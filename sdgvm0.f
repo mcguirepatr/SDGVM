@@ -92,6 +92,7 @@
       INTEGER iyear,oymd,oymdft,dsbb(maxnft),chill(maxnft),persum
       INTEGER stcmp,iargc,yearind(maxyrs),idum,outyears,thty_dys,wi
       INTEGER xlatresn,xlonresn,day_mnth,yearv(maxyrs),nyears,narg
+      INTEGER met_seqv(maxyrs),metyear,met_yearv(maxyrs),yr0ms,yrfms
       INTEGER seed1,seed2,seed3,spinl,yr0s,yr0p,yrfp,xseed1,site_dat
       INTEGER ibox,jbox,last_blank,site_out,country_id,outyears1,gi,fti
       INTEGER outyears2,budo(maxnft),seno(maxnft),ss(maxnft),clim_type
@@ -128,7 +129,7 @@
       LOGICAL l_clim,l_lu,l_soil(20),l_stats,l_regional,l_countries
       LOGICAL out_cov,out_bio,out_bud,out_sen,l_b_and_c,check_c
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
-      LOGICAL fire(maxyrs),harvest(maxyrs)
+      LOGICAL fire(maxyrs),harvest(maxyrs),met_seq
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -286,15 +287,30 @@
         STOP
       ENDIF
 
-      READ(98,'(A)') stinput
-      CALL STRIPB(stinput)
-      st1 = stinput
-      OPEN(99,FILE=st1(1:blank(st1))//'/readme.dat',STATUS='OLD',
-     &iostat=kode)
+      READ(98,'(A)') st1
+      ii = n_fields(st1) 
+      CALL STRIPBS(st1,stinput)
+      !st1 = stinput
+      
+      met_seq = .FALSE.
+      IF(ii.gt.1) THEN
+        st3 = 'seq'
+        CALL STRIPBN(st1,st2)
+        IF (stcmp(st2,st3).EQ.1) THEN
+          met_seq = .TRUE.
+        ELSE
+          WRITE(*,*) 'If it exists, second field of second line in 
+     &input.dat must read "seq"' 
+           STOP 
+        ENDIF
+      ENDIF
+
+      OPEN(99,FILE=stinput(1:blank(stinput))//'/readme.dat',
+     &STATUS='OLD',iostat=kode)
       IF (kode.NE.0) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,*) 'Climate data file does not exist:'
-        WRITE(*,'('' "'',A,''/readme.dat"'')') st1(1:blank(st1))
+        WRITE(*,'('' "'',A,''/readme.dat"'')') stinput(1:blank(stinput))
         STOP
       ENDIF
       READ(99,'(A)') st1
@@ -354,13 +370,14 @@
       ELSE
         WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,*)
-     &'First line of climat readme.dat file must read DAILY MONTHLY or 
+     &'First line of climate readme.dat file must read DAILY MONTHLY or 
      &SITE.'
         STOP
       ENDIF
       CLOSE(99)
 *----------------------------------------------------------------------*
 
+      !APW - not sure what this does
       st1 = stinput
 
       READ(98,'(A)') ststats
@@ -710,13 +727,38 @@
       ENDIF
       outyears = min(outyears,nyears)
 
+
+*----------------------------------------------------------------------*
+* Read in a met sequence if specified   -------------------------------*
+*----------------------------------------------------------------------*
+      yr0ms = yr0p
+      yrfms = yrfp 
+      IF(met_seq) THEN
+        OPEN(99,FILE='met_seq.dat',iostat=kode)
+        IF (kode.NE.0) THEN
+          WRITE(*,'('' PROGRAM TERMINATED'')')
+          WRITE(*,*) 'non-sequential met sequence selected but file 
+     &does not exist.'
+          WRITE(*,'('' "'',A,''"'')') 'met_seq.dat'
+          STOP
+        ENDIF
+        DO i=1,(yrfp-yr0p+1)
+          READ(99,*) met_seqv(i)
+          IF(i.eq.1) yr0ms = met_seqv(i)
+          if(i.gt.1) yr0ms = min(yr0ms,met_seqv(i))
+          IF(i.eq.1) yrfms = met_seqv(i)
+          if(i.gt.1) yrfms = max(yrfms,met_seqv(i))
+        ENDDO
+        CLOSE(99)
+      ENDIF
+
 *----------------------------------------------------------------------*
 * Set 'yr0' and 'yrf' which are the years of actual climate required   *
 * for the run. And check that the climate exists in the climate        *
 * database                                                             *
 *----------------------------------------------------------------------*
-      yr0 = min(yr0s,yr0p)
-      yrf = max(yr0s+min(spinl,cycle)-1,yrfp)
+      yr0 = min(yr0s,yr0p,yr0ms)
+      yrf = max(yr0s+min(spinl,cycle)-1,yrfp,yrfms)
       IF ((yr0.LT.xyear0).OR.(yrf.GT.xyearf)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,'('' Tyring to use '',i4,''-'',i4,'' climate.'')') 
@@ -742,8 +784,14 @@
           ELSE
             yearv(i) = mod(i-1,cycle) + yr0s
           ENDIF
+          met_yearv(i) = yearv(i)
         ELSE
           yearv(i) = i - spinl + yr0p - 1
+          IF(met_seq) THEN
+            met_yearv(i) = met_seqv(i-spinl)
+          ELSE
+            met_yearv(i) = yearv(i)
+          ENDIF
         ENDIF
       ENDDO
 
@@ -1709,7 +1757,7 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 *  Read co2 file.                                                      *
 *----------------------------------------------------------------------*
-      print*, daily_co2
+      !print*, daily_co2
       CALL READCO2 (stco2,yr0,yrf,co2,daily_co2)
 *----------------------------------------------------------------------*
 
@@ -2419,7 +2467,8 @@ c     &site_dat,lat,lon,ca
 *----------------------------------------------------------------------*
       DO iyear=1,nyears
 
-        year = yearv(iyear)
+        year    = yearv(iyear)
+        metyear = met_yearv(iyear)
 
         !APW - not sure what this does
         DO ft=1,nft
@@ -2457,16 +2506,16 @@ c     &site_dat,lat,lon,ca
         DO mnth=1,12
           DO day=1,no_days(year,mnth,thty_dys)
             tmp(mnth,day) = 
-     &real(xtmpv(yearv(iyear)-yr0+1,mnth,day))/100.0d0
+     &real(xtmpv(metyear-yr0+1,mnth,day))/100.0d0
             prc(mnth,day) = 
-     &real(xprcv(yearv(iyear)-yr0+1,mnth,day))/10.0d0
+     &real(xprcv(metyear-yr0+1,mnth,day))/10.0d0
             hum(mnth,day) = 
-     &real(xhumv(yearv(iyear)-yr0+1,mnth,day))/100.0d0
+     &real(xhumv(metyear-yr0+1,mnth,day))/100.0d0
             swr(mnth,day) = 
-     &xswrv(yearv(iyear)-yr0+1,mnth,day)       
+     &xswrv(metyear-yr0+1,mnth,day)       
             IF (withcloudcover) THEN
                cld(mnth) = 
-     &real(xcldv(yearv(iyear)-yr0+1,mnth))/1000.0d0
+     &real(xcldv(metyear-yr0+1,mnth))/1000.0d0
             ELSE
                cld(mnth) = 0.5d0
                if(read_par.eq.1) cld(mnth) = 1.0d0
@@ -4189,7 +4238,7 @@ c     check water cycle closure
             WRITE(*,'(''check'',3f12.6)') ccheck
           ENDIF
         ENDIF
-      if(site.gt.1629) write(*,'(360f8.2)') swr
+      !if(site.gt.1629) write(*,'(360f8.2)') swr
       ENDDO
 *----------------------------------------------------------------------*
 *                             End of year loop                         *

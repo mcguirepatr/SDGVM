@@ -363,7 +363,7 @@ c     added by Ghislain 20/10/03
 *      print*,'gpp & resp ',12.0*can2a*3600.0d0*hrs/1000000.0d0, 
 *     &12.0*canres*3600.0d0*(24.0d0-hrs)/1000000.0d0
 
-      if (day.eq.115)  print*,'canres ',mnth,canres
+      !if (day.eq.115)  print*,'canres ',mnth,canres
 
       !daytime sums
 

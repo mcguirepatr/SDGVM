@@ -415,21 +415,16 @@ c	enddo
           WRITE(*,*) 'No SW radiation data file'
           WRITE(*,*) 'or record mismatch.'
           WRITE(*,'(''"'',A,''"'')') fname8(1:blank(fname8))
-!        ELSE
-!          WRITE(*,*) 'SW data file opened'
-!	  READ(8,'(a100)',rec=1) test_chars
-!          WRITE(*,*) test_chars
-!          WRITE(*,*) ''
         ENDIF
         ENDIF 
      
          OPEN(fno+7,file=fname7,access='direct',recl=recl1,
      &form='formatted',status='old',iostat=kode)
-!        IF (kode.NE.0) THEN
-!          WRITE(*,*) 'No cloud file found using default value'
-!          WRITE(*,*) cld_default
-!          WRITE(*,'(''"'',A,''"'')') fname7(1:blank(fname7))
-!        ENDIF
+        IF (kode.NE.0) THEN
+          WRITE(*,*) 'No cloud file found using default value'
+          WRITE(*,*) cld_default
+          WRITE(*,'(''"'',A,''"'')') fname7(1:blank(fname7))
+        ENDIF
 
 
         DO ii=1,4

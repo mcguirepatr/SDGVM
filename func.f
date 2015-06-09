@@ -379,7 +379,7 @@
 
 *----------------------------------------------------------------------*
 *                                                                      *
-*                          SUBROUTUINE STRIPB                          *
+*                          SUBROUTINE STRIPB                          *
 *                          ******************                          *
 *                                                                      *
 * Strips leading blnaks of its argument.                               *
