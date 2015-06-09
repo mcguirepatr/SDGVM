@@ -295,7 +295,7 @@
       met_seq = .FALSE.
       IF(ii.gt.1) THEN
         st3 = 'seq'
-        CALL STRIPBN(st1,st2)
+        CALL STRIPBS(st1,st2)
         IF (stcmp(st2,st3).EQ.1) THEN
           met_seq = .TRUE.
         ELSE
@@ -757,11 +757,13 @@
 * for the run. And check that the climate exists in the climate        *
 * database                                                             *
 *----------------------------------------------------------------------*
-      yr0 = min(yr0s,yr0p,yr0ms)
-      yrf = max(yr0s+min(spinl,cycle)-1,yrfp,yrfms)
+      yr0 = min(yr0s,yr0p)
+      yrf = max(yr0s+min(spinl,cycle)-1,yrfp)
+      IF(met_seq) yr0 = min(yr0s,yr0ms)
+      IF(met_seq) yrf = max(yr0s+min(spinl,cycle)-1,yrfms)
       IF ((yr0.LT.xyear0).OR.(yrf.GT.xyearf)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,'('' Tyring to use '',i4,''-'',i4,'' climate.'')') 
+        WRITE(*,'('' Trying to use '',i4,''-'',i4,'' climate.'')') 
      &yr0,yrf 
         WRITE(*,'('' Climate database runs from '',i4,''-'',i4,''.'')') 
      &xyear0,xyearf
