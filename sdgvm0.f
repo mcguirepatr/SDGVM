@@ -510,8 +510,13 @@
       !- even if this variable is 0, it is expected to be read from the soils database
       ! - 0 is the default for this switch, use this switch to implement a routine that uses soil C:N read from the soils database 
       soilcn_map = 0  
+
       !grass lai can only take 50% of stored C and leaf growth subject to growth respiration
-      phen_cor   = 0 
+      phen_cor   = 1 
+
+      !switch electron transport function, 0 - Harley 1992, 1 - Farquhar
+      !& Wong 1984
+      hw_j       = 0
 
       !this is commented out for ease of adding new swithces to the input.dat for model development
       !read next line of input switches. ln 12 in input.dat
@@ -537,34 +542,40 @@
 
       !set default configurations for standard versions
       IF(SDGVM_070607) THEN
-        read_par   = 0
-        read_clump = 0
-        soilp_map  = 0
         daily_co2  = 0 
-        vcmax_type = 0
-        ncalc_type = 0
-        hw_j       = 0
-        clump_bl   = 0
+        read_par   = 0
         subd_par   = 0 
-        soilcn_map = 0
+        read_clump = 0
+        clump_bl   = 0
         no_slw_lim = 0
+
+        ncalc_type = 0
+        vcmax_type = 0
+        soilp_map  = 0
         gs_func    = 0
+
+        soilcn_map = 0
+        phen_cor   = 0 
+        hw_j       = 0
       ENDIF
 
       IF(SDGVM_140129) THEN
-        read_par   = 1
-        read_clump = 0
-        soilp_map  = 0 
         daily_co2  = 0 
-        vcmax_type = 1
-        ncalc_type = 1
-        hw_j       = 0
-        clump_bl   = 0 
-        phen_cor   = 1
+        read_par   = 1
         subd_par   = 1
-        soilcn_map = 0
+        read_clump = 0
+        clump_bl   = 0 
         no_slw_lim = 0
+
+        ncalc_type = 1
+        vcmax_type = 1
+        soilp_map  = 0 
+        s070607    = 0
         gs_func    = 0
+
+        soilcn_map = 0
+        phen_cor   = 1
+        hw_j       = 0
       ENDIF
 
       !parameters for 070607 version
