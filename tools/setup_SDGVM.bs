@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# This script is designed to copy the blank SDGVM directory into an actual run directory
+# the script takes the model project directory (pre-existing) as first argument and run directory (will be created) as second argument
+# also renames the directories in the run and submit scripts so that the only file that needs editing is the input file
+
+HOME=/home/alp
+MOD=/models/SDGVM/src/sdgvm
+CPRUN=/blank_runs/global_mp_1deg
+DATA=/models/SDGVM/input_data
+PROJECTS_DIR=/models/SDGVM/run
+PROJECT=/$1
+RUNDIR=$HOME$PROJECTS_DIR$PROJECT/$2/
+
+# if needed, copy a template run instance from the $CPDIR below into new directory 
+# and modify the input_global.dat file to create a new template
+# modify the below path accordingly
+CPDIR=$HOME$MOD$CPRUN
+
+mkdir $RUNDIR
+cp -R $CPDIR/* $RUNDIR
+
+sed -i "s@#RUNDIR#@$RUNDIR@"  ${RUNDIR}submit*.pbs
+sed -i "s@#PROJECT#@$1@"      ${RUNDIR}submit*.pbs
+sed -i "s@#SIM#@$2@"          ${RUNDIR}submit*.pbs
+
+sed -i "s@#DATA#@$DATA@"      ${RUNDIR}input_global.dat
+sed -i "s@#HOME#@$HOME@"      ${RUNDIR}input_global.dat
+
+sed -i "s@#HOME#@$HOME@"      ${RUNDIR}run_SDGVM.bs
+sed -i "s@#MOD#@$MOD@"        ${RUNDIR}run_SDGVM.bs
+sed -i "s@#DATA#@$DATA@"      ${RUNDIR}run_SDGVM.bs
+
+sed -i "s@#HOME#@$HOME@"                        ${RUNDIR}run_postprocessing.bs
+sed -i "s@#MOD#@$MOD@"                          ${RUNDIR}run_postprocessing.bs
+sed -i "s@#DIR#@$HOME$PROJECT_DIR@"             ${RUNDIR}run_postprocessing.bs
+sed -i "s@#PDIR#@$HOME$PROJECTS_DIR$PROJECT@"   ${RUNDIR}run_postprocessing.bs
+sed -i "s@#SIM#@$2@"                            ${RUNDIR}run_postprocessing.bs
+
+
+ 

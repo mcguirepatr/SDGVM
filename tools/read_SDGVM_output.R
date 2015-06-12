@@ -6,14 +6,18 @@
 # Oct 2013
 #
 ######################
+
+.libPaths('~/bin/Rlibs')
 library(plyr)
 library(parallel)
 
 
+
 # Function to concatenate SDGVM output when run across multiple cores
 ########################
-stich_sdgvm_mp_apply <- function(wd,grids=5,nyears=110,styear=1901,
-                                 annual=T,monthly=T,daily=T,mc=F,procs=4){
+stich_sdgvm_mp_apply <- function(wd,grids=4,mc=T,
+                                 annual=T,monthly=T,daily=T,
+                                 ...){
   
   # annual files just open and stich together rowise
   # monthly open, convert structure and stich rowise
@@ -23,7 +27,7 @@ stich_sdgvm_mp_apply <- function(wd,grids=5,nyears=110,styear=1901,
   ########################
   setwd(wd)
   
-  #read output file names
+  #read & sort output file names
   setwd(paste(wd,'grid1/',sep=''))
   files  <- list.files()
   files  <- files[-which(files=='site_info.dat')]
@@ -34,26 +38,42 @@ stich_sdgvm_mp_apply <- function(wd,grids=5,nyears=110,styear=1901,
   msubs  <- grep('monthly',files)
   dsubs  <- grep('daily',files)
   
-  dfiles <- files[dsubs]
-  mfiles <- files[msubs]
   afiles <- files[-c(dsubs,msubs)]
-    
-  # data processing
+  mfiles <- files[msubs]
+  dfiles <- files[dsubs]
+ 
+  mpftsubs  <- grep('[A-Z]',mfiles)
+  dpftsubs  <- grep('[A-Z]',dfiles)
+  mpftfiles <- mfiles[mpftsubs]
+  dpftfiles <- dfiles[dpftsubs]
+  mfiles    <- mfiles[-mpftsubs]
+  dfiles    <- dfiles[-dpftsubs]
+ 
+  if(annual)  print(afiles,quote=F)
+  if(monthly) print(mfiles,quote=F)
+  if(daily)   print(dfiles,quote=F)
+  
+  # output variable loops 
   ########################
   if(mc){
-    if(annual)  mclapply(afiles,stitch_annual,grids,wd,mc.cores=procs)
-    if(monthly) mclapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,styr=styr,nyears=nyears,mc.cores=procs)
-    if(daily)   mclapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,styr=styear,nyears=nyears,mc.cores=1)    
+    if(annual)  mclapply(afiles,stitch_annual,grids,wd,...)
+    if(monthly) mclapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
+    if(daily)   mclapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)    
   } else {
     if(annual)  lapply(afiles,stitch_annual,grids,wd)
-    if(monthly) lapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,styear=styear,nyears=nyears)
-    if(daily)   lapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,styear=styear,nyears=nyears)        
+    if(monthly) lapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
+    if(daily)   lapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)        
   }
 }
 
-stitch_annual <- function(ifile,grids,wd){
+
+
+# Ancilliary functions
+#######################
+
+stitch_annual <- function(ifile,grids,wd,...){
   
-  #   ldf <- mclapply(1:grids,grid,ifile,wd,procs=6)
+  print(ifile)
   ldf <- lapply(1:grids,read_grid,ifile,wd)
   df  <- rbind.fill(ldf)
   
@@ -62,26 +82,25 @@ stitch_annual <- function(ifile,grids,wd){
   write_sdgvm(df,ifile)
 }  
 
-stitch_subannual <- function(ifile,grids,wd,atr,ad,styear,nyears){
+stitch_subannual <- function(ifile,grids,wd,...){
   
-  #   ldv <- mclapply(1:grids,grid,ifile,wd,procs=6)
+  print(ifile)
   ldv <- lapply(1:grids,scan_grid,ifile,wd)
   dv  <- unlist(ldv)
-  fdf <- process_sdgvm_matrix(dv,atr,styear,nyears,ad)
+  fdf <- process_sdgvm_matrix(dv,...)
   
   # write complete dataset to output dir
   setwd(wd)
   write_sdgvm(fdf,ifile)
 }
 
-process_sdgvm_matrix <- function(dv,atr,styear,nyears,ad){
+process_sdgvm_matrix <- function(dv,atr,ad,nyears,...){
+  
   slice <- function(i,mat,l){
     s <- (i-1)*l + 1
     e <- i*l
     mat[,s:e]
   }
-  
-  years  <- styear + nyears - 1
   
   #pull lat and lon from the vector dv
   blk_l    <- nyears*(atr+ad)+2
@@ -110,12 +129,12 @@ process_sdgvm_matrix <- function(dv,atr,styear,nyears,ad){
 
 read_grid <- function(g,ifile,wd){
   setwd(paste(wd,'grid',g,'/',sep=''))
-  read.table(ifile)
+  read.table(ifile,na.strings=c('*********'))
 }
 
 scan_grid <- function(g,ifile,wd){
   setwd(paste(wd,'grid',g,'/',sep=''))
-  scan(ifile)
+  scan(ifile,na.strings=c('*********'))
 }
 
 write_sdgvm <- function(df,file,w=10){

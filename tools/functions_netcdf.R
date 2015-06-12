@@ -7,8 +7,10 @@
 #
 #########################
 
+library(parallel)
 library(ncdf4)
 library(lattice)
+
 source('params_netcdf.R')
   
 ### Creat a netcdf from scratch
