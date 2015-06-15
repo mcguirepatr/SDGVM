@@ -15,7 +15,7 @@
 #PBS -S /bin/csh -V
 #PBS -M walkerap@ornl.gov
 #PBS -m ea
-#PBS -o ./logs/${PBS_JOBNAME}.o${PBS_JOBID}
+#PBS -o #RUNDIR#/${PBS_JOBNAME}.o${PBS_JOBID}
 
 
 #limit coredumpsize 1000000
