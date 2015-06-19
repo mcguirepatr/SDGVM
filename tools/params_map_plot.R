@@ -13,7 +13,7 @@ yellow.green <- colorRampPalette(c('lightgoldenrod','darkgreen'),space='Lab',bia
 # green.blue<-colorRampPalette(c('darkgreen','midnightblue'),space='Lab',bias=10)
 # col.pos   <- c(yellow.green(9),green.blue(5)[2:5])
 col.neg   <- c(white.red(7)[1:6],'lightgoldenrod',yellow.green(7)[2:7])
-col.inc   <- c('grey95',rev(topo.colors(10)),'red')
+col.inc   <- c('grey90',rev(topo.colors(10)),'red')
 
 
 # Variable parameters

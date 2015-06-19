@@ -33,44 +33,6 @@ open <- function(var,mnames,wdpath){
 
 ###############################
 
-grid_calc <- function(x,gsum,index,res){        
-  
-  # res 1 - longitude resolution
-  # res 2 - latitude resolution
-  
-  #add lat and lon boundaries
-  x$w_bound <- x$lon - res[1]/2
-  x$e_bound <- x$lon + res[1]/2
-  x$s_bound <- x$lat - res[2]/2
-  x$n_bound <- x$lat + res[2]/2
-  
-  #add polygons to data
-  poly_p <- cbind(x$w_bound, x$w_bound, x$e_bound, x$e_bound, x$s_bound, x$n_bound, x$n_bound, x$s_bound)
-  x      <- cbind(x,poly_p)
-  
-  #parameters for summing global values 
-  circ  <- 40008.0
-  rad   <- circ/(2.0*pi)
-  ydist <- circ*res[2]/360.0
-  
-  #take the global sum/mean values i.e. convert m-2 values to absolutes
-  x$xdist<-2.0*pi*rad*cos(x$lat*pi/180.0)*res[1]/360.0
-
-  x$area<-x$xdist*ydist
-  
-  ifelse(gsum, 
-         x$sum<-x[,index]*x$area,
-         x$sum<-(x[,index]*x$area)/sum(x$area)
-  )
-  
-  #return processed dataframe
-  x
-}
-
-  
-  
-###############################
-
 write_title <- function(mod,vn,vs) as.expression(substitute(list(mod*' '*vname[vsub]),list(mod=mod,vname=vn,vsub=vs)))
 write_var   <- function(vn,vs) as.expression(substitute(list(vname[vsub]),list(vname=vn,vsub=vs)))
 
@@ -78,9 +40,7 @@ write_var   <- function(vn,vs) as.expression(substitute(list(vname[vsub]),list(v
 
 ###############################
 
-region <- function(x,region){
-  #subset dataset 'x' by region 
-  
+region <- function(region){
   # returns 'xylims' a 6 element vector composing of:
   # (W lon boundary, E lon boundary, S lat boundary, N lat boundary, lon tick res, lat tick res)
   
@@ -132,10 +92,8 @@ area_integrate <- function(x,y,res,gm){
   x$xdist <- 2.0*pi*rad*cos(x$lat*pi/180.0)*res[1]/360.0
   x$area  <- x$xdist*ydist
   areai   <- y*x$area 
-  if(gm) areai       <- areai/sum(x$area)
-  global_sum         <- apply(as.matrix(areai),2,sum,na.rm=T)
-  if(!gm) global_sum <- global_sum*1e-9
-  global_sum
+  # convert to mean value per unit area, or convert to human readable units (e.g. for C in gm-2 converts to Pg)
+  if(gm) areai/sum(x$area) else areai*1e-9
 }
 
 
@@ -155,7 +113,7 @@ plotmap <- function(i,map) {
 
 
 plot_map_lattice <- function(x,index,lab,pregion='global',model,
-                             year,mar,gs=NULL,...){
+                             year,gs=NULL,...){
   #initialise
   world <- getMap()    
   
@@ -172,7 +130,7 @@ plot_map_lattice <- function(x,index,lab,pregion='global',model,
   #remove nas
   x <- x[is.finite(x$plotdata),]  
   #by region
-  lims  <- region(x,pregion)
+  lims  <- region(pregion)
   #subset data to region
   x <- subset(x,lon>lims[1]-2)
   x <- subset(x,lon<lims[2]+2)
