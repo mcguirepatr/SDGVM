@@ -92,7 +92,8 @@
       INTEGER iyear,oymd,oymdft,dsbb(maxnft),chill(maxnft),persum
       INTEGER stcmp,iargc,yearind(maxyrs),idum,outyears,thty_dys,wi
       INTEGER xlatresn,xlonresn,day_mnth,yearv(maxyrs),nyears,narg
-      INTEGER met_seqv(maxyrs),metyear,met_yearv(maxyrs),yr0ms,yrfms
+      INTEGER met_seqv(maxyrs),metyear,met_yearv(maxyrs)
+      INTEGER yr0ms,yrfms,yr0m,yrfm
       INTEGER seed1,seed2,seed3,spinl,yr0s,yr0p,yrfp,xseed1,site_dat
       INTEGER ibox,jbox,last_blank,site_out,country_id,outyears1,gi,fti
       INTEGER outyears2,budo(maxnft),seno(maxnft),ss(maxnft),clim_type
@@ -770,12 +771,14 @@
 *----------------------------------------------------------------------*
       yr0 = min(yr0s,yr0p)
       yrf = max(yr0s+min(spinl,cycle)-1,yrfp)
-      IF(met_seq) yr0 = min(yr0s,yr0ms)
-      IF(met_seq) yrf = max(yr0s+min(spinl,cycle)-1,yrfms)
-      IF ((yr0.LT.xyear0).OR.(yrf.GT.xyearf)) THEN
+      yr0m = yr0
+      yrfm = yrf
+      IF(met_seq) yr0m = min(yr0s,yr0ms)
+      IF(met_seq) yrfm = max(yr0s+min(spinl,cycle)-1,yrfms)
+      IF ((yr0m.LT.xyear0).OR.(yrfm.GT.xyearf)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,'('' Trying to use '',i4,''-'',i4,'' climate.'')') 
-     &yr0,yrf 
+     &yr0m,yrfm 
         WRITE(*,'('' Climate database runs from '',i4,''-'',i4,''.'')') 
      &xyear0,xyearf
         STOP
@@ -1770,7 +1773,7 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 *  Read co2 file.                                                      *
 *----------------------------------------------------------------------*
-      !print*, daily_co2
+      !print*, daily_co2,yr0,yrf
       CALL READCO2 (stco2,yr0,yrf,co2,daily_co2)
 *----------------------------------------------------------------------*
 
@@ -2483,6 +2486,7 @@ c     &site_dat,lat,lon,ca
         year    = yearv(iyear)
         metyear = met_yearv(iyear)
 
+
         !APW - not sure what this does
         DO ft=1,nft
           laimax(ft) = 4.601d0 
@@ -2508,6 +2512,8 @@ c     &site_dat,lat,lon,ca
           ENDIF
         ENDIF
 
+        !print*, year, metyear, ca(1,1)
+
         IF (mod(iyear,max(year_out,1)).EQ.min(1,year_out)-1) THEN
            WRITE(*,'('' Year no.'',2i5,'', ca = '',2f6.2)') iyear, !
      & year,ca(1,1),ca(12,31) !
@@ -2519,16 +2525,16 @@ c     &site_dat,lat,lon,ca
         DO mnth=1,12
           DO day=1,no_days(year,mnth,thty_dys)
             tmp(mnth,day) = 
-     &real(xtmpv(metyear-yr0+1,mnth,day))/100.0d0
+     &real(xtmpv(metyear-yr0m+1,mnth,day))/100.0d0
             prc(mnth,day) = 
-     &real(xprcv(metyear-yr0+1,mnth,day))/10.0d0
+     &real(xprcv(metyear-yr0m+1,mnth,day))/10.0d0
             hum(mnth,day) = 
-     &real(xhumv(metyear-yr0+1,mnth,day))/100.0d0
+     &real(xhumv(metyear-yr0m+1,mnth,day))/100.0d0
             swr(mnth,day) = 
-     &xswrv(metyear-yr0+1,mnth,day)       
+     &xswrv(metyear-yr0m+1,mnth,day)       
             IF (withcloudcover) THEN
                cld(mnth) = 
-     &real(xcldv(metyear-yr0+1,mnth))/1000.0d0
+     &real(xcldv(metyear-yr0m+1,mnth))/1000.0d0
             ELSE
                cld(mnth) = 0.5d0
                if(read_par.eq.1) cld(mnth) = 1.0d0

@@ -25,6 +25,8 @@
       const  = 0
 10    CONTINUE
 
+c      print*, yr0, yrf
+
 !      print*, daily_co2
       IF(daily_co2.eq.1) THEN 
 	READ(98,*,end=99) year,mnth,day,ca 
@@ -38,6 +40,7 @@
         prev_year = year 
       ELSE 
         READ(98,*,end=99) year,ca
+c        print*, year,ca
 	IF ((year.GE.yr0).AND.(year.LE.yrf)) THEN
           norecs = norecs + 1
           co2(norecs,:,:) = ca
