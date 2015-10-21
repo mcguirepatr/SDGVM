@@ -17,7 +17,7 @@
       REAL*8 tmp(12,31),prc(12,31),hum(12,31),cld(12),latdel,londel
       REAL*8 leafper,stemper,rootper,avnpp,avgpp,avlai,avdof,co20,co2f
       REAL*8 avrof,infix,nppsold,avnppst,co2const,ic0(8),in0(8),iminn(3)
-      REAL*8 avnleaf,avvcmax,avjmax,avleaf_nit,avsla,sl
+      REAL*8 avnleaf,avvcmax,avjmax,avleaf_nit,avsla,sl,hrs
       REAL*8 swcold,swcnew,is1,is2,is3,is4,isn,ilsn,tc0(8),tn0(8),sum1
       REAL*8 tminn(3),ts1,ts2,ts3,ts4,tsn,tlsn,oscale,yield(maxnft)
       REAL*8 c0(8,maxnft),n0(8,maxnft),minn(3,maxnft),c0v(8),n0v(8)
@@ -3448,7 +3448,7 @@ c     monthly initialisations
      &env_vcmax(ft),env_jmax(ft),soilp_map,can2g,canga,ga,
      &ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),ftg1(ft),
      &no_slw_lim,par_loops,s070607,gs_func,ce_light(:,:,ft),
-     &ce_ci(:,:,ft),ce_t,sl)
+     &ce_ci(:,:,ft),ce_t,sl,hrs)
 
 !            write(*,*) mnth,day,tleaf_n
 c      cbal = -1*(daygpp) + dayra + leafresp + rootresp + stemresp +
@@ -3558,9 +3558,12 @@ c      endif
             daily_out(44,ft,mnth,day) = rootv(1)*12.0d0   ! root growth in grams
             !the following conductance outputs are in mol H2O m-2 s-1 
             daily_out(45,ft,mnth,day) = canga/(8.3144*(tmp(mnth,day)+
-     &273.15)/101325.0)                               !canopy aerodynamic conductance (H2O units)
-            daily_out(46,ft,mnth,day) = ga*1.3        !leaf boundary layer conductance (H2O units)
-            daily_out(47,ft,mnth,day) = can2g*1.6     !canopy stomatal conductance (H2O units)
+     &273.15)/101325.0)                                   !canopy aerodynamic conductance (H2O units)
+            daily_out(46,ft,mnth,day) = ga*1.3            !leaf boundary layer conductance (H2O units)
+            daily_out(47,ft,mnth,day) = can2g*1.6         !canopy stomatal conductance (H2O units)
+            daily_out(73,ft,mnth,day) = qdirect + qdiff   !total PAR (H2O units)
+            daily_out(74,ft,mnth,day) = ca(mnth,day)      !co2 partial pressure (Pa)
+            daily_out(75,ft,mnth,day) = hrs               !daylight hours (hours)
 
 
             IF ((bb(ft).EQ.day+(mnth-1)*30).AND.(budo(ft).EQ.0))

@@ -20,7 +20,7 @@
      &SDGVM_070607,can_clump,tassim,tgs,tci,hw_j,clump_bl,phen_cor,
      &subd_par,env_vcmax,env_jmax,soilp_map,can2g,canga,ga,
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,no_slw_lim,par_loops,s070607,
-     &gs_func,ce_light,ce_ci,ce_t,sl)
+     &gs_func,ce_light,ce_ci,ce_t,sl,hrs)
 
 *----------------------------------------------------------------------*
       REAL*8 oi
