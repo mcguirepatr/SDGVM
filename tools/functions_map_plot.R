@@ -7,9 +7,6 @@
 #
 ###################################
 
-#library(maps)
-#library(fBasics)
-
 .libPaths('~/bin/Rlibs')
 library(lattice)
 library(latticeExtra)
@@ -23,7 +20,7 @@ library(rworldxtra)
 
 open <- function(var,mnames,wdpath){
   ifile <- paste(var,'.dat',sep='')
-  print(ifile)
+  #print(ifile)
   x     <- read.table(paste(wdpath,ifile,sep=''),header=F,na.strings='********')
   names(x)<-mnames  
   x
@@ -45,31 +42,43 @@ region <- function(region){
   # (W lon boundary, E lon boundary, S lat boundary, N lat boundary, lon tick res, lat tick res)
   
   if(region=='global') {
-    xylims <- c(-180,180,-60,90,90,30)
+    xylims <- c(-180,180,-60,90,90,30,-40,-45)
   }
   
   else if(region=='europe'){
-    xylims <- c(-10,80,30,70,15,10)
+    xylims <- c(-10,80,30,70,15,10,0,0)
   }
   
   else if(region=='tropics'){
-    xylims<-c(-90,180,-30,30,90,15)
+    xylims <- c(-120,180,-23.5,23.5,90,15,55,-15)
+  }
+  
+  else if(region=='neotropics'){
+    xylims <- c(-120,-30,-23.5,23.5,90,15,-110,-15)
+  }
+  
+  else if(region=='afrotropics'){
+    xylims <- c(-30,60,-23.5,23.5,90,15,-25,-15)
+  }
+  
+  else if(region=='asiantropics'){
+    xylims <- c(60,180,-23.5,23.5,90,15,65,-15)
   }
   
   else if(region=='boreal NA'){
-    xylims <- c(-180,-45,45,70,15,10)
+    xylims <- c(-180,-45,45,70,15,10,0,0)
   }
   
   else if(region=='siberia'){
-    xylims <- c(80,180,45,70,20,15)
+    xylims <- c(80,180,45,70,20,15,0,0)
   }
   
   else if(region=='north'){
-    xylims <- c(-180,180,-45,70,90,15)    
+    xylims <- c(-180,180,-45,70,90,15,0,0)    
   }
   
   else if(region=='amazonia'){
-    xylims <- c(-90,-30,-30,15,30,15)
+    xylims <- c(-90,-30,-23.5,15,30,15,0,0)
   }
   
   #returns
@@ -112,8 +121,14 @@ plotmap <- function(i,map) {
 
 
 
-plot_map_lattice <- function(x,index,lab,pregion='global',model,
-                             year,gs=NULL,...){
+plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,...){
+  # This function plots world (or subsetted) maps of gridded data
+
+  # expects a dataframe, 'x', with the columns 'lat', 'lon', 'plotdata', 'year', and 'run'
+  # 'run' is a factorial column with the label for the simulation that produced 'plotdata'  
+  # 'year' is also a factorial column, I'm not sure yet that this is compatible with 'gs'
+  # 'gs' is a vector or matrix of globally area integrated values for the data in 'x$plotdata'
+
   #initialise
   world <- getMap()    
   
@@ -122,8 +137,8 @@ plot_map_lattice <- function(x,index,lab,pregion='global',model,
   
   if(!is.null(gs)){
     if(lab$gsum) {
-           global_sum <- round(gs[,index-2],1)
-    } else global_sum <- round(gs[,index-2],2)
+           global_sum <- round(gs,1)
+    } else global_sum <- round(gs,2)
   } else global_sum <- gs
   
   #subset dataset 
@@ -140,7 +155,10 @@ plot_map_lattice <- function(x,index,lab,pregion='global',model,
   #   print(head(x))
   
   #plot
-  levelplot(plotdata~lon*lat|as.factor(year)*run,x,...,
+  #levelplot(plotdata~lon*lat|as.factor(year)*run,x,...,
+  levelplot(plotdata~lon*lat|run,x,...,
+  #contourplot(plotdata~lon*lat|run,x,...,
+  #          region=T,labels=F,contour=F,
             as.table=T,
             main=write_var(lab$name,lab$nsub),
             # scale bar
@@ -159,9 +177,9 @@ plot_map_lattice <- function(x,index,lab,pregion='global',model,
               panel.levelplot(...)
               lapply(1:length(world@polygons),plotmap,map=world)
               panel.abline(h=c(0,-23.3,23.3,66.5,-66.5),lty=c(2,3,3,3,3,3),lwd=0.6)
-              panel.text(x=-160,y=-35,pos=4,labels=ifelse(lab$gsum|lab$gmean,t(global_sum)[panel.number()],''))      
-              panel.text(x=-160,y=-45,pos=4,labels=ifelse(lab$gsum|lab$gmean,parse(text=lab$sunit),''))      
-            }) #+ layer_(panel.2dsmoother(..., n = 200))
+              panel.text(x=lims[7],y=lims[8],pos=4,labels=ifelse(lab$gsum|lab$gmean,t(global_sum)[panel.number()],''))      
+              panel.text(x=lims[7]+cs*((lims[2]-lims[1])/25),y=lims[8],pos=4,labels=ifelse(lab$gsum|lab$gmean,parse(text=lab$sunit),''))      
+            }) 
 }   
 
 
@@ -169,19 +187,21 @@ plot_map_lattice <- function(x,index,lab,pregion='global',model,
 axis.ticks <- function (...,y=F,ticks = seq(-180,180,20), ticks2 = seq(-180,180,5)){
   ans    <- xscale.components.default(...)
   ticks2 <- ticks2[!(ticks2 %in% ticks)]
-  ans$bottom$ticks$at  <- c(ticks, ticks2)
-  ans$bottom$ticks$tck <- c(rep(-1,length(ticks)), rep(-0.5,length(ticks2)))
-  ans$bottom$labels$at <- ticks
-  ans$bottom$labels$labels <- ticks
+  ans$bottom$ticks$at      <- c(ticks, ticks2)
+  ans$bottom$ticks$tck     <- c(rep(-1,length(ticks)), rep(-0.5,length(ticks2)))
+  lab_ticks                <- seq(-160,160,40) 
+  ans$bottom$labels$at     <- lab_ticks
+  ans$bottom$labels$labels <- lab_ticks
   if(y){
     ans    <- yscale.components.default(...)
-    ticks  <- c(seq(-90,90,20))
+    ticks  <- c(seq(-80,80,20))
     ticks2 <- seq(-90,90,5)
     ticks2 <- ticks2[!(ticks2 %in% ticks)]
-    ans$left$ticks$at  <- c(ticks, ticks2)
-    ans$left$ticks$tck <- c(rep(-1,length(ticks)), rep(-0.5,length(ticks2)))
-    ans$left$labels$at <- ticks
-    ans$left$labels$labels <- ticks
+    ans$left$ticks$at      <- c(ticks, ticks2)
+    ans$left$ticks$tck     <- c(rep(-1,length(ticks)), rep(-0.5,length(ticks2)))
+    lab_ticks              <- seq(-80,80,20) 
+    ans$left$labels$at     <- lab_ticks
+    ans$left$labels$labels <- lab_ticks
   }
   ans
 }

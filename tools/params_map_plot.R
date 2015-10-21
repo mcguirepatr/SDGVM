@@ -12,8 +12,9 @@ white.red    <- colorRampPalette(c('red3','lightgoldenrod'),space='Lab',bias=10)
 yellow.green <- colorRampPalette(c('lightgoldenrod','darkgreen'),space='Lab',bias=10)
 # green.blue<-colorRampPalette(c('darkgreen','midnightblue'),space='Lab',bias=10)
 # col.pos   <- c(yellow.green(9),green.blue(5)[2:5])
-col.neg   <- c(white.red(7)[1:6],'lightgoldenrod',yellow.green(7)[2:7])
-col.inc   <- c('grey90',rev(topo.colors(10)),'red')
+col.neg     <- c(white.red(7)[1:6],'lightgoldenrod',yellow.green(7)[2:7])
+col.inc     <- c('grey90',rev(topo.colors(10)),'darkred')
+col.inc.gpp <- c(col.inc[1:4],'greenyellow',col.inc[6],'green4',col.inc[8:10],'navy',rev(c('orange','darkorange2','red','darkred')))
 
 
 # Variable parameters
@@ -34,8 +35,8 @@ gpp <- list(
   sunit = 'Pg',
   gsum  = T,
   gmean = F,
-  at    = c(0,100,250,500,750,1000,1250,1500,2000,2500,3000,3500),
-  cols  = col.inc
+  at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500,4000),
+  cols  = col.inc.gpp
 )  
 nbp <- list(
   name  = 'NBP',
@@ -74,7 +75,7 @@ evt <- list(
   sunit = 'Eg',
   gsum  = T,
   gmean = F,
-  at    = c(0,100,250,500,750,1000,1500,2000,2500,3000,3500,1500),
+  at    = c(0,100,250,500,750,1000,1500,2000,2500,3000,3500,4500),
   cols  = col.inc
 ) 
 trn <- list(
@@ -144,8 +145,8 @@ anvcmax <- list(
   sunit = 'mu*mol*" "*m^-2*" "*s^-1',
   gsum  = F,
   gmean = T,
-  at    = c(0,10,20,25,30,35,40,50,60,80,100,130),
-  cols  = col.inc
+  at    = c(0,5,10,15,20,25,30,35,40,50,60,70,80,100,120,140),
+  cols  = col.inc.gpp
 )
 
 anjmax <- list(
@@ -185,7 +186,7 @@ swr<- list(
   sunit = 'Wm^-2',
   gsum  = F,
   gmean = T,
-  at    = c(0,10,20,50,75,100,125,150,175,200,230,260),
+  at    = c(0,10,20,50,75,100,125,150,175,200,230,260,290),
   cols  = col.inc
 )
 qtotal<- list(
@@ -205,8 +206,8 @@ tmp <- list(
   sunit = '.^oC',
   gsum  = F,
   gmean = T,
-  at    = c(-10,5,0,5,10,15,20,25,30,35),
-  cols  = rev(heat.colors(9))
+  at    = c(-20,-15,-10,-5,0,5,10,15,20,25,30,35),
+  cols  = c(rev(heat.colors(10))[1:9],'darkred','purple4')
 )
 prc <- list(
   name  = 'Precipitaton',
@@ -215,8 +216,8 @@ prc <- list(
   sunit = 'Eg',
   gsum  = T,
   gmean = F,
-  at    = c(0,100,250,500,750,1000,1500,2000,2500,3000,3500,4000),
-  cols  = col.inc
+  at    = c(0,100,250,500,750,1000,1500,2000,2500,3000,3500,4000,4500,5000),
+  cols  = col.inc.gpp
 )
 swc <- list(
   name  = 'Soil Water',
