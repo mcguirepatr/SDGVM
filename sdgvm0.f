@@ -67,8 +67,9 @@
       REAL*8 map_clump,w_scalar,t_scalar,leafv_sum,stemv_sum,rootv_sum
       REAL*8 aprc_dryqv(10),aprc_dryq,yearprcdryq,prc_week(52),prcq(52)
       REAL*8 matvar,aprc_rel,a2,b2
-      REAL*8 jmax_ci_low,jmax_ci_high
       REAL*8 jmax_int(maxnft),jmax_int_er(maxnft)
+      REAL*8 jmax_ci_low,jmax_ci_high
+      REAL*8 ftTopt(maxnft),ftHa(maxnft),ftHd(maxnft)
       REAL*8 jmax_slope(maxnft),jmax_slope_er(maxnft)
       REAL*8 sla_ci_low,sla_ci_high
       REAL*8 sla_int(maxnft),sla_int_er(maxnft)
@@ -77,7 +78,7 @@
 
       INTEGER read_clump,hw_j,clump_bl,phen_cor,pft_nflds
       INTEGER mswitch,subd_par,switch3,no_slw_lim
-      INTEGER soilcn_map,soilp_map,vcmax_type,ncalc_type,read_par
+      INTEGER soilcn_map,soilp_map,vcmax_type,ncalc_type,read_par,ttype
       INTEGER sites,cycle,yr0,yrf,snp_no,snpshts(1000),dschill(maxnft)
       INTEGER ftbbm(maxnft),ftssm(maxnft),ftsss(maxnft),n_fields
       INTEGER snp_year,ftlls(maxnft),ftsls(maxnft),ftrls(maxnft),day,d
@@ -482,6 +483,11 @@
         IF (i.gt.-1)  ncalc_type = i 
         CALL STRIPBN(st1,i) 
         !select vcmax parameterisation
+        ttype = 0
+        IF (i.ge.10) THEN
+          ttype = int(real(i)/10.0)
+          i     = i - 10*ttype
+        ENDIF
         IF (i.gt.-1)  vcmax_type = i 
         CALL STRIPBN(st1,i) 
         !use soil P from a map to calculate Vcmax (Vcmax switch must also be 1 for P to be used in Vcmax calc) 
@@ -962,7 +968,9 @@
       ftjvb(ft)  = 0.0d0
       ftg0(ft)   = 0.0d0
       ftg1(ft)   = 0.0d0
-
+      ftTopt(ft) = 0.0d0
+      ftHa(ft)   = 0.0d0
+      ftHd(ft)   = 0.0d0
 
       ft = 2
       ftc3(ft) = 0
@@ -999,11 +1007,15 @@
       ftjvb(ft)  = 0.0d0
       ftg0(ft)   = 0.0d0
       ftg1(ft)   = 0.0d0
+      ftTopt(ft) = 0.0d0
+      ftHa(ft)   = 0.0d0
+      ftHd(ft)   = 0.0d0
 
 *----------------------------------------------------------------------*
 * Read in functional type parameterisation.                            *
 *----------------------------------------------------------------------*
       pft_nflds = 34
+      IF(ttype.ge.1) pft_nflds = 37
 
       READ(98,'(A)') st1
       CALL STRIPB(st1)
@@ -1057,13 +1069,26 @@
             STOP
           ENDIF
 
-          READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
+          IF(ttype.eq.0) THEN
+            READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
      &ftagh(ft),ftdth(ft),ftmor(ft),ftwd(ft),ftxyl(ft),ftpd(ft),
      &ftsla(ft),ftlls(ft),ftsls(ft),ftrls(ft),ftlmor(ft),ftrat(ft),
      &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
      &ftg1(ft)
+      ftTopt(ft) = 0.0d0
+      ftHa(ft)   = 0.0d0
+      ftHd(ft)   = 0.0d0
+          ELSEIF(ttype.ge.1) THEN
+            READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
+     &ftagh(ft),ftdth(ft),ftmor(ft),ftwd(ft),ftxyl(ft),ftpd(ft),
+     &ftsla(ft),ftlls(ft),ftsls(ft),ftrls(ft),ftlmor(ft),ftrat(ft),
+     &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
+     &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
+     &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
+     &ftg1(ft),ftTopt(ft),ftHa(ft),ftHd(ft)
+          ENDIF
 
           IF (ftmor(ft).GT.maxyrs) THEN
             WRITE(*,'('' PROGRAM TERMINATED'')')
@@ -1131,6 +1156,7 @@
               STOP
             ENDIF
 
+          IF(ttype.eq.0) THEN 
             READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
      &ftagh(ft),ftdth(ft),ftmor(ft),ftwd(ft),ftxyl(ft),ftpd(ft),
      &ftsla(ft),ftlls(ft),ftsls(ft),ftrls(ft),ftlmor(ft),ftrat(ft),
@@ -1138,6 +1164,18 @@
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
      &ftg1(ft)
+      ftTopt(ft) = 0.0d0
+      ftHa(ft)   = 0.0d0
+      ftHd(ft)   = 0.0d0
+          ELSEIF(ttype.ge.1) THEN
+            READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
+     &ftagh(ft),ftdth(ft),ftmor(ft),ftwd(ft),ftxyl(ft),ftpd(ft),
+     &ftsla(ft),ftlls(ft),ftsls(ft),ftrls(ft),ftlmor(ft),ftrat(ft),
+     &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
+     &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
+     &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
+     &ftg1(ft),ftTopt(ft),ftHa(ft),ftHd(ft)
+          ENDIF
 
             IF (ftsla(ft).LT.0.0d0) THEN
               ftsla(ft) = 10.0d0**(2.35d0 -
@@ -3448,7 +3486,7 @@ c     monthly initialisations
      &env_vcmax(ft),env_jmax(ft),soilp_map,can2g,canga,ga,
      &ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),ftg1(ft),
      &no_slw_lim,par_loops,s070607,gs_func,ce_light(:,:,ft),
-     &ce_ci(:,:,ft),ce_t,sl,hrs)
+     &ce_ci(:,:,ft),ce_t,sl,hrs,ttype,ftTopt(ft),ftHa(ft),ftHd(ft))
 
 !            write(*,*) mnth,day,tleaf_n
 c      cbal = -1*(daygpp) + dayra + leafresp + rootresp + stemresp +

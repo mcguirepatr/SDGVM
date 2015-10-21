@@ -20,7 +20,7 @@
      &SDGVM_070607,can_clump,tassim,tgs,tci,hw_j,clump_bl,phen_cor,
      &subd_par,env_vcmax,env_jmax,soilp_map,can2g,canga,ga,
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,no_slw_lim,par_loops,s070607,
-     &gs_func,ce_light,ce_ci,ce_t,sl,hrs)
+     &gs_func,ce_light,ce_ci,ce_t,sl,hrs,ttype,ftTopt,ftHa,ftHd)
 
 *----------------------------------------------------------------------*
       REAL*8 oi
@@ -31,7 +31,7 @@
       REAL*8 soilc,soiln,rh,tk,rn,pet,petmm,petv,laimax,q,qdiff
       REAL*8 qdirect,hrs,vpd,canga,lam,rho,s,gam,amx,gsn,dp2,pet2,wtfc
       REAL*8 etwt,etmm,ftagh,soilw,maxc,soil2g,can2a,daygpp,daynpp
-      REAL*8 ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,sl
+      REAL*8 ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,ftTopt,ftHa,ftHd,sl
       REAL*8 tmem(200),sapresp,sla,nppstorx,leafmol,ht,tf(13),ga
       REAL*8 eemm,daysoff,amax,respref,suma(360),can2g,cangs,svp,rlai
       REAL*8 wtwp,p,nppstor2,dayl,sum,canres,et,ee,flow1,flow2,tran,rem
@@ -48,7 +48,7 @@
       INTEGER mnth,i,iter,no_day,ndsum(12),lai,day,year,bb,bbgs
       INTEGER ftdth,ss,dsbb,chill,dschill,ncalc_type,read_par
       INTEGER hw_j,clump_bl,phen_cor,subd_par,soilp_map
-      INTEGER no_slw_lim,vcmax_type,par_loops,s070607,gs_func
+      INTEGER no_slw_lim,vcmax_type,par_loops,s070607,gs_func,ttype
       LOGICAL veg,SDGVM_070607
       INCLUDE 'param.inc'
 
@@ -258,7 +258,7 @@ c     z0=roughness length
      &tassim,tgs,tci,hw_j,clump_bl,subd_par,thty_dys,
      &year,lat,swr,cld,read_par,env_vcmax,env_jmax,soilp_map,ga,
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,par_loops,s070607,gs_func,
-     &ce_light,ce_ci,ce_t)
+     &ce_light,ce_ci,ce_t,ttype,ftTopt,ftHa,ftHd)
 
 c      write(*,*) 'o',canga,can2a,can2g,canres,suma
 

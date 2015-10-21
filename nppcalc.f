@@ -10,7 +10,8 @@
      &leaf_nit,vcmax,jmax,ft,kg,sla,SDGVM_070607,can_clump,tassim,tgs,
      &tci,hw_j,clump_bl,subd_par,thty_dys,year,lat,swr,cld,
      &read_par,env_vcmax,env_jmax,soilp_map,ga,ftvna,ftvnb,ftjva,ftjvb,
-     &ftg0,ftg1,par_loops,s070607,gs_func,ce_light,ce_ci,ce_t)
+     &ftg0,ftg1,par_loops,s070607,gs_func,ce_light,ce_ci,ce_t,ttype,
+     &ftTopt,ftHa,ftHd)
 *----------------------------------------------------------------------*
       IMPLICIT NONE
       
@@ -29,7 +30,7 @@
       REAL*8 can2a,can2g,rn,wtwp,kg,rht,tpav
       REAL*8 tppcv,tpgsv,ca,rd(12),tpaj,tppcj,tpgsj,hrs
       REAL*8 a(12),gs(12),ci(12),tpac4,tppcc4,tpgsc4,xvmax
-      REAL*8 a_sd(12),gs_sd(12)
+      REAL*8 a_sd(12),gs_sd(12),ftTopt,ftHa,ftHd
       REAL*8 ci_sd(12),ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1
       REAl*8 apar,fpr,gsm,ncan,pleaf(12),slaleaf,tleaf,pcan,slaton
       REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30)
@@ -48,6 +49,7 @@
       INTEGER i,lai,k,c3,mnth,day,ncalc_type,vcmax_type,ft,oday
       INTEGER hw_j,clump_bl,subd_par,ii,omnth,par_loops,gs_func
       INTEGER thty_dys,year,no_day,read_par,soilp_map,s070607
+      INTEGER ttype
       REAL*8  sd_scale(par_loops+1),sd_scale2,nup_rate
       LOGICAL SDGVM_070607,output
 
@@ -191,7 +193,8 @@
              vm(i) = brent_solver(0,1d-6,5d-4,
      &oi,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,
      &sum(ce_t(:))/30.d0,0.d0,1,0.d0,0.d0,0.d0,i,
-     &sum(ce_ci(:,i))/30.d0,sum(ce_light(:,i))/30.d0)
+     &sum(ce_ci(:,i))/30.d0,sum(ce_light(:,i))/30.d0,ttype,
+     &ftTopt,ftHa,ftHd)
              vm(i) = vm(i) * 1d6
           ELSE
             PRINT*, 'vcmax_type ',vcmax_type,' undefined. set to a value
@@ -222,9 +225,9 @@
 
           !temperature scale Vcmax & Jmax
           if(vcmax_type.le.6) then
-            vmx(i)=vm(i) * T_SCALAR(t,'v',1)
+            vmx(i)=vm(i) * T_SCALAR(t,'v',ttype,ftTopt,ftHa,ftHd)
             ! - assumes temp sensitivity of Jmax is the same as vcmax which is wrong 
-            jmx(i)=jm(i) * T_SCALAR(t,'j',1)
+            jmx(i)=jm(i) * T_SCALAR(t,'j',ttype,ftTopt,ftHa,ftHd)
 
             !leaf age scale Vcmax & Jmax
             vmx(i) = vmx(i)*npp_eff
@@ -233,8 +236,8 @@
             vmx(i) = vm(i)
             jmx(i) = jm(i)
             !invert temp correction scalar to get values at 25oC
-            vm(i) = vmx(i) / T_SCALAR(t,'v',1)
-            jm(i) = jmx(i) / T_SCALAR(t,'j',1)
+            vm(i) = vmx(i) / T_SCALAR(t,'v',ttype,ftTopt,ftHa,ftHd)
+            jm(i) = jmx(i) / T_SCALAR(t,'j',ttype,ftTopt,ftHa,ftHd)
           endif
 
           !water limitation scale Vcmax & Jmax
@@ -627,7 +630,8 @@
       real*8  xvmax      !need to make this an array and set it up in canopy properties lai loop
       logical output,brent     !flag to print troubleshooting output to screen
 
-      brent = .false.
+      brent = .false. ! if the brent solver needs reimplementing here 
+                      ! then it will be necessary to pass the pft temp scalar parameters to this subroutine  
       
       !calculate VPD
       dv = 0.6108d0*exp(17.269d0*t/(237.3d0 + t))*(1.0d0 - 
@@ -644,29 +648,29 @@
 
           !C3/C4 if
           IF (c3.EQ.1) THEN
-            if(.not.brent) then
+       !     if(.not.brent) then
               CALL ASSVMAX(tpav,tppcv,cs,tpgsv,oi,ca,vmx,
      &rh,kg,ko,kc,tau,rd,ga,t,p,gs_func,g0,g1,dv,i)
-            else
-              tpav  = brent_solver(1,0.d0,50.d0,
-     &oi,ca,vmx,0.d0,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,0.d0,0.d0)
-              cs    = ca - tpav*1.0e-6*p/ga
-              tpgsv = GS_LEAF(g0,g1,tpav,dv,t,cs,gs_func) * kg
-              tppcv = cs - tpav*1.0e-6*p/tpgsv
-            endif
+       !     else
+       !       tpav  = brent_solver(1,0.d0,50.d0,
+      !&oi,ca,vmx,0.d0,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,0.d0,0.d0,ftTopt,ftHa,ftHd)
+       !       cs    = ca - tpav*1.0e-6*p/ga
+       !       tpgsv = GS_LEAF(g0,g1,tpav,dv,t,cs,gs_func) * kg
+       !       tppcv = cs - tpav*1.0e-6*p/tpgsv
+       !     endif
 
             !light or shade leaves
             IF (fshade.GT.0.01d0) THEN
-              if(.not.brent) then
+        !      if(.not.brent) then
                 CALL ASSJ(tpaj,tppcj,tpgsj,oi,ca,rh,kg,tau,rd,ga,t,p,
      &jshade,gs_func,g0,g1,dv,i)
-              else
-                tpaj  = brent_solver(2,0.d0,40.d0,
-     &oi,ca,vmx,jshade,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,0.d0,0.d0)
-                cs    = ca - tpaj*1.0e-6*p/ga
-                tpgsj = GS_LEAF(g0,g1,tpaj,dv,t,cs,gs_func) * kg
-                tppcj = cs - tpaj*1.0e-6*p/tpgsj
-              endif
+        !      else
+        !        tpaj  = brent_solver(2,0.d0,40.d0,
+      !&oi,ca,vmx,jshade,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,0.d0,0.d0,ftTopt,ftHa,ftHd)
+        !        cs    = ca - tpaj*1.0e-6*p/ga
+        !        tpgsj = GS_LEAF(g0,g1,tpaj,dv,t,cs,gs_func) * kg
+        !        tppcj = cs - tpaj*1.0e-6*p/tpgsj
+        !      endif
 
               CALL LIMITATIONPROCESS(tpav,tppcv,tpgsv,tpaj,tppcj,
      &tpgsj,ashade,pcshade,gsshade)
@@ -677,16 +681,16 @@
             ENDIF
 
             IF (fsunlit.GT.0.01d0) THEN
-              if(.not.brent) then
+        !      if(.not.brent) then
                 CALL ASSJ(tpaj,tppcj,tpgsj,oi,ca,rh,kg,tau,rd,ga,t,p,
      &jsunlit,gs_func,g0,g1,dv,i)
-              else
-                tpaj  = brent_solver(2,0.d0,40.d0,
-     &oi,ca,vmx,jsunlit,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,0.d0,0.d0)
-                cs    = ca - tpaj*1.0e-6*p/ga
-                tpgsj = GS_LEAF(g0,g1,tpaj,dv,t,cs,gs_func) * kg
-                tppcj = cs - tpaj*1.0e-6*p/tpgsj
-              endif
+        !      else
+        !        tpaj  = brent_solver(2,0.d0,40.d0,
+      !&oi,ca,vmx,jsunlit,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,0.d0,0.d0,ftTopt,ftHa,ftHd)
+        !        cs    = ca - tpaj*1.0e-6*p/ga
+        !        tpgsj = GS_LEAF(g0,g1,tpaj,dv,t,cs,gs_func) * kg
+        !        tppcj = cs - tpaj*1.0e-6*p/tpgsj
+        !      endif
 
               CALL LIMITATIONPROCESS(tpav,tppcv,tpgsv,tpaj,tppcj,
      &tpgsj,asunlit,pcsunlit,gssunlit)
@@ -1137,7 +1141,7 @@
       REAL*8  t,tk,kc,ko,tau,alpha
       INTEGER farq_pars_func
 
-      tk = t + 273.0d0  
+      tk = t + 273.15d0  
       
       alpha = 0.24d0
       kc  = exp(35.8d0 - 80.5d0/(0.00831d0*tk))
@@ -1154,23 +1158,46 @@
 *     Gives vcmax or jmax temperature scalar                           *  
 *                                                                      *
 *----------------------------------------------------------------------*
-      FUNCTION T_SCALAR(t,jv,ttype)
+      FUNCTION T_SCALAR(t,jv,ttype,ftTopt,ftHa,ftHd)
 
       IMPLICIT NONE
 
-      REAL*8    :: t,qt,t_scalar
+      REAL*8    :: t,qt,t_scalar,ftTopt,ftHa,ftHd
+      REAL*8    :: Tsk,Trk,Topt,R,deltaS
       INTEGER   :: ttype 
       CHARACTER :: jv
 
-      if(ttype.eq.1) then
+      if(ttype.eq.2) then
+         ! employ Kattge Topt scaling based on previous temp 
+         Topt = ftTopt
+      else 
+         Topt = ftTopt 
+      endif
+
+      if(ttype.eq.0) then
+        ! SDGVM original
         qt = 2.3d0
         if (t.gt.30.0d0) t = 30.d0
         t_scalar = qt**(t/10.0d0)/qt**(2.5d0)
+   
+      else if(ttype.ge.1) then
+        ! modified Arrhenius
+        R = 8.31446        
+
+        deltaS = ftHd/(ftTopt+273.15) + ( R*log(ftHa/(ftHd-ftHa)) )
+        Tsk    = t + 273.15
+        Trk    = 298.15
+
+        t_scalar = exp(ftHa*(Tsk-Trk) / (R*Tsk*Trk)) * ( 
+     & (1 + exp((Trk*deltaS-ftHd) / (Trk*R)) ) 
+     &/(1 + exp((Tsk*deltaS-ftHd) / (Tsk*R)) ) )  
+
       else
         t_scalar = 0.d0
         print*, 'temperature scalar type',ttype,'undefined'
         stop
       endif
+
 
       END
 
@@ -1226,19 +1253,9 @@
   
       IMPLICIT NONE
       REAL*8  :: vcmax_maire,t,ci,oi,light,vm
-      REAL*8  :: vt,jt,km,gstar,alpha
-      INTEGER :: farq_pars_func,i
+      REAL*8  :: vt,jt,km,gstar,alpha,ftTopt,ftHa,ftHd
+      INTEGER :: farq_pars_func,i,ttype
 
-      !CALL FARQ_PARS(t,kc,ko,tau,farq_pars_func)
-
-      ! vcmax25 to vcmax at leaf t scalar 
-      !vt    = T_SCALAR(t,'v',1)
-      ! jmax25 to jmax at leaf t scalar 
-      !jt    = T_SCALAR(t,'j',1)
-      !km    = kc*(1 + oi/ko)
-      !gstar = 0.5d0*oi/tau 
-      !alpha = 0.24d0
-     
       vcmax_maire = vm*ci *
      &(1.d0+(alpha*light/(jt*(exp(1.d0)*(vm/vt)**0.89d0)))**2.d0)**0.5d0
      &*(4*ci+8*gstar) - alpha*light*ci*(ci+km) 
@@ -1624,16 +1641,17 @@
 
 !####Brent solver off wikipedia
       FUNCTION BRENT_SOLVER(func,i1,i2,
-     &oi,ca,vmx,j,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,ci,light) 
+     &oi,ca,vmx,j,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,ci,light,ttype,
+     &ftTopt,ftHa,ftHd) 
  
       IMPLICIT NONE
       
       REAL*8 :: brent_solver,i1,i2,errortol
       REAL*8 :: a,b,c,d,s,fa,fb,fc,fs,tmp,tmp2,fa00
-      REAL*8 :: fassv,fassj,vcmax_maire
+      REAL*8 :: fassv,fassj,vcmax_maire,ftTopt,ftHa,ftHd
       REAL*8 :: oi,ca,rh,rd,vmx,j,p,ga,dv,t,cs,kg,g0,g1,ci,light
       REAL*8 :: kc,ko,tau,km,gstar,vt,jt,alp,t_scalar
-      INTEGER :: func,gs_func,i,n,farq_pars_func
+      INTEGER :: func,gs_func,i,n,farq_pars_func,ttype
       LOGICAL :: mflag,done
 
       ! Error tolerance umol m-2 s-1
@@ -1654,8 +1672,8 @@
         ! Error tolerance mol m-2 s-1
         errortol = 1d-7
         ! vcmax25 & jmax25 to leaf t scalar 
-        vt = T_SCALAR(t,'v',1)
-        jt = T_SCALAR(t,'j',1)
+        vt = T_SCALAR(t,'v',ttype,ftTopt,ftHa,ftHd)
+        jt = T_SCALAR(t,'j',ttype,ftTopt,ftHa,ftHd)
         fa = VCMAX_MAIRE(a,vt,jt,ci,km,gstar,alp,light,farq_pars_func,i)
         fb = VCMAX_MAIRE(b,vt,jt,ci,km,gstar,alp,light,farq_pars_func,i)
       elseif (func.eq.1) then
