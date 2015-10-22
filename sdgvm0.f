@@ -69,7 +69,8 @@
       REAL*8 matvar,aprc_rel,a2,b2
       REAL*8 jmax_int(maxnft),jmax_int_er(maxnft)
       REAL*8 jmax_ci_low,jmax_ci_high
-      REAL*8 ftTopt(maxnft),ftHa(maxnft),ftHd(maxnft)
+      REAL*8 ftToptV(maxnft),ftHaV(maxnft),ftHdV(maxnft)
+      REAL*8 ftToptJ(maxnft),ftHaJ(maxnft),ftHdJ(maxnft)
       REAL*8 jmax_slope(maxnft),jmax_slope_er(maxnft)
       REAL*8 sla_ci_low,sla_ci_high
       REAL*8 sla_int(maxnft),sla_int_er(maxnft)
@@ -968,9 +969,12 @@
       ftjvb(ft)  = 0.0d0
       ftg0(ft)   = 0.0d0
       ftg1(ft)   = 0.0d0
-      ftTopt(ft) = 0.0d0
-      ftHa(ft)   = 0.0d0
-      ftHd(ft)   = 0.0d0
+      ftToptV(ft) = 0.0d0
+      ftHaV(ft)   = 0.0d0
+      ftHdV(ft)   = 0.0d0
+      ftToptJ(ft) = 0.0d0
+      ftHaJ(ft)   = 0.0d0
+      ftHdJ(ft)   = 0.0d0
 
       ft = 2
       ftc3(ft) = 0
@@ -1007,15 +1011,18 @@
       ftjvb(ft)  = 0.0d0
       ftg0(ft)   = 0.0d0
       ftg1(ft)   = 0.0d0
-      ftTopt(ft) = 0.0d0
-      ftHa(ft)   = 0.0d0
-      ftHd(ft)   = 0.0d0
+      ftToptV(ft) = 0.0d0
+      ftHaV(ft)   = 0.0d0
+      ftHdV(ft)   = 0.0d0
+      ftToptJ(ft) = 0.0d0
+      ftHaJ(ft)   = 0.0d0
+      ftHdJ(ft)   = 0.0d0
 
 *----------------------------------------------------------------------*
 * Read in functional type parameterisation.                            *
 *----------------------------------------------------------------------*
       pft_nflds = 34
-      IF(ttype.ge.1) pft_nflds = 37
+      IF(ttype.ge.1) pft_nflds = 40
 
       READ(98,'(A)') st1
       CALL STRIPB(st1)
@@ -1046,80 +1053,84 @@
         ft = 2
 
 40      CONTINUE
-          READ(99,'(1000a)',end=30) st1
-          ft = ft + 1
+        READ(99,'(1000a)',end=30) st1
+        ft = ft + 1
 
-            IF (ft.GT.maxnft) THEN
-              WRITE(*,'('' PROGRAM TERMINATED'')')
-              WRITE(*,'('' Maximum number of fts is'',i4,'', currently m
+        IF (ft.GT.maxnft) THEN
+          WRITE(*,'('' PROGRAM TERMINATED'')')
+          WRITE(*,'('' Maximum number of fts is'',i4,'', currently m
      &ore than this are defined.'')') maxnft
-              WRITE(*,*) 'Either increase "maxnft" defined in "array_dim
+          WRITE(*,*) 'Either increase "maxnft" defined in "array_dim
      &s.dat" or decrease'
-              WRITE(*,*) 'the number of ft parameterisations: this requi
+          WRITE(*,*) 'the number of ft parameterisations: this requi
      &res re-compilation.'
-              STOP
-            ENDIF
+          STOP
+        ENDIF
 
-          IF (n_fields(st1).NE.pft_nflds) THEN
-            WRITE(*,'('' PROGRAM TERMINATED'')')
-            WRITE(*,*) 'The ft parameterisation must contain',pft_nflds,
-     &'fields.'
-            WRITE(*,'(1x,A,'' has '',i3)') st1(1:blank(st1)),n_fields(st
-     &1)
-            STOP
-          ENDIF
+        IF (n_fields(st1).NE.pft_nflds) THEN
+          WRITE(*,'('' PROGRAM TERMINATED'')')
+          WRITE(*,*) 'The ft parameterisation must contain',
+     &pft_nflds,'fields.'
+          WRITE(*,'(1x,A,'' has '',i3)') st1(1:blank(st1)),
+     &n_fields(st1)
+          STOP
+        ENDIF
 
-          IF(ttype.eq.0) THEN
-            READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
+        IF(ttype.eq.0) THEN
+          READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
      &ftagh(ft),ftdth(ft),ftmor(ft),ftwd(ft),ftxyl(ft),ftpd(ft),
      &ftsla(ft),ftlls(ft),ftsls(ft),ftrls(ft),ftlmor(ft),ftrat(ft),
      &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
      &ftg1(ft)
-      ftTopt(ft) = 0.0d0
-      ftHa(ft)   = 0.0d0
-      ftHd(ft)   = 0.0d0
-          ELSEIF(ttype.ge.1) THEN
-            READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
+      ftToptV(ft) = 0.0d0
+      ftHaV(ft)   = 0.0d0
+      ftHdV(ft)   = 0.0d0
+      ftToptJ(ft) = 0.0d0
+      ftHaJ(ft)   = 0.0d0
+      ftHdJ(ft)   = 0.0d0
+        ELSEIF(ttype.ge.1) THEN
+          READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
      &ftagh(ft),ftdth(ft),ftmor(ft),ftwd(ft),ftxyl(ft),ftpd(ft),
      &ftsla(ft),ftlls(ft),ftsls(ft),ftrls(ft),ftlmor(ft),ftrat(ft),
      &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
-     &ftg1(ft),ftTopt(ft),ftHa(ft),ftHd(ft)
-          ENDIF
+     &ftg1(ft),ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),
+     &ftHdJ(ft)
+        ENDIF
 
-          IF (ftmor(ft).GT.maxyrs) THEN
-            WRITE(*,'('' PROGRAM TERMINATED'')')
-            WRITE(*,'('' Mortality of '',A,'' is '',i4,'', maximum allow
+        IF (ftmor(ft).GT.maxyrs) THEN
+          WRITE(*,'('' PROGRAM TERMINATED'')')
+          WRITE(*,'('' Mortality of '',A,'' is '',i4,'', maximum allow
      &able is '',i4,''.'')')
-            STOP
-          ENDIF
+          STOP
+        ENDIF
 
-          IF (ftsla(ft).LT.0.0d0) THEN
-            ftsla(ft) = 10.0d0**(2.35d0 -
+        IF (ftsla(ft).LT.0.0d0) THEN
+          ftsla(ft) = 10.0d0**(2.35d0 -
      &0.39d0*log10(real(ftlls(ft))/30.0d0))*2.0d0/10000.0d0
 *      ftsla(ft) = 10.0d0**(2.43d0-0.46d0*log10(real(ftlls(ft))/30.0d0))
 *     &*2.0/10000.0
-          ENDIF
+        ENDIF
 
-          ftsla(ft) = ftsla(ft)/p_sla
+        ftsla(ft) = ftsla(ft)/p_sla
 
-          IF (ftlls(ft).LT.0.0d0) THEN
-            ftlls(ft) = int(10.0d0**((2.35d0 -
+        IF (ftlls(ft).LT.0.0d0) THEN
+          ftlls(ft) = int(10.0d0**((2.35d0 -
      &log10(ftsla(ft)*10000.0d0/2.0d0))/0.39d0)*30.0d0+0.5d0)
-          ENDIF
+        ENDIF
 
-          IF (ftmor(ft).GT.maxage) THEN
-            WRITE(*,'('' PROGRAM TERMINATED'')')
-            WRITE(*,'('' Maximum age of "'',A,''" is '',i4,'', maximum a
+        IF (ftmor(ft).GT.maxage) THEN
+          WRITE(*,'('' PROGRAM TERMINATED'')')
+          WRITE(*,'('' Maximum age of "'',A,''" is '',i4,'', maximum a
      &llowable age is '',i4,''.'')') st1(1:blank(st1)),ftmor(ft),maxage
-            WRITE(*,*) 'Either increase "maxage" defined in "array_dims"
+          WRITE(*,*) 'Either increase "maxage" defined in "array_dims"
      &'
-            WRITE(*,*) 'or decrease mortality in the parameterisation.'
-            STOP
-          ENDIF
+          WRITE(*,*) 'or decrease mortality in the parameterisation.'
+          STOP
+        ENDIF
 
         GOTO 40
 30      CONTINUE
@@ -1133,7 +1144,7 @@
         ft = 2
 98      CONTINUE
 
-          IF (ichar(st1(1:1)).NE.32) THEN
+        IF (ichar(st1(1:1)).NE.32) THEN
             ft = ft + 1
 
             IF (ft.GT.maxnft) THEN
@@ -1147,35 +1158,39 @@
               STOP
             ENDIF
 
-          IF (n_fields(st1).NE.pft_nflds) THEN
-            WRITE(*,'('' PROGRAM TERMINATED'')')
-            WRITE(*,*) 'The ft parameterisation must contain',pft_nflds,
-     &'fields.'
+            IF (n_fields(st1).NE.pft_nflds) THEN
+              WRITE(*,'('' PROGRAM TERMINATED'')')
+              WRITE(*,*) 'The ft parameterisation must contain',
+     &pft_nflds,'fields.'
               WRITE(*,'(1x,A,'' has '',i3)') st1(1:blank(st1)),n_fields(
      &st1)
               STOP
             ENDIF
 
-          IF(ttype.eq.0) THEN 
-            READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
+            IF(ttype.eq.0) THEN
+              READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
      &ftagh(ft),ftdth(ft),ftmor(ft),ftwd(ft),ftxyl(ft),ftpd(ft),
      &ftsla(ft),ftlls(ft),ftsls(ft),ftrls(ft),ftlmor(ft),ftrat(ft),
      &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
      &ftg1(ft)
-      ftTopt(ft) = 0.0d0
-      ftHa(ft)   = 0.0d0
-      ftHd(ft)   = 0.0d0
-          ELSEIF(ttype.ge.1) THEN
-            READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
+      ftToptV(ft) = 0.0d0
+      ftHaV(ft)   = 0.0d0
+      ftHdV(ft)   = 0.0d0
+      ftToptJ(ft) = 0.0d0
+      ftHaJ(ft)   = 0.0d0
+      ftHdJ(ft)   = 0.0d0
+            ELSEIF(ttype.ge.1) THEN
+              READ(st1,*) fttags(ft),ftmix(ft),ftc3(ft),ftphen(ft),
      &ftagh(ft),ftdth(ft),ftmor(ft),ftwd(ft),ftxyl(ft),ftpd(ft),
      &ftsla(ft),ftlls(ft),ftsls(ft),ftrls(ft),ftlmor(ft),ftrat(ft),
      &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
-     &ftg1(ft),ftTopt(ft),ftHa(ft),ftHd(ft)
-          ENDIF
+     &ftg1(ft),ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),
+     &ftHdJ(ft)
+            ENDIF
 
             IF (ftsla(ft).LT.0.0d0) THEN
               ftsla(ft) = 10.0d0**(2.35d0 -
@@ -3486,7 +3501,8 @@ c     monthly initialisations
      &env_vcmax(ft),env_jmax(ft),soilp_map,can2g,canga,ga,
      &ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),ftg1(ft),
      &no_slw_lim,par_loops,s070607,gs_func,ce_light(:,:,ft),
-     &ce_ci(:,:,ft),ce_t,sl,hrs,ttype,ftTopt(ft),ftHa(ft),ftHd(ft))
+     &ce_ci(:,:,ft),ce_t,sl,hrs,ttype,
+     &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft))
 
 !            write(*,*) mnth,day,tleaf_n
 c      cbal = -1*(daygpp) + dayra + leafresp + rootresp + stemresp +
