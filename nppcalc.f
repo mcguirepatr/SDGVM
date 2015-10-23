@@ -1179,15 +1179,16 @@
    
       else if(ttype.ge.1) then
         ! modified Arrhenius
-        R = 8.31446        
+        R = 0.00831446        
 
         if(ttype.eq.2) then
           ! employ Kattge&Knorr scaling based on mean temp of previous month 
           if(jv.eq.'v') then
-            deltaS = 668.39 - 1.07*tmonth
+            deltaS = 668.39d0 - 1.07d0*tmonth
           else
-            deltaS = 659.70 - 0.75*tmonth
+            deltaS = 659.70d0 - 0.75d0*tmonth
           endif
+          deltaS = deltaS * 1e-3
         else 
           ! use fixed delta S based on input PFT parameters
           deltaS = ftHd/(ftTopt+273.15) + ( R*log(ftHa/(ftHd-ftHa)) )
