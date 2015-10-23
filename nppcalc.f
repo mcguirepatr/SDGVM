@@ -18,6 +18,8 @@
       INCLUDE 'array_dims.inc'
       INCLUDE 'param.inc'
 
+
+
       REAL*8 suma,sumd,rlai,soilc,soil2g,wtfc,nmult,npp_eff
       REAL*8 soiln,y1,y0,x1,x0,mmult,minn(3),nup,t
       REAL*8 tk,up,kc,ko,tau,can_sum,nleaf_sum,cld,gb
