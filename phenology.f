@@ -13,7 +13,7 @@
      &daysoff,laimax,leaflit,stemlit,rootlit,mnth,day,s_ln,s_sr,s_sn,
      &s_rr,s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,
      &maxlai,wtfc,yield,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,
-     &chill,dschill,s_lr,leafresp,rootresp,stemresp,sdgvm_070607,
+     &chill,dschill,s_lr,leafresp,rootresp,stemresp,
      &phen_cor,s070607)
 *----------------------------------------------------------------------*
       IMPLICIT NONE
@@ -28,7 +28,6 @@
       INTEGER lai,leafls,stemls,rootls,mnth,day,ij,i,bb,gs,bbgs,sssum
       INTEGER bb2bbmin,bb2bbmax,bbm,ssm,sss,ss,dsbb
       INTEGER ftdth,harvest,chill,dschill,phen_cor,s070607
-      LOGICAL sdgvm_070607
       INCLUDE 'param.inc'
       real sumrr,sumsr,sumlr,summr
       save sumrr,sumsr,sumlr,summr
@@ -200,7 +199,7 @@
 !            laiinc = (nppstore - 0.0d0*nppstor2)/leafmol/1.25d0
 !            laiinc = (nppstore - 0.5*nppstor2)/leafmol/1.25d0
              !nppstorx = nppstore
-            if((SDGVM_070607).OR.(s070607.eq.1)) then
+            if(s070607.eq.1) then
               nppstorx = nppstore
             ELSEIF(phen_cor.eq.1) THEN 
               ! restricts the maximum amount of the npp store to be used for leaf growth to 62.5% (i.e. 50% ends up as leaf mass)
@@ -230,7 +229,7 @@
 *----------------------------------------------------------------------*
       IF ((bb.GT.0).AND.(bbgs.LT.gs).AND.(nppstore.GT.0.0d0)) THEN
 !        laiinc = lairat*(nppstorx - 0.0d0*nppstor2)/leafmol/1.0d0
-        if((SDGVM_070607).OR.(s070607.eq.1)) then
+        if(s070607.eq.1) then
           laiinc = lairat*(nppstorx)/leafmol/1.0d0
         ELSE
           laiinc = lairat*(nppstorx)/leafmol/1.25d0

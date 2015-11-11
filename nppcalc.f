@@ -7,11 +7,11 @@
      &t,rh,ca,oi,rn,qdirect,qdiff,can2a,can2g,canrd,canres,suma,amx,
      &amax,hrs,canga,p,mnth,day,nleaf_sum,fpr,gsm,tleaf_n,tleaf_p,
      &ncalc_type,vcmax_type,
-     &leaf_nit,vcmax,jmax,ft,kg,sla,SDGVM_070607,can_clump,tassim,tgs,
-     &tci,hw_j,clump_bl,subd_par,thty_dys,year,lat,swr,cld,
+     &leaf_nit,vcmax,jmax,ft,kg,sla,can_clump,tassim,tgs,
+     &tci,hw_j,cstype,subd_par,thty_dys,year,lat,swr,cld,
      &read_par,env_vcmax,env_jmax,soilp_map,ga,ftvna,ftvnb,ftjva,ftjvb,
      &ftg0,ftg1,par_loops,s070607,gs_func,ce_light,ce_ci,ce_t,ttype,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
+     &calc_zen,cos_zen,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
 *----------------------------------------------------------------------*
       IMPLICIT NONE
       
@@ -26,9 +26,9 @@
       REAL*8 rem,can(12),vm(12),jm(12),jmx(12),oi
       REAL*8 canres,dresp(12),drespt(12),upt(12),nupw
       REAL*8 vmx(12),rh,c1,c2,canga,p,ga,nleaf(12)
-      REAL*8 q,qdiff,qdirect,cs,coeff,sla,can_clump
+      REAL*8 q,qdiff,qdirect,cs,sla,can_clump
       REAL*8 q_sd,qdiff_sd,brent_solver,t_scalar
-      REAL*8 qdirect_sd,canrd
+      REAL*8 qdirect_sd,canrd,cos_zen,k
       REAL*8 can2a,can2g,rn,wtwp,kg,rht,tpav
       REAL*8 tppcv,tpgsv,ca,rd(12),tpaj,tppcj,tpgsj,hrs
       REAL*8 a(12),gs(12),ci(12),tpac4,tppcc4,tpgsc4,xvmax
@@ -48,17 +48,21 @@
       REAL*8 leaf_nit,vcmax,jmax,tassim,tgs,tci
 
       REAL*8 ax,amax,amx,lyr,qt,lat,swr,env_vcmax,env_jmax
-      INTEGER i,lai,k,c3,mnth,day,ncalc_type,vcmax_type,ft,oday
-      INTEGER hw_j,clump_bl,subd_par,ii,omnth,par_loops,gs_func
+      INTEGER i,lai,c3,mnth,day,ncalc_type,vcmax_type,ft,oday
+      INTEGER hw_j,cstype,subd_par,ii,omnth,par_loops,gs_func
       INTEGER thty_dys,year,no_day,read_par,soilp_map,s070607
-      INTEGER ttype
+      INTEGER ttype,calc_zen
       REAL*8  sd_scale(par_loops+1),sd_scale2,nup_rate
-      LOGICAL SDGVM_070607,output
+      LOGICAL output,gold
 
       omnth  = 7
       oday   = 10
       output = .FALSE.
-    
+   
+      if(hw_j.eq.3) then
+        hw_j = 0 
+        gold = .TRUE.
+      endif 
  
       !if(output.and.(mnth.eq.omnth).and.(day.eq.oday)) then
        ! print*, 'NPPCALC'
@@ -121,34 +125,44 @@
         up = NUP_RATE(soilc,soiln,p_nu1,p_nu2,p_nu4)
       endif
 
-      ! Total the Beer's Law values for each lai up to the current one
-      if(clump_bl.eq.0) then 
-        coeff =-0.5d0
-      else
-        coeff =-0.5d0 * can_clump
-      endif
-
+      ! canopy N scaling
+      k = 0.5d0
+      if(cstype.eq.1) k = 0.5d0 * can_clump
+      
+      ! Total the Beer's Law values for canopy
       can_sum = 0.0d0
       DO i=1,lai-1
-        k = i - 1
-        can_sum = can_sum + exp(coeff*real(k))
+        if(cstype.lt.2) then 
+          can_sum = can_sum + exp(-k*real(i))
+        elseif(cstype.eq.2) then
+          ! use light proportion to scale
+          can_sum = can_sum + sum(ce_light(:,i))
+        else
+          PRINT*, 'cstype ',cstype,' undefined. set to a value
+     &<3 in <input.dat> or define additional canopy scaling method'
+          STOP
+        endif
+     
       ENDDO
-      can_sum = can_sum + exp(coeff*real(lai - 1))*rem
+      if(cstype.lt.2) can_sum = can_sum + exp(-k*real(lai))*rem
+      if(cstype.eq.2) can_sum = can_sum + sum(ce_light(:,lai))*rem
+
 
       !start first LAI loop 
       ! - canopy scaling of variables that do not vary with light
       DO i=1,lai
-        ! print*, kg
         lyr = real(i)
 
         !proportion of canopy N in the LAI layer 'lyr'
-        ! - this is supposed to be proportional to the light in layer 'lyr' but this is inconsistent with the two stream rad scheme used by SDGVM
-        IF (i.LT.lai) THEN
-          can(i) = exp(coeff*(lyr - 1.0d0))/can_sum
-        ELSE
-          can(i) = exp(coeff*(lyr - 1.0d0))/can_sum
-        ENDIF
+        ! - this is supposed to be proportional to the light in layer 'lyr' but this is inconsistent with the rad scheme used by SDGVM
+        if(cstype.lt.2) then 
+          can(i) = exp(-k*(lyr))/can_sum
+        elseif(cstype.eq.2) then
+          ! use light proportion to scale
+          can(i) = sum(ce_light(:,i)) / can_sum
+        endif
 
+        ! calculate leaf N in canopy layer i
         IF (ncalc_type.le.1) THEN 
            !default topleaf N 
            nleaf(i) = up*can(i)*p_nleaf
@@ -162,6 +176,10 @@
      &<3 in <input.dat> or define your own N calculation method'
            STOP
         ENDIF
+        ! this scales the bottom layer from a fractional layer to a full layer
+        ! all calculations below then acount for this by scaling all fluxes by rem 
+        if((i.eq.lai).and.(s070607.eq.1)) nleaf(i) = nleaf(i) / rem
+ 
 
         !if soil water not completely limiting calculate photosynthesis
         IF (kg.GT.1.0e-10) THEN
@@ -256,7 +274,7 @@
 
           !dark respiration (daytime) mol m-2 s-1
           ! assumes rd is proportional to soil water lim
-          if((SDGVM_070607).OR.(s070607.eq.1)) then
+          if(s070607.eq.1) then
             rd(:) = vmx(i)*0.02d0
           else
             !SDGVM previously calculated rd but wasn't layer specific
@@ -267,7 +285,8 @@
           IF(subd_par.eq.0) then
           !calculate incident light in canopy layer 
             CALL GOUDRIAANSLAW(lyr-0.5d0,rlai,qdirect,qdiff,
-     &fsunlit(i),qsunlit(i), fshade(i),qshade(i),can_clump)
+     &fsunlit(i),qsunlit(i), fshade(i),qshade(i),can_clump,cos_zen,
+     &s070607,gold)
 
             !if(output.and.(mnth.eq.omnth).and.(day.eq.oday)) then
               !print*, qdirect+qdiff,qsunlit(i)+qshade(i),i
@@ -285,7 +304,8 @@
 
           IF(subd_par.eq.0) then
             CALL GOUDRIAANSLAW(lyr-0.5d0,rlai,qdirect,qdiff,
-     &fsunlit(i),qsunlit(i), fshade(i),qshade(i),can_clump)
+     &fsunlit(i),qsunlit(i), fshade(i),qshade(i),can_clump,cos_zen,
+     &s070607,gold)
 
             vmx(i)     = 0.0d0
             jsunlit(i) = 0.0d0
@@ -437,15 +457,18 @@
             !print*, 'par_loop:',ii
             CALL PFD(lat,no_day(year,mnth,day,thty_dys),hrs,cld,
      &qdirect_sd,qdiff_sd,q_sd,swr,read_par,subd_par,(ii-1),
-     &par_loops)
-            !at dawn assume diffuse light is 5 umol/m2/s
-            IF(qdirect_sd+qdiff_sd.lt.5.0d-6) qdiff_sd = 5.0d-6  
+     &par_loops,calc_zen,cos_zen)
             
+            ! at dawn assume diffuse light is 5 umol/m2/s
+            ! and cos_zen a fraction above zero
+            IF(qdirect_sd+qdiff_sd.lt.5.0d-6) qdiff_sd = 5.0d-6  
+            IF(cos_zen.le.0d0)                cos_zen  = cos(3.141/2)
+
             DO i=1,lai
               !in the average PAR version of the model this is contained within a water limitation if statement 
               CALL GOUDRIAANSLAW(real(i)-0.5d0,rlai,qdirect_sd,
      &qdiff_sd,fsunlit_sd(i),qsunlit_sd(i),fshade_sd(i),
-     &qshade_sd(i),can_clump)
+     &qshade_sd(i),can_clump,cos_zen,s070607,gold)
 
               !if(output.and.(mnth.eq.omnth).and.(day.eq.oday)
       !&.and.(ii.eq.4)) then

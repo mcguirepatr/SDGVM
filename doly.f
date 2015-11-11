@@ -17,10 +17,10 @@
      &lmor_sc,nleaf,chill,dschill,fpr,gsm,swr,tleaf_n,tleaf_p,
      &ncalc_type,leaf_nit,vcmax,jmax,
      &vcmax_type,leafresp,rootresp,stemresp,daynpp,read_par,kg,
-     &SDGVM_070607,can_clump,tassim,tgs,tci,hw_j,clump_bl,phen_cor,
+     &can_clump,tassim,tgs,tci,hw_j,cstype,phen_cor,
      &subd_par,env_vcmax,env_jmax,soilp_map,can2g,canga,ga,
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,no_slw_lim,par_loops,s070607,
-     &gs_func,ce_light,ce_ci,ce_t,sl,hrs,ttype,
+     &gs_func,ce_light,ce_ci,ce_t,sl,hrs,ttype,calc_zen,
      &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
 
 *----------------------------------------------------------------------*
@@ -45,13 +45,13 @@
       REAL*8 s_lr,s_ln,sswc(4),maxlai,yield,yld,resp,fpr,dayra,gsm
       REAL*8 sm_trig(30),s1in,tsumam,stemfr,lmor_sc(3600),nleaf
       REAL*8 leaf_nit,vcmax,jmax,leafresp,rootresp,stemresp,kg,can_clump
-      REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30)
+      REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30),cos_zen
       INTEGER leafls,stemls,rootls,bbm,ssm,sss,ftphen,c3,thty_dys,ft
       INTEGER mnth,i,iter,no_day,ndsum(12),lai,day,year,bb,bbgs
       INTEGER ftdth,ss,dsbb,chill,dschill,ncalc_type,read_par
-      INTEGER hw_j,clump_bl,phen_cor,subd_par,soilp_map
+      INTEGER hw_j,cstype,calc_zen,phen_cor,subd_par,soilp_map
       INTEGER no_slw_lim,vcmax_type,par_loops,s070607,gs_func,ttype
-      LOGICAL veg,SDGVM_070607
+      LOGICAL veg
       INCLUDE 'param.inc'
 
       maxlai = 11.9d0
@@ -105,7 +105,7 @@
 *----------------------------------------------------------------------*
       !maxc, max value of water response scalar
       !Leaf molecular weight.
-      if((SDGVM_070607).OR.(s070607.eq.1)) then
+      if(s070607.eq.1) then
         maxc = 690.0d0/622.6d0
 
         IF (sla.GT.0.0d0) THEN
@@ -188,7 +188,7 @@ c Better: should be removed from nppcalc
 *----------------------------------------------------------------------*
       hrs = dayl(lat,no_day(year,mnth,day,thty_dys))
       CALL PFD(lat,no_day(year,mnth,day,thty_dys),hrs,cld,qdirect,qdiff,
-     &q,swr,read_par,0,1,1)
+     &q,swr,read_par,0,1,1,calc_zen,cos_zen)
 c          print *,'irrad=',q
 c     &      ,pfd_without_cloud(lat,no_day(year,mnth,day,thty_dys),hrs)
 !      print'(''direct diff '',i3,2f10.5)',mnth,qdirect,qdiff
@@ -256,11 +256,12 @@ c     z0=roughness length
      &rlai,t,rh,ca,oi,rn,qdirect,qdiff,can2a,can2g,canrd,canres,suma(1),
      &amx,amax,hrs,canga/1.3d0,p,mnth,day,nleaf,fpr,gsm,
      &tleaf_n,tleaf_p,ncalc_type,
-     &vcmax_type,leaf_nit,vcmax,jmax,ft,kg,sla,SDGVM_070607,can_clump,
-     &tassim,tgs,tci,hw_j,clump_bl,subd_par,thty_dys,
+     &vcmax_type,leaf_nit,vcmax,jmax,ft,kg,sla,can_clump,
+     &tassim,tgs,tci,hw_j,cstype,subd_par,thty_dys,
      &year,lat,swr,cld,read_par,env_vcmax,env_jmax,soilp_map,ga,
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,par_loops,s070607,gs_func,
-     &ce_light,ce_ci,ce_t,ttype,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
+     &ce_light,ce_ci,ce_t,ttype,calc_zen,cos_zen,
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
 
 c      write(*,*) 'o',canga,can2a,can2g,canres,suma
 
@@ -411,7 +412,7 @@ c     added by Ghislain 20/10/03
      &daysoff,laimax,lflit,smlit,rtlit,mnth,day,s_ln,s_sr,s_sn,s_rr,
      &s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,maxlai,
      &wtfc,yld,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,chill,
-     &dschill,dayra,leafresp,rootresp,stemresp,SDGVM_070607,
+     &dschill,dayra,leafresp,rootresp,stemresp,
      &phen_cor,s070607)
         ELSEIF (ftphen.EQ.2) THEN
           CALL PHENOLOGY2(bbm,bb0,bbmax,bblim,ssm,sss,sslim,
