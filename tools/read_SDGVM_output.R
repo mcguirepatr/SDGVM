@@ -16,7 +16,7 @@ library(parallel)
 # Function to concatenate SDGVM output when run across multiple cores
 ########################
 stich_sdgvm_mp_apply <- function(wd,grids=4,mc=T,
-                                 annual=T,monthly=T,daily=T,
+                                 annual=T,monthly=T,daily=T,pft=T,
                                  ...){
   
   # annual files just open and stich together rowise
@@ -56,13 +56,17 @@ stich_sdgvm_mp_apply <- function(wd,grids=4,mc=T,
   # output variable loops 
   ########################
   if(mc){
-    if(annual)  mclapply(afiles,stitch_annual,grids,wd,...)
-    if(monthly) mclapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
-    if(daily)   mclapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)    
+    if(annual)      mclapply(afiles,stitch_annual,grids,wd,...)
+    if(monthly)     mclapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
+    if(daily)       mclapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)    
+    if(monthly&pft) mclapply(mpftfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
+    if(daily&pft)   mclapply(dpftfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)    
   } else {
-    if(annual)  lapply(afiles,stitch_annual,grids,wd)
-    if(monthly) lapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
-    if(daily)   lapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)        
+    if(annual)      lapply(afiles,stitch_annual,grids,wd)
+    if(monthly)     lapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
+    if(daily)       lapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)        
+    if(monthly&pft) lapply(mpftfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
+    if(daily&pft)   lapply(dpftfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)        
   }
 }
 
