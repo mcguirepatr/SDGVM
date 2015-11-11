@@ -121,7 +121,7 @@ plotmap <- function(i,map) {
 
 
 
-plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,...){
+plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=F,...){
   # This function plots world (or subsetted) maps of gridded data
 
   # expects a dataframe, 'x', with the columns 'lat', 'lon', 'plotdata', 'year', and 'run'
@@ -131,9 +131,6 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,...){
 
   #initialise
   world <- getMap()    
-  
-  ncol    <- length(lab$cols)
-  colours <- lab$cols
   
   if(!is.null(gs)){
     if(lab$gsum) {
@@ -153,6 +150,22 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,...){
   x <- subset(x,lat<lims[4]+1.25)
   
   #   print(head(x))
+   
+  # normalise dta based on the 95%ile
+  if(norm){
+    if(any(x$plotdata<0)) {
+      x$plotdata <- x$plotdata / max( abs(quantile(x$plotdata,0.05,type=8)) , abs(quantile(x$plotdata,0.95,type=8)) )
+      lab$cols   <- col.neg
+      lab$at     <- seq(-1.2,1.2,0.2) 
+    } else {
+      x$plotdata <- x$plotdata / quantile(x$plotdata,0.95,type=8)
+      lab$cols   <- cols.inc.gpp
+      lab$at     <- seq(0,1.3,0.1) 
+    }
+  }
+
+  ncol    <- length(lab$cols)
+  colours <- lab$cols
   
   #plot
   #levelplot(plotdata~lon*lat|as.factor(year)*run,x,...,

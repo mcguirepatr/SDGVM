@@ -31,8 +31,9 @@ project <- 'vcmax'
 sim     <- c('original','orig_N','Kattge','Kattge_oxisol','Maire','vBodegom_env','vBodegom_mean','Walker_N','Walker_NP','Woodward_94','Woodward_95')
 
 # simulations index array (which simulations to plot from the vector 'sim', when 'sim' is arranged in alphabetical order)
-sia     <- 1:length(sim)
+#sia     <- 1:length(sim)
 #sia     <- 1:2 
+sia     <- NULL
 
 # output file naming prefix
 of      <- project
@@ -59,7 +60,10 @@ year    <- 2012
 yr_mean <- c(2001,2010)
 
 # plot trends across whole timeseries
-trends  <- T
+trends  <- F 
+
+# normalise the data to the 95%ile
+norm    <- F
 
 # line colour & type on trend and zonal plots, correspond to the labels in 'sim' when 'sim' is in alphabetical order
 col_trend <- topo.colors(10)
@@ -92,6 +96,8 @@ if(length(commandArgs(T))>=1) {
     eval(parse(text=commandArgs(T)[ca]))
   }
 }
+
+if(is.null(sia)) sia <- 1:length(sim)
 
 
 
@@ -238,12 +244,12 @@ for( v in 1:length(vars) ){
   if(pregion=='tropics') skip <- c(rep(F,3),T,rep(F,6))
   
   p1  <- plot_map_lattice(df,get(vars[v]),
-                          pregion,gs=globsum,layout=c(cs,rs),skip=skip)
+                          pregion,gs=globsum,norm=norm,layout=c(cs,rs),skip=skip)
   
   names(mean_df)[3:4] <- c('plotdata','run')
   mean_df$year        <- mean(yr_mean)
   p1x <- plot_map_lattice(mean_df,get(vars[v]),
-                          pregion,gs=mean_global_sum,layout=c(cs,rs),skip=skip)
+                          pregion,gs=mean_global_sum,norm=norm,layout=c(cs,rs),skip=skip)
 
   # plots
   mpars <- trellis.par.get()
@@ -253,9 +259,10 @@ for( v in 1:length(vars) ){
   res  <- 400
 
   setwd(owd)
-  ofile      <- paste(of,'_',pregion,'_',vars[v],'.png',sep='')
-  ofile_mean <- paste(of,'_',pregion,'_mean_',vars[v],'.png',sep='')
-  pdfofile   <- paste(of,'_',pregion,'_',vars[v],'.pdf',sep='')
+  prefix     <- if(norm) paste(of,'norm',pregion,sep='_') else paste(of,pregion,sep='_')
+  ofile      <- paste(prefix,'_',vars[v],'.png',sep='')
+  ofile_mean <- paste(prefix,'_mean_',vars[v],'.png',sep='')
+  pdfofile   <- paste(prefix,'_',vars[v],'.pdf',sep='')
   
   png(ofile,width=4*res,height=3*res,pointsize=28,bg='transparent')
   trellis.par.set(mpars)
@@ -322,6 +329,7 @@ for( v in 1:length(vars) ){
     png(ofile,width=1200,height=900,pointsize=28,bg='transparent')
     trellis.par.set(mpars)
     print(p4)
+
     dev.off()
   }  
 }
