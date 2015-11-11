@@ -59,13 +59,12 @@
 *                          PHOTON FLUX DENSITY                         *
 *----------------------------------------------------------------------*
       SUBROUTINE pfd(lat,day,hrs,cloud,direct,diffuse,total,swr,
-     & read_par,subd_par,t,total_t)
-*     Ghislain 08/12/03
+     & read_par,subd_par,t,total_t,calc_zen,cos_zen)
 *----------------------------------------------------------------------*
       REAL*8    lat,hrs,del,rlat,toa,pi,conv,cloud,diffprop,alpha,beta
       REAL*8    sigma,dawn_angle,coscst,direct,diffuse,total,clearness
-      REAL*8    swr,ts,h,toa_h,solar_const,tem
-      INTEGER   day,read_par,subd_par,t,total_t
+      REAL*8    swr,ts,h,toa_h,solar_const,tem,dJ_R,dJ_K,cos_zen
+      INTEGER   day,read_par,subd_par,t,total_t,calc_zen
       PARAMETER (conv = 1.74532925E-2,pi = 3.1415927)
       PARAMETER (solar_const = 1370.0d0)
 
@@ -81,13 +80,19 @@
         !CALL sunrise_angle(day,lat,dawn_angle,tem)
         !print*, dawn_angle
 
+        !calculate daytime mean cos of the zenith angle  
+        cos_zen = 1/dawn_angle*( 
+     &    sin(rlat)*sin(del)*dawn_angle + 
+     &    cos(rlat)*cos(del)*sin(dawn_angle) )
+
         !top of atmosphere irradiance
         ! - watts/m2 average over the day 
         ! - between sun rise and sun set
-        toa = solar_const *         ! solar constant in W/m2
-     &       24.0d0/(pi*hrs)*(      ! average over the day (daylength)
-     &       sin(rlat)*sin(del)*dawn_angle + 
-     &       cos(rlat)*cos(del)*sin(dawn_angle) )
+        !toa = solar_const * cos_zen ! daytime mean irradiance (W/m2)
+        toa = solar_const *         ! solar constant (W/m2)
+     &    24.0d0/(pi*hrs)*(         ! average over the day (daylength)
+     &    sin(rlat)*sin(del)*dawn_angle + 
+     &    cos(rlat)*cos(del)*sin(dawn_angle) )
 
 c     calculate the mean daylight top of canopy (total) shortwave radiation
         IF(read_par.eq.1) THEN
@@ -104,20 +109,23 @@ c     calculate the mean daylight top of canopy (total) shortwave radiation
           beta   = 0.682d0 - 0.3183d0*coscst
           sigma  = 0.02d0*log(max(cloud,0.001d0))+0.03259d0
 
-          total = toa*(beta-sigma*cloud*10.0d0)-alpha
+          total  = toa*(beta-sigma*cloud*10.0d0)-alpha
         ENDIF
 
         IF(subd_par.eq.1) THEN
           !sub-daily variation in SWR 
 
           !calculate using hour angle (h) 
-          ! - scale by (instantaneous insolation at h)/(mean daylight insolation)
+          ! - scale by (instantaneous insolation at h)/(mean daylight insolation) law of cosines
           ! - when t = 0, h is 0 and is solar noon
           ! - when t = total_t, h is the dawn angle i.e. sunrise
-          h     = dawn_angle * real(t)/real(total_t)
+          h       = dawn_angle * real(t)/real(total_t)
+          ! calculate cos of the zenith angle
+          cos_zen = sin(rlat)*sin(del) + cos(rlat)*cos(del)*cos(h)
           !calculate instantaneous insolation at hour angle h
-          toa_h = solar_const * ( sin(rlat)*sin(del) + 
-     & cos(rlat)*cos(del)*cos(h) )
+          toa_h   = solar_const * cos_zen 
+          !toa_h   = solar_const * ( sin(rlat)*sin(del) + 
+      !& cos(rlat)*cos(del)*cos(h) )
 !          if(day.eq.160) print*, h,toa,toa_h,toa_h/toa
           !scale SWR (total) from daytime mean to instantaneous 
           ! - scale by the ratio of toa instantaneous insolation to daytime mean
@@ -128,7 +136,7 @@ c     calculate the mean daylight top of canopy (total) shortwave radiation
           endif
 !          if(day.eq.160) print*, total 
           !reset top of atmosphere to instantaneous value
-          toa   = toa_h
+          toa = toa_h
 
         ENDIF
 
@@ -139,19 +147,34 @@ c     calculate the mean daylight top of canopy (total) shortwave radiation
           clearness = total/toa
         endif
 
-c     calculate diffuse irradiance (from Forest ETP WG)
-
-        IF(clearness.LT.0.07) THEN
-           diffprop = 1.0
-        ELSE IF(clearness.LT.0.35) THEN
-           diffprop = 1.0-2.3*(clearness-0.07)**2
-        ELSE IF(clearness.LT.0.75) THEN
-           diffprop = 1.33-1.46*clearness
+        !calculate diffuse irradiance (from Spitters etal 1986)
+        IF(subd_par.eq.1) THEN
+          ! hourly data
+          dJ_R = 0.847d0 - 1.61d0*cos_zen + 1.04d0*cos_zen**2
+          dJ_K = (1.47d0-dJ_R)/1.66d0
+          IF(clearness.LT.0.22) THEN
+            diffprop = 1.0
+          ELSE IF(clearness.LT.0.35) THEN
+            diffprop = 1.0-6.4*(clearness-0.22)**2
+          ELSE IF(clearness.LT.dJ_K) THEN
+            diffprop = 1.47-1.66*clearness
+          ELSE
+            diffprop = dJ_R
+          ENDIF
         ELSE
-           diffprop = 0.23d0
+          ! daily data
+          IF(clearness.LT.0.07) THEN
+            diffprop = 1.0
+          ELSE IF(clearness.LT.0.35) THEN
+            diffprop = 1.0-2.3*(clearness-0.07)**2
+          ELSE IF(clearness.LT.0.75) THEN
+            diffprop = 1.33-1.46*clearness
+          ELSE
+            diffprop = 0.23d0
+          ENDIF
         ENDIF
 
-        diffuse=total*diffprop
+        diffuse = total*diffprop
 
 c PAR is about 48% of the total irradiance. A better formula could be 
 c found.
@@ -173,6 +196,9 @@ c convert to mol/m2/sec from W/m2
         direct  = 0.0d0
       ENDIF
 
+      ! set zenith angle to zero if requested (originaly SDGVM default)
+      if(calc_zen.eq.0) cos_zen = 1d0
+      
       !print*, hrs, swr, total!, direct, diffuse
 
       RETURN

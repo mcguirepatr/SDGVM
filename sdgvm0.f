@@ -77,7 +77,7 @@
       REAL*8 sla_slope(maxnft),sla_slope_er(maxnft)
 
 
-      INTEGER read_clump,hw_j,clump_bl,phen_cor,pft_nflds
+      INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
       INTEGER mswitch,subd_par,switch3,no_slw_lim
       INTEGER soilcn_map,soilp_map,vcmax_type,ncalc_type,read_par,ttype
       INTEGER sites,cycle,yr0,yrf,snp_no,snpshts(1000),dschill(maxnft)
@@ -132,7 +132,7 @@
       LOGICAL l_clim,l_lu,l_soil(20),l_stats,l_regional,l_countries
       LOGICAL out_cov,out_bio,out_bud,out_sen,l_b_and_c,check_c
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
-      LOGICAL fire(maxyrs),harvest(maxyrs),met_seq
+      LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -440,19 +440,19 @@
       IF (ii.EQ.6) THEN 
         CALL STRIPBN(st1,i)
         !read in daily co2 
-        IF (i.gt.-1)  daily_co2 = i 
+        IF (i.gt.-1)  daily_co2  = i 
         CALL STRIPBN(st1,i) 
         !read PAR data 
-        IF (i.gt.-1)  read_par = i 
+        IF (i.gt.-1)  read_par   = i 
         CALL STRIPBN(st1,i)
         !use sub-daily PAR scaling
-        IF (i.gt.-1)  subd_par = i 
+        IF (i.gt.-1)  subd_par   = i 
         CALL STRIPBN(st1,i) 
         !canopy clumping index: 0-do not use; 1-from pft values; 2-from a map
         IF (i.gt.-1)  read_clump = i 
         CALL STRIPBN(st1,i) 
-        !include clumping index in Beer's law scaling of canopy N 
-        IF (i.gt.-1)  clump_bl = i 
+        !calculate solar zenith angle and use in canopy light interception 
+        IF (i.gt.-1)  calc_zen   = i 
         CALL STRIPBN(st1,i) 
         !no soil water limitation
         IF (i.gt.-1)  no_slw_lim = i 
@@ -481,6 +481,11 @@
       IF (ii.EQ.5) THEN 
         CALL STRIPBN(st1,i)
         !select canopy nitrogen calculation method
+        cstype = 0
+        IF (i.ge.10) THEN
+          cstype = int(real(i)/10.0)
+          i      = i - 10*cstype
+        ENDIF
         IF (i.gt.-1)  ncalc_type = i 
         CALL STRIPBN(st1,i) 
         !select vcmax parameterisation
@@ -548,18 +553,23 @@
 !        STOP !   
 !      ENDIF !
 
+      if(gs_func.eq.3) goudriaan_old = .TRUE.
+
       !set default configurations for standard versions
       IF(SDGVM_070607) THEN
         daily_co2  = 0 
         read_par   = 0
         subd_par   = 0 
         read_clump = 0
-        clump_bl   = 0
+        calc_zen   = 0
         no_slw_lim = 0
 
+        cstype     = 0  
         ncalc_type = 0
+        ttype      = 0
         vcmax_type = 0
         soilp_map  = 0
+        s070607    = 1
         gs_func    = 0
 
         soilcn_map = 0
@@ -572,10 +582,12 @@
         read_par   = 1
         subd_par   = 1
         read_clump = 0
-        clump_bl   = 0 
+        calc_zen   = 1 
         no_slw_lim = 0
 
+        cstype     = 0
         ncalc_type = 1
+        ttype      = 0
         vcmax_type = 1
         soilp_map  = 0 
         s070607    = 0
@@ -586,9 +598,11 @@
         hw_j       = 0
       ENDIF
 
+      if(goudriaan_old) hw_j = 3
+
       !parameters for 070607 version
-      if((SDGVM_070607).OR.(s070607.eq.1)) then
-        p_et = 0.7
+      if(s070607.eq.1) then
+        p_et  = 0.7
         p_pet = 0.7
       endif
 
@@ -3150,7 +3164,7 @@ c          tleaf_sla = tleaf_sla/1000
 *----------------------------------------------------------------------*
         DO ft=1,nft
           bioleaf(ft) = 0.0d0
-          if((SDGVM_070607).OR.(s070607.eq.1)) then
+          if(s070607.eq.1) then
             DO day=1,ftlls(ft)
               bioleaf(ft) = bioleaf(ft) + 
      &leafdp(day,ft)*12.0d0/ftsla(ft)/18.0d0
@@ -3496,12 +3510,12 @@ c     monthly initialisations
      &tsumam(ft),stemfr(ft),lmor_sc(:,ft),nleaf,chill(ft),dschill(ft),
      &fpr,gsm(ft),swr(mnth,day),tleaf_n,tleaf_p,
      &ncalc_type,leaf_nit,vcmax,jmax,vcmax_type,
-     &leafresp,rootresp,stemresp,daynpp,read_par,kg(ft),SDGVM_070607,
-     &ftcan_clump(ft),tassim,tgs,tci,hw_j,clump_bl,phen_cor,subd_par,
+     &leafresp,rootresp,stemresp,daynpp,read_par,kg(ft),
+     &ftcan_clump(ft),tassim,tgs,tci,hw_j,cstype,phen_cor,subd_par,
      &env_vcmax(ft),env_jmax(ft),soilp_map,can2g,canga,ga,
      &ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),ftg1(ft),
      &no_slw_lim,par_loops,s070607,gs_func,ce_light(:,:,ft),
-     &ce_ci(:,:,ft),ce_t,sl,hrs,ttype,
+     &ce_ci(:,:,ft),ce_t,sl,hrs,ttype,calc_zen,
      &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft))
 
 !            write(*,*) mnth,day,tleaf_n
@@ -3530,14 +3544,14 @@ c      endif
             if((fttags(ft).eq.'BARE').or.fttags(ft).eq.'CITY') then
               leafg     = 0.0
             else
-              if((SDGVM_070607).OR.(s070607.eq.1)) then
+              if(s070607.eq.1) then
                 leafg = leafv(1)*12.0d0/ftsla(ft)/18.0d0
               else
                 leafg = leafv(1)/(ftsla(ft)/0.480d0)
               endif 
  
               do xi=1,ftlls(ft)
-                if((SDGVM_070607).OR.(s070607.eq.1)) then
+                if(s070607.eq.1) then
                  leafv_sum = leafv_sum+leafv(xi)*12.0d0/ftsla(ft)/18.0d0
                 else
                  leafv_sum = leafv_sum+leafv(xi)/(ftsla(ft)/0.480d0)
@@ -3987,7 +4001,7 @@ c     check water cycle closure
         tbioleaf = 0.0000
         DO ft=1,nft
           bioleaf(ft) = 0.0d0
-          if((SDGVM_070607).OR.(s070607.eq.1)) then
+          if(s070607.eq.1) then
             DO day=1,ftlls(ft)
               bioleaf(ft) = bioleaf(ft) + 
      &leafdp(day,ft)*12.0d0/ftsla(ft)/18.0d0
