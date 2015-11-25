@@ -11,7 +11,7 @@ rm(list=ls())
 
 
 
-# Set default object values
+# Set default argument values
 ########################
 
 # output timesteps to process
@@ -109,7 +109,13 @@ if(netcdf) lapply(wd_list[pia],write_sdgvm_netcdf,
                   mfiles=mfiles,
                   nsites=nsites,nyears=ny,lon=lon,lat=lat)
 
-  
+# remove grid output now that combined files have been created
+for( wdc in wd_list) {
+  setwd(wdc)
+  system(" for i in grid*;do mv $i/simulation.dat $i/simulation.txt; done")
+  system(" for i in grid*;do mv $i/site_info.dat  $i/site_info.txt; done")
+  system("rm ./grid*/*.dat")
+} 
   
   
   

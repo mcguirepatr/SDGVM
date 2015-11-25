@@ -1,0 +1,12 @@
+#!/bin/bash
+
+SIMS=( #S# )
+
+for s in ${SIMS[*]}; do
+  echo $s
+  cd $s
+  qsub submit.pbs
+  cd ..
+done
+
+
