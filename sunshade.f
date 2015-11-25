@@ -78,8 +78,6 @@ c     ... hum, I don't know if albedodiff is really different or not... so equal
         kdiff      = 0.8d0 * can_clump 
         kdiffprime = m*kdiff
 
-
-
         ! calculate albedos
         rhosoil     = 0.15d0
         rhoh        = (1d0-m)/(1d0+m)
@@ -92,9 +90,7 @@ c     ... hum, I don't know if albedodiff is really different or not... so equal
         rhodiff     = rhodiff_can + (rhosoil-rhodiff_can)
      & *exp(-2d0*kdiffprime*lai)
 
-
-
-        ! calculate incident direct & diffuse radiation  
+       ! calculate absorped direct & diffuse radiation  
        qshade = (1d0-rhodiff)*diffrad*kdiffprime*exp(-kdiffprime*lyr)
      & + (1d0-rhobeam)*beamrad*kbeamprime*exp(-kbeamprime*lyr)
      & - (1d0-leafscattering)*beamrad*kbeam*exp(-kbeam*lyr)
@@ -105,7 +101,6 @@ c     ... hum, I don't know if albedodiff is really different or not... so equal
         ! calculate fraction sunlit vs shaded leaves
         fsunlit = exp(-kbeam*lyr)
         fshade  = 1d0 - fsunlit
-
       
       else 
 

@@ -156,7 +156,7 @@
         !proportion of canopy N in the LAI layer 'lyr'
         ! - this is supposed to be proportional to the light in layer 'lyr' but this is inconsistent with the rad scheme used by SDGVM
         if(cstype.lt.2) then 
-          can(i) = exp(-k*(lyr))/can_sum
+          can(i) = exp(-k*(lyr)) / can_sum
         elseif(cstype.eq.2) then
           ! use light proportion to scale
           can(i) = sum(ce_light(:,i)) / can_sum
@@ -223,13 +223,13 @@
           ENDIF
           
           !calculate Jmax@25oC (jm) 
-          IF(vcmax_type.eq.0) THEN
+          IF((vcmax_type.eq.0).or.(vcmax_type.eq.5).or.
+     &(vcmax_type.eq.6)) THEN
             !070607 default - Wullschleger 1993 
             jm(i)  = (29.1d0 + 1.64d0*vm(i))
-          ELSEIF((vcmax_type.eq.1).or.(vcmax_type.eq.5).or.(vcmax_type
-     &.ge.6)) then
+          ELSEIF((vcmax_type.eq.1).or.(vcmax_type.eq.7)) THEN
             !Walker -  only vcmax
-            jm(i)  = exp(1.01+0.89*log(vm(i)))
+            jm(i)  = exp(1.d0+0.89d0*log(vm(i)))
           ELSEIF((vcmax_type.eq.2).OR.(vcmax_type.eq.3)) THEN
             !from van Bodegom for TERRABITES project
             ! - not a function of vcmax so temperature corrected etc here
