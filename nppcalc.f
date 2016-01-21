@@ -1187,11 +1187,11 @@
 *     Gives vcmax or jmax temperature scalar                           *  
 *                                                                      *
 *----------------------------------------------------------------------*
-      FUNCTION T_SCALAR(t,jv,ttype,ftTopt,ftHa,ftHd,tmonth)
+      FUNCTION T_SCALAR(t,jv,ttype,ftTopt,ftkHa,ftkHd,tmonth)
 
       IMPLICIT NONE
 
-      REAL*8    :: t,qt,t_scalar,ftTopt,ftHa,ftHd,tmonth
+      REAL*8    :: t,qt,t_scalar,ftTopt,ftkHa,ftkHd,ftHa,ftHd,tmonth
       REAL*8    :: Tsk,Trk,R,deltaS,dS
       INTEGER   :: ttype 
       CHARACTER :: jv
@@ -1204,7 +1204,13 @@
    
       else if(ttype.ge.1) then
         ! modified Arrhenius
-        R = 0.00831446        
+        
+        R = 8.31446        
+
+        ! convert from kJ to J
+        ! parameter valkues are read in as kJ... to save space
+        ftHa = ftkHa * 1e3
+        ftHd = ftkHd * 1e3
 
         if(ttype.eq.2) then
           ! employ Kattge&Knorr scaling based on mean temp of previous month 
@@ -1213,7 +1219,6 @@
           else
             deltaS = 659.70d0 - 0.75d0*tmonth
           endif
-          deltaS = deltaS * 1e-3
         else 
           ! use fixed delta S based on input PFT parameters
           deltaS = ftHd/(ftTopt+273.15) + ( R*log(ftHa/(ftHd-ftHa)) )
