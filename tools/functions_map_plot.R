@@ -19,10 +19,10 @@ library(rworldxtra)
 #open annual data SDGVM files
 
 open <- function(var,mnames,wdpath){
-  ifile <- paste(var,'.dat',sep='')
-  #print(ifile)
-  x     <- read.table(paste(wdpath,ifile,sep=''),header=F,na.strings='********')
-  names(x)<-mnames  
+  ifile    <- paste(var,'.dat',sep='')
+  x        <- read.table(paste(wdpath,ifile,sep=''),header=F,na.strings='********')
+  x        <- as.data.frame(apply(x,2,as.numeric))
+  names(x) <- mnames  
   x
 }
 
@@ -30,8 +30,9 @@ open <- function(var,mnames,wdpath){
 
 ###############################
 
-write_title <- function(mod,vn,vs) as.expression(substitute(list(mod*' '*vname[vsub]),list(mod=mod,vname=vn,vsub=vs)))
-write_var   <- function(vn,vs) as.expression(substitute(list(vname[vsub]),list(vname=vn,vsub=vs)))
+write_title  <- function(mod,vn,vs) as.expression(substitute(list(mod*' '*vname[vsub]),list(mod=mod,vname=vn,vsub=vs)))
+write_title1 <- function(vn,vs,txt) as.expression(substitute(list(vname[vsub]*' '*text),list(vname=vn,vsub=vs,text=txt)))
+write_var    <- function(vn,vs)     as.expression(substitute(list(vname[vsub]),list(vname=vn,vsub=vs)))
 
 
 
@@ -121,7 +122,7 @@ plotmap <- function(i,map) {
 
 
 
-plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=F,...){
+plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,...){
   # This function plots world (or subsetted) maps of gridded data
 
   # expects a dataframe, 'x', with the columns 'lat', 'lon', 'plotdata', 'year', and 'run'
@@ -151,17 +152,30 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=F,...){
   
   #   print(head(x))
    
-  # normalise dta based on the 95%ile
-  if(norm){
-    if(any(x$plotdata<0)) {
-      x$plotdata <- x$plotdata / max( abs(quantile(x$plotdata,0.05,type=8)) , abs(quantile(x$plotdata,0.95,type=8)) )
-      lab$cols   <- col.neg
-      lab$at     <- seq(-1.2,1.2,0.2) 
+  # modify plotting parameters if norm or diff is used normalise data based on the 95%ile
+  text <- NULL
+  if(!is.null(norm)) {
+    
+    text <- paste('normalised:',norm)
+
+    if(norm=='sd') {
+      lab$cols <- col.neg
+      lab$at   <- c(seq(-3.5,-0.5,0.5),-0.1,0.1,seq(0.5,3.5,0.5)) 
+    } else if(any(x$plotdata<0)) {
+      lab$cols <- col.neg
+      lab$at   <- c(seq(-1.3,0.1,0.2),seq(0.1,1.3,0.2)) 
     } else {
-      x$plotdata <- x$plotdata / quantile(x$plotdata,0.95,type=8)
-      lab$cols   <- cols.inc.gpp
-      lab$at     <- seq(0,1.3,0.1) 
+      lab$cols <- col.inc.gpp
+      lab$at   <- seq(0,1.3,0.1) 
     }
+  }
+
+  if(!is.null(diff)) {
+    text      <- paste(text,'. Difference plot',sep='')
+    lab$cols  <- col.neg
+    lab$at    <- lab$at / 2 
+    lab$at[1] <- round(min(x$plotdata),1) 
+    lab$at[length(lab$at)] <- round(max(x$plotdata),1) 
   }
 
   ncol    <- length(lab$cols)
@@ -173,7 +187,7 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=F,...){
   #contourplot(plotdata~lon*lat|run,x,...,
   #          region=T,labels=F,contour=F,
             as.table=T,
-            main=write_var(lab$name,lab$nsub),
+            main=write_title1(lab$name,lab$nsub,text),
             # scale bar
             col.regions=colours,cuts=ncol-2,
             at=lab$at,
@@ -197,7 +211,8 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=F,...){
 
 
 
-axis.ticks <- function (...,y=F,ticks = seq(-180,180,20), ticks2 = seq(-180,180,5)){
+axis.ticks <- function ( ... , y=F , ticks=seq(-180,180,20) , ticks2=seq(-180,180,5) ) {
+  
   ans    <- xscale.components.default(...)
   ticks2 <- ticks2[!(ticks2 %in% ticks)]
   ans$bottom$ticks$at      <- c(ticks, ticks2)
@@ -205,6 +220,7 @@ axis.ticks <- function (...,y=F,ticks = seq(-180,180,20), ticks2 = seq(-180,180,
   lab_ticks                <- seq(-160,160,40) 
   ans$bottom$labels$at     <- lab_ticks
   ans$bottom$labels$labels <- lab_ticks
+  
   if(y){
     ans    <- yscale.components.default(...)
     ticks  <- c(seq(-80,80,20))
@@ -216,6 +232,7 @@ axis.ticks <- function (...,y=F,ticks = seq(-180,180,20), ticks2 = seq(-180,180,
     ans$left$labels$at     <- lab_ticks
     ans$left$labels$labels <- lab_ticks
   }
+  
   ans
 }
 

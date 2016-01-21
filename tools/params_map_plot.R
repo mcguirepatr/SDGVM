@@ -8,11 +8,10 @@
 #########################
 
 # Colours
-white.red    <- colorRampPalette(c('red3','lightgoldenrod'),space='Lab',bias=10)
-yellow.green <- colorRampPalette(c('lightgoldenrod','darkgreen'),space='Lab',bias=10)
-# green.blue<-colorRampPalette(c('darkgreen','midnightblue'),space='Lab',bias=10)
-# col.pos   <- c(yellow.green(9),green.blue(5)[2:5])
-col.neg     <- c(white.red(7)[1:6],'lightgoldenrod',yellow.green(7)[2:7])
+red.white   <- colorRampPalette(c('red3','grey90'),space='Lab',bias=10)
+blue.white  <- colorRampPalette(c('midnightblue','grey90'),space='Lab',bias=10)
+nc <- 7 
+col.neg     <- c(blue.white(nc+1)[1:nc],'grey90',rev(red.white(nc+1)[1:(nc)]))
 col.inc     <- c('grey90',rev(topo.colors(10)),'darkred')
 col.inc.gpp <- c(col.inc[1:4],'greenyellow',col.inc[6],'green4',col.inc[8:10],'navy',rev(c('orange','darkorange2','red','darkred')))
 
@@ -26,7 +25,7 @@ npp <- list(
   gsum  = T,
   gmean = F,
   at    = c(0,50,125,250,375,500,750,1000,1250,1500,1750,2000),
-  cols  = col.inc
+  cols  = col.inc.gpp
 )  
 gpp <- list(
   name  = 'GPP',
@@ -75,8 +74,8 @@ evt <- list(
   sunit = 'Eg',
   gsum  = T,
   gmean = F,
-  at    = c(0,100,250,500,750,1000,1500,2000,2500,3000,3500,4500),
-  cols  = col.inc
+  at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500,4000),
+  cols  = col.inc.gpp
 ) 
 trn <- list(
   name  = 'Transpiration',
@@ -85,8 +84,8 @@ trn <- list(
   sunit = 'Eg',
   gsum  = T,
   gmean = F,
-  at    = c(0,50,100,200,300,400,500,600,700,800,900,1000),
-  cols  = col.inc
+  at    = c(0,50,100,200,300,400,500,600,700,800,900,1000,1100,1200),
+  cols  = col.inc.gpp
 )
 scn  <- list(
   name  = 'Total Soil Carbon',
@@ -95,7 +94,7 @@ scn  <- list(
   sunit = 'Pg',
   gsum  = T,
   gmean = F,
-  at    = c(0,1000,2500,5000,7500,10000,15000,20000,25000,30000,35000,40000),
+  at    = c(0,1000,2500,5000,7500,10000,15000,20000,25000,30000,35000,40000,45000,50000),
   cols  = col.inc
 )
 sresp <- list(
@@ -105,7 +104,7 @@ sresp <- list(
   sunit = 'Pg',
   gsum  = T,
   gmean = F,
-  at    = c(0,100,250,500,750,1000,1500,2000,2500,3000,3500,1500),
+  at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500,4000),
   cols  = col.inc
 )
 presp <- list(
@@ -125,16 +124,16 @@ mgresp <- list(
   sunit = 'Pg',
   gsum  = T,
   gmean = F,
-  at    = c(0,100,250,500,750,1000,1500,2000,2500,3000,3500,1500),
+  at    = c(0,100,250,500,750,1000,1500,2000,2500,3000,3500,4500),
   cols  = col.inc
 )
 lai <- list(
   name  = 'LAI',
   nsub  = '',
-  unit  = 'm m^-2',
-  sunit = '',
+  unit  = 'm^2*" "*m^-2',
+  sunit = 'm^2*" "*m^-2',
   gsum  = F,
-  gmean = F,
+  gmean = T,
   at    = c(0,0.5,1:8,9.5,11.5),
   cols  = col.inc
 )
@@ -202,8 +201,8 @@ qtotal<- list(
 tmp <- list(
   name  = 'Temperature',
   nsub  = '',
-  unit  = '.^oC',
-  sunit = '.^oC',
+  unit  = 'degree*C',
+  sunit = 'degree*C',
   gsum  = F,
   gmean = T,
   at    = c(-20,-15,-10,-5,0,5,10,15,20,25,30,35),

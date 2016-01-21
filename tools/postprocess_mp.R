@@ -22,6 +22,9 @@ daily   <- T
 # stich output files from all grids into a single file
 stich   <- T
 
+# delete sub-grid files once processesed
+delete  <- T 
+
 # write CMOR netcdf output
 netcdf  <- F
 
@@ -89,33 +92,36 @@ if(length(commandArgs(T))>=1) {
 ##########################
 setwd(fd)
 source('read_SDGVM_output.R')
-#source('functions_netcdf.R')
+if(netcdf) source('functions_netcdf.R')
 
 
 
 ### Start Program
 ##########################
 wd_list <- paste(wd,sim,'output/',sep='/')
+print(wd_list)
 
 # stich mp data
-if(stich) lapply(wd_list[pia],stich_sdgvm_mp_apply,
-                 grids=grids,mc=T,
-                 annual=annual,monthly=monthly,daily=daily,
-                 mc.cores=cores,styear=sty,nyears=ny)
+if(stich) {
+  lapply(wd_list[pia],stich_sdgvm_mp_apply,
+         grids=grids,mc=T,
+         annual=annual,monthly=monthly,daily=daily,
+         mc.cores=cores,styear=sty,nyears=ny)
+
+  # remove grid output now that combined files have been created
+  if(delete) {
+    for( wdc in wd_list[pia]) {
+      setwd(wdc)
+      system("for i in grid*; do mv $i/simulation.dat $i/simulation.txt; done")
+      system("for i in grid*; do mv $i/site_info.dat  $i/site_info.txt; done")
+      system("for i in grid*; do mv $i/diag.dat       $i/diag.txt; done")
+      system("rm ./grid*/*.dat")
+  }} 
+}
 
 # convert data to CMOR netcdf output
 if(netcdf) lapply(wd_list[pia],write_sdgvm_netcdf,
                   afiles=afiles,
                   mfiles=mfiles,
                   nsites=nsites,nyears=ny,lon=lon,lat=lat)
-
-# remove grid output now that combined files have been created
-for( wdc in wd_list) {
-  setwd(wdc)
-  system(" for i in grid*;do mv $i/simulation.dat $i/simulation.txt; done")
-  system(" for i in grid*;do mv $i/site_info.dat  $i/site_info.txt; done")
-  system("rm ./grid*/*.dat")
-} 
-  
-  
   

@@ -29,15 +29,18 @@ stich_sdgvm_mp_apply <- function(wd,grids=4,mc=T,
   
   #read & sort output file names
   setwd(paste(wd,'grid1/',sep=''))
+  print(paste(wd,'grid1/',sep=''))
+  
   files  <- list.files()
   files  <- files[-which(files=='site_info.dat')]
   files  <- files[-which(files=='simulation.dat')]
   files  <- files[-which(files=='diag.dat')]
   isubs  <- grep('init',files)
   files  <- files[-isubs]
+  print(files)
+  
   msubs  <- grep('monthly',files)
   dsubs  <- grep('daily',files)
-  
   afiles <- files[-c(dsubs,msubs)]
   mfiles <- files[msubs]
   dfiles <- files[dsubs]
@@ -49,9 +52,12 @@ stich_sdgvm_mp_apply <- function(wd,grids=4,mc=T,
   mfiles    <- mfiles[-mpftsubs]
   dfiles    <- dfiles[-dpftsubs]
  
+  print(afiles,quote=F)
   if(annual)  print(afiles,quote=F)
   if(monthly) print(mfiles,quote=F)
   if(daily)   print(dfiles,quote=F)
+  if(monthly&pft) print(mpftfiles,quote=F)
+  if(daily&pft)   print(dpftfiles,quote=F)
   
   # output variable loops 
   ########################

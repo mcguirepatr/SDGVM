@@ -6,7 +6,9 @@
 
 HOME=/home/alp
 MOD=/models/SDGVM/src/sdgvm
-CPRUN=/blank_runs/global_mp_1deg
+#CPRUN=/blank_runs/global_mp_1deg
+echo "Warning:: 3.75 2.5 degree run selected"
+CPRUN=/blank_runs/global_mp_3p75x2p5deg
 DATA=/models/SDGVM/input_data
 PROJECTS_DIR=/models/SDGVM/run
 PROJECT=/$1
