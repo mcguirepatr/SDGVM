@@ -1208,12 +1208,16 @@
         R = 8.31446        
 
         ! convert from kJ to J
-        ! parameter valkues are read in as kJ... to save space
+        ! parameter values are read in as kJ... to save space
         ftHa = ftkHa * 1e3
         ftHd = ftkHd * 1e3
 
         if(ttype.eq.2) then
           ! employ Kattge&Knorr scaling based on mean temp of previous month 
+          
+          ftHa = 71513
+          ftHd = 49884
+
           if(jv.eq.'v') then
             deltaS = 668.39d0 - 1.07d0*tmonth
           else
