@@ -188,6 +188,7 @@
           IF(vcmax_type.eq.0) THEN
             !default 070607 SDGVM
             vm(i) = nleaf(i)*p_vm         
+
           ELSEIF(vcmax_type.eq.1) THEN
             !from Walker et al - N only
             vm(i) = exp(3.712+0.65*log(nleaf(i)))
@@ -199,23 +200,43 @@
               vm(i) = exp(3.946+0.921*log(nleaf(i))+
      &0.121*log(pleaf(i))+0.282*log(nleaf(i))*log(pleaf(i)))
             ENDIF
+
           ELSEIF((vcmax_type.eq.2).OR.(vcmax_type.eq.3).or.
      &(vcmax_type.eq.5).or.(vcmax_type.eq.6)) THEN
             !vcmax based on environment 
             vm(i) = env_vcmax * can(i)/can(1)
+
+          ELSEIF(vcmax_type.eq.7) THEN
+            ! after Maire et al 2012
+            
+            !if(i.eq.1) print'(30(f6.1,1x))', ce_light(:,1) *1d6
+            !if(i.eq.1) print'(f6.1)',   sum(ce_light(:,1))/30.d0 *1d6
+            
+            ! calculate Vcmax at the mean temperature of the last month in mol m-2s-1
+            vm(i) = brent_solver(0,1d-6,5d-4,
+     &oi,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,
+     &sum(ce_t(:))/30.d0,0.d0,1,0.d0,0.d0,0.d0,i,
+     &sum(ce_ci(:,i))/30.d0,sum(ce_light(:,i))/30.d0,ttype,
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0)
+            
+            ! convert back to value at 25oC 
+            ! invert temp correction scalar to get values at 25oC
+            vm(i) = vmx(i) / T_SCALAR(sum(ce_t(:))/30.d0,'v',ttype,
+     &ftToptV,ftHaV,ftHdV,sum(ce_t(:))/30.d0) 
+            jm(i) = jmx(i) / T_SCALAR(sum(ce_t(:))/30.d0,'j',ttype,
+     &ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0) 
+
+            ! convert to umol m-2s-1
+            vm(i) = vm(i) * 1d6
+
           ELSEIF(vcmax_type.eq.4) THEN
             !specified as a PFT parameter
             vm(i) = ftvna + ftvnb*nleaf(i)
-          ELSEIF(vcmax_type.eq.7) THEN
-            !calculate after Maire et al 2012
-             !if(i.eq.1) print'(30(f6.1,1x))', ce_light(:,1) *1d6
-             !if(i.eq.1) print'(f6.1)',   sum(ce_light(:,1))/30.d0 *1d6
-             vm(i) = brent_solver(0,1d-6,5d-4,
-     &oi,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,
-     &t,0.d0,1,0.d0,0.d0,0.d0,i,
-     &sum(ce_ci(:,i))/30.d0,sum(ce_light(:,i))/30.d0,ttype,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0)
-             vm(i) = vm(i) * 1d6
+
+          ELSEIF(vcmax_type.eq.8) THEN
+            !specified as a PFT parameter but jmax specified as the Walker function of Vcmax
+            vm(i) = ftvna + ftvnb*nleaf(i)
+
           ELSE
             PRINT*, 'vcmax_type ',vcmax_type,' undefined. set to a value
      &<4 in <input.dat> or define your own vcmax calculation method'
@@ -227,7 +248,8 @@
      &(vcmax_type.eq.6)) THEN
             !070607 default - Wullschleger 1993 
             jm(i)  = (29.1d0 + 1.64d0*vm(i))
-          ELSEIF((vcmax_type.eq.1).or.(vcmax_type.eq.7)) THEN
+          ELSEIF((vcmax_type.eq.1).or.(vcmax_type.eq.7).or.
+     &(vcmax_type.eq.8)) THEN
             !Walker -  only vcmax
             jm(i)  = exp(1.d0+0.89d0*log(vm(i)))
           ELSEIF((vcmax_type.eq.2).OR.(vcmax_type.eq.3)) THEN
@@ -244,25 +266,26 @@
           ENDIF
 
           !temperature scale Vcmax & Jmax
-          if(vcmax_type.le.6) then
-            vmx(i) = vm(i) * T_SCALAR(t,'v',ttype,ftToptV,ftHaV,ftHdV,
+          !if(vcmax_type.le.6) then
+          vmx(i) = vm(i) * T_SCALAR(t,'v',ttype,ftToptV,ftHaV,ftHdV,
      &sum(ce_t(:))/30.d0)
-            ! - assumes temp sensitivity of Jmax is the same as vcmax which is wrong 
-            jmx(i) = jm(i) * T_SCALAR(t,'j',ttype,ftToptJ,ftHaJ,ftHdJ,
+          jmx(i) = jm(i) * T_SCALAR(t,'j',ttype,ftToptJ,ftHaJ,ftHdJ,
      &sum(ce_t(:))/30.d0)
 
-            !leaf age scale Vcmax & Jmax
-            vmx(i) = vmx(i)*npp_eff
-            jmx(i) = jmx(i)*npp_eff
-          else
-            vmx(i) = vm(i)
-            jmx(i) = jm(i)
-            !invert temp correction scalar to get values at 25oC
-            vm(i) = vmx(i) / T_SCALAR(t,'v',ttype,ftToptV,ftHaV,ftHdV,
-     &sum(ce_t(:))/30.d0) 
-            jm(i) = jmx(i) / T_SCALAR(t,'j',ttype,ftToptJ,ftHaJ,ftHdJ,
-     &sum(ce_t(:))/30.d0) 
-          endif
+          !leaf age scale Vcmax & Jmax
+          vmx(i) = vmx(i)*npp_eff
+          jmx(i) = jmx(i)*npp_eff
+          
+          !else
+          !  vmx(i) = vm(i)
+          !  jmx(i) = jm(i)
+            
+          !  !invert temp correction scalar to get values at 25oC
+          !  vm(i) = vmx(i) / T_SCALAR(t,'v',ttype,ftToptV,ftHaV,ftHdV,
+      !&sum(ce_t(:))/30.d0) 
+          !  jm(i) = jmx(i) / T_SCALAR(t,'j',ttype,ftToptJ,ftHaJ,ftHdJ,
+      !&sum(ce_t(:))/30.d0) 
+          !endif
 
           !water limitation scale Vcmax & Jmax
           vmx(i) = vmx(i)*kg**p_nu3
@@ -1726,8 +1749,8 @@
         fa = VCMAX_MAIRE(a,vt,jt,ci,km,gstar,alp,light,farq_pars_func,i)
         fb = VCMAX_MAIRE(b,vt,jt,ci,km,gstar,alp,light,farq_pars_func,i)
       elseif (func.eq.1) then
-        fa=a-FASSV(a,gstar,km,ca,vmx,kg,rd,ga,t,p,gs_func,g0,g1,dv,i)
-        fb=b-FASSV(b,gstar,km,ca,vmx,kg,rd,ga,t,p,gs_func,g0,g1,dv,0)
+        fa = a -FASSV(a,gstar,km,ca,vmx,kg,rd,ga,t,p,gs_func,g0,g1,dv,i)
+        fb = b -FASSV(b,gstar,km,ca,vmx,kg,rd,ga,t,p,gs_func,g0,g1,dv,0)
         if(fa.ge.0.d0) then
           ! in this case rd is greater than gross a 
           ! therefore assume a = 0 and anet = rd i
