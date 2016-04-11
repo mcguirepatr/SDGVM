@@ -90,7 +90,7 @@ c     ... hum, I don't know if albedodiff is really different or not... so equal
         rhodiff     = rhodiff_can + (rhosoil-rhodiff_can)
      & *exp(-2d0*kdiffprime*lai)
 
-       ! calculate absorped direct & diffuse radiation  
+       ! calculate absorbed direct & diffuse radiation  
        qshade = (1d0-rhodiff)*diffrad*kdiffprime*exp(-kdiffprime*lyr)
      & + (1d0-rhobeam)*beamrad*kbeamprime*exp(-kbeamprime*lyr)
      & - (1d0-leafscattering)*beamrad*kbeam*exp(-kbeam*lyr)
