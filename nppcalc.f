@@ -221,9 +221,9 @@
             
             ! convert back to value at 25oC 
             ! invert temp correction scalar to get values at 25oC
-            vm(i) = vmx(i) / T_SCALAR(sum(ce_t(:))/30.d0,'v',ttype,
+            vm(i) = vm(i) / T_SCALAR(sum(ce_t(:))/30.d0,'v',ttype,
      &ftToptV,ftHaV,ftHdV,sum(ce_t(:))/30.d0) 
-            jm(i) = jmx(i) / T_SCALAR(sum(ce_t(:))/30.d0,'j',ttype,
+            jm(i) = jm(i) / T_SCALAR(sum(ce_t(:))/30.d0,'j',ttype,
      &ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0) 
 
             ! convert to umol m-2s-1
@@ -254,7 +254,7 @@
             jm(i)  = exp(1.d0+0.89d0*log(vm(i)))
           ELSEIF((vcmax_type.eq.2).OR.(vcmax_type.eq.3)) THEN
             !from van Bodegom for TERRABITES project
-            ! - not a function of vcmax so temperature corrected etc here
+            ! - not a function of vcmax 
             jm(i) = env_jmax * can(i)/can(1)
           ELSEIF(vcmax_type.eq.4) THEN
             !specified as a PFT parameter
