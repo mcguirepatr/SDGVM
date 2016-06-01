@@ -1327,10 +1327,13 @@
       REAL*8  :: vt,jt,km,gstar,alpha
       INTEGER :: farq_pars_func,i,ttype
 
-      vcmax_maire = vm*ci *
-     &(1.d0+(alpha*light/(jt*(exp(1.d0)*(vm/vt)**0.89d0)))**2.d0)**0.5d0
-     &*(4*ci+8*gstar) - alpha*light*ci*(ci+km) 
+c      vcmax_maire = vm*ci *
+c     &(1.d0+(alpha*light/(jt*(exp(1.d0)*(vm/vt)**0.89d0)))**2.d0)**0.5d0
+c     &*(4*ci+8*gstar) - alpha*light*ci*(ci+km) 
 
+      vcmax_maire = alpha*light / 
+     &(1.d0+(alpha*light/(jt*(exp(1.d0)*(vm/vt)**0.89d0)))**2.d0)**0.5d0
+     &*(ci+km)/(4*ci+8*gstar)  
       !if(i.eq.1) print*, 'maire vcmax calc'
       !if(i.eq.1) print'(4f8.4)', vt,jt,km,gstar
       !if(i.eq.1) print'(4f14.8)', vcmax_maire,ci,light,t
@@ -1710,7 +1713,7 @@
 *----------------------------------------------------------------------*
 *----------------------------------------------------------------------*
 
-!####Brent solver off wikipedia
+!####Brent solver from wikipedia
       FUNCTION BRENT_SOLVER(func,i1,i2,
      &oi,ca,vmx,j,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,ci,light,ttype,
      &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,tmonth) 
@@ -1740,7 +1743,7 @@
       !initial guess  
       a  = i1
       b  = i2
-      if (func.eq.0) then
+c      if (func.eq.0) then
         ! Error tolerance mol m-2 s-1
         errortol = 1d-7
         ! vcmax25 & jmax25 to leaf t scalar 
@@ -1748,27 +1751,27 @@
         jt = T_SCALAR(tmonth,'j',ttype,ftToptJ,ftHaJ,ftHdJ,tmonth)
         fa = VCMAX_MAIRE(a,vt,jt,ci,km,gstar,alp,light,farq_pars_func,i)
         fb = VCMAX_MAIRE(b,vt,jt,ci,km,gstar,alp,light,farq_pars_func,i)
-      elseif (func.eq.1) then
-        fa = a -FASSV(a,gstar,km,ca,vmx,kg,rd,ga,t,p,gs_func,g0,g1,dv,i)
-        fb = b -FASSV(b,gstar,km,ca,vmx,kg,rd,ga,t,p,gs_func,g0,g1,dv,0)
-        if(fa.ge.0.d0) then
-          ! in this case rd is greater than gross a 
-          ! therefore assume a = 0 and anet = rd i
-          b = 0.d0
-          done = .true.
-        endif
-      elseif(func.eq.2) then
-        fa = a - FASSJ(a,gstar,ca,kg,rd,ga,t,p,j,gs_func,g0,g1,dv,i)
-        fb = b - FASSJ(b,gstar,ca,kg,rd,ga,t,p,j,gs_func,g0,g1,dv,0)
-        if(fa.ge.0.d0) then
-          ! in this case rd is greater than gross a 
-          ! therefore assume a = 0 and anet = rd i
-          b = 0.d0
-          done = .true.
-        endif
-      else 
-        print*, 'incorrect solver function number specified'
-      endif
+c      elseif (func.eq.1) then
+c        fa = a -FASSV(a,gstar,km,ca,vmx,kg,rd,ga,t,p,gs_func,g0,g1,dv,i)
+c        fb = b -FASSV(b,gstar,km,ca,vmx,kg,rd,ga,t,p,gs_func,g0,g1,dv,0)
+c        if(fa.ge.0.d0) then
+c          ! in this case rd is greater than gross a 
+c          ! therefore assume a = 0 and anet = rd i
+c          b = 0.d0
+c          done = .true.
+c        endif
+c      elseif(func.eq.2) then
+c        fa = a - FASSJ(a,gstar,ca,kg,rd,ga,t,p,j,gs_func,g0,g1,dv,i)
+c        fb = b - FASSJ(b,gstar,ca,kg,rd,ga,t,p,j,gs_func,g0,g1,dv,0)
+c        if(fa.ge.0.d0) then
+c          ! in this case rd is greater than gross a 
+c          ! therefore assume a = 0 and anet = rd i
+c          b = 0.d0
+c          done = .true.
+c        endif
+c      else 
+c        print*, 'incorrect solver function number specified'
+c      endif
       
       fa00 = fa 
       !if(i.eq.1) print*, i,fa,fb
@@ -1823,13 +1826,13 @@
         !s is the new value 
         !fs = function(s)
     
-        if (func.eq.0) then
+c        if (func.eq.0) then
         fs = VCMAX_MAIRE(s,vt,jt,ci,km,gstar,alp,light,farq_pars_func,i)
-        elseif (func.eq.1) then
-        fs=s-FASSV(s,gstar,km,ca,vmx,kg,rd,ga,t,p,gs_func,g0,g1,dv,0)
-        elseif(func.eq.2) then
-        fs = s - FASSJ(s,gstar,ca,kg,rd,ga,t,p,j,gs_func,g0,g1,dv,0)
-        endif  
+c        elseif (func.eq.1) then
+c        fs=s-FASSV(s,gstar,km,ca,vmx,kg,rd,ga,t,p,gs_func,g0,g1,dv,0)
+c        elseif(func.eq.2) then
+c        fs = s - FASSJ(s,gstar,ca,kg,rd,ga,t,p,j,gs_func,g0,g1,dv,0)
+c        endif  
    
         d  = c
         c  = b
