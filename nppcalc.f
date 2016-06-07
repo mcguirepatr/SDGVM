@@ -1327,16 +1327,16 @@
       REAL*8  :: vt,jt,km,gstar,alpha
       INTEGER :: farq_pars_func,i,ttype
 
-c      vcmax_maire = vm*ci *
-c     &(1.d0+(alpha*light/(jt*(exp(1.d0)*(vm/vt)**0.89d0)))**2.d0)**0.5d0
-c     &*(4*ci+8*gstar) - alpha*light*ci*(ci+km) 
-
-      vcmax_maire = alpha*light / 
+      vcmax_maire = vm*
      &(1.d0+(alpha*light/(jt*(exp(1.d0)*(vm/vt)**0.89d0)))**2.d0)**0.5d0
-     &*(ci+km)/(4*ci+8*gstar)  
-      !if(i.eq.1) print*, 'maire vcmax calc'
-      !if(i.eq.1) print'(4f8.4)', vt,jt,km,gstar
-      !if(i.eq.1) print'(4f14.8)', vcmax_maire,ci,light,t
+     &*(4*ci+8*gstar) - alpha*light*(ci+km) 
+
+c      vcmax_maire = alpha*light / 
+c     &(1.d0+(alpha*light/(jt*(exp(1.d0)*(vm/vt)**0.89d0)))**2.d0)**0.5d0
+c     &*(ci+km)/(4*ci+8*gstar)  
+      if(i.eq.1) print*, 'maire vcmax calc'
+      if(i.eq.1) print'(4f8.4)', vt,jt,km,gstar
+      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
       END  
 
 *----------------------------------------------------------------------*
