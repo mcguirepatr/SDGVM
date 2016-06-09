@@ -18,8 +18,6 @@
       INCLUDE 'array_dims.inc'
       INCLUDE 'param.inc'
 
-
-
       REAL*8 suma,sumd,rlai,soilc,soil2g,wtfc,nmult,npp_eff
       REAL*8 soiln,y1,y0,x1,x0,mmult,minn(3),nup,t
       REAL*8 tk,up,kc,ko,tau,can_sum,nleaf_sum,cld,gb
@@ -147,6 +145,10 @@
       if(cstype.lt.2) can_sum = can_sum + exp(-k*real(lai))*rem
       if(cstype.eq.2) can_sum = can_sum + sum(ce_light(:,lai))*rem
 
+      !initialise LUNA model after Ali, Xu, et al 2015
+      IF(vcmax_type.eq.9) THEN
+         call LUNA_INIT()  
+      ENDIF
 
       !start first LAI loop 
       ! - canopy scaling of variables that do not vary with light
@@ -206,6 +208,10 @@
             !vcmax based on environment 
             vm(i) = env_vcmax * can(i)/can(1)
 
+          ELSEIF(vcmax_type.eq.4) THEN
+            !specified as a PFT parameter
+            vm(i) = ftvna + ftvnb*nleaf(i)
+
           ELSEIF(vcmax_type.eq.7) THEN
             ! after Maire et al 2012
             
@@ -229,13 +235,16 @@
             ! convert to umol m-2s-1
             vm(i) = vm(i) * 1d6
 
-          ELSEIF(vcmax_type.eq.4) THEN
-            !specified as a PFT parameter
-            vm(i) = ftvna + ftvnb*nleaf(i)
-
           ELSEIF(vcmax_type.eq.8) THEN
             !specified as a PFT parameter but jmax specified as the Walker function of Vcmax
             vm(i) = ftvna + ftvnb*nleaf(i)
+
+          ELSEIF(vcmax_type.eq.9) THEN
+            !i use LUNA model after Ali, Xu, et al 2015
+            call LUNA(vm(i),i)  
+
+            ! convert to umol m-2s-1
+            vm(i) = vm(i) * 1d6
 
           ELSE
             PRINT*, 'vcmax_type ',vcmax_type,' undefined. set to a value
@@ -334,6 +343,12 @@
             jsunlit(i) = 0.0d0
             jshade(i)  = 0.0d0
           ENDIF
+
+          !LUNA model has a term that reduces Vcmax during drought and winter etc
+          IF(vcmax_type.eq.9) THEN
+            call LUNA_nogrowth()  
+          ENDIF
+
 
         !water limitation IF
         ENDIF
