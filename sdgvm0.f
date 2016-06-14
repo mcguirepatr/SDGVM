@@ -59,7 +59,8 @@
       REAL*8 sm_trig(30,maxnft),smtrig(30),topsl,suma(360),dayra
       REAL*8 tsumam(maxnft),stemfr(maxnft),lmor_sc(3600,maxnft)
       REAL*8 wilt,field,sat,orgc,lflitold,fpr,daynpp,canga,ga
-      REAL*8 soilCtoN,leaf_nit,vcmax,jmax,tassim,tgs,tci,nup_rate
+      REAL*8 soilCtoN,leaf_nit,vcmax(12,maxnft),jmax(12,maxnft)
+      REAL*8 tassim,tgs,tci,nup_rate,pnlc(12,maxnft),enzs(12,maxnft)
       REAL*8 vtleaf_n(12,30),qdirsum,qdifsum,mnthp_days(12)             
       REAL*8 gsm(maxnft),tleaf_n,tleaf_p,respsum,cbal,leafg,f_amax
       REAL*8 soilp,soilcn_init,masoilcnv(3),soilcn,masoilcn,masoilcnr
@@ -112,6 +113,7 @@
       REAL*8 mahum,masoilc,masoilw,eco2
       REAL*8 matmp_init,matmp_max_init,matmp_min_init,map_days_init
       REAL*8 ce_light(30,12,maxnft),ce_ci(30,12,maxnft),ce_t(30)
+      REAL*8 ce_maxlight(30,12,maxnft),ce_ga(30,12,maxnft),ce_rh(30)
       REAL*8 mahum_init,masoilc_init,masoilw_init
       REAL*8 env_vcmax(maxnft),env_jmax(maxnft)
       REAL*8 env_vcmax_min(maxnft),env_jmax_min(maxnft)
@@ -989,6 +991,10 @@
       ftToptJ(ft) = 0.0d0
       ftHaJ(ft)   = 0.0d0
       ftHdJ(ft)   = 0.0d0
+      vcmax(:,ft) = 0.0d0
+      jmax(:,ft)  = 0.0d0
+      pnlc(:,ft)  = 0.0d0
+      enzs(:,ft)  = 0.0d0
 
       ft = 2
       ftc3(ft) = 0
@@ -1019,18 +1025,22 @@
       ftgrf(ft) = 0.0d0
       ftppm0(ft) = 0.0d0
       ftcan_clump(ft) = 0.0d0
-      ftvna(ft)  = 0.0d0
-      ftvnb(ft)  = 0.0d0
-      ftjva(ft)  = 0.0d0
-      ftjvb(ft)  = 0.0d0
-      ftg0(ft)   = 0.0d0
-      ftg1(ft)   = 0.0d0
+      ftvna(ft)   = 0.0d0
+      ftvnb(ft)   = 0.0d0
+      ftjva(ft)   = 0.0d0
+      ftjvb(ft)   = 0.0d0
+      ftg0(ft)    = 0.0d0
+      ftg1(ft)    = 0.0d0
       ftToptV(ft) = 0.0d0
       ftHaV(ft)   = 0.0d0
       ftHdV(ft)   = 0.0d0
       ftToptJ(ft) = 0.0d0
       ftHaJ(ft)   = 0.0d0
       ftHdJ(ft)   = 0.0d0
+      vcmax(:,ft) = 0.0d0
+      jmax(:,ft)  = 0.0d0
+      pnlc(:,ft)  = 0.0d0
+      enzs(:,ft)  = 0.0d0
 
 *----------------------------------------------------------------------*
 * Read in functional type parameterisation.                            *
@@ -2297,24 +2307,35 @@ c     &site_dat,lat,lon,ca
             lsn(ft) = ilsn
           ENDDO
         
-        !simple initiations of mean climate and soil variables
-        !only used if ncalc_type = >2 or vcmax_type = >2  
-        !XXXX
-        maprc_init  = 1300.0d0
-        maswr_init  = 150.0d0
-        soilcn_init = 15.0d0 
-	soilp_init  = 569.20d0 !median value from Yang et al 2012 global soil P map converted to ug P g-1 soil using bulk density data from islscp2
-        matmp_init     = 10.0d0
-        matmp_max_init = 15.0d0
-        matmp_min_init = 5.0d0
-        map_days_init  = 5.0d0
-        mahum_init     = 75.0d0
-        masoilc_init   = 20.0d0
-        masoilw_init   = 0.20d0
+          !simple initiations of mean climate and soil variables
+          !only used if ncalc_type = >2 or vcmax_type = >2  
+          !XXXX
+          maprc_init     = 1300.0d0
+          maswr_init     = 150.0d0
+          soilcn_init    = 15.0d0 
+          soilp_init     = 569.20d0 !median value from Yang et al 2012 global soil P map converted to ug P g-1 soil using bulk density data from islscp2
+          matmp_init     = 10.0d0
+          matmp_max_init = 15.0d0
+          matmp_min_init = 5.0d0
+          map_days_init  = 5.0d0
+          mahum_init     = 75.0d0
+          masoilc_init   = 20.0d0
+          masoilw_init   = 0.20d0
 
-        ce_t   = 15.d0
-        ce_ci  = 28.d0
-        ce_light = 5.0e-4 
+          ce_t           = 15.d0
+          ce_rh          = 75.d0 
+          ce_ci          = 28.d0
+          ce_ga          = 0.1d0
+          ce_light       = 5.0e-4 
+          ce_maxlight    = 1.0e-3 
+
+          DO ft=3,nft
+            vcmax(:,ft)  = 10.d0 
+            jmax(:,ft)   = 20.d0
+            pnlc(:,ft)   = 0.1d0
+            enzs(:,ft)   = 1.d0
+          ENDDO
+
         ELSE
       
           IF ((abs(lat-zlat).GT.0.001).OR.
@@ -2384,10 +2405,22 @@ c     &site_dat,lat,lon,ca
             READ(79,*) (zsumadp(i,ft),i=1,360)
           ENDDO
           READ(79,*) (zstemfr(ft),ft=1,nft)
+
           READ(79,*) ce_t 
-          READ(79,*) ce_ci 
-          READ(79,*) ce_light 
+          READ(79,*) ce_rh       
+          DO ft=3,nft
+            READ(79,*) (ce_ci(:,i,ft),      i=1,12)
+            READ(79,*) (ce_ga(:,i,ft),      i=1,12)       
+            READ(79,*) (ce_light(:,i,ft),   i=1,12)
+            READ(79,*) (ce_maxlight(:,i,ft),i=1,12)
+            READ(79,*) (vcmax(i,ft),i=1,12)
+            READ(79,*) (jmax(i,ft),i=1,12)
+            READ(79,*) (pnlc(i,ft),i=1,12)
+            READ(79,*) (enzs(i,ft),i=1,12)
+          ENDDO
           ENDIF
+
+          !print*, vcmax(1,:)
 
           DO ft=1,nft
             s1(ft) = zs1(ft)
@@ -3484,8 +3517,10 @@ c     monthly initialisations
             oldlai   = lai(ft)
             nleaf    = 0.0d0
             leaf_nit = 0.0d0
-            jmax     = 0.0d0
-            vcmax    = 0.0d0
+            !jmax     = 0.0d0
+            !vcmax    = 0.0d0
+
+            !print*, vcmax(1,ft)
 
             lflitold = leaflit(ft)
 !      print*,'dol ',tmp(mnth,day),prc(mnth,day),hum(mnth,day),cld(mnth), 
@@ -3509,13 +3544,16 @@ c     monthly initialisations
      &rootnpp(ft),yield(ft),ft,resp,smtrig,qdirect,qdiff,suma,
      &tsumam(ft),stemfr(ft),lmor_sc(:,ft),nleaf,chill(ft),dschill(ft),
      &fpr,gsm(ft),swr(mnth,day),tleaf_n,tleaf_p,
-     &ncalc_type,leaf_nit,vcmax,jmax,vcmax_type,
+     &ncalc_type,leaf_nit,vcmax(:,ft),jmax(:,ft),pnlc(:,ft),enzs(:,ft),
+     &vcmax_type,
      &leafresp,rootresp,stemresp,daynpp,read_par,kg(ft),
      &ftcan_clump(ft),tassim,tgs,tci,hw_j,cstype,phen_cor,subd_par,
      &env_vcmax(ft),env_jmax(ft),soilp_map,can2g,canga,ga,
      &ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),ftg1(ft),
-     &no_slw_lim,par_loops,s070607,gs_func,ce_light(:,:,ft),
-     &ce_ci(:,:,ft),ce_t,sl,hrs,ttype,calc_zen,
+     &no_slw_lim,par_loops,s070607,gs_func,
+     &ce_light(:,:,ft),ce_ci(:,:,ft),ce_t,
+     &ce_maxlight(:,:,ft),ce_ga(:,:,ft),ce_rh,
+     &sl,hrs,ttype,calc_zen,
      &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft))
 
 !            write(*,*) mnth,day,tleaf_n
@@ -3606,8 +3644,8 @@ c      endif
             daily_out(25,ft,mnth,day) = lsn(ft)+sn(ft) ! liquid snow and snow water equivalent
             daily_out(26,ft,mnth,day) = nleaf
             daily_out(27,ft,mnth,day) = leaf_nit
-            daily_out(28,ft,mnth,day) = vcmax
-            daily_out(29,ft,mnth,day) = jmax
+            daily_out(28,ft,mnth,day) = vcmax(1,ft)
+            daily_out(29,ft,mnth,day) = jmax(1,ft)
             daily_out(30,ft,mnth,day) = kg(ft)        !soil water limitation factor (unitless)
             daily_out(31,ft,mnth,day) = tassim        !topleaf assimilation (umol CO2 m-2 s-1)
             daily_out(32,ft,mnth,day) = tgs           !topleaf stomatal conductance (umol CO2 m-2 s-1)
@@ -3674,7 +3712,8 @@ c      endif
               sumadp(d,ft) = suma(d)
             ENDDO
 
-          ELSE ! dolydo ?
+          ! dolydo IF
+          ELSE 
             DO i=1,douts
               daily_out(i,ft,mnth,day) = 0.0d0
             ENDDO
@@ -3737,6 +3776,8 @@ c      endif
 *                             End of month loop                         *
 *----------------------------------------------------------------------*
       ENDDO                     ! end of monthly loop
+
+      !print*, ce_ci(30,1,:)
 
       DO ft=1,nft
 
@@ -4426,8 +4467,17 @@ c     check water cycle closure
           ENDDO
           WRITE(89,'(100E16.8)') (stemfr(ft),ft=1,nft)
           WRITE(89,*) ce_t 
-          WRITE(89,*) ce_ci 
-          WRITE(89,*) ce_light
+          WRITE(89,*) ce_rh       
+          DO ft=3,nft
+            WRITE(89,*) (ce_ci(:,i,ft),      i=1,12)
+            WRITE(89,*) (ce_ga(:,i,ft),      i=1,12)       
+            WRITE(89,*) (ce_light(:,i,ft),   i=1,12)
+            WRITE(89,*) (ce_maxlight(:,i,ft),i=1,12)
+            WRITE(89,*) (vcmax(i,ft),i=1,12)
+            WRITE(89,*) (jmax(i,ft) ,i=1,12)
+            WRITE(89,*) (pnlc(i,ft) ,i=1,12)
+            WRITE(89,*) (enzs(i,ft) ,i=1,12)
+          ENDDO
         ENDIF
 
         WRITE(80,'(F7.3,F9.3)') lat,lon

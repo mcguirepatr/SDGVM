@@ -7,12 +7,14 @@
      &t,rh,ca,oi,rn,qdirect,qdiff,can2a,can2g,canrd,canres,suma,amx,
      &amax,hrs,canga,p,mnth,day,nleaf_sum,fpr,gsm,tleaf_n,tleaf_p,
      &ncalc_type,vcmax_type,
-     &leaf_nit,vcmax,jmax,ft,kg,sla,can_clump,tassim,tgs,
+     &leaf_nit,vcmax,jmax,pnlc,enzs,ft,kg,sla,can_clump,tassim,tgs,
      &tci,hw_j,cstype,subd_par,thty_dys,year,lat,swr,cld,
      &read_par,env_vcmax,env_jmax,soilp_map,ga,ftvna,ftvnb,ftjva,ftjvb,
-     &ftg0,ftg1,par_loops,s070607,gs_func,ce_light,ce_ci,ce_t,ttype,
+     &ftg0,ftg1,par_loops,s070607,gs_func,ce_light,ce_ci,ce_t,
+     &ce_maxlight,ce_ga,ce_rh,ttype,
      &calc_zen,cos_zen,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
 *----------------------------------------------------------------------*
+      
       IMPLICIT NONE
       
       INCLUDE 'array_dims.inc'
@@ -34,6 +36,7 @@
       REAL*8 ci_sd(12),ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1
       REAl*8 apar,fpr,gsm,ncan,pleaf(12),slaleaf,tleaf,pcan,slaton
       REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30)
+      REAL*8 ce_maxlight(30,12),ce_ga(30,12),ce_rh(30),maxlight(12)
       REAL*8 asunlit,ashade,pcsunlit,pcshade,gssunlit,gsshade
 * light-limited assimilation rate (j) and irradiance (q) for sunlit
 * and shade
@@ -43,7 +46,9 @@
 * fraction of sunlit and shade
       REAL*8 fsunlit(12),fshade(12),tleaf_n,tleaf_p
       REAL*8 fsunlit_sd(12),fshade_sd(12)
-      REAL*8 leaf_nit,vcmax,jmax,tassim,tgs,tci
+      REAL*8 leaf_nit,vcmax(12),jmax(12),pnlc(12),enzs(12)
+      REAL*8 tassim,tgs,tci
+      REAL*8 max_daily_pchg, max_dpchg
 
       REAL*8 ax,amax,amx,lyr,qt,lat,swr,env_vcmax,env_jmax
       INTEGER i,lai,c3,mnth,day,ncalc_type,vcmax_type,ft,oday
@@ -68,6 +73,10 @@
        ! print*, ''
       !endif
 
+      !print*, vcmax(1)
+      !print*, ce_light(30,1),ce_maxlight(30,1)  
+      !print*, sum(ce_light(:,1))/30.d0,sum(ce_maxlight(:,1))/30.d0,
+      !&vcmax(1),jmax(1)  
       !print*, qdirect, qdirect, qdirect, qdiff
       apar=0.0d0
 
@@ -77,8 +86,10 @@
 
       suma = 0.0d0
       sumd = 0.0d0
-      vcmax= 0.0d0
-      jmax = 0.0d0
+      if(vcmax_type.ne.9) then
+        vcmax(:) = 0.0d0
+        jmax(:)  = 0.0d0
+      endif
       leaf_nit  = 0.0d0
       nleaf_sum = 0.0d0
       canres    = 0.0d0
@@ -94,7 +105,7 @@
       !if there are light and leaves - calculate canopy properties 
       !print*, '' 
       IF ((rlai.GT.0.1d0).AND.(q.GT.0.0d0)) THEN
-
+      !print*, 'calculate N and Vcmax'
 
 !      IF (soil2g.GT.wtwp) THEN
 !        kg = maxc*((soil2g - wtwp)/(wtfc - wtwp))**p_kgw
@@ -147,9 +158,10 @@
 
       !initialise LUNA model after Ali, Xu, et al 2015
       IF(vcmax_type.eq.9) THEN
-         call LUNA_INIT()  
+         max_dpchg = max_daily_pchg(sum(ce_t(:))/30.d0)  
       ENDIF
-
+      !print*, max_dpchg
+ 
       !start first LAI loop 
       ! - canopy scaling of variables that do not vary with light
       DO i=1,lai
@@ -163,6 +175,7 @@
           ! use light proportion to scale
           can(i) = sum(ce_light(:,i)) / can_sum
         endif
+        if((i.eq.lai).and.(s070607.eq.0)) can(i) = can(i) * rem
 
         ! calculate leaf N in canopy layer i
         IF (ncalc_type.le.1) THEN 
@@ -179,9 +192,10 @@
            STOP
         ENDIF
         ! this scales the bottom layer from a fractional layer to a full layer
-        ! all calculations below then acount for this by scaling all fluxes by rem 
-        if((i.eq.lai).and.(s070607.eq.1)) nleaf(i) = nleaf(i) / rem
- 
+        ! - unless total LAI is <1, in which case leaf N is assumed for a full leaf layer 
+        ! calculations below this assume a full leaf layer and then scale all fluxes in lowest lai layer by rem 
+        if((i.eq.lai).and.(lai.ne.1)) nleaf(i) = nleaf(i) / rem
+        !if(i.eq.lai) print*, rlai, can(i), up*p_nleaf, nleaf(i)
 
         !if soil water not completely limiting calculate photosynthesis
         IF (kg.GT.1.0e-10) THEN
@@ -240,15 +254,25 @@
             vm(i) = ftvna + ftvnb*nleaf(i)
 
           ELSEIF(vcmax_type.eq.9) THEN
-            !i use LUNA model after Ali, Xu, et al 2015
-            call LUNA(vm(i),i)  
+            ! use LUNA model after Ali, Xu, et al 2015
 
+            vm(i) = vcmax(i)
+            jm(i) = jmax(i)
+
+            call LUNA(i,vm(i),jm(i),PNlc(i),enzs(i),
+     &sum(ce_ga(:,i))/30.d0,
+     &sla,nleaf(i),sum(ce_light(:,i))/30.d0,sum(ce_maxlight(:,i))/30.d0,
+     &ca,oi,hrs,sum(ce_rh(:))/30.d0,sum(ce_t(:))/30.d0,  
+     &gs_func,ftg0,ftg1,max_dpchg,ttype,ftToptV,ftHaV,ftHdV,
+     &ftToptJ,ftHaJ,ftHdJ)  
+
+            !print*, 'LUNA vcm:', vm(i)
             ! convert to umol m-2s-1
-            vm(i) = vm(i) * 1d6
+            !vm(i) = vm(i) * 1d6
 
           ELSE
             PRINT*, 'vcmax_type ',vcmax_type,' undefined. set to a value
-     &<4 in <input.dat> or define your own vcmax calculation method'
+     &1-9 in <input.dat> or define your own vcmax calculation method'
             STOP
           ENDIF
           
@@ -268,9 +292,11 @@
           ELSEIF(vcmax_type.eq.4) THEN
             !specified as a PFT parameter
             jm(i)  = ftjva + ftjvb*vm(i)
+          ELSEIF(vcmax_type.eq.9) THEN
+            ! do nothing - jmax already defined above            
           ELSE
             PRINT*, 'vcmax_type ',vcmax_type,' undefined. set to a value
-     &<6 in <input.dat>'
+     &<1-9 in <input.dat>'
             STOP
           ENDIF
 
@@ -285,17 +311,6 @@
           vmx(i) = vmx(i)*npp_eff
           jmx(i) = jmx(i)*npp_eff
           
-          !else
-          !  vmx(i) = vm(i)
-          !  jmx(i) = jm(i)
-            
-          !  !invert temp correction scalar to get values at 25oC
-          !  vm(i) = vmx(i) / T_SCALAR(t,'v',ttype,ftToptV,ftHaV,ftHdV,
-      !&sum(ce_t(:))/30.d0) 
-          !  jm(i) = jmx(i) / T_SCALAR(t,'j',ttype,ftToptJ,ftHaJ,ftHdJ,
-      !&sum(ce_t(:))/30.d0) 
-          !endif
-
           !water limitation scale Vcmax & Jmax
           vmx(i) = vmx(i)*kg**p_nu3
           jmx(i) = jmx(i)*kg**p_nu3
@@ -344,9 +359,31 @@
             jshade(i)  = 0.0d0
           ENDIF
 
-          !LUNA model has a term that reduces Vcmax during drought and winter etc
+          !LUNA model has a term that reduces Vcmax during drought and periods of stress 
           IF(vcmax_type.eq.9) THEN
-            call LUNA_nogrowth()  
+            vm(i) = vcmax(i)
+            jm(i) = jmax(i)
+
+            call LUNA_nogrowth(max_dpchg,vm(i),jm(i),enzs(i),lai)  
+            !temperature scale Vcmax & Jmax
+            !if(vcmax_type.le.6) then
+            vmx(i) = vm(i) * T_SCALAR(t,'v',ttype,ftToptV,ftHaV,ftHdV,
+     &sum(ce_t(:))/30.d0)
+            jmx(i) = jm(i) * T_SCALAR(t,'j',ttype,ftToptJ,ftHaJ,ftHdJ,
+     &sum(ce_t(:))/30.d0)
+
+            !leaf age scale Vcmax & Jmax
+            vmx(i) = vmx(i)*npp_eff
+            jmx(i) = jmx(i)*npp_eff
+          
+            !water limitation scale Vcmax & Jmax
+            vmx(i) = vmx(i)*kg**p_nu3
+            jmx(i) = jmx(i)*kg**p_nu3
+
+            !convert from umol to mol
+            vmx(i) = vmx(i) * 1d-6
+            jmx(i) = jmx(i) * 1d-6
+
           ENDIF
 
 
@@ -355,7 +392,8 @@
 
 
         !leaf respiration - nighttime 
-        if((vcmax_type.eq.2).or.(vcmax_type.eq.3).or.(vcmax_type.ge.5)) 
+        if((vcmax_type.eq.2).or.(vcmax_type.eq.3).or.(vcmax_type.eq.5) 
+     &.or.(vcmax_type.eq.6).or.(vcmax_type.eq.7) ) 
      &then
           !these vcmax types assume no leaf N and that day AND night leaf resp = f(vcmax)
           nleaf(i) = 0.d0
@@ -378,45 +416,49 @@
       !initial LAI loop
       ENDDO
 
-      !output varibles for the top LAI layer - vcmax & jmax at 25oC, without water stress scaling
-      !IF (rlai.lt.1) THEN
-      !  vcmax    = vm(1)*rem
-      !  jmax     = jm(1)*rem
-      !  leaf_nit = nleaf(1)*rem
-      !ELSE
-        vcmax    = vm(1)
-        jmax     = jm(1)
-        leaf_nit = nleaf(1)
-      !ENDIF
+      !else there is no light or leaves  
+      ELSE
+        
+        IF(vcmax_type.eq.9) THEN
+          !LUNA model retains the final value of vcmax pre-total leaf loss to initialise the following year
+          vm(:)     = vcmax(:) 
+          jm(:)     = jmax(:)
+        ELSE
+          vm(:)     = 0.0d0
+          jm(:)     = 0.0d0
+        ENDIF
+
+        can(:)     = 0.0d0
+        upt(:)     = 0.0d0
+        nleaf(:)   = 0.0d0
+        dresp(:)   = 0.0d0
+        drespt(:)  = 0.0d0
+        jmx(:)     = 0.0d0
+        vmx(:)     = 0.0d0
+        jshade(:)  = 0.0d0
+        jsunlit(:) = 0.0d0
+        fsunlit(:) = 0.0d0
+        fshade(:)  = 0.0d0
+        qsunlit(:) = 0.0d0
+        qshade(:)  = 0.0d0
+        
+        canres   = 0.0d0
+        !vcmax    = 0.0d0
+        !jmax     = 0.0d0
+        leaf_nit = 0.0d0        
+ 
+      !end light and leaves loop
+      ENDIF
+      
+      !output varibles - vcmax & jmax at 25oC (all layers) & leaf N (top layer only), all per unit leaf area, without water stress scaling
+      !print*, vcmax(1),vm(1) 
+      vcmax    = vm(:)
+      jmax     = jm(:)
+      leaf_nit = nleaf(1)
       !print*, vcmax, jmax  
       !print'(12(f8.4,1x))', vmx(:) * 1d6 
       !print'(12(f8.4,1x))', vm(:)  
       
-      !else there is no light or leaves  
-      ELSE
-        DO i=1,lai
-          can(i)    = 0.0d0
-          upt(i)    = 0.0d0
-          dresp(i)  = 0.0d0
-          drespt(i) = 0.0d0
-          vm(i)     = 0.0d0
-          jm(i)     = 0.0d0
-          jmx(i)    = 0.0d0
-          vmx(i)    = 0.0d0
-
-          jshade(i)  = 0.0d0
-          jsunlit(i) = 0.0d0
-          fsunlit(i) = 0.0d0
-          fshade(i)  = 0.0d0
-          qsunlit(i) = 0.0d0
-          qshade(i)  = 0.0d0
-        ENDDO
-        canres   = 0.0d0
-        vcmax    = 0.0d0
-        jmax     = 0.0d0
-        leaf_nit = 0.0d0
-      !end light and leaves loop
-      ENDIF
 
 *----------------------------------------------------------------------*
 * Assimilation calculations using subroutines ASSVMAX and ASSJ.        *
@@ -459,8 +501,8 @@
             print*, ''
          endif
 
-        ELSE
         !if switch 1 not equal to 0: use sub-daily PAR loop
+        ELSE
 
           !scaling factor for integration of subdaily variability 
           sd_scale(:) = 1.0d0
@@ -536,22 +578,25 @@
             !endif
 
           !numerically integrate canopy values to get daily mean (mean is necessary because per second values are scaled to daytime values in doly)   
-            a(:)  =  a(:)  + a_sd(:)  / sd_scale(ii) 
-            ci(:) =  ci(:) + ci_sd(:) / sd_scale(ii)  
-            gs(:) =  gs(:) + gs_sd(:) / sd_scale(ii)  
+            a(:)       =  a(:)       + a_sd(:)       / sd_scale(ii) 
+            ci(:)      =  ci(:)      + ci_sd(:)      / sd_scale(ii)  
+            gs(:)      =  gs(:)      + gs_sd(:)      / sd_scale(ii)  
             fsunlit(:) =  fsunlit(:) + fsunlit_sd(:) / sd_scale(ii)  
             fshade(:)  =  fshade(:)  + fshade_sd(:)  / sd_scale(ii)  
             qsunlit(:) =  qsunlit(:) + qsunlit_sd(:) / sd_scale(ii)  
             qshade(:)  =  qshade(:)  + qshade_sd(:)  / sd_scale(ii)  
-            qdirect    =  qdirect    + qdirect_sd / sd_scale(ii)  
-            qdiff      =  qdiff      + qdiff_sd   / sd_scale(ii)  
+            qdirect    =  qdirect    + qdirect_sd    / sd_scale(ii)  
+            qdiff      =  qdiff      + qdiff_sd      / sd_scale(ii)  
+
+            if(ii.eq.1) maxlight(:) = 
+     &fsunlit_sd(:)*qsunlit_sd(:)+fshade_sd(:)*qshade_sd(:)
 
           !sub-daily loop
           ENDDO
 
-          a  =  a   * sd_scale2  
-          ci =  ci  * sd_scale2  
-          gs =  gs  * sd_scale2  
+          a       =  a        * sd_scale2  
+          ci      =  ci       * sd_scale2  
+          gs      =  gs       * sd_scale2  
           fsunlit =  fsunlit  * sd_scale2
           fshade  =  fshade   * sd_scale2 
           qsunlit =  qsunlit  * sd_scale2
@@ -562,16 +607,23 @@
         !subd_par if statement mean daily PAR or downscaled sub-daily PAR 
         ENDIF
       
-      ! calculate environment variables for Maire vcmax calc
-      ce_t(1:29)       = ce_t(2:30)
+      ! calculate environment variables for Maire & LUNA vcmax calc
+      ce_t(1:29)  = ce_t(2:30)
+      ce_rh(1:29) = ce_rh(2:30)
       do i=1,lai
-        ce_ci(1:29,i)    = ce_ci(2:30,i) 
-        ce_light(1:29,i) = ce_light(2:30,i)
+        ce_ci(1:29,i)       = ce_ci(2:30,i) 
+        ce_ga(1:29,i)       = ce_ga(2:30,i) 
+        ce_light(1:29,i)    = ce_light(2:30,i)
+        ce_maxlight(1:29,i) = ce_maxlight(2:30,i)
       enddo
 
       ce_t(30)       = t
+      ce_rh(30)      = rh
       ce_ci(30,:)    = ci(:)
+      ce_ga(30,:)    = ga
       ce_light(30,:) = fsunlit(:)*qsunlit(:)+fshade(:)*qshade(:)    
+      ce_maxlight(30,:) = maxlight 
+      !print*, ce_ci(30,:)
 
       !rlai if
       ELSE
@@ -1231,11 +1283,18 @@
 
       REAL*8    :: t,qt,t_scalar,ftTopt,ftkHa,ftkHd,ftHa,ftHd,tmonth
       REAL*8    :: Tsk,Trk,R,deltaS,dS
-      INTEGER   :: ttype 
+      INTEGER, intent(in) :: ttype 
       CHARACTER :: jv
 
+      !print*, 'T_SCALAR, ttype:', ttype
+      !if(ttype.eq.0) print*, 'here, ttype:', ttype
+
+      !if(0.eq.0) print*, '0 equals 0'
+      
       if(ttype.eq.0) then
+      !if(0.eq.0) then
         ! SDGVM original
+        !print*, 'ttype original'
         qt = 2.3d0
         if (t.gt.30.0d0) t = 30.d0
         t_scalar = qt**(t/10.0d0)/qt**(2.5d0)
@@ -1349,9 +1408,9 @@
 c      vcmax_maire = alpha*light / 
 c     &(1.d0+(alpha*light/(jt*(exp(1.d0)*(vm/vt)**0.89d0)))**2.d0)**0.5d0
 c     &*(ci+km)/(4*ci+8*gstar)  
-      if(i.eq.1) print*, 'maire vcmax calc'
-      if(i.eq.1) print'(4f8.4)', vt,jt,km,gstar
-      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
+c      if(i.eq.1) print*, 'maire vcmax calc'
+c      if(i.eq.1) print'(4f8.4)', vt,jt,km,gstar
+c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
       END  
 
 *----------------------------------------------------------------------*

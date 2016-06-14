@@ -1,7 +1,7 @@
 FFLAGS= -g -fbounds-check -Wuninitialized -O3 -ftrapv -fimplicit-none -fno-automatic -fbacktrace
 FF = gfortran
 
-OBJ = sdgvm0.o sdgvm1.o data.o growth.o parameter_adjustment.o hydrology.o phenology.o func.o doly.o soil.o nppcalc.o light.o sunshade.o weathergenerator.o metdos.o
+OBJ = sdgvm0.o sdgvm1.o data.o growth.o parameter_adjustment.o hydrology.o phenology.o func.o doly.o soil.o nppcalc.o light.o sunshade.o weathergenerator.o metdos.o luna.o
 
 sdgvm0:	$(OBJ)
 	$(FF) $(FFLAGS)  -o sdgvm0 $(OBJ)

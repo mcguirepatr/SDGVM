@@ -15,12 +15,13 @@
      &dsbb,tmem,maxlai,thty_dys,wtfc,wtwp,leafnpp,stemnpp,rootnpp,
      &yield,ft,resp,sm_trig,qdirect,qdiff,suma,tsumam,stemfr,
      &lmor_sc,nleaf,chill,dschill,fpr,gsm,swr,tleaf_n,tleaf_p,
-     &ncalc_type,leaf_nit,vcmax,jmax,
+     &ncalc_type,leaf_nit,vcmax,jmax,pnlc,enzs,
      &vcmax_type,leafresp,rootresp,stemresp,daynpp,read_par,kg,
      &can_clump,tassim,tgs,tci,hw_j,cstype,phen_cor,
      &subd_par,env_vcmax,env_jmax,soilp_map,can2g,canga,ga,
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,no_slw_lim,par_loops,s070607,
-     &gs_func,ce_light,ce_ci,ce_t,sl,hrs,ttype,calc_zen,
+     &gs_func,ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,
+     &sl,hrs,ttype,calc_zen,
      &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
 
 *----------------------------------------------------------------------*
@@ -44,8 +45,10 @@
       REAL*8 swr,tleaf_n,tleaf_p,tassim,tgs,tci,env_vcmax,env_jmax
       REAL*8 s_lr,s_ln,sswc(4),maxlai,yield,yld,resp,fpr,dayra,gsm
       REAL*8 sm_trig(30),s1in,tsumam,stemfr,lmor_sc(3600),nleaf
-      REAL*8 leaf_nit,vcmax,jmax,leafresp,rootresp,stemresp,kg,can_clump
-      REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30),cos_zen
+      REAL*8 leaf_nit,vcmax(12),jmax(12),pnlc(12),enzs(12),leafresp
+      REAL*8 rootresp,stemresp
+      REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30),cos_zen,kg,can_clump
+      REAL*8 ce_maxlight(30,12),ce_ga(30,12),ce_rh(30)
       INTEGER leafls,stemls,rootls,bbm,ssm,sss,ftphen,c3,thty_dys,ft
       INTEGER mnth,i,iter,no_day,ndsum(12),lai,day,year,bb,bbgs
       INTEGER ftdth,ss,dsbb,chill,dschill,ncalc_type,read_par
@@ -256,11 +259,12 @@ c     z0=roughness length
      &rlai,t,rh,ca,oi,rn,qdirect,qdiff,can2a,can2g,canrd,canres,suma(1),
      &amx,amax,hrs,canga/1.3d0,p,mnth,day,nleaf,fpr,gsm,
      &tleaf_n,tleaf_p,ncalc_type,
-     &vcmax_type,leaf_nit,vcmax,jmax,ft,kg,sla,can_clump,
+     &vcmax_type,leaf_nit,vcmax,jmax,pnlc,enzs,ft,kg,sla,can_clump,
      &tassim,tgs,tci,hw_j,cstype,subd_par,thty_dys,
      &year,lat,swr,cld,read_par,env_vcmax,env_jmax,soilp_map,ga,
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,par_loops,s070607,gs_func,
-     &ce_light,ce_ci,ce_t,ttype,calc_zen,cos_zen,
+     &ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,ttype,
+     &calc_zen,cos_zen,
      &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
 
 c      write(*,*) 'o',canga,can2a,can2g,canres,suma
