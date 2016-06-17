@@ -397,6 +397,7 @@
       PNrespopt  = Nresp  / FNCa 
       
       !brought in from parent subroutine
+      PNlc_z      = PNlcopt
 
       ! determine change in vcmax and jmax 
       vcmx25_opt  = PNcbopt * FNCa * Fc25
@@ -406,12 +407,12 @@
       chg_constrn = min(abs(chg),vcmx25_z*max_daily_pchg)
       vcmx25_z    = vcmx25_z+sign(1.0d0,chg)*chg_constrn
       !if(z.eq.1) print*, vcmx25_opt,chg,vcmx25_z      
+      !print*, vcmx25_opt,chg,vcmx25_z      
  
       chg         = jmx25_opt-jmx25_z
       chg_constrn = min(abs(chg),jmx25_z*max_daily_pchg)
       jmx25_z     = jmx25_z+sign(1.0d0,chg)*chg_constrn 
-      
-      PNlc_z      = PNlcopt
+      !print*, jmx25_opt,chg,jmx25_z      
       
       if(enzs_z<1.0) enzs_z = enzs_z * (1.0d0 + max_daily_pchg)
 
@@ -546,9 +547,17 @@
       Wc2Wj       = Wc2Wjb0 * (NUEchg**0.5d0)
       Wc2Wj       = min(1.0d0, Wc2Wj)
       Vcmax       = Wc2Wj * JmaxL * Kj2Kc
+     
+      !added the two below lines for stability when not calculating LUNA everyday
+      ! - in the lowest canopy layers the solver sometimes returns negative values 
+      ! - and with larger intervals between LUNA calcultions (~10 days) the max proportional change can equal 1
+      ! - allowing returned Vcmax and Jmax to be below 0
+      Vcmax       = max(1d-7,Vcmax)
+      Jmax        = max(1d-7,Jmax)
+     
       JmeanL      = theta * PARi10 / ( sqrt(1.0d0 +
      &(ELTRNabsorb / Jmax)**2.0d0) )
-      
+ 
       if(KcKjFlag.eq.0) then      !update the Kc,Kj, anc ci information
        
        ! From SDGVM - for consistency
@@ -570,17 +579,20 @@
        !&qsunlit,t,rn,soil2g,wtwp,ga,rh,C3,kg,ko,kc,tau,p,oi,ca,
        !&a,gs,ci,day,mnth,oday,omnth,.FALSE.,gs_func,ftg0,ftg1,i)
  
-       ! should rd be zero below, seems like maybe it should according to the code but by not including rd in the a,ci,gs solution this will underestimate ci
+       ! should rd be zero below? seems like maybe it should according to the code but by not including rd in the a,ci,gs solution this will underestimate ci
+       ! the below function calls the SDGVM calculation of assimilation, simultaneously solving A, gs, & ci
+       ! for the purposes of the LUNA model A (umolm-2s-1)  and ci (Pa) are returned and used in further calculations
+       ! inputs to this model are in Pa units and molm-2s-1 
        CALL ASSIMILATION_CALC(0.0d0,1.0d0,
      &Vcmax,0.0d0,0.0d0,0.0d0,JmeanL,0.0d0,0.0d0,
      &0.0d0,tleafd10,1.0d0,1.0d0,0.0d0,rb10,relh10,1,1.0d0,k_o,k_c,tau,
      &forc_pbot10,O2a10,CO2a10,A,gs,ci,1,2,1,1,.FALSE.,gs_func,ftg0,
      &ftg1,2)
 
-      c_p = 0.5d0*O2a10/tau
-      awc = k_c * (1.0d0 + O2a10 / k_o)
-      Kj  = max(ci - c_p, 0.0d0) / (4.0d0 * ci + 8.0d0 * c_p)
-      Kc  = max(ci - c_p, 0.0d0) / (ci + awc)
+       c_p = 0.5d0*O2a10/tau
+       awc = k_c * (1.0d0 + O2a10 / k_o)
+       Kj  = max(ci - c_p, 0.0d0) / (4.0d0 * ci + 8.0d0 * c_p)
+       Kc  = max(ci - c_p, 0.0d0) / (ci + awc)
        
       else
        
@@ -597,7 +609,7 @@
       PSN        = Cv * A * hourpd
 !      Vcmaxnight = VcmxTKattge(tair10, tleafn10) / 
 !     &VcmxTKattge(tair10, tleafd10) * Vcmax
-      ! SDGVM assumes mean diel air temp 
+      ! SDGVM assumes mean 24 hr air temp 
       Vcmaxnight = Vcmax
       ! again these calculations are adjusted to suit SDGVM molm-2s-1 units for Vcmax and Jmax 
       RESP       = Cv * 0.015d0 * ( Vcmax * hourpd + Vcmaxnight * 

@@ -54,9 +54,11 @@
       INTEGER i,lai,c3,mnth,day,ncalc_type,vcmax_type,ft,oday
       INTEGER hw_j,cstype,subd_par,ii,omnth,par_loops,gs_func
       INTEGER thty_dys,year,no_day,read_par,soilp_map,s070607
-      INTEGER ttype,calc_zen
+      INTEGER ttype,calc_zen,luna_calc_days
       REAL*8  sd_scale(par_loops+1),sd_scale2,nup_rate
       LOGICAL output,gold
+
+      !print*, 'NPPcalc', day
 
       omnth  = 7
       oday   = 10
@@ -67,6 +69,9 @@
         gold = .TRUE.
       endif 
  
+      ! parameter - interval between luna calculations of Vcmax (in days)
+      luna_calc_days = 10
+
       !if(output.and.(mnth.eq.omnth).and.(day.eq.oday)) then
        ! print*, 'NPPCALC'
        ! print*, t,rn,soil2g,wtwp
@@ -156,7 +161,7 @@
       if(cstype.lt.2) can_sum = can_sum + exp(-k*real(lai))*rem
       if(cstype.eq.2) can_sum = can_sum + sum(ce_light(:,lai))*rem
 
-      !initialise LUNA model after Ali, Xu, et al 2015
+      !calculate maximum daily change in vcmax for LUNA model after Ali, Xu, et al 2015
       IF(vcmax_type.eq.9) THEN
          max_dpchg = max_daily_pchg(sum(ce_t(:))/30.d0)  
       ENDIF
@@ -259,12 +264,17 @@
             vm(i) = vcmax(i)
             jm(i) = jmax(i)
 
-            call LUNA(i,vm(i),jm(i),PNlc(i),enzs(i),
+
+            IF(mod(day,luna_calc_days).eq.0) THEN
+            !print*, 'calc LUNA' 
+            !print*, luna_calc_days*max_dpchg,vm(i),jm(i)
+              call LUNA(i,vm(i),jm(i),PNlc(i),enzs(i),
      &sum(ce_ga(:,i))/30.d0,
      &sla,nleaf(i),sum(ce_light(:,i))/30.d0,sum(ce_maxlight(:,i))/30.d0,
      &ca,oi,hrs,sum(ce_rh(:))/30.d0,sum(ce_t(:))/30.d0,  
-     &gs_func,ftg0,ftg1,max_dpchg,ttype,ftToptV,ftHaV,ftHdV,
-     &ftToptJ,ftHaJ,ftHdJ)  
+     &gs_func,ftg0,ftg1,max_dpchg*luna_calc_days,ttype,ftToptV,ftHaV,
+     &ftHdV,ftToptJ,ftHaJ,ftHdJ)  
+            ENDIF
 
             !print*, 'LUNA vcm:', vm(i)
             ! convert to umol m-2s-1
@@ -687,7 +697,7 @@
       gsm = gs(1)
  
       !convert suma to mols
-      suma = suma/1000000.0d0
+      suma = suma*1.d-6
 
       RETURN
       END
