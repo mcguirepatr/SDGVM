@@ -455,7 +455,7 @@ c added by Ghislain 07/10/03
      &daysoff,laimax,leaflit,stemlit,rootlit,mnth,day,s_ln,s_sr,s_sn,
      &s_rr,s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,
      &maxlai,wtfc,yield,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,
-     &chill,dschill,s_lr,leafresp,rootresp,stemresp,target_lai)
+     &chill,dschill,s_lr,leafresp,rootresp,stemresp)
 *----------------------------------------------------------------------*
       IMPLICIT NONE
       REAL*8 nppstore,rootnpp,tran,rlai,lairat,leafmol,respref,soil2g
@@ -466,12 +466,14 @@ c added by Ghislain 07/10/03
       REAL*8 bblim,sslim,bbsum,yield,sm_trig(30),smtrig,xdaynpp,ans
       REAL*8 suma(360),tsuma,tsumam,stemfr,maint,yy,lmor_sc(3600)
       real sumrr,sumsr,sumlr,summr,resp_r,resp_s,resp_m,resp_l
-      REAL*8 leafresp,rootresp,stemresp,rtemp,target_lai
+      REAL*8 leafresp,rootresp,stemresp,rtemp
       SAVE sumrr,sumsr,sumlr,summr
       INTEGER lai,leafls,stemls,rootls,mnth,day,ij,i,bb,gs,bbgs,sssum
       INTEGER bb2bbmin,bb2bbmax,bbm,ssm,sss,ss,dsbb
       INTEGER chill,dschill
       INCLUDE 'param.inc'
+
+c      print*, 'PHEN2:', rlai,ftvna,ftvnb
 
       bb2bbmin = 315
       bb2bbmax = 375
@@ -638,7 +640,6 @@ c added by Ghislain 07/10/03
             ENDIF
             !laiinc = (nppstore - nppstor2)/leafmol/1.25d0 ! this line does nothing
             nppstorx = nppstore
-            target_lai = (nppstore - nppstor2)/leafmol/1.25d0
 !            print*,'laiinc ',laiinc,tsuma,stemfr*12.0
           ENDIF
         ENDIF

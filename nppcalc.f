@@ -264,7 +264,6 @@
             vm(i) = vcmax(i)
             jm(i) = jmax(i)
 
-
             IF(mod(day,luna_calc_days).eq.0) THEN
             !print*, 'calc LUNA' 
             !print*, luna_calc_days*max_dpchg,vm(i),jm(i)
@@ -281,7 +280,7 @@
             !vm(i) = vm(i) * 1d6
 
           ELSE
-            PRINT*, 'vcmax_type ',vcmax_type,' undefined. set to a value
+            PRINT*, 'vcmax_type:',vcmax_type,'undefined. set to a value
      &1-9 in <input.dat> or define your own vcmax calculation method'
             STOP
           ENDIF

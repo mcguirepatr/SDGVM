@@ -352,7 +352,7 @@ c     added by Ghislain 20/10/03
      &f3,ft,dep,sl)
       soilw = s1 + s2 + s3 + s4
       soil2g = soilw/(dep*10.0d0)
-      
+
       if ((mnth.eq.4).and.(day.eq.-20)) print*,mnth,day,soilw,etmm
 
       DO i=1,29
