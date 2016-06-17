@@ -12,4 +12,6 @@
 *~
 
 # files created by compiler
-*.o *.exe sdgvm0 
+*.o
+*.exe
+sdgvm0
