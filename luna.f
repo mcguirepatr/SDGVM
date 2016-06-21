@@ -179,7 +179,7 @@
       REAL*8, parameter :: rhol = 0.075                     ! leaf reflectance: 1=vis, 2=nir  
       REAL*8, parameter :: taul = 0.075                     ! leaf transmittance: 1=vis, 2=nir 
       REAL*8, parameter :: Cb   = 1.78d0                    ! nitrogen use effiency for choloraphyll for light capture, see Evans 1989  
-      REAL*8, parameter :: Cv   = 1.2d-50 * 3600.d0         ! conversion factor from umol CO2 to g carbon
+      REAL*8, parameter :: Cv   = 1.2d-5 * 3600.d0          ! conversion factor from umol CO2 to g carbon
       REAL*8, parameter :: Kc25 = 40.49d0                   ! Mechalis constant of CO2 for rubisco(Pa), Bernacchi et al (2001) Plant, Cell and Environment 24:253-259
       REAL*8, parameter :: Ko25 = 27840d0                   ! Mechalis constant of O2 for rubisco(Pa), Bernacchi et al (2001) Plant, Cell and Environment 24:253-259
       REAL*8, parameter :: Cp25 = 4.275d0                   ! CO2 compensation point at 25C (Pa), Bernacchi et al (2001) Plant, Cell and Environment 24:253-259
@@ -214,8 +214,8 @@
       !SDGVM PAR units are in molm-2s-1
       !par240d_z   = par240d * 1d6
       !par240x_z   = par240x * 1d6
-      par240d_z   = par240d * 1.d0
-      par240x_z   = par240x * 1.d0
+      par240d_z   = par240d
+      par240x_z   = par240x
       
       ! SLA is fixed through the canopy in SDGVM and lnc is pre-determined according to Beer's Law scaling or similar 
       ! - therefore relCLNCa, PARTop are not needed
@@ -287,7 +287,7 @@
       
       !------------------------------------------------------------------
       jj = 1
-      do while ( (PNlcoldi .NE. PNlc) .and. (jj < 100) )      
+      do while ( (PNlcoldi .NE. PNlc) .and. (jj .lt. 100) )      
      
        ! Fc is the scaling factor to go from leaf N invested in RuBisCO to Vcmax  
        ! Fj is the scaling factor to go from leaf N invested in elec trans to Jmax  
@@ -530,8 +530,11 @@
       !-------------------------------------------------------------------------------------------------------------------------------
       !parameters
       REAL*8, parameter :: Cb = 1.78d0                      ! nitrogen use effiency for choloraphyll for light capture, see Evans 1989  
-      REAL*8, parameter :: Cv = 1.2d-50 * 3600.d0           ! conversion factor from umol CO2 to g carbon
+      REAL*8, parameter :: Cv = 1.2d-5 * 3600.d0            ! conversion factor from umol CO2 to g carbon
       REAL*8, parameter :: Jmaxb0 = 0.0311d0                ! the baseline proportion of nitrogen allocated for electron transport (J)     
+      REAL*8, parameter :: Kc25 = 40.49d0                   ! Mechalis constant of CO2 for rubisco(Pa), Bernacchi et al (2001) Plant, Cell and Environment 24:253-259
+      REAL*8, parameter :: Ko25 = 27840.d0                  ! Mechalis constant of O2 for rubisco(Pa), Bernacchi et al (2001) Plant, Cell and Environment 24:253-259
+      REAL*8, parameter :: Cp25 = 4.275d0                   ! CO2 compensation point at 25C (Pa), Bernacchi et al (2001) Plant, Cell and Environment 24:253-259
       !-------------------------------------------------------------------------------------------------------------------------------------------------       
       
       theta_cj    = 0.95d0
@@ -552,8 +555,8 @@
       ! - in the lowest canopy layers the solver sometimes returns negative values 
       ! - and with larger intervals between LUNA calcultions (~10 days) the max proportional change can equal 1
       ! - allowing returned Vcmax and Jmax to be below 0
-      Vcmax       = max(1d-7,Vcmax)
-      Jmax        = max(1d-7,Jmax)
+      !Vcmax       = max(1d-7,Vcmax)
+      !Jmax        = max(1d-7,Jmax)
      
       JmeanL      = theta * PARi10 / ( sqrt(1.0d0 +
      &(ELTRNabsorb / Jmax)**2.0d0) )
@@ -562,11 +565,20 @@
        
        ! From SDGVM - for consistency
        ! in LUNA ko, kc, and tau are at the 10-day mean leaf temp
-       ! - need to check that units are consistent, in SDGVM these are all in Pa
-       k_c  = exp(35.8d0   - 80.5d0 / (0.00831d0*(tleafd10+273.15)) )
-       k_o  = exp(9.6d0    - 14.51d0/ (0.00831d0*(tleafd10+273.15)) )
-       k_o  = k_o * 1.0d3
-       tau  = exp(-3.949d0 + 28.99d0/ (0.00831d0*(tleafd10+273.15)) )
+       k_c = Kc25 * exp((79430.0d0 / (8.31d0 * 
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + tleafd10)))
+       k_o = Ko25 * exp((36380.0d0 / (8.31d0 *
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + tleafd10)))
+       c_p = Cp25 * exp((37830.0d0 / (8.31d0 * 
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + tleafd10)))
+       !print*, 'LUNA  orig.', k_c,k_o,c_p,tleafd10
+       
+       !k_c  = exp(35.8d0   - 80.5d0 / (0.00831d0*(tleafd10+273.15)) )
+       !k_o  = exp(9.6d0    - 14.51d0/ (0.00831d0*(tleafd10+273.15)) )
+       !k_o  = k_o * 1.0d3
+       !tau  = exp(-3.949d0 + 28.99d0/ (0.00831d0*(tleafd10+273.15)) )
+       !c_p  = 0.5d0*O2a10/tau
+       !print*, 'SDGVM orig.', k_c,k_o,c_p,tleafd10
        
        ! this function is over-parameterised due to an old attempt to use the Brent solver that is currently not implemented
        ! Vcmax and J are also assumed to be in molm-2s-1 in SDGVM
@@ -589,13 +601,13 @@
      &forc_pbot10,O2a10,CO2a10,A,gs,ci,1,2,1,1,.FALSE.,gs_func,ftg0,
      &ftg1,2)
 
-       c_p = 0.5d0*O2a10/tau
        awc = k_c * (1.0d0 + O2a10 / k_o)
        Kj  = max(ci - c_p, 0.0d0) / (4.0d0 * ci + 8.0d0 * c_p)
        Kc  = max(ci - c_p, 0.0d0) / (ci + awc)
        
       else
        
+       !print*, 'previous assim' 
        Wc = Kc * Vcmax
        Wj = Kj * JmeanL
        !A  = (1.0d0 - theta_cj) * max(Wc, Wj) + theta_cj * min(Wc, Wj) 
@@ -663,30 +675,36 @@
       REAL*8 :: tau
       REAL*8 :: t_scalar                                !temperature scaling factor for Vcmax or Jmax 
       
-      REAL*8, parameter :: Fc25 = 294.2d0              ! Fc25 = 6.22*47.3 #see Rogers (2014) Photosynthesis Research 
-      REAL*8, parameter :: Fj25 = 1257.0d0             ! Fj25 = 8.06*156  #see COSTE 2005 and Xu et al 2012
-      
+      REAL*8, parameter :: Fc25 = 294.2d0               ! Fc25 = 6.22*47.3 #see Rogers (2014) Photosynthesis Research 
+      REAL*8, parameter :: Fj25 = 1257.0d0              ! Fj25 = 8.06*156  #see COSTE 2005 and Xu et al 2012
+      REAL*8, parameter :: Kc25 = 40.49d0               ! Mechanis constant of CO2 for rubisco(Pa), Bernacchi et al (2001) Plant, Cell and Environment 24:253-259
+      REAL*8, parameter :: Ko25 = 27840.d0              ! Mechanis constant of O2 for rubisco(Pa), Bernacchi et al (2001) Plant, Cell and Environment 24:253-259
+      REAL*8, parameter :: Cp25 = 4.275d0               ! CO2 compensation point at 25C (Pa), Bernacchi et al (2001) Plant, Cell and Environment 24:253-259
+   
       !-------------------------------------------------------------------------------------------------------------------------------------------------       
       !print*, 'LUNA NUE, ttype:', ttype
       !Fc  = VcmxTKattge(tgrow, tleaf) * Fc25
       !Fj  = JmxTKattge(tgrow, tleaf)  * Fj25
       Fc  =T_SCALAR(tleaf,'v',ttype,ftToptV,ftHaV,ftHdV,tgrow)*Fc25
       Fj  =T_SCALAR(tleaf,'j',ttype,ftToptJ,ftHaJ,ftHdJ,tgrow)*Fj25
-c      k_c = Kc25 * exp((79430.0d0 / (rgas*1.e-3d0 * 
-c     &(25.0d0 + tfrz))) * (1.0d0 - (tfrz + 25.0d0) / (tfrz + tleaf)))
-c      k_o = Ko25 * exp((36380.0d0 / (rgas*1.e-3d0 *
-c     &(25.0d0 + tfrz))) * (1.0d0 - (tfrz + 25.0d0) / (tfrz + tleaf)))
-c      c_p = Cp25 * exp((37830.0d0 / (rgas*1.e-3d0 * 
-c     &(25.0d0 + tfrz))) * (1.0d0 - (tfrz + 25.0d0) / (tfrz + tleaf)))
-      
+ 
+      k_c = Kc25 * exp((79430.0d0 / (8.31d0 * 
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + tleaf)))
+      k_o = Ko25 * exp((36380.0d0 / (8.31d0 *
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + tleaf)))
+      c_p = Cp25 * exp((37830.0d0 / (8.31d0 * 
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + tleaf)))
+      !print*, 'LUNA  orig.', k_c,k_o,c_p,tleaf
+ 
       ! From SDGVM - for consistency
       ! in LUNA ko, kc, and tau are at the 10-day mean leaf temp
       ! in SDGVM these are all in Pa
-      k_c = exp(35.8d0   - 80.5d0 /(0.00831d0*(tleaf+273.15)))
-      k_o = exp(9.6d0    - 14.51d0/(0.00831d0*(tleaf+273.15)))
-      k_o = k_o*1.d3
-      tau = exp(-3.949d0 + 28.99d0/(0.00831d0*(tleaf+273.15)))
-      c_p = 0.5d0*o2a/tau
+      !k_c = exp(35.8d0   - 80.5d0 /(8.31d-3*(tleaf+273.15)))
+      !k_o = exp(9.6d0    - 14.51d0/(8.31d-3*(tleaf+273.15)))
+      !k_o = k_o*1.d3
+      !tau = exp(-3.949d0 + 28.99d0/(8.31d-3*(tleaf+273.15)))
+      !c_p = 0.5d0*o2a/tau
+      !print*, 'SDGVM orig.', k_c,k_o,c_p
      
       awc = k_c * ( 1.0d0 + o2a/k_o )
       Kj  = max( ci-c_p,0.0d0 ) / ( 4.0d0*ci + 8.0d0*c_p )
