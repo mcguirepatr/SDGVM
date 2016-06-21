@@ -230,6 +230,9 @@
           ELSEIF(vcmax_type.eq.4) THEN
             !specified as a PFT parameter
             vm(i) = ftvna + ftvnb*nleaf(i)
+            
+            ! if specified as a constant, i.e. ftvnb = 0 then scale using can
+            IF(ftvnb.lt.1d-5) vm(i) = vm(i) * can(i)/can(1)
 
           ELSEIF(vcmax_type.eq.7) THEN
             ! after Maire et al 2012
@@ -257,6 +260,9 @@
           ELSEIF(vcmax_type.eq.8) THEN
             !specified as a PFT parameter but jmax specified as the Walker function of Vcmax
             vm(i) = ftvna + ftvnb*nleaf(i)
+             
+            ! if specified as a constant, i.e. ftvnb = 0 then scale using can
+            IF(ftvnb.lt.1d-5) vm(i) = vm(i) * can(i)/can(1)
 
           ELSEIF(vcmax_type.eq.9) THEN
             ! use LUNA model after Ali, Xu, et al 2015
