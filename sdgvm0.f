@@ -93,19 +93,19 @@
       INTEGER mnth,no_days,fireres,xyear0,per,omav(douts),year_out
       INTEGER dolydo(maxnft),luse(maxyrs),fno,bb(maxnft),bbgs(maxnft)
       INTEGER iyear,oymd,oymdft,dsbb(maxnft),chill(maxnft),persum
-      INTEGER stcmp,iargc,yearind(maxyrs),idum,outyears,thty_dys,wi
+      INTEGER stcmp,iargc,yearind(maxyrs),idum,outyears,thty_dys
       INTEGER xlatresn,xlonresn,day_mnth,yearv(maxyrs),nyears,narg
       INTEGER met_seqv(maxyrs),metyear,met_yearv(maxyrs)
       INTEGER yr0ms,yrfms,yr0m,yrfm
       INTEGER seed1,seed2,seed3,spinl,yr0s,yr0p,yrfp,xseed1,site_dat
-      INTEGER ibox,jbox,last_blank,site_out,country_id,outyears1,gi,fti
+      INTEGER ibox,jbox,last_blank,site_out,country_id,outyears1,fti
       INTEGER outyears2,budo(maxnft),seno(maxnft),ss(maxnft),clim_type
       INTEGER check_ft_grow,no_countries,n_param_0,n_param_f,n_param
       REAL*8 xtmpv(500,12,31),xprcv(500,12,31),xhumv(500,12,31)
       REAL*8 xcldv(500,12),xswrv(500,12,31),swr(12,31),mnthswr(12)
       REAL*8 yearswr,mapv(10),maswrv(30),maprc,maswr,maprcr,maswrr
       REAL*8 maprc_init,maswr_init,leafresp,rootresp,stemresp
-      REAL*8 matmpv(10),matmp_maxv(10),yeartmp_max
+      REAL*8 matmpv(10),matmp_maxv(10),yeartmp_max,gi,wi
       REAL*8 matmp_minv(10),yeartmp_min,map_daysv(10),yearp_days
       REAL*8 mahumv(10),masoilcv(10),yearsoilc
       REAL*8 masoilwv(10),yearsoilw,tabglitterc,tblgc,tbioleaf
@@ -121,7 +121,7 @@
       REAL*8 env_sla_max(maxnft),env_sla_min(maxnft)
       INTEGER env_vcmax_bounds(maxnft),env_jmax_bounds(maxnft)
       INTEGER env_sla_bounds(maxnft),daily_co2,par_loops,s070607
-      REAL*8 can2g,tslc,trlc
+      REAL*8 can2g,tslc,trlc,active_cov
 
       CHARACTER st1*1000,st2*1000,st3*1000,st4*1000
       CHARACTER st5*1000,otags(douts)*1000,ofmt(200)*100,in2st*10000
@@ -3950,46 +3950,76 @@ c     check water cycle closure
           av_hgt_all = av_hgt_all + ftcov(ft)*av_hgt(ft)
         ENDDO
 
-          gi=0
-          wi=0
-          DO mnth=1,12
-             DO day=1,no_days(year,mnth,thty_dys)
-               fti=1 
-               DO ft=1,nft
-               !sums the below variables when lai>1, weighted by pft cover   
-               if(daily_out(1,ft,mnth,day).gt.1.0d0) then
-                 avnleaf = avnleaf + ftcov(ft)*daily_out(26,ft,mnth,day)
-               avleaf_nit = avleaf_nit + ftcov(ft)*daily_out(27,ft,mnth,
-     &day)
-                 avvcmax = avvcmax + ftcov(ft)*daily_out(28,ft,mnth,day)
-                 avsla   = avsla   + ftcov(ft)*ftsla(ft)
-                 avjmax  = avjmax  + ftcov(ft)*daily_out(29,ft,mnth,day)
-                 if(fti.eq.1) gi=gi+1
-                 fti=fti+1
-               endif
-               ENDDO
+        gi=0.000d0 ! gi tracks how many days in the year at least one PFT had LAI > 1
+        wi=0.000d0 ! wi tracks how many days in the year at least one PFT had GPP > 1
+        DO mnth=1,12
+           DO day=1,no_days(year,mnth,thty_dys)
+             active_cov  = 0.d0
+             DO ft=1,nft
+              ! need to use a method that doesn't just weight by cov but
+              ! also consideres other PFTs and whether they are active or
+              ! not. e.g. if a PFT with large fractional cover has no LAI
+              ! then the small fractional cover of the PFT that does will
+              ! give a low value of vcmax even if it's the only PFT with
+              ! LAI. 
+c             active_cov1 = 0.d0
+              if(daily_out(1,ft,mnth,day).gt.1.0d0) then
+                active_cov = active_cov + ftcov(ft)
+              endif
+c             if(daily_out(6,ft,mnth,day).gt.1.0d0) active_cov1=ftcov(ft)
+             ENDDO
 
-               fti=1 
-               DO ft=1,nft
-               !sums the soil water stress scalar when gpp>1, weighted by pft cover   
-               if(daily_out(6,ft,mnth,day).gt.1.0d0) then
-                 kg_beta  = kg_beta  + ftcov(ft)*
+c             print*, active_cov
+
+             fti=1 
+             DO ft=1,nft
+             ! sums the below variables when lai>1 (because weird things happen to leaf N when LAI<1)
+             ! weighted by pft cover as a proportion of 'active' PFT cover, defined here as LAI > 1  
+             !if(daily_out(1,ft,mnth,day).gt.1.0d0) then
+             if((daily_out(1,ft,mnth,day).gt.1.0d0).and.
+     &(active_cov.gt.1.d-3)) then
+               avnleaf   = avnleaf    + (ftcov(ft)/active_cov) * 
+     &daily_out(26,ft,mnth,day)
+               avleaf_nit= avleaf_nit + (ftcov(ft)/active_cov) * 
+     &daily_out(27,ft,mnth,day)
+               avvcmax   = avvcmax    + (ftcov(ft)/active_cov) * 
+     &daily_out(28,ft,mnth,day)
+               avjmax    = avjmax     + (ftcov(ft)/active_cov) * 
+     &daily_out(29,ft,mnth,day)
+               kg_beta   = kg_beta    + (ftcov(ft)/active_cov) *
      &daily_out(30,ft,mnth,day)
-                 if(fti.eq.1) wi=wi+1
-                 fti=fti+1
-               endif
-               respsum  = respsum  + ftcov(ft)*daily_out(19,ft,mnth,day)
-               qdirsum  = qdirsum  + ftcov(ft)*daily_out(20,ft,mnth,day)
-               qdifsum  = qdifsum  + ftcov(ft)*daily_out(21,ft,mnth,day)
-               yearsoilw= yearsoilw+ ftcov(ft)*daily_out(18,ft,mnth,day)
-               ENDDO
-             ENDDO 
-          ENDDO
-          
-          oscale = 0.0d0
-          DO mnth=1,12       
-            oscale = oscale + real(no_days(year,mnth,thty_dys))   
-          ENDDO
+               avsla     = avsla      + (ftcov(ft)/active_cov) * 
+     &ftsla(ft)
+
+               if(fti.eq.1) gi=gi+1.d0
+               fti=fti+1
+             endif
+             ENDDO
+
+             fti=1 
+             DO ft=1,nft
+             ! sums the soil water stress scalar when gpp>1, weighted by pft cover as a proportion of 'active' PFT cover, defined here as GPP > 1  
+c             if(daily_out(6,ft,mnth,day).gt.1.0d0) then
+c               kg_beta  = kg_beta  + ftcov(ft)/active_cov1 *
+c     &daily_out(30,ft,mnth,day)
+c               if(fti.eq.1) wi=wi+1
+c               fti=fti+1
+c             endif
+             yearsoilw= yearsoilw+ ftcov(ft) * daily_out(18,ft,mnth,day)
+             respsum  = respsum  + ftcov(ft) * daily_out(19,ft,mnth,day)
+             qdirsum  = qdirsum  + ftcov(ft) * daily_out(20,ft,mnth,day)
+             qdifsum  = qdifsum  + ftcov(ft) * daily_out(21,ft,mnth,day)
+             ENDDO
+           ENDDO 
+        ENDDO
+        
+        oscale = 0.0d0
+        DO mnth=1,12       
+          oscale = oscale + real(no_days(year,mnth,thty_dys))   
+        ENDDO
+
+        if(gi.lt.1.d-1) gi = 1d0
+        !if(wi.lt.1.d-1) wi = 1d0
 
         oscale     = 1.0/oscale
         avnleaf    = avnleaf/gi
@@ -3997,7 +4027,8 @@ c     check water cycle closure
         avvcmax    = avvcmax/gi
         avjmax     = avjmax/gi
         avsla      = avsla/gi
-        kg_beta    = kg_beta/wi
+c       kg_beta    = kg_beta/wi
+        kg_beta    = kg_beta/gi
         max_hgt    = maxval(hgt(:,:))
         yearsoilw  = yearsoilw*oscale
         !convert year soil W from mm to prop by volume
