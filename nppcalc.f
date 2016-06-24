@@ -56,7 +56,7 @@
       INTEGER thty_dys,year,no_day,read_par,soilp_map,s070607
       INTEGER ttype,calc_zen,luna_calc_days
       REAL*8  sd_scale(par_loops+1),sd_scale2,nup_rate
-      LOGICAL output,gold
+      LOGICAL output,gold,jfv
 
       !print*, 'NPPcalc', day
 
@@ -250,9 +250,9 @@
             ! convert back to value at 25oC 
             ! invert temp correction scalar to get values at 25oC
             vm(i) = vm(i) / T_SCALAR(sum(ce_t(:))/30.d0,'v',ttype,
-     &ftToptV,ftHaV,ftHdV,sum(ce_t(:))/30.d0) 
+     &ftToptV,ftHaV,ftHdV,sum(ce_t(:))/30.d09,jfv) 
             jm(i) = jm(i) / T_SCALAR(sum(ce_t(:))/30.d0,'j',ttype,
-     &ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0) 
+     &ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0,jfv) 
 
             ! convert to umol m-2s-1
             vm(i) = vm(i) * 1d6
@@ -296,19 +296,24 @@
      &(vcmax_type.eq.6)) THEN
             !070607 default - Wullschleger 1993 
             jm(i)  = (29.1d0 + 1.64d0*vm(i))
+            jfv    = .TRUE.
           ELSEIF((vcmax_type.eq.1).or.(vcmax_type.eq.7).or.
      &(vcmax_type.eq.8)) THEN
             !Walker -  only vcmax
             jm(i)  = exp(1.d0+0.89d0*log(vm(i)))
+            jfv    = .TRUE.
           ELSEIF((vcmax_type.eq.2).OR.(vcmax_type.eq.3)) THEN
             !from van Bodegom for TERRABITES project
             ! - not a function of vcmax 
-            jm(i) = env_jmax * can(i)/can(1)
+            jm(i)  = env_jmax * can(i)/can(1)
+            jfv    = .FALSE.
           ELSEIF(vcmax_type.eq.4) THEN
             !specified as a PFT parameter
             jm(i)  = ftjva + ftjvb*vm(i)
+            jfv    = .TRUE.
           ELSEIF(vcmax_type.eq.9) THEN
             ! do nothing - jmax already defined above            
+            jfv    = .FALSE.
           ELSE
             PRINT*, 'vcmax_type ',vcmax_type,' undefined. set to a value
      &<1-9 in <input.dat>'
@@ -318,9 +323,9 @@
           !temperature scale Vcmax & Jmax
           !if(vcmax_type.le.6) then
           vmx(i) = vm(i) * T_SCALAR(t,'v',ttype,ftToptV,ftHaV,ftHdV,
-     &sum(ce_t(:))/30.d0)
+     &sum(ce_t(:))/30.d0,jfv)
           jmx(i) = jm(i) * T_SCALAR(t,'j',ttype,ftToptJ,ftHaJ,ftHdJ,
-     &sum(ce_t(:))/30.d0)
+     &sum(ce_t(:))/30.d0,jfv)
 
           !leaf age scale Vcmax & Jmax
           vmx(i) = vmx(i)*npp_eff
@@ -383,9 +388,9 @@
             !temperature scale Vcmax & Jmax
             !if(vcmax_type.le.6) then
             vmx(i) = vm(i) * T_SCALAR(t,'v',ttype,ftToptV,ftHaV,ftHdV,
-     &sum(ce_t(:))/30.d0)
+     &sum(ce_t(:))/30.d0,.FALSE.)
             jmx(i) = jm(i) * T_SCALAR(t,'j',ttype,ftToptJ,ftHaJ,ftHdJ,
-     &sum(ce_t(:))/30.d0)
+     &sum(ce_t(:))/30.d0,.FALSE.)
 
             !leaf age scale Vcmax & Jmax
             vmx(i) = vmx(i)*npp_eff
@@ -1292,13 +1297,14 @@
 *     Gives vcmax or jmax temperature scalar                           *  
 *                                                                      *
 *----------------------------------------------------------------------*
-      FUNCTION T_SCALAR(t,jv,ttype,ftTopt,ftkHa,ftkHd,tmonth)
+      FUNCTION T_SCALAR(t,jv,ttype,ftTopt,ftkHa,ftkHd,tmonth,jfv)
 
       IMPLICIT NONE
 
       REAL*8    :: t,qt,t_scalar,ftTopt,ftkHa,ftkHd,ftHa,ftHd,tmonth
       REAL*8    :: Tsk,Trk,R,deltaS,dS
       INTEGER, intent(in) :: ttype 
+      LOGICAL, intent(in) :: jfv 
       CHARACTER :: jv
 
       !print*, 'T_SCALAR, ttype:', ttype
@@ -1349,7 +1355,7 @@
      &/(1 + exp((Tsk*deltaS-ftHd) / (Tsk*R)) ) )  
 
         !adjust jmax based on kattge&knorr Jmax to Vcmax ratio relationship to temp
-        if((jv.eq.'j').and.(ttype.ge.2)) 
+        if((jv.eq.'j').and.(ttype.ge.2).and.jfv) 
      &t_scalar = t_scalar * (2.59-0.035*tmonth)/1.715
 
       else
@@ -1805,7 +1811,7 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
 !####Brent solver from wikipedia
       FUNCTION BRENT_SOLVER(func,i1,i2,
      &oi,ca,vmx,j,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,ci,light,ttype,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,tmonth) 
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,tmonth,jfv) 
  
       IMPLICIT NONE
       
@@ -1816,7 +1822,7 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
       REAL*8 :: oi,ca,rh,rd,vmx,j,p,ga,dv,t,cs,kg,g0,g1,ci,light
       REAL*8 :: kc,ko,tau,km,gstar,vt,jt,alp,t_scalar
       INTEGER :: func,gs_func,i,n,farq_pars_func,ttype
-      LOGICAL :: mflag,done
+      LOGICAL :: mflag,done,jfv
 
       ! Error tolerance umol m-2 s-1
       errortol = 1d-3
@@ -1836,8 +1842,8 @@ c      if (func.eq.0) then
         ! Error tolerance mol m-2 s-1
         errortol = 1d-7
         ! vcmax25 & jmax25 to leaf t scalar 
-        vt = T_SCALAR(tmonth,'v',ttype,ftToptV,ftHaV,ftHdV,tmonth)
-        jt = T_SCALAR(tmonth,'j',ttype,ftToptJ,ftHaJ,ftHdJ,tmonth)
+        vt = T_SCALAR(tmonth,'v',ttype,ftToptV,ftHaV,ftHdV,tmonth,jfv)
+        jt = T_SCALAR(tmonth,'j',ttype,ftToptJ,ftHaJ,ftHdJ,tmonth,jfv)
         fa = VCMAX_MAIRE(a,vt,jt,ci,km,gstar,alp,light,farq_pars_func,i)
         fb = VCMAX_MAIRE(b,vt,jt,ci,km,gstar,alp,light,farq_pars_func,i)
 c      elseif (func.eq.1) then

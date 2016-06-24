@@ -28,7 +28,7 @@
       !     PNstoreold, PNlcold, PNetold, PNrespold, PNcbold, &
       !     PNstoreopt, PNlcopt, PNetopt, PNrespopt, PNcbopt)
       subroutine LUNA(z,vcmx25_z,jmx25_z,PNlc_z,enzs_z,rb10,
-     &sla,lnc,par240d,par240x,CO2a10,o2a10,hourpd,relh10,tair10,  
+     &sla,lnc,par240d,par240x,CO2a10,o2a10,hourpd,relh10_in,tair10,  
      &gs_func,ftg0,ftg1,max_daily_pchg,ttype,ftToptV,ftHaV,ftHdV,
      &ftToptJ,ftHaJ,ftHdJ) 
      
@@ -37,11 +37,11 @@
       !REAL*8, intent (in) :: FNCa                       !Area based functional nitrogen content (g N/m2 leaf)
       REAL*8, intent (in) :: sla                        !Specific leaf area m2 g-1 DW
       REAL*8, intent (in) :: lnc                        !Area based leaf nitrogen content (g N/m2 leaf)
-      REAL*8, intent (in) :: relh10                     !10-day mean relative humidity (unitless)
+      REAL*8, intent (in) :: relh10_in                  !10-day mean relative humidity (unitless)
       REAL*8, intent (in) :: CO2a10                     !10-day meanCO2 concentration in the air (Pa)
       REAL*8, intent (in) :: O2a10                      !10-day mean O2 concentration in the air (Pa)
-      REAL*8, intent (in) :: par240d                  !10-day mean photosynthetic active radiation on in a canopy (umol/m2/s)
-      REAL*8, intent (in) :: par240x                  !10-day mean 24hr maximum photosynthetic active radiation on in a canopy (umol/m2/s)
+      REAL*8, intent (in) :: par240d                    !10-day mean photosynthetic active radiation on in a canopy (umol/m2/s)
+      REAL*8, intent (in) :: par240x                    !10-day mean 24hr maximum photosynthetic active radiation on in a canopy (umol/m2/s)
       REAL*8, intent (in) :: rb10                       !10-day mean boundary layer resistance
       REAL*8, intent (in) :: hourpd                     !hours of light in a the day (hrs)
       REAL*8, intent (in) :: tair10                     !10-day running mean of the 2m temperature (oC)
@@ -85,6 +85,7 @@
       REAL*8 :: SNCa                       !Area based structural nitrogen content (g N/m2 leaf)
       REAL*8 :: par240d_z                  !10-day mean photosynthetic active radiation on in a canopy (umol/m2/s)
       REAL*8 :: par240x_z                  !10-day mean 24hr maximum photosynthetic active radiation on in a canopy (umol/m2/s)
+      REAL*8 :: relh10                     !10-day mean relative humidity (unitless)
       REAL*8 :: PARi10                     !10-day mean photosynthetic active radiation on in a canopy (umol/m2/s)
       REAL*8 :: PARimx10                   !10-day mean 24hr maximum photosynthetic active radiation on in a canopy (umol/m2/s)
       REAL*8 :: PNlcold                    !old value of the proportion of nitrogen allocated to light capture (unitless)
@@ -196,7 +197,7 @@
       REAL*8, parameter :: NMCp25 = 0.715d0                 ! estimated by assuming 80% maintenance respiration is used for photosynthesis enzyme maintenance
       REAL*8, parameter :: Trange1 = 5.0d0                  ! lower temperature limit (oC) for nitrogen optimization  
       REAL*8, parameter :: Trange2 = 42.0d0                 ! upper temperature limit (oC) for nitrogen optimization
-      REAL*8, parameter :: SNC = 0.004d0                    ! structural nitrogen concentration (g N g-1 dry mass carbon)
+      REAL*8, parameter :: SNC = 0.004d0                    ! structural nitrogen concentration (g N g-1 C)
       REAL*8, parameter :: mp = 9.0d0                       ! slope of stomatal conductance; this is used to estimate model parameter, but may need to be updated from the physiology file, 
       !SDGVM PAR units are in molm-2s-1
       REAL*8, parameter :: PARLowLim = 200.0d-6             ! minimum photosynthetically active radiation for nitrogen optimization
@@ -217,6 +218,9 @@
       par240d_z   = par240d
       par240x_z   = par240x
       
+      ! LUNA expects RH in proportion i.e. 0-1, SDGVM in %      
+      relh10      = relh10_in * 1.d-2
+ 
       ! SLA is fixed through the canopy in SDGVM and lnc is pre-determined according to Beer's Law scaling or similar 
       ! - therefore relCLNCa, PARTop are not needed
       ! PAR is already passed to this routine in umol m-2 s-1 (check not day)
@@ -224,8 +228,8 @@
 
       !------------------------------------------------------------------
       !SNCa     =  1.0d0/slatop(ft) * SNC !(Eq A3)
-      SNCa = 1.0d0/sla/0.48d0 * SNC     !(Eq A3)
-      FNCa = lnc - SNCa                !(Eq A4)
+      SNCa = 1.0d0/sla*0.48d0 * SNC     !(Eq A3)
+      FNCa = lnc - SNCa                 !(Eq A4)
       
       !------------------------------------------------------------------
       ! for SDGVM the distinction between sunlit and non-sunlit leaves is not made in the LUNA model
@@ -239,7 +243,8 @@
       
       !------------------------------------------------------------------
       !nitrogen allocation model-start          
-      PNlcold     = PNlc_z
+      !PNlcold     = PNlc_z
+      PNlcold     = 0.2d0 / lnc 
       PNetold     = 0.0d0
       PNrespold   = 0.0d0
       PNcbold     = 0.0d0                                     
@@ -293,8 +298,10 @@
        ! Fj is the scaling factor to go from leaf N invested in elec trans to Jmax  
        !Fc   = VcmxTKattge(tair10, tleafd10c) * Fc25
        !Fj   = JmxTKattge(tair10, tleafd10c)  * Fj25
-       Fc=T_SCALAR(tleafd10c,'v',ttype,ftToptV,ftHaV,ftHdV,tair10)*Fc25
-       Fj=T_SCALAR(tleafd10c,'j',ttype,ftToptJ,ftHaJ,ftHdJ,tair10)*Fj25
+       Fc = T_SCALAR(tleafd10c,'v',ttype,ftToptV,ftHaV,ftHdV,
+     &tair10,.FALSE.)*Fc25
+       Fj = T_SCALAR(tleafd10c,'j',ttype,ftToptJ,ftHaJ,ftHdJ,
+     &tair10,.FALSE.)*Fj25
        
        NUEr = Cv * NUEr25 * ( RespTBernacchi(tleafd10c) * hourpd +
      &RespTBernacchi(tleafn10c) * (24.0d0 - hourpd) ) !nitrogen use efficiency for respiration (g biomass/m2/day/g N)
@@ -597,25 +604,37 @@
        ! inputs to this model are in Pa units and molm-2s-1 
        CALL ASSIMILATION_CALC(0.0d0,1.0d0,
      &Vcmax,0.0d0,0.0d0,0.0d0,JmeanL,0.0d0,0.0d0,
-     &0.0d0,tleafd10,1.0d0,1.0d0,0.0d0,rb10,relh10,1,1.0d0,k_o,k_c,tau,
-     &forc_pbot10,O2a10,CO2a10,A,gs,ci,1,2,1,1,.FALSE.,gs_func,ftg0,
-     &ftg1,2)
+     &0.0d0,tleafd10,1.0d0,1.0d0,0.0d0,rb10*1d2,relh10,1,1.0d0,
+     &k_o,k_c,tau,forc_pbot10,O2a10,CO2a10,A,gs,ci,1,2,1,1,.FALSE.,
+     &gs_func,ftg0,ftg1,2)
 
        awc = k_c * (1.0d0 + O2a10 / k_o)
        Kj  = max(ci - c_p, 0.0d0) / (4.0d0 * ci + 8.0d0 * c_p)
        Kc  = max(ci - c_p, 0.0d0) / (ci + awc)
        
-      else
+      ! below else changed to endif
+      ! different from original LUNA code as A in LUNA is smoothed
+      ! between Wc and Wj, and parameters have been calibrated to this
+      ! smoothing. Somewhat decouples LUNA from the SDGVM photosynthesis
+      ! method which assumes the straight minimum of wc or wj but is
+      ! probably a reasonable compromise 
+      !else
+      endif
        
-       !print*, 'previous assim' 
-       Wc = Kc * Vcmax
-       Wj = Kj * JmeanL
-       !A  = (1.0d0 - theta_cj) * max(Wc, Wj) + theta_cj * min(Wc, Wj) 
-       ! Vcmax and J are in molm-2s-1 because that's what SDGVM expects, so the above calculation gives Kc and Kj in molm-2s-1
-       A  = ( (1.0d0 - theta_cj) * max(Wc, Wj) + theta_cj * min(Wc, Wj) 
+      ! as described above, satisfy the LUNA assumption of co-limitation
+      ! between wc and wj
+      Wc = Kc * Vcmax
+      Wj = Kj * JmeanL
+      !A  = (1.0d0 - theta_cj) * max(Wc, Wj) + theta_cj * min(Wc, Wj) 
+      ! Vcmax and J are in molm-2s-1 because that's what SDGVM expects, so the above calculation gives Kc and Kj in molm-2s-1
+      ! the below smoothing function is used for numercial stability,
+      ! at the solution Wj and Wc ought to be pretty similar due to the
+      ! encoded co-ordination hypothesis, therefore this smoothing
+      ! should not have a big effect on A calculated at the optimum
+      A  = ( (1.0d0 - theta_cj) * max(Wc, Wj) + theta_cj * min(Wc, Wj) 
      &) * 1e6
        
-      endif
+      !endif
       
       ! Cv converts from umolm-2s-1 to gC m-2 hour-1
       PSN        = Cv * A * hourpd
@@ -685,8 +704,10 @@
       !print*, 'LUNA NUE, ttype:', ttype
       !Fc  = VcmxTKattge(tgrow, tleaf) * Fc25
       !Fj  = JmxTKattge(tgrow, tleaf)  * Fj25
-      Fc  =T_SCALAR(tleaf,'v',ttype,ftToptV,ftHaV,ftHdV,tgrow)*Fc25
-      Fj  =T_SCALAR(tleaf,'j',ttype,ftToptJ,ftHaJ,ftHdJ,tgrow)*Fj25
+      Fc  = T_SCALAR(tleaf,'v',ttype,ftToptV,ftHaV,ftHdV,
+     &tgrow,.FALSE.)*Fc25
+      Fj  = T_SCALAR(tleaf,'j',ttype,ftToptJ,ftHaJ,ftHdJ,
+     &tgrow,.FALSE.)*Fj25
  
       k_c = Kc25 * exp((79430.0d0 / (8.31d0 * 
      &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + tleaf)))
