@@ -1333,12 +1333,13 @@
         if(ttype.eq.2) then
           ! employ Kattge&Knorr scaling based on mean temp of previous month 
           
-          ftHa = 71513
-          ftHd = 49884
+          ftHd = 2d5
 
           if(jv.eq.'v') then
+            ftHa   = 71513.d0
             deltaS = 668.39d0 - 1.07d0*tmonth
           else
+            ftHa   = 49884.d0
             deltaS = 659.70d0 - 0.75d0*tmonth
           endif
         else 
