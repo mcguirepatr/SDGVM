@@ -4,11 +4,17 @@
 # the script takes the model project directory (pre-existing) as first argument and run directory (will be created) as second argument
 # also renames the directories in the run and submit scripts so that the only file that needs editing is the input file
 
+
+#### Need to add functionality to specify a simulation that uses modified arrhenius temperature scaling 
+####  - which needs additional parameters to be specified in the input file  
+
+
+
 HOME=/home/alp
 MOD=/models/SDGVM/src/sdgvm
-#CPRUN=/blank_runs/global_mp_1deg
-echo "Warning:: 3.75 2.5 degree run selected"
-CPRUN=/blank_runs/global_mp_3p75x2p5deg
+CPRUN=/blank_runs/global_mp_1deg
+#echo "Warning:: 3.75 2.5 degree run selected"
+#CPRUN=/blank_runs/global_mp_3p75x2p5deg
 DATA=/models/SDGVM/input_data
 PROJECTS_DIR=/models/SDGVM/run
 PROJECT=/$1
@@ -26,8 +32,8 @@ sed -i "s@#RUNDIR#@$RUNDIR@"  ${RUNDIR}submit*.pbs
 sed -i "s@#PROJECT#@$1@"      ${RUNDIR}submit*.pbs
 sed -i "s@#SIM#@$2@"          ${RUNDIR}submit*.pbs
 
-sed -i "s@#DATA#@$DATA@"      ${RUNDIR}input_global.dat
-sed -i "s@#HOME#@$HOME@"      ${RUNDIR}input_global.dat
+sed -i "s@#DATA#@$DATA@"      ${RUNDIR}input_globa*.dat
+sed -i "s@#HOME#@$HOME@"      ${RUNDIR}input_globa*.dat
 
 sed -i "s@#HOME#@$HOME@"      ${RUNDIR}run_SDGVM.bs
 sed -i "s@#MOD#@$MOD@"        ${RUNDIR}run_SDGVM.bs

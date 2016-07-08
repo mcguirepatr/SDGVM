@@ -24,7 +24,7 @@ mkdir ./src
 cp $MODEL/*.f    ./src
 cp $MODEL/sdgvm0 ./src
 
-# run loop - executes all but final set of sites
+# run loop 
 ((e=${#SITE_INDEX[*]} - 1 ))
 
 for s in `seq 1 $e` ;do

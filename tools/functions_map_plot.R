@@ -39,11 +39,11 @@ write_var    <- function(vn,vs)     as.expression(substitute(list(vname[vsub]),l
 ###############################
 
 region <- function(region){
-  # returns 'xylims' a 6 element vector composing of:
-  # (W lon boundary, E lon boundary, S lat boundary, N lat boundary, lon tick res, lat tick res)
+  # returns 'xylims' an 8 element vector composing of:
+  # (W lon boundary, E lon boundary, S lat boundary, N lat boundary, )
   
   if(region=='global') {
-    xylims <- c(-180,180,-60,90,90,30,-40,-45)
+    xylims <- c(-180,180,-60,90,90,30,30,-43)
   }
   
   else if(region=='europe'){
@@ -122,7 +122,7 @@ plotmap <- function(i,map) {
 
 
 
-plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,...){
+plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,labcex=1,stripprint,...){
   # This function plots world (or subsetted) maps of gridded data
 
   # expects a dataframe, 'x', with the columns 'lat', 'lon', 'plotdata', 'year', and 'run'
@@ -152,7 +152,7 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,
   
   #   print(head(x))
    
-  # modify plotting parameters if norm or diff is used normalise data based on the 95%ile
+  # modify plotting parameters if norm or diff is used normalise data 
   text <- NULL
   if(!is.null(norm)) {
     
@@ -161,6 +161,8 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,
     if(norm=='sd') {
       lab$cols <- col.neg
       lab$at   <- c(seq(-3.5,-0.5,0.5),-0.1,0.1,seq(0.5,3.5,0.5)) 
+      lab$at   <- c(seq(-4.0,-0.5,0.5),seq(0.5,4.0,0.5))
+      lab$unit <- 'sigma' 
     } else if(any(x$plotdata<0)) {
       lab$cols <- col.neg
       lab$at   <- c(seq(-1.3,0.1,0.2),seq(0.1,1.3,0.2)) 
@@ -173,39 +175,70 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,
   if(!is.null(diff)) {
     text      <- paste(text,'. Difference plot',sep='')
     lab$cols  <- col.neg
-    lab$at    <- lab$at / 2 
-    lab$at[1] <- round(min(x$plotdata),1) 
-    lab$at[length(lab$at)] <- round(max(x$plotdata),1) 
+#    lab$at    <- lab$at / 2 
+    lab$at    <- lab$at * 0.375 
+    lab$at    <- round(lab$at,2)  
+  }
+
+  lab$lab <- lab$at
+
+  # expand range of labels based on data
+  if(F){
+    lab$at_orig <- lab$at
+    lla         <- length(lab$at)
+    if(round(min(x$plotdata),1)<lab$at[1])   lab$at[1]   <- round(min(x$plotdata),1)
+    if(round(max(x$plotdata),1)>lab$at[lla]) lab$at[lla] <- round(max(x$plotdata),1)
+    # rescale range based on expanded max/min
+    if(F) lab$at <- seq(lab$at[1],lab$at[lla],(lab$at[lla]-lab$at[1])/(lla-1))
+    lab$at      <- round(lab$at,2)  
+  }
+  if(T){
+    lab$at_orig <- lab$at
+    lla         <- length(lab$at)
+    if(round(min(x$plotdata),1)<lab$at[1]) { 
+      x$plotdata[x$plotdata < lab$at[1]] <- lab$at[1] + 1e-3
+      lab$lab[1] <- paste('<',lab$lab[1],sep='') 
+    }
+    if(round(max(x$plotdata),1)>lab$at[lla]) { 
+      x$plotdata[x$plotdata > lab$at[lla]] <- lab$at[lla] - 1e-3
+      lab$lab[lla] <- paste('>',lab$lab[lla],sep='')
+    }
   }
 
   ncol    <- length(lab$cols)
   colours <- lab$cols
-  
+  print(norm)
+ 
   #plot
   #levelplot(plotdata~lon*lat|as.factor(year)*run,x,...,
   levelplot(plotdata~lon*lat|run,x,...,
   #contourplot(plotdata~lon*lat|run,x,...,
   #          region=T,labels=F,contour=F,
-            as.table=T,
-            main=write_title1(lab$name,lab$nsub,text),
+            as.table=T,cex=labcex*0.5,
             # scale bar
             col.regions=colours,cuts=ncol-2,
             at=lab$at,
-            colorkey=list(labels=list(labels=lab$at,at=lab$at)),
+            colorkey=list(space='bottom',height=0.8,width=labcex*0.7,labels=list(labels=lab$lab,at=lab$at,cex=labcex*0.4),tck=labcex*0.5),
+            sub=list(eval(parse(text=paste('expression(',lab$name,"   (",lab$unit,")",')',sep=''))),cex=0.5*labcex),
             # axes
             aspect='iso',xlim=c(lims[1:2]),ylim=c(lims[3:4]),xlab=NULL,ylab=NULL,
-            scales=list(alternating=F),
+            scales=list(alternating=F,ce=labcex*0.3),
             xscale.components=function(...,top=F,lim=lims[1:2]){
               axis.ticks(lim=lim,...)},
             yscale.components=function(...,lim=lims[3:4]){
               axis.ticks(lim=lim,y=T,...)},
+            strip=stripprint,
+            par.strip.text=list(cex=labcex*0.35,lines=1),
             # panel function
             panel=function(...){
               panel.levelplot(...)
+              panel.polygon(x=c(-35,-25,-25,-35),y=c(-10,-10,-4,-4),col='white',border=F)
               lapply(1:length(world@polygons),plotmap,map=world)
-              panel.abline(h=c(0,-23.3,23.3,66.5,-66.5),lty=c(2,3,3,3,3,3),lwd=0.6)
-              panel.text(x=lims[7],y=lims[8],pos=4,labels=ifelse(lab$gsum|lab$gmean,t(global_sum)[panel.number()],''))      
-              panel.text(x=lims[7]+cs*((lims[2]-lims[1])/25),y=lims[8],pos=4,labels=ifelse(lab$gsum|lab$gmean,parse(text=lab$sunit),''))      
+              panel.abline(h=c(0,-23.3,23.3,66.5,-66.5),lty=c(2,3,3,3,3,3),lwd=0.5)
+              if(is.null(diff)&is.null(norm)&lab$printsum) {
+                panel.text(x=lims[7],y=lims[8],pos=4,labels=ifelse(lab$gsum|lab$gmean,t(global_sum)[panel.number()],''),cex=labcex*0.35)      
+                panel.text(x=lims[7]+cs*((lims[2]-lims[1])/25),y=lims[8],pos=4,labels=ifelse(lab$gsum|lab$gmean,parse(text=lab$sunit),''),cex=labcex*0.35)      
+              }   
             }) 
 }   
 
@@ -216,10 +249,11 @@ axis.ticks <- function ( ... , y=F , ticks=seq(-180,180,20) , ticks2=seq(-180,18
   ans    <- xscale.components.default(...)
   ticks2 <- ticks2[!(ticks2 %in% ticks)]
   ans$bottom$ticks$at      <- c(ticks, ticks2)
-  ans$bottom$ticks$tck     <- c(rep(-1,length(ticks)), rep(-0.5,length(ticks2)))
+  ans$bottom$ticks$tck     <- c(rep(-0.5,length(ticks)), rep(-0.2,length(ticks2)))
   lab_ticks                <- seq(-160,160,40) 
   ans$bottom$labels$at     <- lab_ticks
   ans$bottom$labels$labels <- lab_ticks
+  ans$bottom$labels$cex    <- labcex
   
   if(y){
     ans    <- yscale.components.default(...)
@@ -227,10 +261,11 @@ axis.ticks <- function ( ... , y=F , ticks=seq(-180,180,20) , ticks2=seq(-180,18
     ticks2 <- seq(-90,90,5)
     ticks2 <- ticks2[!(ticks2 %in% ticks)]
     ans$left$ticks$at      <- c(ticks, ticks2)
-    ans$left$ticks$tck     <- c(rep(-1,length(ticks)), rep(-0.5,length(ticks2)))
+    ans$left$ticks$tck     <- c(rep(-0.5,length(ticks)), rep(-0.25,length(ticks2)))
     lab_ticks              <- seq(-80,80,20) 
     ans$left$labels$at     <- lab_ticks
     ans$left$labels$labels <- lab_ticks
+    ans$left$labels$cex    <- labcex
   }
   
   ans
