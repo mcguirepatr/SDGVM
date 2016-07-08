@@ -239,13 +239,15 @@
             
             !if(i.eq.1) print'(30(f6.1,1x))', ce_light(:,1) *1d6
             !if(i.eq.1) print'(f6.1)',   sum(ce_light(:,1))/30.d0 *1d6
-            
+           
+            ! Jmax is simulated as a function of Vcmax 
+            jfv    = .TRUE.
             ! calculate Vcmax at the mean temperature of the last month in mol m-2s-1
             vm(i) = brent_solver(0,1d-6,5d-4,
      &oi,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0,
      &sum(ce_t(:))/30.d0,0.d0,1,0.d0,0.d0,0.d0,i,
      &sum(ce_ci(:,i))/30.d0,sum(ce_light(:,i))/30.d0,ttype,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0)
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0,jfv)
             
             ! convert back to value at 25oC 
             ! invert temp correction scalar to get values at 25oC

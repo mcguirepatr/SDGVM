@@ -562,8 +562,8 @@
       ! - in the lowest canopy layers the solver sometimes returns negative values 
       ! - and with larger intervals between LUNA calcultions (~10 days) the max proportional change can equal 1
       ! - allowing returned Vcmax and Jmax to be below 0
-      !Vcmax       = max(1d-7,Vcmax)
-      !Jmax        = max(1d-7,Jmax)
+      Vcmax       = max(1d-7,Vcmax)
+      Jmax        = max(1d-7,Jmax)
      
       JmeanL      = theta * PARi10 / ( sqrt(1.0d0 +
      &(ELTRNabsorb / Jmax)**2.0d0) )
