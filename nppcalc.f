@@ -737,7 +737,12 @@
 
       IF(fw1984.eq.0) THEN
          !use Harley 1992 J to Jmax realtionship
-         j=0.24d0*q/(1.0d0+(0.24d0**2)*(q**2)/(jmx**2))**0.5d0
+         !j=0.24d0*q/(1.0d0+(0.24d0**2)*(q**2)/(jmx**2))**0.5d0
+         ! in the function above 0.24 refers to the apparent quantum efficiency of light capture 
+         ! and is the value used by Harley,  
+         ! however Goudriaan's Law returns absorbed light so already accounts for reflection and transmission
+         ! so the intrinsic quantum efficiency should be used, the 1.15 multiplier in the below function accounts for this
+         j=1.15d0*0.24d0*q/(1.0d0+(0.24d0**2)*(q**2)/(jmx**2))**0.5d0
       ELSE
          !use Farquhar & Wong 1984 J to Jmax realtionship
          I2 = q * 0.36d0    
@@ -1294,8 +1299,9 @@
 
       tk = t + 273.15d0  
       oi = 21000.0d0 
-      
-      alpha = 0.24d0
+
+      ! see explanation for 1.15 multiplier in subroutine JCALC       
+      alpha = 1.15d0*0.24d0
       
       ! below are the kinetic parameters from Farquhar etal 1980
       !kc  = exp(35.8d0 - 80.5d0/(0.00831d0*tk))
@@ -1311,7 +1317,6 @@
      &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + t)))
       tau = 0.5d0*oi/c_p
 
-      ! changed by Ghislain 08/10/03      IF (rlai.GT.0.1d0) THEN
       END SUBROUTINE
 *----------------------------------------------------------------------*
 
