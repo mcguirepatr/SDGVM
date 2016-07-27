@@ -47,7 +47,7 @@
       REAL*8 fsunlit(12),fshade(12),tleaf_n,tleaf_p
       REAL*8 fsunlit_sd(12),fshade_sd(12)
       REAL*8 leaf_nit,vcmax(12),jmax(12),pnlc(12),enzs(12)
-      REAL*8 tassim,tgs,tci
+      REAL*8 tassim,tgs,tci,c_p
       REAL*8 max_daily_pchg, max_dpchg
 
       REAL*8 ax,amax,amx,lyr,qt,lat,swr,env_vcmax,env_jmax
@@ -100,9 +100,19 @@
       canres    = 0.0d0
       nleaf(:)  = 0.0d0
 
-      kc  = exp(35.8d0 - 80.5d0/(0.00831d0*tk))
-      ko  = exp(9.6d0 - 14.51d0/(0.00831d0*tk))*1000.0d0
-      tau = exp(-3.949d0 + 28.99d0/(0.00831d0*tk))
+      ! below are the kinetic parameters from Farquhar etal 1980
+      !kc  = exp(35.8d0 - 80.5d0/(0.00831d0*tk))
+      !ko  = exp(9.6d0 - 14.51d0/(0.00831d0*tk))*1000.0d0
+      !tau = exp(-3.949d0 + 28.99d0/(0.00831d0*tk))
+
+      ! the above are now deprecated for the in vivo parameters froim Bernacchi etal 2001
+      kc  = 40.49d0 * exp((79430.0d0 / (8.31d0 * 
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + t)))
+      ko  = 27840.d0 * exp((36380.0d0 / (8.31d0 *
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + t)))
+      c_p = 4.275d0 * exp((37830.0d0 / (8.31d0 * 
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + t)))
+      tau = 0.5d0*oi/c_p
 
       ! changed by Ghislain 08/10/03      IF (rlai.GT.0.1d0) THEN
       q = qdiff + qdirect
@@ -1279,16 +1289,29 @@
 
       IMPLICIT NONE
        
-      REAL*8  t,tk,kc,ko,tau,alpha
+      REAL*8  t,tk,kc,ko,tau,alpha,c_p,oi
       INTEGER farq_pars_func
 
       tk = t + 273.15d0  
+      oi = 21000.0d0 
       
       alpha = 0.24d0
-      kc  = exp(35.8d0 - 80.5d0/(0.00831d0*tk))
-      ko  = exp(9.6d0 - 14.51d0/(0.00831d0*tk))*1000.0d0
-      tau = exp(-3.949d0 + 28.99d0/(0.00831d0*tk))
+      
+      ! below are the kinetic parameters from Farquhar etal 1980
+      !kc  = exp(35.8d0 - 80.5d0/(0.00831d0*tk))
+      !ko  = exp(9.6d0 - 14.51d0/(0.00831d0*tk))*1000.0d0
+      !tau = exp(-3.949d0 + 28.99d0/(0.00831d0*tk))
 
+      ! the above are now deprecated for the in vivo parameters from Bernacchi etal 2001
+      kc  = 40.49d0 * exp((79430.0d0 / (8.31d0 * 
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + t)))
+      ko  = 27840.d0 * exp((36380.0d0 / (8.31d0 *
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + t)))
+      c_p = 4.275d0 * exp((37830.0d0 / (8.31d0 * 
+     &298.15d0)) * (1.0d0 - (298.15d0) / (273.15d0 + t)))
+      tau = 0.5d0*oi/c_p
+
+      ! changed by Ghislain 08/10/03      IF (rlai.GT.0.1d0) THEN
       END SUBROUTINE
 *----------------------------------------------------------------------*
 
