@@ -4166,7 +4166,7 @@ c       kg_beta    = kg_beta/wi
           WRITE(54,'('' '',f8.5,$)') tleaf_p
           WRITE(55,'('' '',f8.4,$)') avsla 
           WRITE(56,'('' '',f8.3,$)') max_hgt 
-          WRITE(57,'('' '',i2,$)') vcmax_type 
+          WRITE(57,'('' '',i2,$)')   vcmax_type 
           WRITE(58,'('' '',f8.3,$)') avnleaf
           WRITE(59,'('' '',f8.3,$)') avleaf_nit                  
           WRITE(60,'('' '',f8.3,$)') avvcmax         

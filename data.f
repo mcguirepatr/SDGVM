@@ -937,6 +937,7 @@ c     look for the first year
          GOTO 10
       ENDIF
 
+      !print*, 'start year:', years(j)
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
 *----------------------------------------------------------------------*
@@ -947,7 +948,7 @@ c     look for the first year
       xnorm = rcol - real(int(rcol))
 *----------------------------------------------------------------------*
 
-      j=1
+      !j=1
       DO i=1,yrf-yr0+1
         IF ((i.EQ.1).OR.((i+yr0-1).EQ.years(j))) THEN
           st2=in2st(years(j))
@@ -1012,7 +1013,6 @@ c
 *              print*,ift,k,x,lutab(classes(k),ift),classes(k)
             ENDDO
           ENDDO
-
 c
 c Calculate the bare soil.
 c
