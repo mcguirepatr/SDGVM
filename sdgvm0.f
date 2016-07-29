@@ -67,7 +67,7 @@
       REAL*8 soilpr,soilp_init,kg(maxnft),kg_beta,ftcan_clump(maxnft)
       REAL*8 map_clump,w_scalar,t_scalar,leafv_sum,stemv_sum,rootv_sum
       REAL*8 aprc_dryqv(10),aprc_dryq,yearprcdryq,prc_week(52),prcq(52)
-      REAL*8 matvar,aprc_rel,a2,b2
+      REAL*8 matvar,aprc_rel,a2,b2,flulccc
       REAL*8 jmax_int(maxnft),jmax_int_er(maxnft)
       REAL*8 jmax_ci_low,jmax_ci_high
       REAL*8 ftToptV(maxnft),ftHaV(maxnft),ftHdV(maxnft)
@@ -1776,6 +1776,7 @@ c CLOSE added by Ghislain 15/12/03
       OPEN(603,FILE=st1(1:blank(st1))//'/abg_litter.dat')
       OPEN(604,FILE=st1(1:blank(st1))//'/blg_c.dat')
       OPEN(605,FILE=st1(1:blank(st1))//'/leafc.dat')
+      OPEN(606,FILE=st1(1:blank(st1))//'/lulccc.dat')
 
 *----------------------------------------------------------------------*
 * Open optional yearly cover, biomass, budburst and senescence files.  *
@@ -2092,7 +2093,7 @@ c     &site_dat,lat,lon,ca
         DO i=21,69
           WRITE(i,'(f7.3,f9.3,$)') lat,lon
         ENDDO
-        DO i=601,605
+        DO i=601,606
           WRITE(i,'(f7.3,f9.3,$)') lat,lon
         ENDDO
 
@@ -3232,7 +3233,7 @@ c          tleaf_sla = tleaf_sla/1000
             IF (check_ft_grow(tmp,ftbbm(ft),ftbb0(ft),ftbbmax(ft),
      &ftbblim(ft),chill(ft),dschill(ft)).EQ.1) THEN
               ftprop(ft) = cluse(ft,year-yr0+1)
-              ftprop(1) = ftprop(1) - ftprop(ft)
+              ftprop(1)  = ftprop(1) - ftprop(ft)
             ELSE
               ftprop(ft) = 0.0d0
             ENDIF
@@ -3249,7 +3250,7 @@ c          tleaf_sla = tleaf_sla/1000
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
-     &ic0,fire(iyear),harvest(iyear),leafdp)
+     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc)
 
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
@@ -4049,8 +4050,10 @@ c       kg_beta    = kg_beta/wi
         tsoiln = tsoiln + iminn(3)
         DO ft=1,nft
           !print*,tslc,trlc
-          tslc = tslc + ftcov(ft) * slc(ft)
-          trlc = trlc + ftcov(ft) * rlc(ft)
+          !tslc = tslc + ftcov(ft) * slc(ft)
+          !trlc = trlc + ftcov(ft) * rlc(ft)
+          tslc = tslc + slc(ft)
+          trlc = trlc + rlc(ft)
         ENDDO
         tsoilc      = tsoilc + tslc + trlc
         !print*, tslc , ic0(1) , ic0(5)
@@ -4153,7 +4156,8 @@ c       kg_beta    = kg_beta/wi
           WRITE(41,'('' '',f8.1,$)') avgpp
           WRITE(42,'('' '',f8.3,$)') avlch
           WRITE(43,'('' '',f8.1,$)') yearprc
-          WRITE(44,'('' '',f8.1,$)') avnpp-avsresp-firec-avlch-avyield
+          WRITE(44,'('' '',f8.1,$)') avnpp-avsresp-firec-avlch-avyield-
+     &flulccc
           WRITE(45,'('' '',f8.1,$)') avtrn
           WRITE(46,'('' '',f8.5,$)') fprob
           WRITE(47,'('' '',f8.2,$)') yeartmp
@@ -4190,6 +4194,7 @@ c       kg_beta    = kg_beta/wi
           WRITE(603,'('' '',f12.2,$)') tabglitterc
           WRITE(604,'('' '',f12.2,$)') tblgc
           WRITE(605,'('' '',f10.2,$)') tbioleaf
+          WRITE(606,'('' '',f10.2,$)') flulccc 
         ENDIF
 
 
@@ -4388,7 +4393,7 @@ c       kg_beta    = kg_beta/wi
 !     &(avnpp-avlch-avsresp-firec)) - avyield
         ccheck = ccheck + avnpp - (ans1 + tc0(1) + 
      &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) + 
-     &avlch + avsresp + firec +  avyield)
+     &avlch + avsresp + firec +  avyield + flulccc)
 
 *----------------------------------------------------------------------*
 * Check carbon and water balance, write to 'DIAG' if any problems.     *
@@ -4412,7 +4417,7 @@ c       kg_beta    = kg_beta/wi
         DO i=21,69
           WRITE(i,*)
         ENDDO
-        DO i=601,605
+        DO i=601,606
           WRITE(i,*)
         ENDDO
 
