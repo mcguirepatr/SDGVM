@@ -3250,7 +3250,7 @@ c          tleaf_sla = tleaf_sla/1000
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
-     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc)
+     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen)
 
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)

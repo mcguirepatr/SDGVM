@@ -6,7 +6,7 @@
       SUBROUTINE COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
      &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
-     &nat_map,ic0,burn,harvest,leafdp,flulccc)
+     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 cov(maxage,maxnft),bio(maxage,2,maxnft),bioleaf(maxnft)
@@ -18,7 +18,7 @@
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
       REAL*8 ftloss_prop(maxnft),sum_cov(maxnft),flulccc
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
-      INTEGER ft,fireres,ilanduse,nat_map(8),age
+      INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       LOGICAL burn,harvest
 
       IF (ilanduse.eq.2) THEN
@@ -50,29 +50,45 @@
       ENDIF
 
 *----------------------------------------------------------------------*
-* Change ft area due to change in the LULCC database                   *
+* Reduce ft area due to change in the LULCC database                   *
 * and put this as bare ground ready for new growth 'ngrowth'.          *
 *----------------------------------------------------------------------*
       ngcov = 0d0
-
       flulccc = 0d0
-      IF (ilanduse.eq.0) THEN
+
+      IF (ilanduse.lt.2) THEN
       sum_cov(:)     = 0.0d0
       ftloss_prop(:) = 0.0d0
       DO ft=3,nft
         DO age=1,ftmor(ft)
           sum_cov(ft) = sum_cov(ft) + cov(age,ft)
         ENDDO
-        if( ftprop(ft)*1d-2 .lt. sum_cov(ft) ) then
-c          print*, 'ftprop is less than sum_cov:',
-c     &ft, ftprop(ft), sum_cov(ft) 
+        !print*, sum_cov(ft)
 
-          ftloss_prop(ft) = 1d0 - ftprop(ft)*1d-2/sum_cov(ft)
+        ! need to make this tree speciifc
+
+        if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
+        if( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) then
+        !if( ftprop(ft)*1d-2 .lt. sum_cov(ft) ) then
+          
+          if( ftprop(ft) .gt. 1d-1 ) then
+            ftloss_prop(ft) = 1d0 - (ftprop(ft)*1d-2)/sum_cov(ft)
+          else
+            ftloss_prop = 1d0 
+          endif
+
+          !print*, 'ftprop is less than sum_cov:',
+      !&ft, ftprop(ft)*1d-2, sum_cov(ft), ftloss_prop(ft) 
+          !print*, (ftprop(ft)*1d-2) - sum_cov(ft)
 
           CALL LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &ftloss_prop,npp,nps,ngcov,slc,rlc,fireres,flulccc,harvest,leafdp)
+     &ftloss_prop,npp,nps,ngcov,slc,rlc,fireres,flulccc,harvest,leafdp,
+     &ft)
 
+          ngcov = ngcov + ftloss_prop(ft) * sum_cov(ft)
         endif
+        endif
+
       ENDDO
       ENDIF
 *----------------------------------------------------------------------*
@@ -1188,7 +1204,8 @@ c     &ft, ftprop(ft), sum_cov(ft)
 * and land-cover change database                                       *
 *----------------------------------------------------------------------*
       SUBROUTINE LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &ftloss_prop,npp,nps,ngcov,slc,rlc,fireres,flulccc,harvest,leafdp)
+     &ftloss_prop,npp,nps,ngcov,slc,rlc,fireres,flulccc,harvest,leafdp,
+     &ft)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
@@ -1200,12 +1217,10 @@ c     &ft, ftprop(ft), sum_cov(ft)
       LOGICAL harvest
 
 
-      flulccc = 0.0d0
 *----------------------------------------------------------------------*
 * kill off pfts that have lost cover according to the landuse database * 
 *----------------------------------------------------------------------*
 
-      DO ft=2,nft
         DO age=1,ftmor(ft)
 
           rlc(ft) = rlc(ft) + bio(age,2,ft) * 
@@ -1219,9 +1234,6 @@ c     &ft, ftprop(ft), sum_cov(ft)
           cov(age,ft) = cov(age,ft)*( 1.0d0 - ftloss_prop(ft) )
           
         ENDDO
-
-        ngcov = ngcov + ftloss_prop(ft)
-      ENDDO
 
       RETURN
       END
