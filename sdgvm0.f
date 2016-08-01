@@ -748,7 +748,7 @@
      &e is '',i4,''.'')') nyears,maxyrs
         WRITE(*,*) 'Either reduce the length of the simulation, or incr
      &ease "maxyrs"'
-        WRITE(*,*) 'this is set in array_param.inc, you must re-comile 
+        WRITE(*,*) 'this is set in array_param.inc, you must re-compile 
      &after altering'
       WRITE(*,*) 'this file.'
         STOP
@@ -1852,7 +1852,7 @@ c CLOSE added by Ghislain 15/12/03
 *  Read co2 file.                                                      *
 *----------------------------------------------------------------------*
       !print*, daily_co2,yr0,yrf
-      CALL READCO2 (stco2,yr0,yrf,co2,daily_co2)
+      CALL READCO2 (stco2,yr0,yrf,co2,daily_co2,spinl,nyears,co2const)
 *----------------------------------------------------------------------*
 
       site_dat = 0
@@ -2602,9 +2602,12 @@ c     &site_dat,lat,lon,ca
 * Set CO2.                                                             *
 *----------------------------------------------------------------------*
 
+        ! if there is a spin up but iyear is in the run proper phase
+        ! set CO2 to the year 
         IF ((spinl.gt.0).AND.(iyear.GT.spinl)) THEN
           speedc = .FALSE.
-          ca(:,:) = co2(year-yr0+1,:,:) !
+          !ca(:,:) = co2(year-yr0+1,:,:) !
+          ca(:,:) = co2(iyear,:,:) !
         ELSE
           IF (co2const.GT.0.0d0) THEN
             ca(:,:) = co2const
@@ -2613,7 +2616,7 @@ c     &site_dat,lat,lon,ca
           ENDIF
         ENDIF
 
-        !print*, year, metyear, ca(1,1)
+        print*, year, metyear, iyear, ca(1,1)
 
         IF (mod(iyear,max(year_out,1)).EQ.min(1,year_out)-1) THEN
            WRITE(*,'('' Year no.'',2i5,'', ca = '',2f6.2)') iyear, !

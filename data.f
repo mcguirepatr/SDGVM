@@ -5,13 +5,15 @@
 * the stinput directory. If only one record exists in the file then    *
 * the co2 value in this record is used throughout the simulation.      *
 *----------------------------------------------------------------------*
-      SUBROUTINE READCO2(stco2,yr0,yrf,co2,daily_co2)
+      SUBROUTINE READCO2(stco2,yr0,yrf,co2,daily_co2,spinl,nyears,
+     &co2const)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
-      REAL*8    co2(maxyrs,12,31),ca
+      REAL*8    co2(maxyrs,12,31),ca,co2const
       INTEGER   yr0,yrf,norecs,year,const,blank,kode,daily_co2,day,mnth
-      INTEGER   prev_year
+      INTEGER   yr0a,yrfa,prev_year,spinl,nyears
       CHARACTER stco2*1000
+      LOGICAL   co2spin
 
       OPEN(98,FILE=stco2,STATUS='OLD',iostat=kode)
       IF (kode.NE.0) THEN
@@ -23,6 +25,18 @@
 
       norecs = 0
       const  = 0
+      co2spin = .FALSE.
+      yrfa    = yrf
+      if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then 
+        if (spinl.lt.nyears) then
+          yr0a = yr0 - spinl
+        else
+          co2spin = .TRUE.
+        endif
+      else 
+        yr0a = yr0
+      endif 
+
 10    CONTINUE
 
 c      print*, yr0, yrf
@@ -30,10 +44,14 @@ c      print*, yr0, yrf
 !      print*, daily_co2
       IF(daily_co2.eq.1) THEN 
 	READ(98,*,end=99) year,mnth,day,ca 
-	IF ((year.eq.yr0).and.(mnth.eq.1).and.(day.eq.1)) prev_year =
+        if(co2spin.and.(norecs.eq.0)) then
+          yr0a = year
+          yrfa = yr0a + spinl - 1
+        endif
+	IF ((year.eq.yr0a).and.(mnth.eq.1).and.(day.eq.1)) prev_year =
      &year-1
         !print*, prev_year, norecs      
-        IF ((year.GE.yr0).AND.(year.LE.yrf)) THEN 
+        IF ((year.GE.yr0a).AND.(year.LE.yrfa)) THEN 
           IF(prev_year.EQ.(year-1)) norecs = norecs + 1 
           co2(norecs,mnth,day) = ca 
         ENDIF 
@@ -41,7 +59,12 @@ c      print*, yr0, yrf
       ELSE 
         READ(98,*,end=99) year,ca
 c        print*, year,ca
-	IF ((year.GE.yr0).AND.(year.LE.yrf)) THEN
+        if(co2spin.and.(norecs.eq.0)) then
+          yr0a = year
+          yrfa = yr0a + spinl - 1
+          print*, 'co2spin',yr0a,yrfa
+        endif
+	IF ((year.GE.yr0a).AND.(year.LE.yrfa)) THEN
           norecs = norecs + 1
           co2(norecs,:,:) = ca
         ENDIF
@@ -50,6 +73,7 @@ c        print*, year,ca
       GOTO 10
 99    CONTINUE
 
+      print*, spinl, nyears, yr0, yr0a, yrf, yrfa
       CLOSE(98)
 
       IF (const.EQ.1) THEN
