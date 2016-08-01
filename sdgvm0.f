@@ -2027,7 +2027,9 @@ c     create the continuous land use (cluse)
             ENDDO
           ENDDO
         ELSE            
-          CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,yr0,yrf,du,l_lu)
+          CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,yr0,yrf,du,l_lu,
+     &spinl,nyears,co2const)
+          !write(*,*) cluse(ft,:)
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN
         l_lu = .TRUE.
@@ -2616,7 +2618,7 @@ c     &site_dat,lat,lon,ca
           ENDIF
         ENDIF
 
-        print*, year, metyear, iyear, ca(1,1)
+        !print*, year, metyear, iyear, ca(1,1)
 
         IF (mod(iyear,max(year_out,1)).EQ.min(1,year_out)-1) THEN
            WRITE(*,'('' Year no.'',2i5,'', ca = '',2f6.2)') iyear, !
@@ -3235,7 +3237,8 @@ c          tleaf_sla = tleaf_sla/1000
           DO ft=2,nft
             IF (check_ft_grow(tmp,ftbbm(ft),ftbb0(ft),ftbbmax(ft),
      &ftbblim(ft),chill(ft),dschill(ft)).EQ.1) THEN
-              ftprop(ft) = cluse(ft,year-yr0+1)
+              !ftprop(ft) = cluse(ft,year-yr0+1)
+              ftprop(ft) = cluse(ft,iyear)
               ftprop(1)  = ftprop(1) - ftprop(ft)
             ELSE
               ftprop(ft) = 0.0d0
@@ -4409,6 +4412,7 @@ c       kg_beta    = kg_beta/wi
           ENDIF
         ENDIF
       !if(site.gt.1629) write(*,'(360f8.2)') swr
+
       ENDDO
 *----------------------------------------------------------------------*
 *                             End of year loop                         *

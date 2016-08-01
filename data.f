@@ -73,7 +73,7 @@ c        print*, year,ca
       GOTO 10
 99    CONTINUE
 
-      print*, spinl, nyears, yr0, yr0a, yrf, yrfa
+      !print*, spinl, nyears, yr0, yr0a, yrf, yrfa
       CLOSE(98)
 
       IF (const.EQ.1) THEN
@@ -890,15 +890,16 @@ c        print*, year,ca
 *                                                                      *
 *                                                                      *
 *----------------------------------------------------------------------*
-      SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,yr0,yrf,du,l_lu)
+      SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,yr0,yrf,du,l_lu,
+     &spinl,nyears,co2const)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
-      INTEGER ii,jj,stcmp,indx(4,4),yr0,yrf,years(1000),nrecl
-      INTEGER classes(1000),nclasses,kode
+      INTEGER ii,jj,stcmp,indx(4,4),yr0,yrf,years(1000),nrecl,yr0a,j1
+      INTEGER classes(1000),nclasses,kode,spinl,nyears,co2const,ij,ij1
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
       LOGICAL l_lu
 
@@ -952,15 +953,29 @@ c        print*, year,ca
         STOP
       ENDIF
 
+      ! configure the first year to look for 
+      !co2spin = .FALSE.
+      !yrfa    = yrf
+      if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then 
+        if (spinl.lt.nyears) then
+          yr0a = yr0 - spinl
+          !yr0a = yr0 
+      !   else
+      !     co2spin = .TRUE.
+        endif
+      else 
+        yr0a = yr0
+      endif 
+
 c     look for the first year
       j=1
 
  10   CONTINUE
-      IF ((j.LT.n).AND.(years(j).LT.yr0)) THEN
+      IF ((j.LT.n).AND.(years(j).LT.yr0a)) THEN
          j = j + 1
          GOTO 10
       ENDIF
-
+      j1 = 1
       !print*, 'start year:', years(j)
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
@@ -973,8 +988,9 @@ c     look for the first year
 *----------------------------------------------------------------------*
 
       !j=1
-      DO i=1,yrf-yr0+1
-        IF ((i.EQ.1).OR.((i+yr0-1).EQ.years(j))) THEN
+      DO i=1,yrf-yr0a+1
+        IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j))) THEN
+          !print*, j, years(j)
           st2=in2st(years(j))
           CALL STRIPB(st2)
           j=j+1
@@ -1049,12 +1065,40 @@ c
 
         ENDIF ! finished reading
 
+        ! previous SDGVM methods - assumes step changes in land-use
         DO ift=1,nft
           cluse(ift,i) = ftprop(ift)
         ENDDO
 
+
+
       ENDDO
 
+      ! TRENDY SDGVM method - assumes smoothed change in land-use between years specified in input dataset
+        !DO i=1,yrf-yr0a+1
+        DO i=1,years(n)-yr0a
+        !  IF ( years(j1) .eq. years(nyears) ) THEN 
+          IF ( (i.EQ.1).OR.((i+yr0a-1).EQ.years(j1)) ) THEN
+            !print*, j, years(j1), years(j1+1)
+            !cluse(ift,i) = cluse(ift,i)
+            ij  = i
+            ij1 = ij + years(j1+1) - years(j1) 
+            j1  = j1 + 1
+            !print*, i,j1,ij,ij1
+            !print*, cluse(10,1), cluse(10,ij), cluse(10,ij1)
+          ELSE
+            DO ift=1,nft
+              cluse(ift,i) = cluse(ift,ij) + 
+     &( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
+     &(cluse(ift,ij1) - cluse(ift,ij)) )
+      !       if(ift.eq.10) then
+      !        print*, cluse(ift,ij), (cluse(ift,ij1) - cluse(ift,ij)),
+      !&cluse(ift,i) 
+      !        print*, (real(i)-real(ij))/(real(ij1)-real(ij))
+      !      endif 
+            ENDDO
+          ENDIF
+      ENDDO
 *      CLOSE(99)
 
       IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.
