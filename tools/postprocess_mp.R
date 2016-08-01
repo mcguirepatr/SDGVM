@@ -62,8 +62,12 @@ ncf    <- 'SDGVM'
 ncfend <- '.nc'
 
 # netcdf files to create
-ncdf_avars <- c('cVeg','cLitter','cSoil','cLeaf','cRoot','fFire')
-ncdf_mvars <- c('mrso','mrro','evapotrans','gpp','ra','npp','rh','nbp','lai')
+ncdf_avars <- c('cVegpft')
+ncdf_mvars <- c('pr','evapotranspft')
+#ncdf_avars <- c('cVeg','cLitter','cSoil','cVegpft','fFire','fLuc','cLeaf','cRoot','burntArea')
+#ncdf_mvars <- c('tas','pr','rsds','mrro','evapotrans','gpp','ra','npp','rh','nbp','lai',
+#                'evapotranspft','transpft','swepft','gpppft','npppft','nbppft','tran')
+#'mrso','landCoverFrac'
 
 # nc file parameters
 mis_val  <- -99999
