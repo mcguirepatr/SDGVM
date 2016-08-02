@@ -65,13 +65,13 @@ stich_sdgvm_mp_apply <- function(wd,grids=4,mc=T,
     if(annual)      mclapply(afiles,stitch_annual,grids,wd,...)
     if(monthly)     mclapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
     if(daily)       mclapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)    
-    if(monthly&pft) mclapply(mpftfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
+    if(monthly&pft) mclapply(mpftfiles,stitch_subannual,grids,wd,atr=12,ad=1,...)
     if(daily&pft)   mclapply(dpftfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)    
   } else {
     if(annual)      lapply(afiles,stitch_annual,grids,wd)
     if(monthly)     lapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
     if(daily)       lapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)        
-    if(monthly&pft) lapply(mpftfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
+    if(monthly&pft) lapply(mpftfiles,stitch_subannual,grids,wd,atr=12,ad=1,...)
     if(daily&pft)   lapply(dpftfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)        
   }
 }
