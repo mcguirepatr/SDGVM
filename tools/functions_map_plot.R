@@ -22,6 +22,7 @@ open <- function(var,mnames,wdpath){
   ifile    <- paste(var,'.dat',sep='')
   x        <- read.table(paste(wdpath,ifile,sep=''),header=F,na.strings='********')
   x        <- as.data.frame(apply(x,2,as.numeric))
+  #print(head(x))
   names(x) <- mnames  
   x
 }
@@ -51,7 +52,8 @@ region <- function(region){
   }
   
   else if(region=='tropics'){
-    xylims <- c(-120,180,-23.5,23.5,90,15,55,-15)
+    #xylims <- c(-120,180,-23.5,23.5,90,15,55,-15)
+    xylims <- c(-120,180,-30,30,90,15,55,-15)
   }
   
   else if(region=='neotropics'){
@@ -122,7 +124,7 @@ plotmap <- function(i,map) {
 
 
 
-plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,labcex=1,stripprint,...){
+plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,mask=mask,labcex=1,stripprint,...){
   # This function plots world (or subsetted) maps of gridded data
 
   # expects a dataframe, 'x', with the columns 'lat', 'lon', 'plotdata', 'year', and 'run'
@@ -159,10 +161,12 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,
     text <- paste('normalised:',norm)
 
     if(norm=='sd') {
-      lab$cols <- col.neg
-      lab$at   <- c(seq(-3.5,-0.5,0.5),-0.1,0.1,seq(0.5,3.5,0.5)) 
+      #lab$cols <- col.neg
       lab$at   <- c(seq(-4.0,-0.5,0.5),seq(0.5,4.0,0.5))
+      lab$at   <- c(seq(-3,3,0.5)) 
+      #lab$at   <- c(seq(-2,2,0.5)) 
       lab$unit <- 'sigma' 
+      lab$cols <- viridis(length(lab$at)-1)
     } else if(any(x$plotdata<0)) {
       lab$cols <- col.neg
       lab$at   <- c(seq(-1.3,0.1,0.2),seq(0.1,1.3,0.2)) 
@@ -176,7 +180,7 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,
     text      <- paste(text,'. Difference plot',sep='')
     lab$cols  <- col.neg
 #    lab$at    <- lab$at / 2 
-    lab$at    <- lab$at * 0.375 
+    if(is.null(norm))  lab$at <- c(seq(-600,-100,100),seq(100,600,100)) else lab$at <- lab$at * 0.5 
     lab$at    <- round(lab$at,2)  
   }
 
@@ -232,7 +236,16 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,
             # panel function
             panel=function(...){
               panel.levelplot(...)
+              # block weird smearing of levelplot in coastal areas
+              # atlantic brasil 
               panel.polygon(x=c(-35,-25,-25,-35),y=c(-10,-10,-4,-4),col='white',border=F)
+              # atlantic africa 
+              panel.polygon(x=c(-27,-17,-17,-27),y=c(10,10,24,24),col='white',border=F)
+              #  madagascar
+              panel.polygon(x=c(60,50,50,60),y=c(-10,-10,-20,-20),col='white',border=F)
+              # Indus valley 
+              if(!is.null(mask)) panel.polygon(x=c(70,55,55,70),y=c(22,22,30,30),col='white',border=F)
+              # add world map
               lapply(1:length(world@polygons),plotmap,map=world)
               panel.abline(h=c(0,-23.3,23.3,66.5,-66.5),lty=c(2,3,3,3,3,3),lwd=0.5)
               if(is.null(diff)&is.null(norm)&lab$printsum) {

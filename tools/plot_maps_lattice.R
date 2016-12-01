@@ -12,6 +12,7 @@ rm(list=ls())
 .libPaths('~/bin/Rlibs')
 library(lattice)
 library(plyr)
+#library(dplyr)
 library(viridis)
 
 
@@ -19,7 +20,7 @@ library(viridis)
 ###user defined inputs
 
 #directory paths
-date    <- '160705'
+date    <- '161129'
 dir     <- '/home/alp/models/SDGVM/'
 rdir    <- 'run'
 edir    <- 'eval_data'
@@ -78,6 +79,12 @@ yr_mean <- c(2001,2010)
 # plot trends across whole timeseries
 trends  <- T 
 
+# write trends across whole timeseries
+trend_out  <- F
+
+# zero ternd on initial year value
+trend_norm <- F
+
 # this should be a character vector. This will break up the zonal lat and lon plots into length(zon_panel_names) panels
 # - the sims will be evenly distributed among the panels
 zon_panel_names <- NULL
@@ -85,14 +92,32 @@ zon_panel_names <- NULL
 # output a table of global integrated values 
 table     <- F 
 
-# normalise the data to the norm*100 %ile
+# plot scatterplot/s of var v against var v-1
+scatter   <- F 
+
+# normalise the data to the norm*100 %ile, or 'sd' or 'center'
 norm      <- NULL 
 
-# make a difference plot, takes the value of the simulation id string as the base for the differences
+# make a difference plot, takes the value of the simulation/dataset id string and uses it as the base for the differences
 diff      <- NULL
+
+# run EOF analysis
+EOF       <- F
 
 # load SIF data
 SIF       <- F
+
+# adjust SIF by mean of SIFadj (can be a GPP proxy or a model simulation, e.g. SIFadj <- 'MPI' )
+SIFadj    <- NULL
+
+# load SIFGPP data
+SIFGPP    <- F
+
+# load MPI GPP data
+MPI       <- F
+
+# load PR GPP data
+PR        <- F
 
 # print map with masked area (current options are: crop, bare; or any combination of these terms in a single string ) 
 mask      <- NULL 
@@ -171,6 +196,28 @@ print('Simulations requested:',quote=F)
 print(sim[sia],quote=F)
 print('',quote=F)
 
+# normalisation function
+fnorm <- function(df,norm) {
+  # takes a dataframe and normalises the 'plotdata' column
+  # norm can be a character string 'sd' or 'center' or a number between 0-1 which will be the quantile to normalise on
+
+  center <- mean(df$plotdata,na.rm=T) 
+  sd     <- var(df$plotdata,na.rm=T)^0.5 
+  if(norm=='sd'){ 
+    df$plotdata <- (df$plotdata - center) / sd 
+  } else if(norm=='center') {
+    df$plotdata <- df$plotdata - center 
+  } else {
+
+    if(any(df$plotdata<0)) {
+      df$plotdata <- df$plotdata / max( abs(quantile(df$plotdata,1-norm,type=8)) , abs(quantile(df$plotdata,norm,type=8)) )
+    } else {
+      df$plotdata <- df$plotdata / quantile(df$plotdata,norm,type=8)
+    }
+  }
+  df
+} 
+
 
 ###############################
 ### start program
@@ -184,10 +231,43 @@ if(SIF) {
   print('',quote=F)
   print('read SIF',quote=F)
   setwd(ewd)
-  sif_df <- read.table('SIF_l3_2007t2012mean_screened_1x1.dat',header=F)
-  names(sif_df) <- c('lat','lon','plotdata')
-  sif_df$run    <- 'SIF' 
-  sif_df$year   <- 2009.5  
+  SIF_df <- read.table('SIF_l3_2007t2012mean_screened_1x1.dat',header=F)
+  names(SIF_df) <- c('lat','lon','plotdata')
+  SIF_df$run    <- 'SIF' 
+  SIF_df$year   <- 2009.5  
+}
+
+# load SIF GPP data
+if(SIFGPP) {
+  print('',quote=F)
+  print('read SIFGPP',quote=F)
+  setwd(ewd)
+  SIFGPP_df <- read.table('CASA-SIFmax_GPP_2007t2012mean_1x1.dat',header=F)
+  names(SIFGPP_df) <- c('lat','lon','plotdata')
+  SIFGPP_df$run    <- 'SIFGPP' 
+  SIFGPP_df$year   <- 2009.5  
+}
+
+# load MPI-GPP data
+if(MPI) {
+  print('',quote=F)
+  print('read MPI-GPP',quote=F)
+  setwd(ewd)
+  MPI_df <- read.table('MPI-GPP_2007t2010mean_screened_1x1.dat',header=F)
+  names(MPI_df) <- c('lat','lon','plotdata')
+  MPI_df$run    <- 'MPI' 
+  MPI_df$year   <- 2009  
+}
+
+# load PR-GPP data
+if(PR) {
+  print('',quote=F)
+  print('read PR-GPP',quote=F)
+  setwd(ewd)
+  PR_df <- read.table('PR-GPP_2007t2012mean_screened_1x1.dat',header=F)
+  names(PR_df)  <- c('lat','lon','plotdata')
+  PR_df$run     <- 'PR' 
+  PR_df$year    <- 2009.5  
 }
 
 # load mask
@@ -237,7 +317,7 @@ if(!is.null(mask)) {
  
 
 # layout parameters
-nruns <- length(sia) + SIF
+nruns <- length(sia) + SIF + SIFGPP + MPI - !is.null(diff)
 if(is.null(rs)){
  rs <- ceiling((nruns*length(year))^0.5)
  if((nruns*length(year)) < 4) rs <- nruns*length(year)
@@ -245,6 +325,7 @@ if(is.null(rs)){
  if(!is.null(cs)) rs <- ceiling(nruns*length(year)/cs)
 }
 if(is.null(cs)) cs <- ceiling(nruns*length(year)/rs)
+print('',quote=F)
 print(paste('rows:',rs,'cols:',cs),quote=F)
  
  
@@ -253,7 +334,7 @@ vars <- vars[via]
 # change this to an mclapply -  so far there are a few too many arguments
 #mclapply(1:length(vars),,)
 
-for( v in 1:length(vars) ){
+for( v in 1:length(vars) ) {
   print('',quote=F)
   print(vars[v],quote=F)
   
@@ -263,7 +344,7 @@ for( v in 1:length(vars) ){
   if(vars[v]=='prc'|vars[v]=='tmp'|vars[v]=='swr'|vars[v]=='qtotal') stripprint <- F
 
   # simulations loop
-  for(m in sia){    
+  for(m in sia) {    
     
     #open data 
     wdpath <- paste(dir,rdir,project,sim[m],'output/',sep='/')
@@ -306,7 +387,7 @@ for( v in 1:length(vars) ){
     }
 
     # calculate area integrated values
-    if((lab$gsum|lab$gmean)&is.null(diff)){
+    if((lab$gsum|lab$gmean)&is.null(diff)) {
 
       # area integrate
       areai   <- area_integrate(mydata[,1:2],mydata[,3:length(mydata)],mod_res,lab$gmean)
@@ -342,6 +423,7 @@ for( v in 1:length(vars) ){
       mean_global_sum <- NULL
       zonal_lat       <- NULL
       zonal_lon       <- NULL
+        
     }
         
     # stack years for lattice plotting
@@ -356,25 +438,27 @@ for( v in 1:length(vars) ){
     df1$run <- sim[m]    
   
     # normalise data
-    if(!is.null(norm)) {
-      # centre with mean and scale by standard deviation
-      if(norm=='sd'){ 
-      
-        df1$plotdata <- ( df1$plotdata - mean(df1$plotdata,na.rm=T) )  / (var(df1$plotdata,na.rm=T)^0.5) 
-        ym$plotdata  <- ( ym$plotdata  - mean(ym$plotdata,na.rm=T) )   / (var(ym$plotdata,na.rm=T)^0.5)  
-      
-      } else {
-      
-        if(any(df1$plotdata<0)) {
-          df1$plotdata <- df1$plotdata / max( abs(quantile(df1$plotdata,1-norm,type=8)) , abs(quantile(df1$plotdata,norm,type=8)) )
-          ym$plotdata  <- ym$plotdata  / max( abs(quantile(ym$plotdata,1-norm,type=8))  , abs(quantile(ym$plotdata,norm,type=8)) )
-        } else {
-          df1$plotdata <- df1$plotdata / quantile(df1$plotdata,norm,type=8)
-          ym$plotdata  <- ym$plotdata  / quantile(ym$plotdata,norm,type=8)
-        }
-      
-      }
-    } 
+    if(!is.null(norm)) df1 <- fnorm(df1,norm) 
+    if(!is.null(norm)) ym  <- fnorm(ym,norm) 
+#    if(!is.null(norm)) {
+#      # centre with mean and scale by standard deviation
+#      if(norm=='sd'){ 
+#      
+#        df1$plotdata <- ( df1$plotdata - mean(df1$plotdata,na.rm=T) )  / (var(df1$plotdata,na.rm=T)^0.5) 
+#        ym$plotdata  <- ( ym$plotdata  - mean(ym$plotdata,na.rm=T) )   / (var(ym$plotdata,na.rm=T)^0.5)  
+#      
+#      } else {
+#      
+#        if(any(df1$plotdata<0)) {
+#          df1$plotdata <- df1$plotdata / max( abs(quantile(df1$plotdata,1-norm,type=8)) , abs(quantile(df1$plotdata,norm,type=8)) )
+#          ym$plotdata  <- ym$plotdata  / max( abs(quantile(ym$plotdata,1-norm,type=8))  , abs(quantile(ym$plotdata,norm,type=8)) )
+#        } else {
+#          df1$plotdata <- df1$plotdata / quantile(df1$plotdata,norm,type=8)
+#          ym$plotdata  <- ym$plotdata  / quantile(ym$plotdata,norm,type=8)
+#        }
+#      
+#      }
+#    } 
   
     # make dataframe with all simulations
     df      <- if(m==sia[1]) df1 else rbind(df,df1)
@@ -394,31 +478,154 @@ for( v in 1:length(vars) ){
   }
 
   # append datasets with eval data
-  if(SIF) {
-    # restrict SIF dataset to pixels that occur in the model dataset only
+  if(SIF|SIFGPP|MPI|PR) {
+
     # hijacking the now unused df1 dataframe from the simulations loop
-    df1$plotdata <- NA
-    df1$run      <- 'SIF'
-    df1$plotdata <- sif_df$plotdata[match(paste(df1$lat,df1$lon),paste(sif_df$lat,sif_df$lon))]
-    sif_df 	 <- df1
-    if(!is.null(norm)) {
-      if(norm=='sd') sif_df$plotdata <- ( sif_df$plotdata - mean(sif_df$plotdata,na.rm=T) ) / (var(sif_df$plotdata,na.rm=T)^0.5)
-      else           sif_df$plotdata <- sif_df$plotdata  / max( abs(quantile(sif_df$plotdata,1-norm,type=8,na.rm=T)) , abs(quantile(sif_df$plotdata,norm,type=8,na.rm=T)) )
+    evars <- c('SIF','SIFGPP','MPI','PR')[which(c(SIF,SIFGPP,MPI,PR))]
+    for( e in evars ) {
+      # restrict dataset to pixels that occur in the model dataset only
+      print(e,quote=F)
+      df1$plotdata <- NA
+      df1$run      <- e
+      edf          <- get(paste(e,'_df',sep=''))
+      df1$plotdata <- edf$plotdata[match(paste(df1$lat,df1$lon),paste(edf$lat,edf$lon))]
+      edf 	   <- df1
+      if(!is.null(norm)) edf <- fnorm(edf,norm) 
+#      if(!is.null(norm)) {
+#        if(norm=='sd') edf$plotdata <- ( edf$plotdata - mean(edf$plotdata,na.rm=T) ) / (var(edf$plotdata,na.rm=T)^0.5)
+#        else           edf$plotdata <- edf$plotdata  / max( abs(quantile(edf$plotdata,1-norm,type=8,na.rm=T)) , abs(quantile(edf$plotdata,norm,type=8,na.rm=T)) )
+#      }
+      df      <- rbind(df,edf)
+      mean_df <- rbind(mean_df,edf)
     }
-    df      <- rbind(df,sif_df)
-    mean_df <- rbind(mean_df,sif_df)
+
+    # adjust SIF by other dataset
+    if(!is.null(SIFadj)) {
+      print(paste('Adjust SIF by:',SIFadj,'mean'),quote=F)
+      sifsubs  <- which(df$run=='SIF')
+      normsubs <- which(df$run==SIFadj)
+      df$plotdata[sifsubs] <- ( df$plotdata[sifsubs] / mean(df$plotdata[sifsubs],na.rm=T) ) * mean(df$plotdata[normsubs],na.rm=T) 
+      sifsubs  <- which(mean_df$run=='SIF')
+      normsubs <- which(mean_df$run==SIFadj)
+      print(paste(mean(mean_df$plotdata[sifsubs],na.rm=T),mean(mean_df$plotdata[normsubs],na.rm=T)),quote=F) 
+      mean_df$plotdata[sifsubs] <- ( mean_df$plotdata[sifsubs] / mean(mean_df$plotdata[sifsubs],na.rm=T) ) * mean(mean_df$plotdata[normsubs],na.rm=T) 
+    } 
   }
  
+#  # append datasets with eval data
+#  if(SIF) {
+#    # restrict SIF dataset to pixels that occur in the model dataset only
+#    # hijacking the now unused df1 dataframe from the simulations loop
+#    df1$plotdata <- NA
+#    df1$run      <- 'SIF'
+#    df1$plotdata <- sif_df$plotdata[match(paste(df1$lat,df1$lon),paste(sif_df$lat,sif_df$lon))]
+#    sif_df 	 <- df1
+#    if(!is.null(norm)) {
+#      if(norm=='sd') sif_df$plotdata <- ( sif_df$plotdata - mean(sif_df$plotdata,na.rm=T) ) / (var(sif_df$plotdata,na.rm=T)^0.5)
+#      else           sif_df$plotdata <- sif_df$plotdata  / max( abs(quantile(sif_df$plotdata,1-norm,type=8,na.rm=T)) , abs(quantile(sif_df$plotdata,norm,type=8,na.rm=T)) )
+#    }
+#    df      <- rbind(df,sif_df)
+#    mean_df <- rbind(mean_df,sif_df)
+#  }
+# 
+#  if(MPI) {
+#    # restrict MPI dataset to pixels that occur in the model dataset only
+#    # hijacking the now unused df1 dataframe from the simulations loop or above SIF processing
+#    df1$plotdata <- NA
+#    df1$run      <- 'MPI'
+#    df1$plotdata <- mpi_df$plotdata[match(paste(df1$lat,df1$lon),paste(mpi_df$lat,mpi_df$lon))]
+#    mpi_df 	 <- df1
+#    if(!is.null(norm)) {
+#      if(norm=='sd') mpi_df$plotdata <- ( mpi_df$plotdata - mean(mpi_df$plotdata,na.rm=T) ) / (var(mpi_df$plotdata,na.rm=T)^0.5)
+#      else           mpi_df$plotdata <- mpi_df$plotdata  / max( abs(quantile(mpi_df$plotdata,1-norm,type=8,na.rm=T)) , abs(quantile(mpi_df$plotdata,norm,type=8,na.rm=T)) )
+#    }
+#
+#    # replace NAs with zeros
+#    mpi_df$plotdata[which(is.na(mpi_df$plotdata))] <- 0 
+#
+#    df      <- rbind(df,mpi_df)
+#    mean_df <- rbind(mean_df,mpi_df)
+#
+#  }
+
+  if(EOF) {
+    # open climate data 
+    for(clim_var in c('prc','tmp','swr')) {
+           
+      print(clim_var)
+      index  <- year-styr+3
+      mydata <- open(clim_var,c('lat','lon',paste('y',styr:endyr,sep='')),wdpath)
+ 
+      # subset to region
+      lims <- region(pregion)
+      mds  <- subset(mydata, lon>(lims[1]-mod_res[1]/2))
+      mds  <- subset(mds,    lon<(lims[2]+mod_res[1]/2))
+      mds  <- subset(mds,    lat>(lims[3]-mod_res[2]/2))
+      mds  <- subset(mds,    lat<(lims[4]+mod_res[2]/2))      
+      mydata <- mds
+   
+      # apply mask
+      if(!is.null(mask))  mydata <- subset(mydata,!is.na(mask_v))
+      
+      # calculate mean across years
+      ym             <- apply(as.matrix(mydata[,(yr_mean[1]-styr+3):(yr_mean[2]-styr+3)]),1,mean)
+      ym             <- cbind(mydata[,1:2],ym,clim_var,mean(yr_mean))
+      names(ym)[3:5] <- c('plotdata','run','year')
+  
+      # normalise 
+      if(!is.null(norm)) ym <- fnorm(ym,norm) 
+#      if(!is.null(norm)) {
+#        if(norm=='sd') ym$plotdata <- ( ym$plotdata - mean(ym$plotdata,na.rm=T) ) / (var(ym$plotdata,na.rm=T)^0.5)
+#        else           ym$plotdata <- ym$plotdata  / max( abs(quantile(ym$plotdata,1-norm,type=8,na.rm=T)) , abs(quantile(ym$plotdata,norm,type=8,na.rm=T)) )
+#      }
+
+      climdf <- if(clim_var=='prc') ym else rbind(climdf,ym)
+    }
+
+    # make data matrix: rows - lat lon vector, cols - run
+    mean_mat <- matrix(as.vector(c(mean_df$plotdata,climdf$plotdata)),nrow=length(df1[,1]))
+    # eigen values of covariance matrix
+    #eig <- eigen(cov(mean_mat))
+    
+    mean_mat_noNA <- mean_mat
+    mean_mat_noNA[which(is.na(mean_mat))] <- 0
+ 
+    # use prcomp to calculate principle components
+    pca <- prcomp(mean_mat_noNA, scale = F)
+    # Eigenvalues
+    eig <- (pca$sdev)^2
+    # Proportional variances in percentage
+    variance <- eig*100/sum(eig)
+    # Cumulative variance
+    cumvar <- cumsum(variance)
+    pca$eig <- data.frame(eig = eig, variance = variance, cumvariance = cumvar)
+
+    # add data to output
+    pca$lat       <- df1$lat
+    pca$lon       <- df1$lon
+    pca$data      <- mean_mat
+    pca$data_noNA <- mean_mat_noNA
+    pca$runid     <- c(levels(mean_df$run),c('prc','tmp','swr'))
+
+    # output PCA
+    print('write PCA .rds',quote=F)
+    setwd(owd)
+    saveRDS(pca,paste(of,'PCA.rds',sep='_'))
+
+  }
+
   # adjust plotting variables for single vs multiple simulations
-  if(is.null(dim(global_sum))==1) {
+  if(is.null(dim(global_sum))) {
     nsims    <- 1
     globsum  <- global_sum[index-2] 
     tglobsum <- global_sum
+    if(trend_norm) tglobsum <- tglobsum - tglobsum[1]
     lt       <- length(global_sum)
   } else { 
     nsims    <- dim(global_sum)[1]
     globsum  <- global_sum[,index-2] 
     tglobsum <- t(global_sum[1:nsims,]) 
+    if(trend_norm) tglobsum <- apply(tglobsum,2,function(v) v - v[1])
     lt       <- dim(global_sum)[2]
   }
   gsi <- if(is.null(icon)) 1:length(globsum) else icon[[1]]
@@ -428,21 +635,25 @@ for( v in 1:length(vars) ){
     # the run subsets must be identical in their lat and lon order
     df$plotdata      <- df$plotdata - df$plotdata[df$run==diff]
     mean_df$plotdata <- mean_df$plotdata - mean_df$plotdata[mean_df$run==diff]
-    df          <- subset(df,run!=diff)
-    mean_df     <- subset(mean_df,run!=diff)
+#    rmse    <- mean_df %>%
+#                 group_by(run) %>%
+#                 summarise(rmse = function(x) mean(abs(x),na.rm=T)
+    rmse    <- as.data.frame.table(tapply(mean_df$plotdata,mean_df$run,function(x) mean(abs(x),na.rm=T) ))
+    df      <- subset(df,run!=diff)
+    mean_df <- subset(mean_df,run!=diff)
   }
 
   # map plots
   # individual year plot
   print('make first plot')
   p1  <- plot_map_lattice(df,get(vars[v]),
-                          pregion,gs=globsum[gsi],norm=norm,diff=diff,labcex=labcex,stripprint,
+                          pregion,gs=globsum[gsi],norm=norm,diff=diff,mask=mask,labcex=labcex,stripprint,
                           layout=c(cs,rs),skip=skip,index.cond=icon,main=list(main,cex=labcex))  
 
   # mean across years plot
   print('make second plot')
   p1x <- plot_map_lattice(mean_df,get(vars[v]),
-                          pregion,gs=mean_global_sum[gsi],norm=norm,diff=diff,labcex=labcex,stripprint,
+                          pregion,gs=mean_global_sum[gsi],norm=norm,diff=diff,mask=mask,labcex=labcex,stripprint,
                           layout=c(cs,rs),skip=skip,index.cond=icon,main=list(main,cex=labcex))
   
   # make plots
@@ -453,9 +664,11 @@ for( v in 1:length(vars) ){
   res  <- 400
 
   setwd(owd)
-  prefix     <- if(!is.null(norm))     paste(of,pregion,'norm',sep='_') else paste(of,pregion,sep='_')
-  prefix     <- if(!is.null(diff))     paste(prefix,'diff',sep='_')     else prefix
-  prefix     <- if(!is.null(mask)) paste(prefix,'mask:',mask,mask_perc,'perc',sep='_') else prefix
+  prefix     <- if(SIF)                paste(of,pregion,'SIF',sep='_')   else paste(of,pregion,sep='_')
+  prefix     <- if(MPI)                paste(prefix,'MPI-GPP',sep='_')   else paste(of,pregion,sep='_')
+  prefix     <- if(!is.null(norm))     paste(prefix,'norm',sep='_')      else prefix
+  prefix     <- if(!is.null(diff))     paste(prefix,'_diff',diff,sep='') else prefix
+  prefix     <- if(!is.null(mask))     paste(prefix,'mask:',mask,mask_perc,'perc',sep='_') else prefix
   print(paste('Prefix:',prefix))
   ofile      <- paste(prefix,'_',vars[v],sep='')
   ofile_mean <- paste(prefix,'_mean_',vars[v],sep='')
@@ -490,6 +703,8 @@ for( v in 1:length(vars) ){
       write.csv(out_table,paste(prefix,'.csv',sep=''),quote=F,row.names=F)
     }
   }
+
+  if(!is.null(diff)) write.csv(rmse,paste(prefix,'_rmse.csv',sep=''),quote=F,row.names=F)
 
   # make trend & zonal plots
   if(trends&!is.null(zonal_lon)){
@@ -576,11 +791,45 @@ for( v in 1:length(vars) ){
     trellis.par.set(mpars)
     print(p4)
     dev.off()
-  }  
+
+  # end plot trends loop
+  }
+
+  if(trend_out) {
+    colnames(tglobsum) <- slabels 
+    saveRDS(tglobsum,paste(prefix,'.RDS',sep=''))
+  }
+
+  if(scatter) {
+    if(v==1) mean_df_prev <- mean_df
+    else {
+      # mean across years plot
+      print('make scatter plot')
+      ps  <- xyplot(mean_df$plotdata~mean_df_prev$plotdata|mean_df$run,
+                    ylab=list(eval(parse(text=paste('expression(',get(vars[v])$name,"   (",get(vars[v])$unit,")",')',sep=''))),
+                              cex=0.5*labcex),
+                    xlab=list(eval(parse(text=paste('expression(',get(vars[v-1])$name,"   (",get(vars[v-1])$unit,")",')',sep=''))),
+                              cex=0.5*labcex),
+                    as.table=T)
+      # p1x <- plot_map_lattice(mean_df,get(vars[v]),
+      #                        pregion,gs=mean_global_sum[gsi],norm=norm,diff=diff,mask=mask,labcex=labcex,stripprint,
+      #                        layout=c(cs,rs),skip=skip,index.cond=icon,main=list(main,cex=labcex))
+      ofile <- paste(of,'_',pregion,'_scatter_',vars[v],'-',vars[v-1],sep='')
+      if(plotype=='pdf') pdf(paste(ofile,'pdf',sep='.'))#,width=width1,height=width1,pointsize=pointsize)
+      else               png(paste(ofile,'png',sep='.'))#,width=4*res,height=3*res,pointsize=28,bg=backg)
+      trellis.par.set(mpars)
+      print(ps)
+      dev.off()
+
+    }
+  }
+
   print('Warnings:')
   print(warnings())
-  print('end plot script')
+
+# end variable loop
 }
 
+print('end plot script')
 
 
