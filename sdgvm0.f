@@ -2799,15 +2799,22 @@ c     &site_dat,lat,lon,ca
             ENDDO
           
             !add this years value to the vectori
+            matmpv(1)     = yeartmp
+            matmp_maxv(1) = yeartmp_max
+            matmp_minv(1) = yeartmp_min
+            mapv(1)       = yearprc
+            mahumv(1)     = yearhum
+            maswrv(1)     = yearswr
+            aprc_dryqv(1) = yearprcdryq
             ! for the TERRABITES simulations only the values in the current year are used
             ! i.e. these values are not means over 10 years as suggested by the vectors 
-            matmpv(:)     = yeartmp
-            matmp_maxv(:) = yeartmp_max
-            matmp_minv(:) = yeartmp_min
-            mapv(:)       = yearprc
-            mahumv(:)     = yearhum
-            maswrv(:)     = yearswr
-            aprc_dryqv(:) = yearprcdryq
+            !matmpv(:)     = yeartmp
+            !matmp_maxv(:) = yeartmp_max
+            !matmp_minv(:) = yeartmp_min
+            !mapv(:)       = yearprc
+            !mahumv(:)     = yearhum
+            !maswrv(:)     = yearswr
+            !aprc_dryqv(:) = yearprcdryq
             !map_daysv(:)  = yearp_days
             !masoilcv(:)   = yearsoilc
             !masoilwv(:)   = yearsoilw
