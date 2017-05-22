@@ -104,7 +104,7 @@ area_integrate <- function(x,y,res,gm){
   x$xdist <- 2.0*pi*rad*cos(x$lat*pi/180.0)*res[1]/360.0
   x$area  <- x$xdist*ydist
   areai   <- y*x$area 
-  # convert to mean value per unit area, or convert to human readable units (e.g. for C in gm-2 converts to Pg)
+  # convert to mean value per global area, or convert to human readable units (e.g. for C in gm-2 converts to Pg)
   if(gm) areai/sum(x$area) else areai*1e-9
 }
 
@@ -116,7 +116,7 @@ area_integrate <- function(x,y,res,gm){
 
 plotmap <- function(i,map) {
   pm <- function(j,i,pg){
-    panel.polygon(x=pg[[j]]@coords[,1],y=pg[[j]]@coords[,2],border='black',lwd=0.5)                
+    panel.polygon(x=pg[[j]]@coords[,1],y=pg[[j]]@coords[,2],border='black',lwd=0.1)                
   }
   polys <- map@polygons[[i]]@Polygons
   lapply(1:length(polys),pm,i=i,pg=polys)
@@ -178,7 +178,7 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,
 
   if(!is.null(diff)) {
     text      <- paste(text,'. Difference plot',sep='')
-    lab$cols  <- col.neg
+    lab$cols  <- rev(col.neg)
 #    lab$at    <- lab$at / 2 
     if(is.null(norm))  lab$at <- c(seq(-600,-100,100),seq(100,600,100)) else lab$at <- lab$at * 0.5 
     lab$at    <- round(lab$at,2)  

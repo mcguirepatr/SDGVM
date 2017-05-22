@@ -20,7 +20,7 @@ library(viridis)
 ###user defined inputs
 
 #directory paths
-date    <- '161129'
+date    <- '170419'
 dir     <- '/home/alp/models/SDGVM/'
 rdir    <- 'run'
 edir    <- 'eval_data'
@@ -34,6 +34,9 @@ sim     <- c('Constant','Kattge','Kattge_oxisol','LUNA','Maire','vBodegom_env','
 
 # simulations index array (which simulations to plot from the vector 'sim', when 'sim' is arranged in alphabetical order, i.e. order(sim)[sia], simulations appear on the plot in the sia order)
 sia     <- NULL
+
+# only plot eval data, use first value of sim to stadardise by model mask 
+evalonly <- F
 
 # alternative labels for sims, should be length(sim) or if sia is not NULL length(sia) long
 # - applied to the sims following order(sim)[sia]  
@@ -124,8 +127,8 @@ mask      <- NULL
 mask_perc <- 40
 
 # line colour & type on trend and zonal plots, correspond to the labels in 'sim' when 'sim' is in alphabetical order
-col_trend <- topo.colors(10)
-lty       <- NULL 
+col_trend <- viridis(9)
+lty       <- 1 
 
 # plot file format
 plotype   <- 'pdf'
@@ -173,9 +176,10 @@ print(commandArgs(T))
 
 # set default values if not specified on command line
 # these are set after parsing command line arguments as they depend on other arguments that could be set on the command line
-if(is.null(sia)) sia <- 1:length(sim)
-if(is.null(lty)) lty <- rep(1:length(sia))
-if(is.null(of))  of  <- project
+if(is.null(sia)&!evalonly) sia <- 1:length(sim)
+if(evalonly)               sia <- 1
+if(is.null(lty))           lty <- rep(1:length(sia))
+if(is.null(of))            of  <- project
 year <- if(is.null(pyear)) 2010 else pyear
 
 # set model resolution
@@ -194,6 +198,7 @@ sim <- sim[order(sim)]
 print('',quote=F)
 print('Simulations requested:',quote=F)
 print(sim[sia],quote=F)
+if(evalonly) print('simulation only used to standardise eval data',quote=F)
 print('',quote=F)
 
 # normalisation function
@@ -317,7 +322,7 @@ if(!is.null(mask)) {
  
 
 # layout parameters
-nruns <- length(sia) + SIF + SIFGPP + MPI - !is.null(diff)
+nruns <- length(sia) + SIF + SIFGPP + MPI - !is.null(diff) - evalonly
 if(is.null(rs)){
  rs <- ceiling((nruns*length(year))^0.5)
  if((nruns*length(year)) < 4) rs <- nruns*length(year)
@@ -440,34 +445,19 @@ for( v in 1:length(vars) ) {
     # normalise data
     if(!is.null(norm)) df1 <- fnorm(df1,norm) 
     if(!is.null(norm)) ym  <- fnorm(ym,norm) 
-#    if(!is.null(norm)) {
-#      # centre with mean and scale by standard deviation
-#      if(norm=='sd'){ 
-#      
-#        df1$plotdata <- ( df1$plotdata - mean(df1$plotdata,na.rm=T) )  / (var(df1$plotdata,na.rm=T)^0.5) 
-#        ym$plotdata  <- ( ym$plotdata  - mean(ym$plotdata,na.rm=T) )   / (var(ym$plotdata,na.rm=T)^0.5)  
-#      
-#      } else {
-#      
-#        if(any(df1$plotdata<0)) {
-#          df1$plotdata <- df1$plotdata / max( abs(quantile(df1$plotdata,1-norm,type=8)) , abs(quantile(df1$plotdata,norm,type=8)) )
-#          ym$plotdata  <- ym$plotdata  / max( abs(quantile(ym$plotdata,1-norm,type=8))  , abs(quantile(ym$plotdata,norm,type=8)) )
-#        } else {
-#          df1$plotdata <- df1$plotdata / quantile(df1$plotdata,norm,type=8)
-#          ym$plotdata  <- ym$plotdata  / quantile(ym$plotdata,norm,type=8)
-#        }
-#      
-#      }
-#    } 
   
     # make dataframe with all simulations
     df      <- if(m==sia[1]) df1 else rbind(df,df1)
     if(substr(vars[v],1,3)!='cov') mean_df <- if(m==sia[1])  ym else rbind(mean_df,ym)      
 
-  # end simulations loop
+  # end simulations loop 
   }
 
+  # assumes no variation in land-cover
   if(substr(vars[v],1,3)=='cov') mean_df <- df
+
+  # prevent global sums and zonal data being over-written when only a single simulation called with eval datasets  
+  if(!evalonly) m <- sia[1] + 1  
 
   # plotting order 
   df$run      <- factor(df$run,levels=sim[sia])
@@ -480,74 +470,110 @@ for( v in 1:length(vars) ) {
   # append datasets with eval data
   if(SIF|SIFGPP|MPI|PR) {
 
-    # hijacking the now unused df1 dataframe from the simulations loop
-    evars <- c('SIF','SIFGPP','MPI','PR')[which(c(SIF,SIFGPP,MPI,PR))]
+    evars <- c('MPI','PR','SIFGPP','SIF')[which(c(MPI,PR,SIFGPP,SIF))]
+    labs  <- c('MPI','WangFP','SIF-CASA','SIF')[which(c(MPI,PR,SIFGPP,SIF))]
+
     for( e in evars ) {
       # restrict dataset to pixels that occur in the model dataset only
       print(e,quote=F)
+      # hijacking the now unused df1 dataframe from the simulations loop
       df1$plotdata <- NA
-      df1$run      <- e
+      df1$run      <- labs[which(evars==e)]
       edf          <- get(paste(e,'_df',sep=''))
       df1$plotdata <- edf$plotdata[match(paste(df1$lat,df1$lon),paste(edf$lat,edf$lon))]
       edf 	   <- df1
       if(!is.null(norm)) edf <- fnorm(edf,norm) 
-#      if(!is.null(norm)) {
-#        if(norm=='sd') edf$plotdata <- ( edf$plotdata - mean(edf$plotdata,na.rm=T) ) / (var(edf$plotdata,na.rm=T)^0.5)
-#        else           edf$plotdata <- edf$plotdata  / max( abs(quantile(edf$plotdata,1-norm,type=8,na.rm=T)) , abs(quantile(edf$plotdata,norm,type=8,na.rm=T)) )
-#      }
-      df      <- rbind(df,edf)
-      mean_df <- rbind(mean_df,edf)
+      df      <- if(m==sia[1]) edf else rbind(df,edf)
+      mean_df <- if(m==sia[1]) edf else rbind(mean_df,edf)
+
+      # add global sums and zonal means 
+      if((lab$gsum|lab$gmean)&is.null(diff)) {
+  
+        # area integrate
+        # edf is already a mean annual value 
+        areai   <- area_integrate(edf[,1:2],edf$plotdata,mod_res,lab$gmean)
+        print(head(areai),quote=F)
+        mean_gs <- sum(areai,na.rm=T)
+        mean_global_sum <- if(m==sia[1]) mean_gs else c(mean_global_sum,mean_gs)
+  
+        # arrange zonal data
+        # - area integrated annual mean values using the year range specified in yr_mean 
+        ymai  <- areai 
+        zmlat <- as.data.frame.table(tapply(ymai,edf$lat,sum))
+        zmlon <- as.data.frame.table(tapply(ymai,edf$lon,sum))
+      
+        zmlat[,1] <- as.numeric(as.character(zmlat[,1]))
+        zmlon[,1] <- as.numeric(as.character(zmlon[,1]))
+  
+        zonal_lat <- if(m==sia[1]) t(zmlat) else rbind(zonal_lat,zmlat[,2])
+        zonal_lon <- if(m==sia[1]) t(zmlon) else rbind(zonal_lon,zmlon[,2])      
+      }
+      
+      if(m==sia[1]) m <- m + 1 
+      
     }
+
+    # this is poor programing but will work for now to add correct labels and keep input consistent 
+    if(!is.null(SIFadj)) if(SIFadj=='SIFGPP') SIFadj <- 'SIF-CASA'
+    if(!is.null(diff))   if(diff=='SIFGPP')     diff <- 'SIF-CASA'
 
     # adjust SIF by other dataset
     if(!is.null(SIFadj)) {
+      print('',quote=F)
       print(paste('Adjust SIF by:',SIFadj,'mean'),quote=F)
+
+      if(class(df$run)=='character') {
+        df$run      <- as.factor(df$run)
+        mean_df$run <- as.factor(mean_df$run)
+        print(levels(df$run))
+      }
+
       sifsubs  <- which(df$run=='SIF')
       normsubs <- which(df$run==SIFadj)
       df$plotdata[sifsubs] <- ( df$plotdata[sifsubs] / mean(df$plotdata[sifsubs],na.rm=T) ) * mean(df$plotdata[normsubs],na.rm=T) 
+      levels(df$run)[which(levels(df$run)=='SIF')] <- 'scaled-SIF'
+
       sifsubs  <- which(mean_df$run=='SIF')
       normsubs <- which(mean_df$run==SIFadj)
-      print(paste(mean(mean_df$plotdata[sifsubs],na.rm=T),mean(mean_df$plotdata[normsubs],na.rm=T)),quote=F) 
       mean_df$plotdata[sifsubs] <- ( mean_df$plotdata[sifsubs] / mean(mean_df$plotdata[sifsubs],na.rm=T) ) * mean(mean_df$plotdata[normsubs],na.rm=T) 
-    } 
+      levels(mean_df$run)[which(levels(mean_df$run)=='SIF')] <- 'scaled-SIF'
+      print(length(which(is.na(mean_df$plotdata[sifsubs]))))
+      if(!is.null(diff)) if(diff=='SIF') diff <- 'scaled-SIF'
+
+      # add global sums and zonal means 
+      if((lab$gsum|lab$gmean)&is.null(diff)) {
+  
+        # area integrate
+        print(head(edf),quote=F)
+        # edf is already a mean annual value 
+        areai   <- area_integrate(mean_df[sifsubs,1:2],mean_df$plotdata[sifsubs],mod_res,lab$gmean)
+        mean_gs <- sum(areai)
+        sif_sub <- length(sia) + sum(c(MPI,PR,SIFGPP)) + !evalonly
+      #  sif_sub <- length(sia) + sum(c(MPI,PR,SIFGPP)) + evalonly
+        mean_global_sum[sif_sub] <-  mean_gs 
+
+        # arrange zonal data
+        # - area integrated annual mean values using the year range specified in yr_mean 
+        ymai    <- areai 
+        zmlat   <- as.data.frame.table(tapply(ymai,edf$lat,sum))
+        zmlon   <- as.data.frame.table(tapply(ymai,edf$lon,sum))
+      
+        zmlat[,1]   <- as.numeric(as.character(zmlat[,1]))
+        zmlon[,1]   <- as.numeric(as.character(zmlon[,1]))
+  
+        zonal_lat[sif_sub,] <- zmlat
+        zonal_lon[sif_sub,] <- zmlon
+      } 
+
+    }
+
+    # plotting order
+    if(evalonly) {  
+     df$run      <- factor(df$run,levels=c('MPI','WangFP','SIF-CASA','scaled-SIF')[which(c(MPI,PR,SIFGPP,SIF))])
+     mean_df$run <- factor(mean_df$run,levels=c('MPI','WangFP','SIF-CASA','scaled-SIF')[which(c(MPI,PR,SIFGPP,SIF))])
+    }
   }
  
-#  # append datasets with eval data
-#  if(SIF) {
-#    # restrict SIF dataset to pixels that occur in the model dataset only
-#    # hijacking the now unused df1 dataframe from the simulations loop
-#    df1$plotdata <- NA
-#    df1$run      <- 'SIF'
-#    df1$plotdata <- sif_df$plotdata[match(paste(df1$lat,df1$lon),paste(sif_df$lat,sif_df$lon))]
-#    sif_df 	 <- df1
-#    if(!is.null(norm)) {
-#      if(norm=='sd') sif_df$plotdata <- ( sif_df$plotdata - mean(sif_df$plotdata,na.rm=T) ) / (var(sif_df$plotdata,na.rm=T)^0.5)
-#      else           sif_df$plotdata <- sif_df$plotdata  / max( abs(quantile(sif_df$plotdata,1-norm,type=8,na.rm=T)) , abs(quantile(sif_df$plotdata,norm,type=8,na.rm=T)) )
-#    }
-#    df      <- rbind(df,sif_df)
-#    mean_df <- rbind(mean_df,sif_df)
-#  }
-# 
-#  if(MPI) {
-#    # restrict MPI dataset to pixels that occur in the model dataset only
-#    # hijacking the now unused df1 dataframe from the simulations loop or above SIF processing
-#    df1$plotdata <- NA
-#    df1$run      <- 'MPI'
-#    df1$plotdata <- mpi_df$plotdata[match(paste(df1$lat,df1$lon),paste(mpi_df$lat,mpi_df$lon))]
-#    mpi_df 	 <- df1
-#    if(!is.null(norm)) {
-#      if(norm=='sd') mpi_df$plotdata <- ( mpi_df$plotdata - mean(mpi_df$plotdata,na.rm=T) ) / (var(mpi_df$plotdata,na.rm=T)^0.5)
-#      else           mpi_df$plotdata <- mpi_df$plotdata  / max( abs(quantile(mpi_df$plotdata,1-norm,type=8,na.rm=T)) , abs(quantile(mpi_df$plotdata,norm,type=8,na.rm=T)) )
-#    }
-#
-#    # replace NAs with zeros
-#    mpi_df$plotdata[which(is.na(mpi_df$plotdata))] <- 0 
-#
-#    df      <- rbind(df,mpi_df)
-#    mean_df <- rbind(mean_df,mpi_df)
-#
-#  }
-
   if(EOF) {
     # open climate data 
     for(clim_var in c('prc','tmp','swr')) {
@@ -574,10 +600,6 @@ for( v in 1:length(vars) ) {
   
       # normalise 
       if(!is.null(norm)) ym <- fnorm(ym,norm) 
-#      if(!is.null(norm)) {
-#        if(norm=='sd') ym$plotdata <- ( ym$plotdata - mean(ym$plotdata,na.rm=T) ) / (var(ym$plotdata,na.rm=T)^0.5)
-#        else           ym$plotdata <- ym$plotdata  / max( abs(quantile(ym$plotdata,1-norm,type=8,na.rm=T)) , abs(quantile(ym$plotdata,norm,type=8,na.rm=T)) )
-#      }
 
       climdf <- if(clim_var=='prc') ym else rbind(climdf,ym)
     }
@@ -628,10 +650,13 @@ for( v in 1:length(vars) ) {
     if(trend_norm) tglobsum <- apply(tglobsum,2,function(v) v - v[1])
     lt       <- dim(global_sum)[2]
   }
-  gsi <- if(is.null(icon)) 1:length(globsum) else icon[[1]]
-  
+  gsi <- if(is.null(icon)) 1:length(mean_global_sum) else icon[[1]]
+  print(gsi) 
+ 
   # make difference
   if(!is.null(diff)) {
+    print('') 
+    print(paste('diff selected:',diff))
     # the run subsets must be identical in their lat and lon order
     df$plotdata      <- df$plotdata - df$plotdata[df$run==diff]
     mean_df$plotdata <- mean_df$plotdata - mean_df$plotdata[mean_df$run==diff]
@@ -721,7 +746,8 @@ for( v in 1:length(vars) ) {
     if(is.null(slabels)) slabels <- sim[sia]
 
     # axis label
-    axis_unit <- if(lab$gsum) lab$sunit else lab$unit
+    axis_unit <- if(lab$gsum)     lab$sunit else lab$unit
+    axis_unit <- if(lab$printsum) axis_unit else "'-'"
     axis_lab  <- eval(parse(text=paste('expression(',lab$name,"  (",axis_unit,")",')',sep='')))
  
     # key 
@@ -815,7 +841,7 @@ for( v in 1:length(vars) ) {
       #                        pregion,gs=mean_global_sum[gsi],norm=norm,diff=diff,mask=mask,labcex=labcex,stripprint,
       #                        layout=c(cs,rs),skip=skip,index.cond=icon,main=list(main,cex=labcex))
       ofile <- paste(of,'_',pregion,'_scatter_',vars[v],'-',vars[v-1],sep='')
-      if(plotype=='pdf') pdf(paste(ofile,'pdf',sep='.'))#,width=width1,height=width1,pointsize=pointsize)
+      if(plotype=='pdf') pdf(paste(ofile,'pdf',sep='.',width=width,height=width,pointsize=pointsize))
       else               png(paste(ofile,'png',sep='.'))#,width=4*res,height=3*res,pointsize=28,bg=backg)
       trellis.par.set(mpars)
       print(ps)

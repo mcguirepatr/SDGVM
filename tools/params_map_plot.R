@@ -23,7 +23,7 @@ col.inc.gpp <- c(col.inc[1:4],'greenyellow',col.inc[6],'green4',col.inc[8:10],'n
 npp <- list(
   name  = 'NPP',
   nsub  = '',
-  unit  = 'gCm^-2',
+  unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',
   gsum  = T,
   gmean = F,
@@ -34,20 +34,20 @@ npp <- list(
 gpp <- list(
   name  = 'GPP',
   nsub  = '',
-  unit  = 'gCm^-2',
+  unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',
   gsum  = T,
   gmean = F,
   printsum = T,
-  #at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500,4000),
-  at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500),
-  cols  = viridis(14)
-  #cols  = col.inc.gpp
+  at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500,4000),
+  #at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500),
+  #cols  = viridis(14)
+  cols  = col.inc.gpp
 )  
 nbp <- list(
   name  = 'NBP',
   nsub  = '',
-  unit  = 'gCm^-2',
+  unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',
   gsum  = T,
   gmean = F,
@@ -83,7 +83,7 @@ antlfn <- list(
 evt <- list(
   name  = 'Total Evapotranspiration',
   nsub  = '',
-  unit  = 'kgm^-2',
+  unit  = 'kgm^-2*y^-1',
   sunit = 'Eg',
   gsum  = T,
   gmean = F,
@@ -94,7 +94,7 @@ evt <- list(
 trn <- list(
   name  = 'Transpiration',
   nsub  = '',
-  unit  = 'kgm^-2',
+  unit  = 'kgm^-2*y^-1',
   sunit = 'Eg',
   gsum  = T,
   gmean = F,
@@ -116,7 +116,7 @@ scn  <- list(
 sresp <- list(
   name  = 'Heterotrophic Respiration',
   nsub  = '',
-  unit  = 'gCm^-2',
+  unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',
   gsum  = T,
   gmean = F,
@@ -127,7 +127,7 @@ sresp <- list(
 presp <- list(
   name  = 'Canopy Respiration',
   nsub  = '',
-  unit  = 'gCm^-2',
+  unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',
   gsum  = T,
   gmean = F,
@@ -138,7 +138,7 @@ presp <- list(
 mgresp <- list(
   name  = 'Plant Respiration',
   nsub  = '',
-  unit  = 'gCm^-2',
+  unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',
   gsum  = T,
   gmean = F,
@@ -166,10 +166,10 @@ anvcmax <- list(
   gmean = T,
   printsum = F,
 #  at    = c(0,10,15,20,25,30,35,40,50,60,70,80 ,100,120,140,160),
-#  at    = c(0,5 ,10,15,20,30,40,50,60,75,90,105,120,140,160,180),
-  at    = c(0,5,10,15,20,25,30,35,40,45,50,55,60,70,80),
+  at    = c(0,5 ,10,15,20,30,40,50,60,75,90,105,120,140,160,180),
+#  at    = c(0,5,10,15,20,25,30,35,40,45,50,55,60,70,80),
 #  cols  = col.inc.gpp
-  cols  = viridis(14)
+  cols  = viridis(15)
 )
 
 anjmax <- list(
@@ -220,8 +220,8 @@ swr<- list(
 qtotal<- list(
   name  = 'PAR',
   nsub  = '',
-  unit  = 'mol*m^-2*yr^-1',
-  sunit = 'mol*m^-2*yr^-1',
+  unit  = 'mol*m^-2*y^-1',
+  sunit = 'mol*m^-2*y^-1',
   gsum  = F,
   gmean = T,
   printsum = F,
