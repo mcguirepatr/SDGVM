@@ -322,6 +322,17 @@
             STOP
           ENDIF
 
+
+          !Always set C4 vcmax and PEPC (hijacking the jmax variable) from van Bodegom trait environment
+          !relationships or mean. 
+          !currently assumes same canopy and temp scaling and age reduction as C3 
+          IF (c3.NE.1) THEN
+            vm(i) = env_vcmax * can(i)/can(1)
+            jm(i) = env_jmax  * can(i)/can(1)
+            jfv   = .FALSE.
+          ENDIF
+
+
           !temperature scale Vcmax & Jmax
           !if(vcmax_type.le.6) then
           vmx(i) = vm(i) * T_SCALAR(t,'v',ttype,ftToptV,ftHaV,ftHdV,
@@ -442,7 +453,7 @@
       ELSE
         
         IF(vcmax_type.eq.9) THEN
-          !LUNA model retains the final value of vcmax pre-total leaf loss to initialise the following year
+          !LUNA model retains the final value of vcmax pre total leaf-loss to initialise the following year
           vm(:)     = vcmax(:) 
           jm(:)     = jmax(:)
         ELSE
@@ -514,7 +525,8 @@
             CALL ASSIMILATION_CALC(fshade(i),fsunlit(i),
      &vmx(i),xvmax,rd(i),jshade(i),jsunlit(i),upt(i),qshade(i),
      &qsunlit(i),t,rn,soil2g,wtwp,ga,rh,C3,kg,ko,kc,tau,p,oi,ca,
-     &a(i),gs(i),ci(i),day,mnth,oday,omnth,.FALSE.,gs_func,ftg0,ftg1,i)
+     &a(i),gs(i),ci(i),day,mnth,oday,omnth,.FALSE.,gs_func,ftg0,ftg1,i,
+     &jmx(i))
           ENDDO
 
           if(output.and.(mnth.eq.omnth).and.(day.eq.oday)
@@ -588,7 +600,7 @@
      &vmx(i),xvmax,rd(i),jshade_sd(i),jsunlit_sd(i),upt(i),
      &qshade_sd(i),qsunlit_sd(i),t,rn,soil2g,wtwp,ga,rh,C3,kg,ko,
      &kc,tau,p,oi,ca,a_sd(i),gs_sd(i),ci_sd(i),day,mnth,oday,
-     &omnth,.FALSE.,gs_func,ftg0,ftg1,i)
+     &omnth,.FALSE.,gs_func,ftg0,ftg1,ii,jmx(i))
 
             !LAI loop
             ENDDO
@@ -747,13 +759,13 @@
       SUBROUTINE ASSIMILATION_CALC(fshade,fsunlit,vmx,xvmax,rd,
      &jshade,jsunlit,upt,qshade,qsunlit,t,rn,soil2g,wtwp,ga,rh,C3,kg,
      &ko,kc,tau,p,oi,ca,a,gs,ci,day,mnth,oday,omnth,output,gs_func,g0,
-     &g1,i)
+     &g1,i,pepc)
 
       IMPLICIT NONE
 
       !input variable by layer variables
       real*8  fshade,fsunlit,vmx,rd,jshade,jsunlit,upt
-      real*8  qshade,qsunlit
+      real*8  qshade,qsunlit,pepc
 
       !input variables constant over layers
       real*8   t,rn,soil2g,wtwp,ga,rh,kg,ko,kc,tau,p,oi,ca,g0,g1
@@ -768,8 +780,8 @@
 
       !output variables
       real*8  a,gs,ci
-      real*8  xvmax      !need to make this an array and set it up in canopy properties lai loop
-      logical output,brent     !flag to print troubleshooting output to screen
+      real*8  xvmax        !need to make this an array and set it up in canopy properties lai loop
+      logical output,brent !flag to print troubleshooting output to screen
 
       brent = .false. ! if the brent solver needs reimplementing here 
                       ! then it will be necessary to pass the pft temp scalar parameters to this subroutine  
@@ -847,7 +859,7 @@
             !sunlit or shade if 
             IF (fshade.GT.0.01d0) THEN
               CALL ASSC4_colim(ashade,pcshade,gsshade,ca,vmx,rh,kg,t,
-     &qshade,p,upt,rd,dv,g0,g1,gs_func,ga)
+     &qshade,p,upt,rd,dv,g0,g1,gs_func,ga,pepc)
               a  = fshade*ashade
               ci = fshade*pcshade
               gs = fshade*gsshade
@@ -855,7 +867,7 @@
             ENDIF
             IF (fsunlit.GT.0.01d0) THEN
               CALL ASSC4_colim(asunlit,pcsunlit,gssunlit,ca,vmx,rh,kg,t,
-     &qsunlit,p,upt,rd,dv,g0,g1,gs_func,ga)
+     &qsunlit,p,upt,rd,dv,g0,g1,gs_func,ga,pepc)
               a  = a  + fsunlit*asunlit
               ci = ci + fsunlit*pcsunlit
               gs = gs + fsunlit*gssunlit
@@ -1634,12 +1646,12 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
  
 *----------------------------------------------------------------------*
       SUBROUTINE ASSC4_colim(a,ci,gs,ca,vmax,rh,kg,t,q,p,up,rd,dv,g0,g1,
-     &gs_func,ga)
+     &gs_func,ga,pepc)
  
       IMPLICIT NONE
 
       REAL*8 gs_leaf,c4_colim 
-      REAL*8 a,pc,gs,pa,vmax,rh,t,q,up,p,vmq,absx,qrub,f,jqq,dv
+      REAL*8 a,pc,gs,pa,vmax,rh,t,q,up,p,vmq,absx,qrub,f,jqq,dv,pepc
       REAL*8 amxt,ac4t,kg,rd,ca,cs,ci,je,k,kt,alpha
       REAL*8 fa,fa0,fa00,faf,a0,af,step
       REAL*8 ax,bx,cx,g0,g1,ga,maxa
@@ -1661,8 +1673,15 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
       !print*, 'C4 min(Je,Ji):',maxa
 
       ! solve colimited net assimiilation rate 
-      k     = 0.70d0
-      kt    = k * 2**( (t-25)/10 ) 
+      !k     = 0.70d0
+      !kt    = k * 2**( (t-25)/10 ) 
+      ! below replaces parameters from collatz 1992 with trait
+      ! environment relationships from van Bodegom and SDGVM temp
+      ! scaling 
+      ! k is multiplied by 1e3 as pepc is passed thru the jmax value
+      ! which is assumed in umolm-2s-1 but pepc is in mmolm-2s-1
+      k     = pepc * 1d3
+      kt    = k  
 
       step = 1.0d0
       a    = 0.0d0

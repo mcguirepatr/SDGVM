@@ -38,6 +38,7 @@
       REAL*8 sumbio,ans1,ftstmx(maxnft),leaflit(maxnft),stemlit(maxnft)
       REAL*8 rootlit(maxnft),ftwd(maxnft),ftxyl(maxnft),ftpd(maxnft)
       REAL*8 ftsla(maxnft),ftcov(maxnft),lon0,lonf,ftrat(maxnft),kd,kx
+      REAL*8 input_ftsla(maxnft)
       REAL*8 ftvna(maxnft),ftvnb(maxnft),ftjva(maxnft),ftjvb(maxnft)
       REAL*8 ftg0(maxnft),ftg1(maxnft),amax(maxnft),vcmax_from_amax
       REAL*8 stembio,rootbio,sum,solcoo,biotoo,lutab(255,100),awl(4)
@@ -119,6 +120,7 @@
       REAL*8 env_vcmax_min(maxnft),env_jmax_min(maxnft)
       REAL*8 env_vcmax_max(maxnft),env_jmax_max(maxnft)
       REAL*8 env_sla_max(maxnft),env_sla_min(maxnft)
+      REAL*8 trait_env_C4_vcmax,trait_env_C4_pepc 
       INTEGER env_vcmax_bounds(maxnft),env_jmax_bounds(maxnft)
       INTEGER env_sla_bounds(maxnft),daily_co2,par_loops,s070607
       REAL*8 can2g,tslc,trlc,active_cov
@@ -1248,6 +1250,10 @@
         ENDIF
         nft = ft
       ENDIF
+
+      ! preverve inpyut sla value to overwrite trait environment
+      ! relationships below when needed 
+      input_ftsla(:) = ftsla(:)
 
 *----------------------------------------------------------------------*
 * Create leaf mortality scales values.                                 *
@@ -2738,7 +2744,7 @@ c     &site_dat,lat,lon,ca
           ENDIF
 
 * calculate annual mean climate variables for trait relationships, Ordonez, TERRABITES etc
-        IF((vcmax_type.ge.2).OR.(ncalc_type.ge.2)) THEN
+        !IF((vcmax_type.ge.2).OR.(ncalc_type.ge.2)) THEN
           !initialise arrays
           IF(iyear.eq.1) THEN
 
@@ -2908,7 +2914,7 @@ c          tleaf_sla = tleaf_sla/1000
           env_vcmax(:) = 0.0d0
           env_jmax(:)  = 0.0d0
           
-          IF(vcmax_type.eq.2) THEN
+          IF(vcmax_type.ne.3) THEN
           !van Bodegom and Verheijin trait regressions
 
           !C3 grass/forb
@@ -2989,25 +2995,25 @@ c          tleaf_sla = tleaf_sla/1000
           ftsla(10)      = 9.46d0
           ENDIF
        
-        ELSE
-          !satisfy initialisation output when trait regressions are not used 
-          matmp     = matmp_init 
-          matmp_max = matmp_max_init
-          matmp_min = matmp_min_init
-          maprc     = maprc_init
-          mahum     = mahum_init
-          maswr     = maswr_init
-          !map_days  = map_days_init
-          !masoilc   = masoilc_init
-          !masoilw   = masoilw_init
-        
-          masoilcn = soilcn_init
-          soilp    = soilp_init
-        !leaf trait loop  
-        ENDIF         
+c        ELSE
+c          !satisfy initialisation output when trait regressions are not used 
+c          matmp     = matmp_init 
+c          matmp_max = matmp_max_init
+c          matmp_min = matmp_min_init
+c          maprc     = maprc_init
+c          mahum     = mahum_init
+c          maswr     = maswr_init
+c          !map_days  = map_days_init
+c          !masoilc   = masoilc_init
+c          !masoilw   = masoilw_init
+c        
+c          masoilcn = soilcn_init
+c          soilp    = soilp_init
+c        !leaf trait loop  
+c        ENDIF         
 
 
-        IF(vcmax_type.eq.2) THEN
+        IF(vcmax_type.ne.3) THEN
           !restrict to 95 %iles of observed trait data
           
           !print*, env_vcmax(:)
@@ -3199,6 +3205,17 @@ c          tleaf_sla = tleaf_sla/1000
           !print*, env_jmax(:)
         ENDIF
 
+        ! extract vcmax & pepc values for C4
+        trait_env_C4_vcmax = env_vcmax(4)
+        trait_env_C4_pepc  = env_jmax(4)
+
+        !overwrite trait environment relationship of SLA when not required 
+        IF ((vcmax_type.ne.2).and.(vcmax_type.ne.3)) THEN
+          ftsla(:) = input_ftsla(:)
+        ENDIF
+
+
+
 *----------------------------------------------------------------------*
 * Carbon at the start of the year.                                     *
 *----------------------------------------------------------------------*
@@ -3346,6 +3363,8 @@ c     water
           sresp(ft) = 0.0d0
           lch(ft) = 0.0d0
 
+          ! calculate Amax as a function of N uptake
+          ! then calc Vcmax from Amax (SDGVM original method)
           amax(ft) = 0.0d0
           IF(vcmax_type.eq.5) THEN
           !calculation of Vcmax from Amax and N uptake rate
@@ -3372,7 +3391,16 @@ c            print*, ft, env_vcmax(ft)
             !print*, ft,soilc(ft),soiln(ft),matmp,amax(ft),env_vcmax(ft)
           ENDIF
 
-
+          !In case where Amax Vcmax method used, set C4 grass/forb vcmax and PEPC (jmax hijacked) using
+          !trait environment relationships or mean
+          env_vcmax(4)   = trait_env_C4_vcmax
+          env_jmax(4)    = trait_env_C4_pepc
+          ! set C4 crops the same
+          env_vcmax(6) = env_vcmax(4)
+          env_jmax(6)  = env_jmax(4)
+          
+          
+          
 * Height (m)
 cccn           ht(ft) = 0.807d0*(laimax(ft)**2.13655d0)
           ht(ft) = 0.807d0*(5.0d0**2.13655d0)
@@ -3382,6 +3410,7 @@ cThis is to do what doly did... but
 cit's strange. Initialisation to 0.0d0 is ok, but the previous 
 c one laimax=4.6d0 above seems not good.
 
+          
 
 c     Convert nppstore to mols
           nppstore(ft) = nppstore(ft)/12.0d0
