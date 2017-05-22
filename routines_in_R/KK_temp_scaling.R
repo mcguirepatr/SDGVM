@@ -66,6 +66,24 @@ f_kkt_scalar <- function(Ts,Tr=25,pars,topt=25,tacc=F,tgrowth=25) {
 }
 
 
+t <- 25
+t <- 1:50
+tk <- t + 273.15
+# below are the kinetic parameters from Farquhar etal 1980
+kc  = exp(35.8 - 80.5/(0.00831*tk))
+ko  = exp(9.6 - 14.51/(0.00831*tk))*1000.0
+tau = exp(-3.949 + 28.99/(0.00831*tk))
+
+# the above are now deprecated for the in vivo parameters from Bernacchi etal 2001
+kc  = 40.49 * exp((79430.0 / (8.31 * 298.15)) * (1.0 - (298.15) / (273.15 + t)))
+ko  = 27840. * exp((36380.0 / (8.31 * 298.15)) * (1.0 - (298.15) / (273.15 + t)))
+c_p = 4.275 * exp((37830.0 / (8.31 * 298.15)) * (1.0 - (298.15) / (273.15 + t)))
+tau = 0.5*21000/c_p
+
+
+
+
+
 
 # non temperature dependent parameters
 # - Table 3 K&K 2007

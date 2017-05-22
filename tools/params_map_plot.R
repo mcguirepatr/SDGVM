@@ -81,7 +81,7 @@ antlfn <- list(
   cols  = col.inc.gpp
 )         
 evt <- list(
-  name  = 'Total Evapotranspiration',
+  name  = 'Total_Evapotranspiration',
   nsub  = '',
   unit  = 'kgm^-2*y^-1',
   sunit = 'Eg',
@@ -103,7 +103,7 @@ trn <- list(
   cols  = col.inc.gpp
 )
 scn  <- list(
-  name  = '"Total Soil Carbon"',
+  name  = '"Total_Soil_Carbon"',
   nsub  = '',
   unit  = 'gCm^-2',
   sunit = 'PCg',
@@ -111,10 +111,11 @@ scn  <- list(
   gmean = F,
   printsum = T,
   at    = c(0,1000,2500,5000,7500,10000,15000,20000,25000,30000,35000,40000,45000,50000),
-  cols  = col.inc
+  #cols  = col.inc
+  cols  = c( col.inc[1] , rev(viridis(11)) )
 )
 sresp <- list(
-  name  = 'Heterotrophic Respiration',
+  name  = 'Heterotrophic_Respiration',
   nsub  = '',
   unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',
@@ -125,7 +126,7 @@ sresp <- list(
   cols  = col.inc
 )
 presp <- list(
-  name  = 'Canopy Respiration',
+  name  = 'Canopy_Respiration',
   nsub  = '',
   unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',
@@ -136,7 +137,7 @@ presp <- list(
   cols  = col.inc
 )
 mgresp <- list(
-  name  = 'Plant Respiration',
+  name  = 'Plant_Respiration',
   nsub  = '',
   unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',
@@ -185,7 +186,7 @@ anjmax <- list(
   cols  = col.inc.gpp
 )
 biot <- list(
-  name  = '"Vegetation Carbon"',
+  name  = '"Vegetation_Carbon"',
   nsub  = '',
   unit  = 'gCm^-2',
   sunit = 'PgC',
@@ -291,7 +292,7 @@ cov_C3 <- list(
   unit  = 'proportion',
   sunit = 'proportion',
   gsum  = F,
-  gmean = F,
+  gmean = T,
   printsum = F,
   at    = c(0,0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1),
   cols  = col.inc
@@ -312,7 +313,30 @@ cov_Ev_Nl <- cov_C3
 cov_Ev_Nl$name <- 'Evergreen_Needleleaf_Cover'
 cov_BARE <- cov_C3
 cov_BARE$name <- 'Bareground'
+fab <- cov_C3
+fab$name <- 'Fire_Burnt_Area'
 
 
-
+fcn <- list(
+  name  = 'Fire_C_losses',
+  nsub  = '',
+  unit  = 'gCm^-2',
+  sunit = 'PgC',
+  gsum  = T,
+  gmean = F,
+  printsum = T,
+  at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500,4000) /10 ,
+  cols  = col.inc.gpp
+)  
+lulccc <- list(
+  name  = 'Land-use_Change_C_losses',
+  nsub  = '',
+  unit  = 'gCm^-2',
+  sunit = 'PgC',
+  gsum  = T,
+  gmean = F,
+  printsum = T,
+  at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500,4000) /10 ,
+  cols  = col.inc.gpp
+)
 

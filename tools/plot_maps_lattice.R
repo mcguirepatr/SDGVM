@@ -101,6 +101,9 @@ scatter   <- F
 # normalise the data to the norm*100 %ile, or 'sd' or 'center'
 norm      <- NULL 
 
+# output a table of global integrated NBP values for each year, for TRENDY project 
+trendy    <- F 
+
 # make a difference plot, takes the value of the simulation/dataset id string and uses it as the base for the differences
 diff      <- NULL
 
@@ -398,7 +401,7 @@ for( v in 1:length(vars) ) {
       areai   <- area_integrate(mydata[,1:2],mydata[,3:length(mydata)],mod_res,lab$gmean)
       gs      <- apply(as.matrix(areai),2,sum,na.rm=T)   
       mean_gs <- mean(gs[(yr_mean[1]-styr+1):(yr_mean[2]-styr+1)])  
-      global_sum      <- if(m==sia[1]) gs else rbind(global_sum,gs)
+      global_sum      <- if(m==sia[1])      gs else rbind(global_sum,gs)
       mean_global_sum <- if(m==sia[1]) mean_gs else c(mean_global_sum,mean_gs)
       #mean_global_sum <- if(m==sia[1]) mean(gs[(yr_mean[1]-styr+1):(yr_mean[2]-styr+1)]) else 
       #                   c(mean_global_sum,mean(gs[(yr_mean[1]-styr+1):(yr_mean[2]-styr+1)]))      
@@ -422,6 +425,26 @@ for( v in 1:length(vars) ) {
         zonal_lon  <- NULL
       }
       
+      if(TRENDY&vars[v]=='nbp') { 
+
+        # zonal/regional sumns for TRENDY NBP
+        trendy_df <- data.frame(year=styr:endyr,global=gs)
+        # Northern extra-tropics
+        sub_mydata <- subset(mydata,lat>30)
+        areai      <- area_integrate(sub_mydata[,1:2],sub_mydata[,3:length(sub_mydata)],mod_res,lab$gmean)
+        trendy_df$northern <- apply(as.matrix(areai),2,sum,na.rm=T)   
+        # tropics
+        sub_mydata <- subset(mydata,lat<30&lat>-30)
+        areai      <- area_integrate(sub_mydata[,1:2],sub_mydata[,3:length(sub_mydata)],mod_res,lab$gmean)
+        trendy_df$tropics <- apply(as.matrix(areai),2,sum,na.rm=T)   
+        # Southern extra-tropics
+        sub_mydata <- subset(mydata,lat<-30)
+        areai      <- area_integrate(sub_mydata[,1:2],sub_mydata[,3:length(sub_mydata)],mod_res,lab$gmean)
+        trendy_df$southern <- apply(as.matrix(areai),2,sum,na.rm=T)   
+        
+        write.csv(trendy_df,paste('SDGVM_',sim[m],'_nbp.csv'),row.names=F,quote=F )
+      }  
+
     } else { 
       
       global_sum      <- NULL

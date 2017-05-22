@@ -61,14 +61,24 @@ fend   <- '.dat'
 ncf    <- 'SDGVM'
 ncfend <- '.nc'
 
+# netcdf files to create
+ncdf_avars <- c('cVegpft')
+ncdf_mvars <- c('pr','evapotranspft')
+#ncdf_avars <- c('cVeg','cLitter','cSoil','cVegpft','fFire','fLuc','cLeaf','cRoot','burntArea')
+#ncdf_mvars <- c('tas','pr','rsds','mrro','evapotrans','gpp','ra','npp','rh','nbp','lai',
+#                'evapotranspft','transpft','swepft','gpppft','npppft','nbppft','tran')
+#'mrso','landCoverFrac'
+
 # nc file parameters
-mis_val <- -99999
-nsites  <- 1548
-lon     <- 3.75
-lat     <- 2.5
+mis_val  <- -99999
+nsites   <- 1548
+lon      <- 3.75
+lat      <- 2.5
+pftnames <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
 
 if(deg1){
   nsites <- 15417
+#  nsites <- 18316
   lon    <- 1
   lat    <- 1  
 }
@@ -92,7 +102,6 @@ if(length(commandArgs(T))>=1) {
 ##########################
 setwd(fd)
 source('read_SDGVM_output.R')
-if(netcdf) source('functions_netcdf.R')
 
 
 
@@ -120,8 +129,9 @@ if(stich) {
 }
 
 # convert data to CMOR netcdf output
+if(netcdf) source('functions_netcdf.R')
 if(netcdf) lapply(wd_list[pia],write_sdgvm_netcdf,
-                  afiles=afiles,
-                  mfiles=mfiles,
-                  nsites=nsites,nyears=ny,lon=lon,lat=lat)
+                  afiles=ncdf_avars,
+                  mfiles=ncdf_mvars,
+                  nsites=nsites,nyears=ny,styr=sty,lon=lon,lat=lat)
   

@@ -6,7 +6,7 @@
       SUBROUTINE COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
      &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
-     &nat_map,ic0,burn,harvest,leafdp)
+     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 cov(maxage,maxnft),bio(maxage,2,maxnft),bioleaf(maxnft)
@@ -16,8 +16,9 @@
       REAL*8 ftstmx(maxnft),stemdp(1000,maxnft),rootdp(1000,maxnft)
       REAL*8 fprob,ftprop(maxnft),ngcov,gold,c3old,c4old,fri,norm
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
+      REAL*8 ftloss_prop(maxnft),sum_cov(maxnft),flulccc
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
-      INTEGER ft,fireres,ilanduse,nat_map(8),age
+      INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       LOGICAL burn,harvest
 
       IF (ilanduse.eq.2) THEN
@@ -49,6 +50,48 @@
       ENDIF
 
 *----------------------------------------------------------------------*
+* Reduce ft area due to change in the LULCC database                   *
+* and put this as bare ground ready for new growth 'ngrowth'.          *
+*----------------------------------------------------------------------*
+      ngcov = 0d0
+      flulccc = 0d0
+
+      IF (ilanduse.lt.2) THEN
+      sum_cov(:)     = 0.0d0
+      ftloss_prop(:) = 0.0d0
+      DO ft=3,nft
+        DO age=1,ftmor(ft)
+          sum_cov(ft) = sum_cov(ft) + cov(age,ft)
+        ENDDO
+        !print*, sum_cov(ft)
+
+        ! need to make this tree speciifc
+
+        if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
+        if( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) then
+        !if( ftprop(ft)*1d-2 .lt. sum_cov(ft) ) then
+          
+          if( ftprop(ft) .gt. 1d-1 ) then
+            ftloss_prop(ft) = 1d0 - (ftprop(ft)*1d-2)/sum_cov(ft)
+          else
+            ftloss_prop = 1d0 
+          endif
+
+          !print*, 'ftprop is less than sum_cov:',
+      !&ft, ftprop(ft)*1d-2, sum_cov(ft), ftloss_prop(ft) 
+          !print*, (ftprop(ft)*1d-2) - sum_cov(ft)
+
+          CALL LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
+     &ftloss_prop,npp,nps,ngcov,slc,rlc,fireres,flulccc,harvest,leafdp,
+     &ft)
+
+          ngcov = ngcov + ftloss_prop(ft) * sum_cov(ft)
+        endif
+        endif
+
+      ENDDO
+      ENDIF
+*----------------------------------------------------------------------*
 * Compute the likelyhood of fire in the current year 'fprob'.          *
 * 'find' is the fire index                                             *
 *----------------------------------------------------------------------*
@@ -60,7 +103,8 @@
 * Also shift cover and biomass arrays one to the right.                *
 *----------------------------------------------------------------------*
       CALL NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
-     &npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp)
+     &npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc)
+
 *----------------------------------------------------------------------*
 
       IF (ilanduse.eq.2) THEN
@@ -68,23 +112,23 @@
 * Compute percentages of decid, ever and grass for the new growth      *
 * ('ngrowth') this year.                                               *
 *----------------------------------------------------------------------*
-*      CALL PERC(dof,tmin,ftprop,nft)
+*       CALL PERC(dof,tmin,ftprop,nft)
 
 *----------------------------------------------------------------------*
 * Restrict the rate of trees taking over grassland.                    *
 *----------------------------------------------------------------------*
-      CALL GRASSREC(nft,ftprop,gold,ngcov,grassrc,nat_map)
+       CALL GRASSREC(nft,ftprop,gold,ngcov,grassrc,nat_map)
 
 *----------------------------------------------------------------------*
 * Restrict the rate of bare ground reclimation 0.2, means 20% can be   *
 * reclaimed every year and set bare ground cover array.                *
 *----------------------------------------------------------------------*
-*      CALL BAREREC(ftprop,cov,bpaold,ngcov,barerc)
+*       CALL BAREREC(ftprop,cov,bpaold,ngcov,barerc)
 
 *----------------------------------------------------------------------*
 * Compute c4 c3 grass split.                                           *
 *----------------------------------------------------------------------*
-*      CALL c3c4(ftprop,c3old,c4old,npp,nps)
+*       CALL c3c4(ftprop,c3old,c4old,npp,nps)
       ENDIF
 *----------------------------------------------------------------------*
 * Set cover arrays to adjust to ftprop as best they can.               *
@@ -1031,13 +1075,13 @@
 * Compute newgrowth and alter cover array accordingly.                 *
 *----------------------------------------------------------------------*
       SUBROUTINE NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &fprob,npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp)
+     &fprob,npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
       REAL*8 hgt(maxage,maxnft),fprob,npp(maxnft),nppstore(maxnft)
       REAL*8 nps(maxnft),ngcov,slc(maxnft),rlc(maxnft),bioleaf(maxnft)
-      REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft)
+      REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
       INTEGER nft,ftmor(maxnft),ft,age,fireres
       LOGICAL harvest
 
@@ -1048,7 +1092,7 @@
 * Take away veg that has died of old age ie > than ftmor(ft), and      *
 * shift cover array on one year.                                       *
 *----------------------------------------------------------------------*
-      ngcov = 0.0d0
+      !ngcov = 0.0d0
       DO ft=1,nft
         ngcov = ngcov + cov(ftmor(ft),ft)
         slc(ft) = slc(ft)  + (bio(ftmor(ft),1,ft) + bioleaf(ft) +
@@ -1107,14 +1151,19 @@
           IF (fireres.LT.0) fprob = real(-fireres)/1000.0d0
           
           !calculate litter from cover loss  
-          ngcov = ngcov + cov(age,ft)*(fprob - fprob*tmor + tmor)
-          slc(ft) = slc(ft) + (bio(age,1,ft) + bioleaf(ft)+ 
-     &nppstore(ft))*(tmor - 0.2d0*fprob*tmor + 0.2d0*fprob)*
-     &cov(age,ft)
+          ngcov   = ngcov + cov(age,ft)*(fprob - fprob*tmor + tmor)
+          
+          slc(ft) = slc(ft) + 
+     &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) * 
+     &(tmor - 0.2d0*fprob*tmor + 0.2d0*fprob) * cov(age,ft)
+
           rlc(ft) = rlc(ft) + bio(age,2,ft)*(tmor - fprob*tmor + fprob)
      &*cov(age,ft)
-          firec = firec + (bio(age,1,ft) + bioleaf(ft) + nppstore(ft))*
-     &(0.8d0*fprob - 0.8d0*fprob*tmor)*cov(age,ft)
+
+          firec   = firec + 
+     &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *
+     &(0.8d0*fprob - 0.8d0*fprob*tmor) * cov(age,ft)
+
           !update cover array
           cov(age,ft) = cov(age,ft)*(1.0d0 - fprob)*(1.0d0 - tmor)
           
@@ -1124,7 +1173,7 @@
             !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact
             if(age.EQ.2) print*, 'harvest'
             !add harvested/removed wood biomass (including 50% nppstore) to firec losses
-            firec   = firec + bio(age,1,ft)*cov(age,ft)
+            flulccc = flulccc + bio(age,1,ft)*cov(age,ft)
             !add harvested/removed leaf biomass to surface soil litter
             slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)
             firec   = firec   + nppstore(ft) * 0.50d0 * cov(age,ft) 
@@ -1148,6 +1197,46 @@
       RETURN
       END
 
+*----------------------------------------------------------------------*
+*                            SUBROUTINE LULCCCHANGE                    *
+*                            ********************                      *
+* Compute newgrowth area and alter cover array according to land-use   *
+* and land-cover change database                                       *
+*----------------------------------------------------------------------*
+      SUBROUTINE LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
+     &ftloss_prop,npp,nps,ngcov,slc,rlc,fireres,flulccc,harvest,leafdp,
+     &ft)
+*----------------------------------------------------------------------*
+      INCLUDE 'array_dims.inc'
+      REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
+      REAL*8 hgt(maxage,maxnft),npp(maxnft),nppstore(maxnft)
+      REAL*8 ftloss_prop(maxnft)
+      REAL*8 nps(maxnft),ngcov,slc(maxnft),rlc(maxnft),bioleaf(maxnft)
+      REAL*8 tmor,tmor0,npp0,flulccc,xfprob,leafdp(3600,maxnft)
+      INTEGER nft,ftmor(maxnft),ft,age,fireres
+      LOGICAL harvest
+
+
+*----------------------------------------------------------------------*
+* kill off pfts that have lost cover according to the landuse database * 
+*----------------------------------------------------------------------*
+
+        DO age=1,ftmor(ft)
+
+          rlc(ft) = rlc(ft) + bio(age,2,ft) * 
+     &ftloss_prop(ft) * cov(age,ft)
+
+          flulccc = flulccc + 
+     &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *
+     &ftloss_prop(ft) * cov(age,ft)
+
+          !update cover array
+          cov(age,ft) = cov(age,ft)*( 1.0d0 - ftloss_prop(ft) )
+          
+        ENDDO
+
+      RETURN
+      END
 *----------------------------------------------------------------------*
 *                            SUBROUTINE SHIFT                          *
 *                            ****************                          *
