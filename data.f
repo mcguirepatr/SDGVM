@@ -59,6 +59,13 @@ c      print*, yr0, yrf
 	IF ((year.eq.yr0a).and.(mnth.eq.1).and.(day.eq.1)) prev_year =
      &year-1
         !print*, prev_year, norecs      
+	IF ((norecs.eq.0).and.(yr0a.LT.year).AND.
+     &(co2const.LE.0.0).AND.(spinl.gt.0)) THEN
+          do dummy=yr0a,year-1
+            norecs = norecs + 1
+            co2(norecs,:,:) = ca
+          enddo
+        ENDIF
         IF ((year.GE.yr0a).AND.(year.LE.yrfa)) THEN 
           IF(prev_year.EQ.(year-1)) norecs = norecs + 1 
           co2(norecs,mnth,day) = ca 
