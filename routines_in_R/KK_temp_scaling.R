@@ -8,7 +8,11 @@
 #
 #################################
 
-# functions
+
+# SDGVM default temp scaling
+
+
+# K&K functions
 # use fixed delta S based on optimum temperature and other parameters
 f_topt_dS <- function(topt,pars,R=8.31446) {
   # no statement to account for Jmax difference in topt
@@ -95,6 +99,35 @@ p_jmax  <- list(jv='j',Ha=49884,Hd=200000)
 # plots
 library(lattice)
 ts <- 1:50
+
+sdgvm_scalar <- function(t,qt=2.3) {
+  t <- ifelse(t>30,30,t) 
+  qt**(t/10.0)/qt**(2.5)
+}
+
+p1_sdgvm <- 
+  xyplot(
+    sdgvm_scalar(ts) +
+      f_kkt_scalar(ts,topt=32.92,pars=p_vcmax) +
+      f_kkt_scalar(ts,pars=p_vcmax,tacc=T,tgrowth=30) +
+      f_kkt_scalar(ts,pars=p_vcmax,tacc=T,tgrowth=10)
+    ~ts,
+    type='l',lty=c(1,2,2,2),col=c('black','black','red','blue'),
+    ylim=c(0,3),
+    xlab=expression('Environment/Leaf Temperature  ['*degree*C*']'),
+    ylab=expression('Scalar [from 25'*degree*C*']'),
+    abline=list(h=0:1,v=c(25),col='grey80'),
+    key=list(corner=c(0,1),x=0,y=0.95,border=F,
+             lines=list(lty=c(1,2,2,2),col=c('black','black','red','blue')),
+             text=list(c('SDGVM default','modified Arrhenius',
+                         expression('modified Arrhenius with acclimation to 30'*degree*c),
+                         expression('modified Arrhenius with acclimation to 10'*degree*c)
+             ))) 
+    )
+p1_sdgvm
+
+
+
 p1 <- 
 xyplot(f_kkt_scalar(ts,pars=p_vcmax)+
          f_kkt_scalar(ts,pars=p_vcmax,tacc=T)+
@@ -144,5 +177,8 @@ print(p1,split=c(1,1,1,2),more=T)
 print(p2,split=c(1,2,1,2),more=F)
 dev.off()
 
+pdf('SDGVM Temp scaling.pdf',width=8,height=5)
+print(p1_sdgvm,more=F)
+dev.off()
 
 
