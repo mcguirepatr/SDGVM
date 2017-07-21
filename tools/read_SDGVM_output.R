@@ -10,7 +10,7 @@
 .libPaths('~/bin/Rlibs')
 library(plyr)
 library(parallel)
-
+library(gdata)
 
 
 # Function to concatenate SDGVM output when run across multiple cores
@@ -85,7 +85,9 @@ stitch_annual <- function(ifile,grids,wd,...){
   
   print(ifile)
   ldf <- lapply(1:grids,read_grid,ifile,wd)
-  df  <- rbind.fill(ldf)
+  #print(head(ldf[[9]])[,1:10])
+  #df  <- rbind.fill(ldf)
+  df  <- do.call('rbind',ldf)
   
   # write complete dataset to output dir
   setwd(wd)
@@ -96,6 +98,7 @@ stitch_subannual <- function(ifile,grids,wd,...){
   
   print(ifile)
   ldv <- lapply(1:grids,scan_grid,ifile,wd)
+  #ldv <- lapply(c(1:8,10:grids),scan_grid,ifile,wd)
   dv  <- unlist(ldv)
   fdf <- process_sdgvm_matrix(dv,...)
   
@@ -138,16 +141,19 @@ process_sdgvm_matrix <- function(dv,atr,ad,nyears,...){
 }
 
 read_grid <- function(g,ifile,wd){
+  #print(paste(ifile,'grid:',g))
   setwd(paste(wd,'grid',g,'/',sep=''))
-  read.table(ifile,na.strings=c('*********'))
+  read.table(ifile,na.strings=c('*******','********','*********','**********','***********','************'))
 }
 
 scan_grid <- function(g,ifile,wd){
+  #print(paste('grid',g))
   setwd(paste(wd,'grid',g,'/',sep=''))
-  scan(ifile,na.strings=c('*********'))
+  scan(ifile,na.strings=c('*******','********','*********','**********','***********','************'))
 }
 
 write_sdgvm <- function(df,file,w=10){
-  write.table(format(df,width=w),file,row.names=F,col.names=F,quote=F)
+  #write.table(format(df,width=w),file,row.names=F,col.names=F,quote=F)
+  write.fwf(df,file,width=w,justify='left',rownames=F,colnames=F,na='NA')
 }
 

@@ -49,10 +49,10 @@ cVeg <- list(
 )
 cVegpft <- list(
   name  = 'cVegpft',
-  file  = 'biot',
+  file  = 'bio',
   pft   = T,
   lname = 'Vegtype level Carbon in Vegetation',
-  units = 'kg C m-2',
+  units = 'kg C m-2, per unit land area occupied by the PFT',
   scale = 1/1000
 )
 cLitter <- list(
@@ -93,7 +93,7 @@ fFire <- list(
   pft   = F,
   lname = 'CO2 Emission from Fire',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000/(30*24*3600)),
+  scale = 1/(1000*30*24*3600),
   annmonth =NULL
 )
 burntArea <- list(
@@ -106,12 +106,12 @@ burntArea <- list(
 )
 fLuc <- list(
   name = 'fLuc',
-  file = 'flulccc',
+  file = 'lulccc',
   pft   = F,
   lname = 'CO2 Flux to Atmosphere from Land Use Change',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000/(30*24*3600)),
-  notes = 'In this instance of SDGVM all above-ground biomass is a ssumed to be lost immediately to the atmosphere, and this is what this variable records. Below-ground biomass is assumed to go into the soil as litter and this variable does not track subsequent decomposition of that litter.',
+  scale = 1/(1000*30*24*3600),
+  notes = 'In this instance of SDGVM all above-ground biomass is assumed to be lost immediately to the atmosphere, and this is what this variable records. Below-ground biomass is assumed to go into the soil as litter and this variable does not track subsequent decomposition of that litter.',
   annmonth = NULL
 )
 #afiles <- list(v1,v2,v3,v4,v5,v6)
@@ -156,7 +156,7 @@ evapotranspft <- list(
   file  = 'evt',
   pft   = T,
   lname = 'Vegtype level evapotranspiration',
-  units = 'W m-2',
+  units = 'W m-2, per unit land area occupied by the PFT',
   scale = 2.257e6,
   notes = 'Converted to Wm-2 from kg m-2 s-1 (which is the standard SDGVM output) assuming a latent heat of vapourisation of 2257 kJ kg-1 at all times. This ignores the additional energy required for sublimation which is an order of magnitude smaller, but will lead to some discrepancy with other models when comparing this variable in cold regions.' 
 )
@@ -174,7 +174,7 @@ transpft <- list(
   file  = 'trn',
   pft   = T,
   lname = 'Vegtype level transpiration',
-  units = 'W m-2',
+  units = 'W m-2, per unit land area occupied by the PFT',
   scale = 2.257e6,
   notes = 'Converted to Wm-2 from kg m-2 s-1 (which is the standard SDGVM output) assuming a latent heat of vapourisation of 2257 kJ kg-1 at all times. This ignores the additional energy required for sublimation which is an order of magnitude smaller, but will lead to some discrepancy with other models when comparing this variable in cold regions. ' 
 )
@@ -183,7 +183,7 @@ swepft <- list(
   file  = 'snw',
   pft   = T,
   lname = 'Vegtype level snow water equivalent',
-  units = 'kg m-2',
+  units = 'kg m-2, per unit land area occupied by the PFT',
   scale = NA
 )
 # v4 <- list(
@@ -206,23 +206,23 @@ gpp <- list(
   pft   = F,
   lname = 'Gross Primary Production',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000/(30*24*3600))
+  scale = 1/(1000*30*24*3600)
 )
 gpppft <- list(
   name = 'gpppft',
   file = 'gpp',
   pft   = T,
   lname = 'Vegtype level GPP',
-  units = 'kg C m-2 s-1',
-  scale = 1/(1000/(30*24*3600))
+  units = 'kg C m-2 s-1, per unit land area occupied by the PFT',
+  scale = 1/(1000*30*24*3600)
 )
 ra <- list(
   name  = 'ra',
   file  = 'rsp',
   pft   = F,
   lname = 'Autotrophic (Plant) respiration',
-  units = 'kg C m-2 s-1',
-  scale = 1/(1000/(30*24*3600))
+  units = 'kg C m-2 s-1, per unit land area occupied by the PFT',
+  scale = 1/(1000*30*24*3600)
 )
 npp <- list(
   name  = 'npp',
@@ -230,15 +230,15 @@ npp <- list(
   pft   = F,
   lname = 'Net Primary Production',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000/(30*24*3600))
+  scale = 1/(1000*30*24*3600)
 )
 npppft <- list(
   name  = 'npppft',
   file  = 'npp',
   pft   = T,
   lname = 'Vegtype level NPP',
-  units = 'kg C m-2 s-1',
-  scale = 1/(1000/(30*24*3600))
+  units = 'kg C m-2 s-1, per unit land area occupied by the PFT',
+  scale = 1/(1000*30*24*3600)
 )
 rh <- list(
   name  = 'rh',
@@ -246,7 +246,7 @@ rh <- list(
   pft   = F,
   lname = 'Heterotrophic Respiration',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000/(30*24*3600))
+  scale = 1/(1000*30*24*3600)
 )
 nbp <- list(
   name = 'nbp',
@@ -254,7 +254,7 @@ nbp <- list(
   pft   = F,
   lname = 'Net Biome Production',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000/(30*24*3600))
+  scale = 1/(1000*30*24*3600)
 )
 nbppft <- list(
   name = 'nbppft',
@@ -262,7 +262,7 @@ nbppft <- list(
   pft   = T,
   lname = 'Vegtype level NBP',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000/(30*24*3600))
+  scale = 1/(1000*30*24*3600)
 )
 lai <- list(
   name = 'lai',
@@ -279,7 +279,7 @@ landCoverFrac <- list(
   lname = 'Fractional Cover of PFT',
   units = '-',
   scale = 1,
-  notes = 'When deciding whether to run a site, SDGVM checks a high-resolution land-sea mask. if the grid cell is >50% land then the site is simulated assuming that the whole of the grid-cell is land. So the sum of the PFT landCoverFracs should always equal 1. Grid cells <50% land are not simulated.'
+  notes = 'These are derived from the HYDE3.2 cropland and pasture cover dataset, 1860-2015, combined with the ESA CCI 2014 Land Cover maps (Poulter et al 2015) translated for the SDGVM PFT set. Cropland cover of the ESA dataset was reduced or increased according to HYDE while grassland cover in ESA was only increased by the psture cover in HYDE so as not to remoive natural grasslands. This likely high biased grassland cover in 1860. When deciding whether to run a site, SDGVM checks a high-resolution land-sea mask. if the grid cell is >50% land then the site is simulated assuming that the whole of the grid-cell is land. So the sum of the PFT landCoverFracs should always equal 1. Grid cells <50% land are not simulated.'
 )
 #mfiles <- list(v1,v2,v3,v6,v7,v8,v9,v10,v11)
 

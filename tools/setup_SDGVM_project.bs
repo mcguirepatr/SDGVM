@@ -5,7 +5,7 @@ PROJECT=$1
 #SIMS=( NC_zen0_beers C_zen0_beers C_zen_beers C_zen0_beersC C_zen_beersC NC_zen0_LP C_zen0_LP C_zen_LP  )
 #SIMS=( Walker_N_ModA Walker_N_ModA_Tacc Kattge_ModA Kattge_ModA_Tacc  )
 #SIMS=( Constant Constant_ModA Constant_ModA_Tacc LUNA LUNA_ModA LUNA_ModA_Tacc  )
-SIMS=( S0_1deg S1_1deg S2_1deg  )
+SIMS=( spin_accel S0 S1 S2  )
 
 SUBPROJECT=''
 if [ ! -z $2 ]; then SUBPROJECT=_$2; fi

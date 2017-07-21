@@ -29,7 +29,6 @@ edir    <- 'eval_data'
 project <- 'vcmax'
 
 # simulations
-# sim     <- c('original','orig_N','Kattge','Kattge_oxisol','Maire','vBodegom_env','vBodegom_mean','Walker_N','Walker_NP','Woodward_94','Woodward_95')
 sim     <- c('Constant','Kattge','Kattge_oxisol','LUNA','Maire','vBodegom_env','vBodegom_mean','Walker_N','Walker_NP','Woodward_95')
 
 # simulations index array (which simulations to plot from the vector 'sim', when 'sim' is arranged in alphabetical order, i.e. order(sim)[sia], simulations appear on the plot in the sia order)
@@ -85,7 +84,7 @@ trends  <- T
 # write trends across whole timeseries
 trend_out  <- F
 
-# zero ternd on initial year value
+# zero trend on initial year value
 trend_norm <- F
 
 # this should be a character vector. This will break up the zonal lat and lon plots into length(zon_panel_names) panels
@@ -130,7 +129,7 @@ mask      <- NULL
 mask_perc <- 40
 
 # line colour & type on trend and zonal plots, correspond to the labels in 'sim' when 'sim' is in alphabetical order
-col_trend <- viridis(9)
+col_trend <- NULL 
 lty       <- 1 
 
 # plot file format
@@ -148,12 +147,16 @@ backg     <- 'transparent'
 backg     <- 'white'
 
 # plotting variables (these all have an associated list in 'params_map_plot.R', to add variables simply add a list in 'params_map_plot.R' with the same name as the variable).
-vars <- c('npp','gpp','nbp',
-          'anlfn','antlfn',        
-          'evt','trn','scn','sresp','presp','mgresp',
-          'lai','anvcmax','anjmax','biot','kg_beta',
-          'swr','qtotal','tmp','prc','swc','field_capacity','wilting_point',
-          'cov_C3','cov_C4','cov_C3crop','cov_C4crop','cov_Dc_Bl','cov_Dc_Nl','cov_Ev_Bl','cov_Ev_Nl','cov_BARE')
+vars <- c('npp','gpp','nbp','anlfn','antlfn',        
+          'evt','trn','scn','sresp','presp',
+          'mgresp','lai','anvcmax','anjmax','biot',
+          'kg_beta','swr','qtotal','tmp','prc',
+          'swc','field_capacity','wilting_point','cov_C3','cov_C4',
+          'cov_C3crop','cov_C4crop','cov_Dc_Bl','cov_Dc_Nl','cov_Ev_Bl',
+          'cov_Ev_Nl','cov_BARE','fcn','lulccc','fab')
+
+# land-cover is fixed and so has only a single column in the output file
+cov_fixed  <- T
 
 # variable index array (which variables to plot, in the order they appear in the 'vars' vector)
 via <- 1:length(vars)
@@ -180,10 +183,14 @@ print(commandArgs(T))
 # set default values if not specified on command line
 # these are set after parsing command line arguments as they depend on other arguments that could be set on the command line
 if(is.null(sia)&!evalonly) sia <- 1:length(sim)
+#if(is.null(sia))           sia       <- 1:length(sim)
 if(evalonly)               sia <- 1
-if(is.null(lty))           lty <- rep(1:length(sia))
 if(is.null(of))            of  <- project
-year <- if(is.null(pyear)) 2010 else pyear
+#if(is.null(lty))           lty <- rep(1:length(sia))
+if(is.null(lty))           lty       <- 1
+if(is.null(col_trend)) col_trend <- viridis(length(sia))
+#year <- if(is.null(pyear)) 2010 else pyear
+year <- if(is.null(pyear)) yr_mean[2] else pyear
 
 # set model resolution
          mod_res <- c(3.75,2.5)
@@ -202,6 +209,9 @@ print('',quote=F)
 print('Simulations requested:',quote=F)
 print(sim[sia],quote=F)
 if(evalonly) print('simulation only used to standardise eval data',quote=F)
+print('',quote=F)
+print('Variables requested:',quote=F)
+print(vars[via],quote=F)
 print('',quote=F)
 
 # normalisation function
@@ -357,7 +367,7 @@ for( v in 1:length(vars) ) {
     #open data 
     wdpath <- paste(dir,rdir,project,sim[m],'output/',sep='/')
     print(wdpath)
-    if(substr(vars[v],1,3)=='cov') {
+    if(substr(vars[v],1,3)=='cov'&cov_fixed) {
       index  <- 3
       mydata <- open(vars[v],c('lat','lon','cov'),wdpath)
       rs     <- 1 
@@ -388,7 +398,7 @@ for( v in 1:length(vars) ) {
     }
 
     # calculate mean across years
-    if(substr(vars[v],1,3)!='cov') {
+    if( !(substr(vars[v],1,3)=='cov'&cov_fixed) ) {
       ym             <- apply(as.matrix(mydata[,(yr_mean[1]-styr+3):(yr_mean[2]-styr+3)]),1,mean)
       ym             <- cbind(mydata[,1:2],ym,sim[m],mean(yr_mean))
       names(ym)[3:5] <- c('plotdata','run','year')
@@ -408,7 +418,10 @@ for( v in 1:length(vars) ) {
 
       # arrange zonal data
       # - area integrated annual mean values using the year range specified in yr_mean 
-      if(substr(vars[v],1,3)!='cov') {
+      #if(substr(vars[v],1,3)!='cov') {
+      if( !(substr(vars[v],1,3)=='cov'&cov_fixed) ) {
+        print('Make zonal data')
+
         ymai  <- apply(as.matrix(areai[,(yr_mean[1]-styr+1):(yr_mean[2]-styr+1)]),1,mean)
         zmlat <- as.data.frame.table(tapply(ymai,mydata$lat,sum))
         zmlon <- as.data.frame.table(tapply(ymai,mydata$lon,sum))
@@ -425,8 +438,9 @@ for( v in 1:length(vars) ) {
         zonal_lon  <- NULL
       }
       
-      if(TRENDY&vars[v]=='nbp') { 
+      if(trendy&vars[v]=='nbp') { 
 
+        trends <- F
         # zonal/regional sumns for TRENDY NBP
         trendy_df <- data.frame(year=styr:endyr,global=gs)
         # Northern extra-tropics
@@ -434,15 +448,19 @@ for( v in 1:length(vars) ) {
         areai      <- area_integrate(sub_mydata[,1:2],sub_mydata[,3:length(sub_mydata)],mod_res,lab$gmean)
         trendy_df$northern <- apply(as.matrix(areai),2,sum,na.rm=T)   
         # tropics
-        sub_mydata <- subset(mydata,lat<30&lat>-30)
+        sub_mydata <- subset(mydata,lat<=30&lat>= -30)
         areai      <- area_integrate(sub_mydata[,1:2],sub_mydata[,3:length(sub_mydata)],mod_res,lab$gmean)
         trendy_df$tropics <- apply(as.matrix(areai),2,sum,na.rm=T)   
         # Southern extra-tropics
-        sub_mydata <- subset(mydata,lat<-30)
+        sub_mydata <- subset(mydata,lat< -30)
         areai      <- area_integrate(sub_mydata[,1:2],sub_mydata[,3:length(sub_mydata)],mod_res,lab$gmean)
         trendy_df$southern <- apply(as.matrix(areai),2,sum,na.rm=T)   
-        
-        write.csv(trendy_df,paste('SDGVM_',sim[m],'_nbp.csv'),row.names=F,quote=F )
+   
+        print('Write TRENDY NBP csv')
+        setwd(wdpath) 
+        write.csv(trendy_df,paste('SDGVM_',sim[m],'_nbp.csv',sep=''),row.names=F,quote=F )
+        setwd(owd) 
+        write.csv(trendy_df,paste('SDGVM_',sim[m],'_nbp.csv',sep=''),row.names=F,quote=F )
       }  
 
     } else { 
@@ -461,6 +479,8 @@ for( v in 1:length(vars) ) {
       names(df1)[3] <- 'plotdata'
       df1
     }
+    #print(index)
+    #print(head(mydata))
     dfl <- lapply(index,stack,df=mydata) 
     df1 <- rbind.fill(dfl)
     df1$run <- sim[m]    
@@ -471,13 +491,13 @@ for( v in 1:length(vars) ) {
   
     # make dataframe with all simulations
     df      <- if(m==sia[1]) df1 else rbind(df,df1)
-    if(substr(vars[v],1,3)!='cov') mean_df <- if(m==sia[1])  ym else rbind(mean_df,ym)      
+    #if(substr(vars[v],1,3)!='cov') mean_df <- if(m==sia[1])  ym else rbind(mean_df,ym)      
+    if( !(substr(vars[v],1,3)=='cov'&cov_fixed) )  mean_df <- if(m==sia[1])  ym else rbind(mean_df,ym)
 
   # end simulations loop 
   }
 
-  # assumes no variation in land-cover
-  if(substr(vars[v],1,3)=='cov') mean_df <- df
+  if(substr(vars[v],1,3)=='cov'&cov_fixed) mean_df <- df
 
   # prevent global sums and zonal data being over-written when only a single simulation called with eval datasets  
   if(!evalonly) m <- sia[1] + 1  
@@ -728,17 +748,14 @@ for( v in 1:length(vars) ) {
     print(p1)
     dev.off()  
   } 
- 
-  if(plotype=='pdf') pdf(paste(ofile_mean,'pdf',sep='.'),width=width,height=height,pointsize=pointsize)
-  else               png(paste(ofile_mean,'png',sep='.'),width=4*res,height=3*res,pointsize=28,bg=backg)
-  trellis.par.set(mpars)
-  print(p1x)
-  dev.off()  
-  
-  #pdf(pdfofile,width=18,height=12,pointsize=28)
-  #trellis.par.set(mpars)
-  #print(p1)
-  #dev.off()  
+
+  if(!trendy) { 
+    if(plotype=='pdf') pdf(paste(ofile_mean,'pdf',sep='.'),width=width,height=height,pointsize=pointsize)
+    else               png(paste(ofile_mean,'png',sep='.'),width=4*res,height=3*res,pointsize=28,bg=backg)
+    trellis.par.set(mpars)
+    print(p1x)
+    dev.off()  
+  }
   
   # make table
   if(table){
@@ -781,10 +798,19 @@ for( v in 1:length(vars) ) {
                       text=list(slabels,cex=labcex*0.2),lines=list(lty=lty,col=col_trend,lwd=labcex*0.7))
   
     print('make trend plot')
+#    print(dim(tglobsum))
+#    print(length(tglobsum))
+#    print(c(styr,endyr,nsims,lt))
+#    print(class(tglobsum))
+#    print(head(tglobsum))
+#    print(tglobsum)
+#    print(col_trend)
+#    print('')
     p2 <-
-    xyplot(tglobsum
+    xyplot(as.vector(tglobsum)
            ~rep(styr:endyr,nsims),
            groups=(rep(1:nsims,each=lt)),
+           #ylim=c(-15,10),
            xlab=list('year',cex=labcex*0.35),
            ylab=list(axis_lab,cex=labcex*0.35),
            #type='l',lwd=labcex*1.1,lty=lty[sia],col=col_trend[sia],
@@ -872,6 +898,7 @@ for( v in 1:length(vars) ) {
 
     }
   }
+
 
   print('Warnings:')
   print(warnings())
