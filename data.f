@@ -13,7 +13,7 @@
       INTEGER   yr0,yrf,norecs,year,const,blank,kode,daily_co2,day,mnth
       INTEGER   yr0a,yrfa,prev_year,spinl,nyears
       CHARACTER stco2*1000
-      LOGICAL   co2spin
+      LOGICAL   co2spin,year0set
 
       OPEN(98,FILE=stco2,STATUS='OLD',iostat=kode)
       IF (kode.NE.0) THEN
@@ -25,7 +25,16 @@
 
       norecs = 0
       const  = 0
+
+      ! this decouples the co2 year from the climate year when co2
+      ! is set to negative in the input file. This is the same as for
+      ! land-use data. If both a spin and a run proper are requested the
+      ! length of the spin is taken from start date of the run proper to
+      ! find the start date for CO2. If just a spin is requested
+      ! then the CO2 starts in the first year for which there
+      ! are CO2 data, i.e. the first year in the CO2 file  
       co2spin = .FALSE.
+      yr0a    = yr0
       yrfa    = yrf
       if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then 
         if (spinl.lt.nyears) then
@@ -33,20 +42,19 @@
         else
           co2spin = .TRUE.
         endif
-      else 
-        yr0a = yr0
       endif 
 
+      year0set = .FALSE.
 10    CONTINUE
-
 c      print*, yr0, yrf
-
 !      print*, daily_co2
+
       IF(daily_co2.eq.1) THEN 
 	READ(98,*,end=99) year,mnth,day,ca 
-        if(co2spin.and.(norecs.eq.0)) then
+        if(co2spin.and.(.not.year0set)) then
           yr0a = year
           yrfa = yr0a + spinl - 1
+          year0set = .TRUE.
         endif
 	IF ((year.eq.yr0a).and.(mnth.eq.1).and.(day.eq.1)) prev_year =
      &year-1
@@ -56,6 +64,7 @@ c      print*, yr0, yrf
           co2(norecs,mnth,day) = ca 
         ENDIF 
         prev_year = year 
+
       ELSE 
         READ(98,*,end=99) year,ca
 c        print*, year,ca
@@ -68,17 +77,20 @@ c        print*, year,ca
           norecs = norecs + 1
           co2(norecs,:,:) = ca
         ENDIF
+
       ENDIF 
+
       const = const + 1
       GOTO 10
 99    CONTINUE
 
       !print*, spinl, nyears, yr0, yr0a, yrf, yrfa
       CLOSE(98)
-
+      
+      ! if only a single value supplied in the file
       IF (const.EQ.1) THEN
-	DO year=yr0,yrf
-	  co2(year-yr0+1,:,:) = ca
+	DO year=yr0a,yrfa
+	  co2(year-yr0a+1,:,:) = ca
 	ENDDO
       ENDIF
 
@@ -896,10 +908,11 @@ c        print*, year,ca
       INCLUDE 'array_dims.inc'
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
-      REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm
+      REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
-      INTEGER ii,jj,stcmp,indx(4,4),yr0,yrf,years(1000),nrecl,yr0a,j1
-      INTEGER classes(1000),nclasses,kode,spinl,nyears,co2const,ij,ij1
+      INTEGER ii,jj,stcmp,indx(4,4),yr0,yrf,years(1000),nrecl,yr0a,yrfa
+      INTEGER classes(1000),nclasses,kode,spinl,nyears
+      INTEGER ij,ij1,j1
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
       LOGICAL l_lu
 
@@ -948,34 +961,48 @@ c        print*, year,ca
 
       IF ((n.GT.1).AND.(yr0.LT.years(1))) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'Can''t start running in ',yr0,
+        WRITE(*,*) 'Cannot start running in ',yr0,
      &        ' since landuse map begin in ',years(1)
         STOP
       ENDIF
 
-      ! configure the first year to look for 
-      !co2spin = .FALSE.
-      !yrfa    = yrf
+      ! this decouples the land use year from the climate year when co2
+      ! is set to negative in the input file. This is the same as for
+      ! CO2 data. If both a spin and a run proper are requested the
+      ! length of the spin is taken from start date of the run proper to
+      ! find the start date for land-cover. If just a spin is requested
+      ! then the land-cover starts in the first year for which there
+      ! are land-cover data  
+      yr0a = yr0
+      yrfa = yrf
       if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then 
         if (spinl.lt.nyears) then
           yr0a = yr0 - spinl
-          !yr0a = yr0 
-      !   else
-      !     co2spin = .TRUE.
+        else
+          yr0a = years(1)
+          yrfa = yr0a + spinl - 1
         endif
-      else 
-        yr0a = yr0
-      endif 
+      endif
+      !print*, yr0, yr0a, yrf, yrfa 
+      !print*, co2const,spinl,nyears
+
+      IF ((n.GT.1).AND.(yr0a.LT.years(1))) THEN
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'Cannot start running in ',yr0a,
+     &        ' since landuse map begin in ',years(1),
+     &        '. Need to reduce spin length.'
+        STOP
+      ENDIF
 
 c     look for the first year
       j=1
-
  10   CONTINUE
       IF ((j.LT.n).AND.(years(j).LT.yr0a)) THEN
          j = j + 1
          GOTO 10
       ENDIF
-      j1 = 1
+      j1 = j
+
       !print*, 'start year:', years(j)
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
@@ -988,7 +1015,7 @@ c     look for the first year
 *----------------------------------------------------------------------*
 
       !j=1
-      DO i=1,yrf-yr0a+1
+      DO i=1,yrfa-yr0a+1
         IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j))) THEN
           !print*, j, years(j)
           st2=in2st(years(j))
@@ -1065,27 +1092,29 @@ c
 
         ENDIF ! finished reading
 
-        ! previous SDGVM methods - assumes step changes in land-use
+        ! previous SDGVM method finished here, assumes step changes in land-use
         DO ift=1,nft
           cluse(ift,i) = ftprop(ift)
         ENDDO
-
-
-
+        !print*, yr0a+i-1!, cluse(:,i)  
       ENDDO
 
-      ! TRENDY SDGVM method - assumes smoothed change in land-use between years specified in input dataset
+
+      ! TRENDY SDGVM method 
+      !- assumes linear interpolation of land-use between years
+      !specified in input dataset
+      !print*, yr0, yr0a
+      IF (n.ne.1) THEN
+        print*, 'Linear interpolation of dynamic Land-Cover fractions'
         !DO i=1,yrf-yr0a+1
         DO i=1,years(n)-yr0a
         !  IF ( years(j1) .eq. years(nyears) ) THEN 
           IF ( (i.EQ.1).OR.((i+yr0a-1).EQ.years(j1)) ) THEN
             !print*, j, years(j1), years(j1+1)
-            !cluse(ift,i) = cluse(ift,i)
             ij  = i
             ij1 = ij + years(j1+1) - years(j1) 
             j1  = j1 + 1
             !print*, i,j1,ij,ij1
-            !print*, cluse(10,1), cluse(10,ij), cluse(10,ij1)
           ELSE
             DO ift=1,nft
               cluse(ift,i) = cluse(ift,ij) + 
@@ -1094,12 +1123,12 @@ c
       !       if(ift.eq.10) then
       !        print*, cluse(ift,ij), (cluse(ift,ij1) - cluse(ift,ij)),
       !&cluse(ift,i) 
-      !        print*, (real(i)-real(ij))/(real(ij1)-real(ij))
       !      endif 
             ENDDO
           ENDIF
-      ENDDO
-*      CLOSE(99)
+        ENDDO
+      ENDIF
+
 
       IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.
      &(indx(3,3).EQ.1)) THEN

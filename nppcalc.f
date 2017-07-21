@@ -12,7 +12,7 @@
      &read_par,env_vcmax,env_jmax,soilp_map,ga,ftvna,ftvnb,ftjva,ftjvb,
      &ftg0,ftg1,par_loops,s070607,gs_func,ce_light,ce_ci,ce_t,
      &ce_maxlight,ce_ga,ce_rh,ttype,
-     &calc_zen,cos_zen,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
+     &calc_zen,cos_zen,iyear,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
 *----------------------------------------------------------------------*
       
       IMPLICIT NONE
@@ -54,15 +54,16 @@
       INTEGER i,lai,c3,mnth,day,ncalc_type,vcmax_type,ft,oday
       INTEGER hw_j,cstype,subd_par,ii,omnth,par_loops,gs_func
       INTEGER thty_dys,year,no_day,read_par,soilp_map,s070607
-      INTEGER ttype,calc_zen,luna_calc_days
+      INTEGER ttype,calc_zen,luna_calc_days,iyear
       REAL*8  sd_scale(par_loops+1),sd_scale2,nup_rate
       LOGICAL output,gold,jfv
 
       !print*, 'NPPcalc', day
 
-      omnth  = 7
-      oday   = 10
+      omnth  = 5 
+      oday   = 4
       output = .FALSE.
+      !if(iyear.eq.55) output = .TRUE.
    
       if(hw_j.eq.3) then
         hw_j = 0 
@@ -316,8 +317,8 @@
             jfv    = .TRUE.
           ELSEIF((vcmax_type.eq.2).OR.(vcmax_type.eq.3)) THEN
             !from van Bodegom for TERRABITES project
-            ! - not a function of vcmax 
             jm(i)  = env_jmax * can(i)/can(1)
+            ! - not a function of vcmax 
             jfv    = .FALSE.
           ELSEIF(vcmax_type.eq.4) THEN
             !specified as a PFT parameter
@@ -325,6 +326,7 @@
             jfv    = .TRUE.
           ELSEIF(vcmax_type.eq.9) THEN
             ! do nothing - jmax already defined above            
+            ! - not a function of vcmax 
             jfv    = .FALSE.
           ELSE
             PRINT*, 'vcmax_type ',vcmax_type,' undefined. set to a value
@@ -376,7 +378,7 @@
           !calculate incident light in canopy layer 
             CALL GOUDRIAANSLAW(lyr-0.5d0,rlai,qdirect,qdiff,
      &fsunlit(i),qsunlit(i), fshade(i),qshade(i),can_clump,cos_zen,
-     &s070607,gold)
+     &s070607,gold,iyear)
 
             !if(output.and.(mnth.eq.omnth).and.(day.eq.oday)) then
               !print*, qdirect+qdiff,qsunlit(i)+qshade(i),i
@@ -395,7 +397,7 @@
           IF(subd_par.eq.0) then
             CALL GOUDRIAANSLAW(lyr-0.5d0,rlai,qdirect,qdiff,
      &fsunlit(i),qsunlit(i), fshade(i),qshade(i),can_clump,cos_zen,
-     &s070607,gold)
+     &s070607,gold,iyear)
 
             vmx(i)     = 0.0d0
             jsunlit(i) = 0.0d0
@@ -541,7 +543,7 @@
 
           if(output.and.(mnth.eq.omnth).and.(day.eq.oday)
      &) then
-            print*, a(1),rd(1),gs(1),ci(1),vmx(1)
+            print*, a(1),rd(1),gs(1),ci(1),vmx(1),jmx(1)
             print*, ''
          endif
 
@@ -592,7 +594,7 @@
               !in the average PAR version of the model this is contained within a water limitation if statement 
               CALL GOUDRIAANSLAW(real(i)-0.5d0,rlai,qdirect_sd,
      &qdiff_sd,fsunlit_sd(i),qsunlit_sd(i),fshade_sd(i),
-     &qshade_sd(i),can_clump,cos_zen,s070607,gold)
+     &qshade_sd(i),can_clump,cos_zen,s070607,gold,iyear)
 
               !if(output.and.(mnth.eq.omnth).and.(day.eq.oday)
       !&.and.(ii.eq.4)) then
@@ -747,6 +749,8 @@
       real*8  q,jmx,j,I2,qa,qb,qc
       integer fw1984
 
+      if(jmx.lt.1.d-7) jmx = 1d-7
+      
       IF(fw1984.eq.0) THEN
          !use Harley 1992 J to Jmax realtionship
          !j=0.24d0*q/(1.0d0+(0.24d0**2)*(q**2)/(jmx**2))**0.5d0

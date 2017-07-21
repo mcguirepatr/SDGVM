@@ -21,7 +21,7 @@
      &subd_par,env_vcmax,env_jmax,soilp_map,can2g,canga,ga,
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,no_slw_lim,par_loops,s070607,
      &gs_func,ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,
-     &sl,hrs,ttype,calc_zen,
+     &sl,hrs,ttype,calc_zen,iyear,
      &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
 
 *----------------------------------------------------------------------*
@@ -51,7 +51,7 @@
       REAL*8 ce_maxlight(30,12),ce_ga(30,12),ce_rh(30)
       INTEGER leafls,stemls,rootls,bbm,ssm,sss,ftphen,c3,thty_dys,ft
       INTEGER mnth,i,iter,no_day,ndsum(12),lai,day,year,bb,bbgs
-      INTEGER ftdth,ss,dsbb,chill,dschill,ncalc_type,read_par
+      INTEGER ftdth,ss,dsbb,chill,dschill,ncalc_type,read_par,iyear
       INTEGER hw_j,cstype,calc_zen,phen_cor,subd_par,soilp_map
       INTEGER no_slw_lim,vcmax_type,par_loops,s070607,gs_func,ttype
       LOGICAL veg
@@ -264,7 +264,7 @@ c     z0=roughness length
      &year,lat,swr,cld,read_par,env_vcmax,env_jmax,soilp_map,ga,
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,par_loops,s070607,gs_func,
      &ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,ttype,
-     &calc_zen,cos_zen,
+     &calc_zen,cos_zen,iyear,
      &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
 
 c      write(*,*) 'o',canga,can2a,can2g,canres,suma

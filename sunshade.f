@@ -47,17 +47,18 @@ c     ... hum, I don't know if albedodiff is really different or not... so equal
 
 
       SUBROUTINE GOUDRIAANSLAW(lyr,lai,beamrad,diffrad,
-     &fsunlit,qsunlit,fshade,qshade,can_clump,cos_zen,s070607,gold)
+     &fsunlit,qsunlit,fshade,qshade,can_clump,cos_zen,s070607,gold,
+     &iyear)
       
       IMPLICIT NONE
       
-      REAL*8 lyr,lai,beamrad,diffrad
+      REAL*8 lyr,lai,beamrad,diffrad,trash
       REAL*8 fsunlit,qsunlit,fshade,qshade
       REAL*8 rhosoil,leafscattering,rhoh
       REAL*8 rhobeam,rhodiff,rhobeam_can,rhodiff_can
       REAL*8 m,can_clump,cos_zen,Gbeam,canopyalbedo
       REAL*8 kbeam,kdiff,kbeamprime,kdiffprime
-      INTEGER s070607
+      INTEGER s070607,iyear
       LOGICAL gold
 
       if(.not.((s070607.eq.1).or.(gold))) then
@@ -72,7 +73,9 @@ c     ... hum, I don't know if albedodiff is really different or not... so equal
         leafscattering = 2d0*0.075d0
         m          = sqrt(1.0d0-leafscattering)
         Gbeam      = 0.5d0 * can_clump
+        !if(cos_zen.lt.1.d-3) cos_zen = 1.d-3
         kbeam      = Gbeam / cos_zen
+        if(kbeam.gt.1d0) kbeam = 1d0
         kbeamprime = m*kbeam
         ! kdiff is Gbeam * can_clump / cos_zen integrated over zenith angle 0 to pi/2  
         kdiff      = 0.8d0 * can_clump 
@@ -83,19 +86,19 @@ c     ... hum, I don't know if albedodiff is really different or not... so equal
         rhoh        = (1d0-m)/(1d0+m)
         rhobeam_can = rhoh*2d0*kbeam/(kbeam+kdiff)
         rhodiff_can = 4*Gbeam*rhoh*( 
-     & Gbeam*(log(Gbeam)-log(Gbeam+kdiff))/kdiff**2 
-     & + 1/kdiff)
+     &Gbeam*(log(Gbeam)-log(Gbeam+kdiff))/kdiff**2 
+     &+ 1/kdiff)
         rhobeam     = rhobeam_can + (rhosoil-rhobeam_can)
-     & *exp(-2d0*kbeamprime*lai)
+     &*exp(-2d0*kbeamprime*lai)
         rhodiff     = rhodiff_can + (rhosoil-rhodiff_can)
-     & *exp(-2d0*kdiffprime*lai)
-
+     &*exp(-2d0*kdiffprime*lai)
+       
        ! calculate absorbed direct & diffuse radiation  
        qshade = (1d0-rhodiff)*diffrad*kdiffprime*exp(-kdiffprime*lyr)
-     & + (1d0-rhobeam)*beamrad*kbeamprime*exp(-kbeamprime*lyr)
-     & - (1d0-leafscattering)*beamrad*kbeam*exp(-kbeam*lyr)
+     &+ (1d0-rhobeam)*beamrad*kbeamprime*exp(-kbeamprime*lyr)
+     &- (1d0-leafscattering)*beamrad*kbeam*exp(-kbeam*lyr)
 
-        IF (qshade.LT.0d0) qshade = 0d0
+        IF (qshade.LT.0.d0) qshade = 0.d0
         qsunlit = (1d0-leafscattering)*kbeam*beamrad + qshade
 
         ! calculate fraction sunlit vs shaded leaves

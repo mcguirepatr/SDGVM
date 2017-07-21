@@ -90,14 +90,14 @@
       INTEGER ilanduse,siteno,iofn,iofnft,iofngft,recl1
       INTEGER icontinuouslanduse,ftphen(maxnft),ftdth(maxnft),kode
       INTEGER i,j,k,l,m,ft,s,w,w1,f
-      INTEGER blank,site,year,age,covind,bioind,xyearf
+      INTEGER blank,site,year,age,bioind,xyearf
       INTEGER mnth,no_days,fireres,xyear0,per,omav(douts),year_out
       INTEGER dolydo(maxnft),luse(maxyrs),fno,bb(maxnft),bbgs(maxnft)
       INTEGER iyear,oymd,oymdft,dsbb(maxnft),chill(maxnft),persum
       INTEGER stcmp,iargc,yearind(maxyrs),idum,outyears,thty_dys
       INTEGER xlatresn,xlonresn,day_mnth,yearv(maxyrs),nyears,narg
       INTEGER met_seqv(maxyrs),metyear,met_yearv(maxyrs)
-      INTEGER yr0ms,yrfms,yr0m,yrfm
+      INTEGER yr0ms,yrfms,yr0m,yrfm,iyear_adj
       INTEGER seed1,seed2,seed3,spinl,yr0s,yr0p,yrfp,xseed1,site_dat
       INTEGER ibox,jbox,last_blank,site_out,country_id,outyears1,fti
       INTEGER outyears2,budo(maxnft),seno(maxnft),ss(maxnft),clim_type
@@ -106,7 +106,7 @@
       REAL*8 xcldv(500,12),xswrv(500,12,31),swr(12,31),mnthswr(12)
       REAL*8 yearswr,mapv(10),maswrv(30),maprc,maswr,maprcr,maswrr
       REAL*8 maprc_init,maswr_init,leafresp,rootresp,stemresp
-      REAL*8 matmpv(10),matmp_maxv(10),yeartmp_max,gi,wi
+      REAL*8 matmpv(10),matmp_maxv(10),yeartmp_max,gi,wi,covind
       REAL*8 matmp_minv(10),yeartmp_min,map_daysv(10),yearp_days
       REAL*8 mahumv(10),masoilcv(10),yearsoilc
       REAL*8 masoilwv(10),yearsoilw,tabglitterc,tblgc,tbioleaf
@@ -1736,7 +1736,7 @@ c CLOSE added by Ghislain 15/12/03
       OPEN(26,FILE=st1(1:blank(st1))//'/swc.dat')
       OPEN(27,FILE=st1(1:blank(st1))//'/biot.dat')
       OPEN(28,FILE=st1(1:blank(st1))//'/bioind.dat')
-      OPEN(29,FILE=st1(1:blank(st1))//'/covind.dat')
+      OPEN(29,FILE=st1(1:blank(st1))//'/co2.dat')
       OPEN(30,FILE=st1(1:blank(st1))//'/dof.dat')
       OPEN(31,FILE=st1(1:blank(st1))//'/rof.dat')
       OPEN(32,FILE=st1(1:blank(st1))//'/fcn.dat')
@@ -2612,10 +2612,12 @@ c     &site_dat,lat,lon,ca
 
         ! if there is a spin up but iyear is in the run proper phase
         ! set CO2 to the year 
+        iyear_adj = 0
         IF ((spinl.gt.0).AND.(iyear.GT.spinl)) THEN
           speedc = .FALSE.
+          if(co2const.gt.0) iyear_adj = spinl
           !ca(:,:) = co2(year-yr0+1,:,:) !
-          ca(:,:) = co2(iyear,:,:) !
+          ca(:,:) = co2(iyear-iyear_adj,:,:) !
         ELSE
           IF (co2const.GT.0.0d0) THEN
             ca(:,:) = co2const
@@ -3262,8 +3264,14 @@ c        ENDIF
             IF (check_ft_grow(tmp,ftbbm(ft),ftbb0(ft),ftbbmax(ft),
      &ftbblim(ft),chill(ft),dschill(ft)).EQ.1) THEN
               !ftprop(ft) = cluse(ft,year-yr0+1)
-              ftprop(ft) = cluse(ft,iyear)
+              if((co2const.gt.0.0).and.(spinl.gt.0).and.
+     &(iyear.le.spinl)) then
+                ftprop(ft) = cluse(ft,1)
+              else
+                ftprop(ft) = cluse(ft,iyear-iyear_adj)
+              endif  
               ftprop(1)  = ftprop(1) - ftprop(ft)
+
             ELSE
               ftprop(ft) = 0.0d0
             ENDIF
@@ -3596,7 +3604,7 @@ c     monthly initialisations
      &no_slw_lim,par_loops,s070607,gs_func,
      &ce_light(:,:,ft),ce_ci(:,:,ft),ce_t,
      &ce_maxlight(:,:,ft),ce_ga(:,:,ft),ce_rh,
-     &sl,hrs,ttype,calc_zen,
+     &sl,hrs,ttype,calc_zen,iyear,
      &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft))
 
 !            write(*,*) mnth,day,tleaf_n
@@ -4107,7 +4115,7 @@ c       kg_beta    = kg_beta/wi
         swcnew = is1 + is2 + is3 + is4 + isn + ilsn
         sumbio = 0.0d0
         bioind = 0
-        covind = 0
+        covind = ca(1,1)
         maxbio = 0.0d0
         maxcov = 0.0d0
         leafper = 0.0d0
@@ -4150,7 +4158,7 @@ c       kg_beta    = kg_beta/wi
           sumbio = sumbio + bioo(ft)
           IF (covo(ft).GT.maxcov) THEN
             maxcov = covo(ft)
-            covind = ft
+            !covind = ft
           ENDIF
           IF (bioo(ft).GT.maxbio) THEN
             maxbio = bioo(ft)
@@ -4183,7 +4191,7 @@ c       kg_beta    = kg_beta/wi
           WRITE(26,'('' '',f8.1,$)') min(swcnew,9999.0d0)
           WRITE(27,'('' '',f8.1,$)') sumbio
           WRITE(28,'('' '',i2,$)')   bioind
-          WRITE(29,'('' '',i2,$)')   covind
+          WRITE(29,'('' '',f6.2,$)')  covind
           WRITE(30,'('' '',f8.1,$)') avdof
           WRITE(31,'('' '',f8.1,$)') avrof
           WRITE(32,'('' '',f8.2,$)') firec
