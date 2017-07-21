@@ -11,7 +11,7 @@
       INCLUDE 'array_dims.inc'
       REAL*8    co2(maxyrs,12,31),ca,co2const
       INTEGER   yr0,yrf,norecs,year,const,blank,kode,daily_co2,day,mnth
-      INTEGER   yr0a,yrfa,prev_year,spinl,nyears
+      INTEGER   yr0a,yrfa,prev_year,spinl,nyears,dummy
       CHARACTER stco2*1000
       LOGICAL   co2spin,year0set
 
@@ -73,10 +73,18 @@ c        print*, year,ca
           yrfa = yr0a + spinl - 1
           print*, 'co2spin',yr0a,yrfa
         endif
+	IF ((norecs.eq.0).and.(yr0a.LT.year).AND.
+     &(co2const.LE.0.0).AND.(spinl.gt.0)) THEN
+          do dummy=yr0a,year-1
+            norecs = norecs + 1
+            co2(norecs,:,:) = ca
+          enddo
+        ENDIF
 	IF ((year.GE.yr0a).AND.(year.LE.yrfa)) THEN
           norecs = norecs + 1
           co2(norecs,:,:) = ca
         ENDIF
+
 
       ENDIF 
 
