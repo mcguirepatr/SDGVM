@@ -1,4 +1,4 @@
-FFLAGS= -fbounds-check -O3 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace 
+FFLAGS= -g -fbounds-check -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace -ffpe-trap=zero,overflow,underflow -fdump-core
 FF = gfortran
 
 OBJ = sdgvm0.o sdgvm1.o data.o growth.o parameter_adjustment.o hydrology.o phenology.o func.o doly.o soil.o nppcalc.o light.o sunshade.o weathergenerator.o metdos.o luna.o
