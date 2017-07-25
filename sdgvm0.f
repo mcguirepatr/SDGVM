@@ -97,7 +97,7 @@
       INTEGER stcmp,iargc,yearind(maxyrs),idum,outyears,thty_dys
       INTEGER xlatresn,xlonresn,day_mnth,yearv(maxyrs),nyears,narg
       INTEGER met_seqv(maxyrs),metyear,met_yearv(maxyrs)
-      INTEGER yr0ms,yrfms,yr0m,yrfm,iyear_adj
+      INTEGER yr0ms,yrfms,yr0m,yrfm,iyear_adj,yr0a,yrfa
       INTEGER seed1,seed2,seed3,spinl,yr0s,yr0p,yrfp,xseed1,site_dat
       INTEGER ibox,jbox,last_blank,site_out,country_id,outyears1,fti
       INTEGER outyears2,budo(maxnft),seno(maxnft),ss(maxnft),clim_type
@@ -1653,7 +1653,8 @@ c CLOSE added by Ghislain 15/12/03
       harvest(:) = .FALSE.
       IF (ilanduse.EQ.1) THEN
 * Use landuse defined in input file.
-        CALL LANDUSE1(luse,yr0,yrf,fire,harvest)
+        CALL LANDUSE1(luse,yr0,yrf,fire,harvest,spinl,nyears,
+     &co2const)
       ENDIF
       IF ((ilanduse.LT.0).OR.(ilanduse.GT.2)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
@@ -2044,9 +2045,19 @@ c     create the continuous land use (cluse)
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN
         l_lu = .TRUE.
-        DO year=yr0,yrf
+        yr0a = yr0
+        yrfa = yrf
+        if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then 
+          if (spinl.lt.nyears) then
+            yr0a = yr0 - spinl
+          else
+            !yr0a = years(1)
+            yrfa = yr0a + spinl - 1
+          endif
+        endif
+        DO year=yr0a,yrfa
           DO ft=1,nft
-            cluse(ft,year-yr0+1) = lutab(luse(year-yr0+1),ft)
+            cluse(ft,year-yr0a+1) = lutab(luse(year-yr0a+1),ft)
           ENDDO
         ENDDO
       ELSEIF (ilanduse.EQ.2) THEN
@@ -3269,12 +3280,24 @@ c        ENDIF
             IF (check_ft_grow(tmp,ftbbm(ft),ftbb0(ft),ftbbmax(ft),
      &ftbblim(ft),chill(ft),dschill(ft)).EQ.1) THEN
               !ftprop(ft) = cluse(ft,year-yr0+1)
-              if((co2const.gt.0.0).and.(spinl.gt.0).and.
-     &(iyear.le.spinl)) then
-                ftprop(ft) = cluse(ft,1)
-              else
+              !if((co2const.gt.0.0).and.(spinl.gt.0).and.
+      !&(iyear.le.spinl)) then
+              !  ftprop(ft) = cluse(ft,1)
+              !else
+              !  ftprop(ft) = cluse(ft,iyear-iyear_adj)
+              !endif  
+
+              ! logic below is identical to the co2 logic
+              if((spinl.gt.0).and.(iyear.gt.spinl)) then
                 ftprop(ft) = cluse(ft,iyear-iyear_adj)
+              else
+                if(co2const.gt.0.0) then
+                  ftprop(ft) = cluse(ft,1)
+                else
+                  ftprop(ft) = cluse(ft,iyear-iyear_adj)
+                endif  
               endif  
+
               ftprop(1)  = ftprop(1) - ftprop(ft)
 
             ELSE

@@ -50,7 +50,9 @@ c      print*, yr0, yrf
 !      print*, daily_co2
 
       IF(daily_co2.eq.1) THEN 
+
 	READ(98,*,end=99) year,mnth,day,ca 
+
         if(co2spin.and.(.not.year0set)) then
           yr0a = year
           yrfa = yr0a + spinl - 1
@@ -73,7 +75,9 @@ c      print*, yr0, yrf
         prev_year = year 
 
       ELSE 
+
         READ(98,*,end=99) year,ca
+
 c        print*, year,ca
         if(co2spin.and.(norecs.eq.0)) then
           yr0a = year
@@ -87,11 +91,11 @@ c        print*, year,ca
             co2(norecs,:,:) = ca
           enddo
         ENDIF
+
 	IF ((year.GE.yr0a).AND.(year.LE.yrfa)) THEN
           norecs = norecs + 1
           co2(norecs,:,:) = ca
         ENDIF
-
 
       ENDIF 
 
@@ -116,19 +120,33 @@ c        print*, year,ca
 *----------------------------------------------------------------------*
 *                         SUBROUTINE LANDUSE1                          *
 *----------------------------------------------------------------------*
-      SUBROUTINE LANDUSE1(luse,yr0,yrf,fire,harvest)
+      SUBROUTINE LANDUSE1(luse,yr0,yrf,fire,harvest,spinl,nyears,
+     &co2const)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
-      INTEGER yr0,yrf,year,early,rep,luse(maxyrs),i,use
+      INTEGER yr0,yrf,yr0a,yrfa,year,early,rep,luse(maxyrs),i,use
+      INTEGER nyears,spinl
+      REAL    co2const
       LOGICAL fire(maxyrs),harvest(maxyrs)
 
       early = yrf+maxyrs
       luse(:) = 1000
       
+      yr0a = yr0
+      yrfa = yrf
+      if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then 
+        if (spinl.lt.nyears) then
+          yr0a = yr0 - spinl
+        else
+          !yr0a = years(1)
+          yrfa = yr0a + spinl - 1
+        endif
+      endif
+      
       i = 1
 10    CONTINUE
         READ(98,*,end=20) year,use
-        IF (year-yr0+1.GT.0)  luse(year-yr0+1) = use
+        IF (year-yr0a+1.GT.0)  luse(year-yr0a+1) = use
         IF ((year.LT.early).AND.(use.GT.0)) rep = use
         !early = year
         i = i+1
@@ -974,12 +992,12 @@ c        print*, year,ca
         nrecl = 4
       ENDIF
 
-      IF ((n.GT.1).AND.(yr0.LT.years(1))) THEN
-        WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'Cannot start running in ',yr0,
-     &        ' since landuse map begin in ',years(1)
-        STOP
-      ENDIF
+      !IF ((n.GT.1).AND.(yr0.LT.years(1))) THEN
+      !  WRITE(*,'('' PROGRAM TERMINATED'')')
+      !  WRITE(*,*) 'Cannot start running in ',yr0,
+      ! &        ' since landuse map begins in ',years(1)
+      !  STOP
+      !ENDIF
 
       ! this decouples the land use year from the climate year when co2
       ! is set to negative in the input file. This is the same as for
@@ -1010,6 +1028,10 @@ c        print*, year,ca
       ENDIF
 
 c     look for the first year
+      ! currently this selects the lanbdcover to be the landcover specified in the exact
+      ! start year of the simulation or the first year after that in the landcover dataset 
+      ! if there is no landcover in the eact start year. Thus all landcover information in 
+      ! the years prior to the start year are ignored  
       j=1
  10   CONTINUE
       IF ((j.LT.n).AND.(years(j).LT.yr0a)) THEN
@@ -1111,7 +1133,7 @@ c
         DO ift=1,nft
           cluse(ift,i) = ftprop(ift)
         ENDDO
-        !print*, yr0a+i-1!, cluse(:,i)  
+        write(*,'(I4,12F8.2)') yr0a+i-1, cluse(1:12,i)  
       ENDDO
 
 
