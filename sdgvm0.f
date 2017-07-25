@@ -137,6 +137,7 @@
       LOGICAL out_cov,out_bio,out_bud,out_sen,l_b_and_c,check_c
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
+      LOGICAL year0set
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -796,6 +797,9 @@
 *----------------------------------------------------------------------*
       yr0 = min(yr0s,yr0p)
       yrf = max(yr0s+min(spinl,cycle)-1,yrfp)
+
+      ! allow a randomised (or otherwise) sequence of years to be used for 
+      ! climate data during the run proper (transient run)
       yr0m = yr0
       yrfm = yrf
       IF(met_seq) yr0m = min(yr0s,yr0ms)
@@ -808,6 +812,22 @@
      &xyear0,xyearf
         STOP
       ENDIF
+
+      ! allow more flexibility in how climate, land-use, and CO2 data are combined.
+      ! Specifically, when co2const < 0 allow climate to cycle through spin, 
+      ! but use dynamic land-use and co2   
+      yr0a = yr0
+      yrfa = yrf
+      year0set = .TRUE.
+      if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then 
+        if (spinl.lt.nyears) then
+          yr0a = yr0 - spinl
+        else
+          year0set = .FALSE.
+          yr0a = 1
+          yrfa = spinl
+        endif
+      endif
 
 *----------------------------------------------------------------------*
 * Set up year climate sequence.                                        *
@@ -1653,8 +1673,7 @@ c CLOSE added by Ghislain 15/12/03
       harvest(:) = .FALSE.
       IF (ilanduse.EQ.1) THEN
 * Use landuse defined in input file.
-        CALL LANDUSE1(luse,yr0,yrf,fire,harvest,spinl,nyears,
-     &co2const)
+        CALL LANDUSE1(luse,fire,harvest,yr0a,yrfa,year0set,spinl)
       ENDIF
       IF ((ilanduse.LT.0).OR.(ilanduse.GT.2)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
@@ -1864,7 +1883,8 @@ c CLOSE added by Ghislain 15/12/03
 *  Read co2 file.                                                      *
 *----------------------------------------------------------------------*
       !print*, daily_co2,yr0,yrf
-      CALL READCO2 (stco2,yr0,yrf,co2,daily_co2,spinl,nyears,co2const)
+      CALL READCO2 (stco2,co2,daily_co2,yr0a,yrfa,year0set,spinl,
+     &nyears)
 *----------------------------------------------------------------------*
 
       site_dat = 0
@@ -2039,22 +2059,22 @@ c     create the continuous land use (cluse)
             ENDDO
           ENDDO
         ELSE            
-          CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,yr0,yrf,du,l_lu,
-     &spinl,nyears,co2const)
+          CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
+     &yr0a,yrfa,year0set,spinl)
           !write(*,*) cluse(ft,:)
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN
         l_lu = .TRUE.
-        yr0a = yr0
-        yrfa = yrf
-        if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then 
-          if (spinl.lt.nyears) then
-            yr0a = yr0 - spinl
-          else
-            !yr0a = years(1)
-            yrfa = yr0a + spinl - 1
-          endif
-        endif
+        !yr0a = yr0
+        !yrfa = yrf
+        !if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then 
+        !  if (spinl.lt.nyears) then
+        !    yr0a = yr0 - spinl
+        !  else
+        !    !yr0a = years(1)
+        !    yrfa = yr0a + spinl - 1
+        !  endif
+        !endif
         DO year=yr0a,yrfa
           DO ft=1,nft
             cluse(ft,year-yr0a+1) = lutab(luse(year-yr0a+1),ft)
@@ -2080,7 +2100,7 @@ c     create the continuous land use (cluse)
         nat_map(7) = ntags(fttags,st2)
         st2 = 'Dc_Nl'
         nat_map(8) = ntags(fttags,st2)
-        DO year=yr0,yrf
+        DO year=yr0a,yrfa
           DO ft=1,nft
             cluse(ft,year-yr0+1) = 0.0d0
           ENDDO
@@ -2090,7 +2110,7 @@ c     create the continuous land use (cluse)
       !print*, 'end landuse, ', site
       !print*, l_clim,l_stats,l_soil(1),l_soil(3),l_soil(8),l_lu, 
       !&l_countries
-	
+
 *----------------------------------------------------------------------*
       ENDIF
 *----------------------------------------------------------------------*
