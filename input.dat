@@ -1,11 +1,11 @@
 UNIX
-/mnt/disk2/Databases/SDGVMdata/clim/global/cru/30min/monthly
-/mnt/disk2/Databases/SDGVMdata/stats/global/era40/30min
-/mnt/disk2/Databases/SDGVMdata/soil/global/islscp2/2deg/0-150_plus_CtoN_soilP
-/mnt/disk2/Databases/SDGVMdata/land_use/global/glc2000/30min
-/mnt/disk2/Databases/SDGVMdata/co2/co2.dat
+/home/alp/models/SDGVM/input_data/clim/global/cru-ncep/30min
+/home/alp/models/SDGVM/input_data/stats/global/era40/30min
+/home/alp/models/SDGVM/input_data/soil/global/islscp2/2deg/0-150_plus_CtoN_soilP
+/home/alp/models/SDGVM/input_data/land_use/global/GLOB2009/30min
+/home/alp/models/SDGVM/input_data/co2/SCRIPPS_spline_merged_ice_core_yearly.dat
 29.62
-/mnt/disk2/Databases/SDGVMdata
+/home/alp/models/SDGVM/input_data
 0
 0 1 1 0 0 0
 1 1 0 0 0
