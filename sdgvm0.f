@@ -2057,7 +2057,7 @@ C PCM2        WRITE(*,*) 'bbbbbbbbb'
       !if no clumping set canopy clumping index to 1
         ftcan_clump(:) = 1
       ELSEIF(read_clump.eq.2)THEN
-        CALL EX_CLUMP(stlu,lat,lon,map_clump,du)
+        CALL EX_CLUMP(stmask,lat,lon,map_clump,du)
         ftcan_clump(:) = map_clump
       ENDIF
 
