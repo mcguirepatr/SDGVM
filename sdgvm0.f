@@ -68,7 +68,7 @@
       REAL*8 soilpr,soilp_init,kg(maxnft),kg_beta,ftcan_clump(maxnft)
       REAL*8 map_clump,w_scalar,t_scalar,leafv_sum,stemv_sum,rootv_sum
       REAL*8 aprc_dryqv(10),aprc_dryq,yearprcdryq,prc_week(52),prcq(52)
-      REAL*8 matvar,aprc_rel,a2,b2,flulccc
+      REAL*8 map_het,matvar,aprc_rel,a2,b2,flulccc
       REAL*8 jmax_int(maxnft),jmax_int_er(maxnft)
       REAL*8 jmax_ci_low,jmax_ci_high
       REAL*8 ftToptV(maxnft),ftHaV(maxnft),ftHdV(maxnft)
@@ -80,7 +80,7 @@
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
-      INTEGER mswitch,subd_par,switch3,no_slw_lim
+      INTEGER mswitch,subd_par,switch3,no_slw_lim,read_het
       INTEGER soilcn_map,soilp_map,vcmax_type,ncalc_type,read_par,ttype
       INTEGER sites,cycle,yr0,yrf,snp_no,snpshts(1000),dschill(maxnft)
       INTEGER ftbbm(maxnft),ftssm(maxnft),ftsss(maxnft),n_fields
@@ -520,9 +520,9 @@ C        WRITE(*,*) 'bbbb'
         CALL STRIPBN(st1,i) 
         !switch stomatal conductance function
         IF (i.gt.-1)  gs_func = i 
-        !CALL STRIPBN(st1,i) 
-        !switch electron transport function
-        !IF (i.gt.-1)  hw_j = i 
+        CALL STRIPBN(st1,i) 
+        !switch to read land heterogeneity
+        IF (i.gt.-1)  read_het = i 
       ELSE !
         WRITE(*,'('' PROGRAM TERMINATED'')') !
         WRITE(*,*) 'Line 11 must contain 5 fields' !
@@ -973,7 +973,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       st2 = 'BARE'
       IF ((stcmp(st2,st1).EQ.0).OR.(n_fields(st1).NE.2)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'Line 19 must read "BARE" forllowed by a number (0-1)
+        WRITE(*,*) 'Line 19 must read "BARE" followed by a number (0-1)
      &.'
         STOP
       ENDIF
@@ -984,7 +984,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       st2 = 'CITY'
       IF ((stcmp(st2,st1).EQ.0).OR.(n_fields(st1).NE.2)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'Line 19 must read "BARE" forllowed by a number (0-1)
+        WRITE(*,*) 'Line 19 must read "BARE" followed by a number (0-1)
      &.'
         STOP
       ENDIF
@@ -2059,6 +2059,14 @@ C PCM2        WRITE(*,*) 'bbbbbbbbb'
       ELSEIF(read_clump.eq.2)THEN
         CALL EX_CLUMP(stmask,lat,lon,map_clump,du)
         ftcan_clump(:) = map_clump
+      ENDIF
+
+*----------------------------------------------------------------------*
+* Read in land cover heterogeneity index from a map                    *
+*----------------------------------------------------------------------*
+      IF(read_het.eq.1)THEN
+        CALL EX_HET(stmask,lat,lon,map_het,du)
+        ftmix(:) = map_het
       ENDIF
 
 *----------------------------------------------------------------------*
