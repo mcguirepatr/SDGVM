@@ -590,6 +590,7 @@ C        WRITE(*,*) 'bbbb'
         soilcn_map = 0
         phen_cor   = 0 
         hw_j       = 0
+        read_het   = 0
       ENDIF
 
       IF(SDGVM_140129) THEN
@@ -611,6 +612,7 @@ C        WRITE(*,*) 'bbbb'
         soilcn_map = 0
         phen_cor   = 1
         hw_j       = 0
+        read_het   = 1 
       ENDIF
 
       if(goudriaan_old) hw_j = 3
