@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# project tool - zips all files labelled SDGVM*  in all run output directories
+# - files labelled SDGVM* will usually be CMOR style netcdf output
+# - run from within the tools directory
+cd ..
+
+DIRS=`ls --hide=*.* --hide=results --hide=tools`
+echo $DIRS
+
+for d in ${DIRS[@]}; do
+  cd ${d}/output
+  for f in SDGVM*; do
+    tar -czvf $f.gz $f  
+  done
+ 
+  cd ../..
+done 
+
+

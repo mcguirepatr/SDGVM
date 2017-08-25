@@ -20,7 +20,7 @@ library(viridis)
 ###user defined inputs
 
 #directory paths
-date    <- '170419'
+date    <- '170822'
 dir     <- '/home/alp/models/SDGVM/'
 rdir    <- 'run'
 edir    <- 'eval_data'

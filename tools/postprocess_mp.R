@@ -23,7 +23,7 @@ daily   <- T
 stich   <- T
 
 # delete sub-grid files once processesed
-delete  <- T 
+delete  <- F 
 
 # write CMOR netcdf output
 netcdf  <- F
@@ -34,10 +34,10 @@ deg1    <- T
 # main directory
 dir  <- '~/models/SDGVM/'
 
-# source code directory
+# source code tools directory
 fd   <- paste(dir,'src/sdgvm/tools/',sep='/')
 
-# model project directory
+# directory in which simulation directory lives
 wd   <- paste(dir,'run/',sep='/')
 
 # simulation directory
@@ -52,7 +52,7 @@ sty  <- 1901
 ny   <- 113
 
 # number of parallel grid directories 
-grids  <- 32
+grids  <- 30
 
 # number of cores to run the analysis over 
 cores  <- 32
@@ -63,13 +63,15 @@ ncf    <- 'SDGVM'
 ncfend <- '.nc'
 
 # netcdf files to create
-ncdf_avars <- c('cVeg','cLitter','cSoil','cVegpft','fFire','fLuc','cLeaf','cRoot','burntArea')
-#ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai',
-#                'evapotranspft','transpft','swepft','gpppft','npppft','tran','landCoverFrac')
+#ncdf_avars <- c('cVeg','cLitter','cSoil','cVegpft','fFire','fLuc','cLeaf','cRoot','burntArea')
+ncdf_avars <- NULL 
+
+ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai',
+                'evapotranspft','transpft','swepft','gpppft','npppft','tran','landCoverFrac')
 #ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans')
 #ncdf_mvars <- c('gpp','ra','npp','rh','nbp','lai',
 #                'evapotranspft','transpft','swepft','gpppft','npppft','tran','landCoverFrac')
-ncdf_mvars <- NULL 
+#ncdf_mvars <- NULL 
 
 # nc file parameters
 mis_val  <- -99999
@@ -108,6 +110,7 @@ if(length(commandArgs(T))>=1) {
 ##########################
 setwd(fd)
 source('read_SDGVM_output.R')
+if(netcdf) source('functions_netcdf.R')
 
 
 
@@ -157,7 +160,6 @@ if(stich) {
 }
 
 # convert data to CMOR netcdf output
-if(netcdf) source('functions_netcdf.R')
 if(netcdf) lapply(wd_list[pia],write_sdgvm_netcdf,
                   afiles=ncdf_avars,
                   mfiles=ncdf_mvars,

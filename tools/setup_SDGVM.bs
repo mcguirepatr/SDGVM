@@ -1,49 +1,74 @@
 #!/bin/bash
 
-# This script is designed to copy the blank SDGVM directory into an actual run directory
+# This script is designed to copy a template SDGVM directory into an actual run directory
+# script can be run by the user to create a single SDGVM run directory or, more commonly, called from the script 'setup_SDGVM_project.bs' to set up multiple runs within a project
 # the script takes the model project directory (pre-existing) as first argument and run directory (will be created) as second argument
-# also renames the directories in the run and submit scripts so that the only file that needs editing is the input file
+# the script renames the directories specified in the run and submit scripts
+# once a run is setup the only file that needs editing is the input file (input*.dat)
 
+# Arguments:
+# $1 - HOME directory (required)
+# $2 - project name (required)
+# $3 - run name (required)
 
-#### Need to add functionality to specify a simulation that uses modified arrhenius temperature scaling 
-####  - which needs additional parameters to be specified in the input file  
-
-
-
-HOME=/home/alp
-MOD=/models/SDGVM/src/sdgvm
+# directories 
+# relative to root
+HOME=$1
+# relative to HOME
+PROJECTS_DIR=/run/
+DATA=/input_data
+MOD=/src/sdgvm
+# relative to MOD
 CPRUN=/blank_runs/global_mp_1deg
-#echo "Warning:: 3.75 2.5 degree run selected"
-#CPRUN=/blank_runs/global_mp_3p75x2p5deg
-DATA=/models/SDGVM/input_data
-PROJECTS_DIR=/models/SDGVM/run
-PROJECT=/$1
-RUNDIR=$HOME$PROJECTS_DIR$PROJECT/$2/
+# relative to PROJECTS_DIR
+PROJECT=$2
+# relative to PROJECT
+RUN=$3
 
-# if needed, copy a template run instance from the $CPDIR below into new directory 
-# and modify the input_global.dat file to create a new template
-# modify the below path accordingly
+# copy blank run from:
 CPDIR=$HOME$MOD$CPRUN
+# to:
+RUNDIR=$HOME$PROJECTS_DIR$PROJECT/$RUN/
 
+# set up run directories
 mkdir $RUNDIR
-cp -R $CPDIR/* $RUNDIR
+mkdir $RUNDIR/logs
 
-sed -i "s@#RUNDIR#@$RUNDIR@"  ${RUNDIR}submit*.pbs
-sed -i "s@#PROJECT#@$1@"      ${RUNDIR}submit*.pbs
-sed -i "s@#SIM#@$2@"          ${RUNDIR}submit*.pbs
+# copy template files
+cd $CPDIR
+cp *param* $RUNDIR
+cp *.bs    $RUNDIR
+cp *.pbs   $RUNDIR
 
-sed -i "s@#DATA#@$DATA@"      ${RUNDIR}input_globa*.dat
-sed -i "s@#HOME#@$HOME@"      ${RUNDIR}input_globa*.dat
+# select and copy template input file
+DEFTIN=input_global.dat
+SPECIN=`ls input* | grep $RUN`
+if [ ! -z $SPECIN ]; then 
+ INPUT=$SPECIN
+else 
+ INPUT=$DEFTIN 
+fi
+echo "Input file: " $INPUT
+cp $INPUT $RUNDIR
 
-sed -i "s@#HOME#@$HOME@"      ${RUNDIR}run_SDGVM.bs
-sed -i "s@#MOD#@$MOD@"        ${RUNDIR}run_SDGVM.bs
-sed -i "s@#DATA#@$DATA@"      ${RUNDIR}run_SDGVM.bs
+# modify run files
+sed -i "s@#RUNDIR#@$RUNDIR@"   ${RUNDIR}submit*.pbs
+sed -i "s@#PROJECT#@$PROJECT@" ${RUNDIR}submit*.pbs
+sed -i "s@#SIM#@$RUN@"         ${RUNDIR}submit*.pbs
+
+sed -i "s@#DATA#@$DATA@"       ${RUNDIR}$INPUT
+sed -i "s@#HOME#@$HOME@"       ${RUNDIR}$INPUT
+
+sed -i "s@#HOME#@$HOME@"       ${RUNDIR}run_SDGVM.bs
+sed -i "s@#MOD#@$MOD@"         ${RUNDIR}run_SDGVM.bs
+sed -i "s@#DATA#@$DATA@"       ${RUNDIR}run_SDGVM.bs
+sed -i "s@#INPUT#@$INPUT@"     ${RUNDIR}run_SDGVM.bs
 
 sed -i "s@#HOME#@$HOME@"                        ${RUNDIR}run_postprocessing.bs
 sed -i "s@#MOD#@$MOD@"                          ${RUNDIR}run_postprocessing.bs
 sed -i "s@#DIR#@$HOME$PROJECT_DIR@"             ${RUNDIR}run_postprocessing.bs
 sed -i "s@#PDIR#@$HOME$PROJECTS_DIR$PROJECT@"   ${RUNDIR}run_postprocessing.bs
-sed -i "s@#SIM#@$2@"                            ${RUNDIR}run_postprocessing.bs
+sed -i "s@#SIM#@$RUN@"                          ${RUNDIR}run_postprocessing.bs
 
 
  
