@@ -593,7 +593,7 @@
         cstype     = 0
         ncalc_type = 1
         ttype      = 0
-        vcmax_type = 1
+        vcmax_type = 8 ! Kattge 2009 oxisol for EvBl, Jmax~Vcmax from Walker 2014
         soilp_map  = 0 
         s070607    = 0
         gs_func    = 0
