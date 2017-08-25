@@ -3,4 +3,7 @@
 SRCDIR=#HOME##MOD#/tools
 
 cd $SRCDIR
-Rscript postprocess_mp.R "ny<-22" "sty<-1991" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"  #"daily<-F" "monthly<-F" 
+# stich gridded output together
+Rscript postprocess_mp.R "ny<-157" "sty<-1860" "netcdf<-T" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"
+# generate netcdf output 
+Rscript postprocess_mp.R "ny<-157" "sty<-1860" "stich<-F" "netcdf<-T" "nsites<-15729" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"
