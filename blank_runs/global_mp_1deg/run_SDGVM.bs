@@ -3,12 +3,11 @@
 # script to run SDGVM in parallel on 30 cores 
 # designed to be run from within it's own directory
 
-#HOME=#HOME#
 MODEL=#HOME##MOD#
-SITES=#HOME##DATA#/sites/global_1deg.dat
 INPUT=#INPUT#
 OUTPUT=output
 
+SITES=#HOME##DATA#/sites/global_1deg.dat
 SITE_INDEX=( 0 450 950 1355 1730 2050 2360 2675 2990 3305 3620 4000 4490 5115 5740 6350 6780 7230 7730 8300 8825 9425 10000 10520 11040 11520 12150 12845 13490 14200 15417 )
 
 
