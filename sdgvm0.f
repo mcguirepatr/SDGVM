@@ -4063,7 +4063,7 @@ c     check water cycle closure
 
       CALL GROWTH(nft,ftmor,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
      &nppstore,npp,lai,nps,npr,evp,slc,rlc,sln,rln,stembio,rootbio,ppm,
-     &hgt,leaflit)
+     &hgt,leaflit,ftphen)
 
       CALL SWAP(ic0,in0,iminn,is1,is2,is3,is4,isn,ilsn,tc0,tn0,
      &tminn,ts1,ts2,ts3,ts4,tsn,tlsn)

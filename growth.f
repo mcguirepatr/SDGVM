@@ -212,7 +212,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE GROWTH(nft,ftmor,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
      &nppstore,npp,lai,nps,npr,evp,slc,rlc,sln,rln,stembio,rootbio,ppm,
-     &hgt,leaflit)
+     &hgt,leaflit,ftphen)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 ftwd(maxnft),ftxyl(maxnft),ftpd(maxnft),cov(maxage,maxnft)
@@ -221,7 +221,7 @@
       REAL*8 rootbio,slc(maxnft),rlc(maxnft),sln(maxnft),rln(maxnft)
       REAL*8 stembio,ppm(maxage,maxnft),hgt(maxage,maxnft),ftgrf(maxnft)
       REAL*8 leaflit(maxnft),ftmat(maxnft)
-      INTEGER nft,ftmor(maxnft),age,ft,i
+      INTEGER nft,ftmor(maxnft),age,ft,i,ftphen(maxnft)
 
 *----------------------------------------------------------------------*
 * Initialise litter arrays, and add on leaf litter computed in DOLY.   *
@@ -264,7 +264,7 @@
 * Compute litter arrays.                                               *
 *----------------------------------------------------------------------*
       CALL MKLIT(nft,ftgr0,ftmor,ftmat,cov,bio,slc,rlc,sln,rln,npp,nps,
-     &npr)
+     &npr,nppstore,ftphen)
 
 *----------------------------------------------------------------------*
 *Compute leaf root and stem biomasses.                                 *
@@ -884,14 +884,14 @@
 * Make litter.                                                         *
 *----------------------------------------------------------------------*
       SUBROUTINE MKLIT(nft,ftgr0,ftmor,ftmat,cov,bio,slc,rlc,sln,rln,
-     &npp,nps,npr)
+     &npp,nps,npr,nppstore,ftphen)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 ftmat(maxnft),cov(maxage,maxnft),bio(maxage,2,maxnft)
       REAL*8 slc(maxnft),rlc(maxnft),sln(maxnft),ftgr0(maxnft)
       REAL*8 rln(maxnft),npp(maxnft),nps(maxnft),npr(maxnft),npps,nppr
-      REAL*8 sl,rl,stlit
-      INTEGER nft,ftmor(maxnft),ft,age
+      REAL*8 sl,rl,stlit,nppstore(maxnft),nppstore_loss
+      INTEGER nft,ftmor(maxnft),ft,age,ftphen(maxnft)
 
       DO ft=1,nft
         IF (ftgr0(ft).GT.0.0d0) THEN
@@ -904,8 +904,24 @@
             rlc(ft) = rlc(ft) + rl*nppr*cov(age,ft)
             bio(age,1,ft) = bio(age,1,ft) - sl*npps
             bio(age,2,ft) = bio(age,2,ft) - rl*nppr
+            ! This code added to account for loss of carbon from the store
+            IF(ftphen(ft).eq.1) THEN
+              rl = 0.9
+              nppstore_loss = nppstore(ft)*rl*cov(age,ft)
+              rlc(ft)       = rlc(ft) + nppstore_loss  
+            ELSE
+              nppstore_loss = 0.0 
+              !nppstore_loss = nppstore(ft)*0.1*cov(age,ft)
+              !slc(ft)       = slc(ft) + nppstore_loss  
+            ENDIF
           ENDDO
+          IF(ftphen(ft).eq.1) THEN
+            nppstore(ft) = nppstore(ft) - nppstore(ft) * rl
+          ELSE
+            !nppstore(ft) = nppstore(ft) - nppstore(ft) * 0.1
+          ENDIF 
         ENDIF
+
       ENDDO
 
       DO ft=1,nft
