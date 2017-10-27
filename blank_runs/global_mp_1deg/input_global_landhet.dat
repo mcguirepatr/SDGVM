@@ -4,19 +4,19 @@ UNIX
 #HOME##DATA#/soil/global/islscp2/2deg/0-150_plus_CtoN_soilP
 #HOME##DATA#/land_use/global/ESACCILCP2014/30min
 #HOME##DATA#/co2/global_co2_ann_1860_2016_TRENDY.dat
-29.02
+-1.0
 #HOME##DATA#
-0
+2
 0 1 1 0 0 0
 1 8 0 0 0 1 
 
-./
+ARGUMENT
 ARGUMENT
 
-1 1 1 
-500 1901 20 0 500 
-PIXEL MONTHLY 500 gpp nep swc evt lai tmp prc
-SUBPIXEL ALL 2 cov
+0 0 0
+41 1901 20 0 1901 2016 157
+PIXEL    MONTHLY 157 tmp prc qdr qdf swc snw rof evt gpp rsp npp srp nep trn lai vcm jmx
+SUBPIXEL MONTHLY 157 evt trn bse snw bio gpp npp cov lai
 SNAPSHOTS 
 
 BARE  1.0
