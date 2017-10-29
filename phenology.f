@@ -280,8 +280,8 @@
           IF(s070607.eq.1) THEN
             laiinc = lairat*nppstorx/leafmol/lresp
           ELSE 
-            laiinc = lairat*nppstorx/leafmol/lresp
-            !laiinc = lairat*kg*nppstorx/leafmol/lresp
+            !laiinc = lairat*nppstorx/leafmol/lresp
+            laiinc = lairat*kg*nppstorx/leafmol/lresp
           ENDIF
         ELSE IF (ftphen.EQ.2) THEN
           laiinc = lairat*nppstorx/leafmol/lresp
