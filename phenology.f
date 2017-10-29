@@ -193,22 +193,22 @@
 *----------------------------------------------------------------------*
 *   - for grasses proportion of store going into leaf production *
 *----------------------------------------------------------------------*
-            IF (ftphen.EQ.1) THEN
+            !IF (ftphen.EQ.1) THEN
               
               IF(s070607.eq.1) THEN
-                nppstorx = nppstore
-              ELSEIF(phen_cor.eq.1) THEN 
-                ! restricts the maximum amount of the npp store to be used for leaf growth to 62.5% (i.e. 50% ends up as leaf mass)
-                nppstorx = 0.5 * 1.25 * nppstore
-                !nppstorx = 0.1 * 1.25 * nppstore
-              ELSE
-                nppstorx = nppstore
-              ENDIF
+!                nppstorx = nppstore
+!              ELSEIF(phen_cor.eq.1) THEN 
+!                ! restricts the maximum amount of the npp store to be used for leaf growth to 62.5% (i.e. 50% ends up as leaf mass)
+!                nppstorx = 0.5 * 1.25 * nppstore
+!                !nppstorx = 0.1 * 1.25 * nppstore
+!              ELSE
+!                nppstorx = nppstore
+!              ENDIF
               
 *----------------------------------------------------------------------*
 *   - for trees adjust proportion of store available for stem production based on suma. *
 *----------------------------------------------------------------------*
-            ELSE IF (ftphen.EQ.2) THEN
+            ELSE !IF (ftphen.EQ.2) THEN
   
               !tsuma is the annual C balance of the lowest LAI layer.
               tsuma = 0.0d0
