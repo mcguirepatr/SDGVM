@@ -410,27 +410,39 @@ c     added by Ghislain 20/10/03
 
       IF (veg) THEN
         nppstore = nppstore + daynpp
-        IF (ftphen.EQ.1) THEN
-          CALL PHENOLOGY1(ftagh,ftdth,bbm,bb0,bbmax,bblim,ssm,sss,sslim,
+!        IF (uphen.EQ.0) THEN
+!        IF (ftphen.EQ.1) THEN
+!          CALL PHENOLOGY1(ftagh,ftdth,bbm,bb0,bbmax,bblim,ssm,sss,sslim,
+!     &nppstore,leafnpp,stemnpp,rootnpp,tran,rlai,lai,lairat,rem,leafls,
+!     &stemls,rootls,leafmol,respref,soil2g,wtwp,tmem,leafv,stemv,rootv,
+!     &daysoff,laimax,lflit,smlit,rtlit,mnth,day,s_ln,s_sr,s_sn,s_rr,
+!     &s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,maxlai,
+!     &wtfc,yld,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,chill,
+!     &dschill,dayra,leafresp,rootresp,stemresp,
+!     &phen_cor,s070607)
+!        ELSEIF (ftphen.EQ.2) THEN
+!          CALL PHENOLOGY2(bbm,bb0,bbmax,bblim,ssm,sss,sslim,
+!     &nppstore,leafnpp,stemnpp,rootnpp,tran,rlai,lai,lairat,rem,leafls,
+!     &stemls,rootls,leafmol,respref,soil2g,wtwp,tmem,leafv,stemv,rootv,
+!     &daysoff,laimax,lflit,smlit,rtlit,mnth,day,s_ln,s_sr,s_sn,s_rr,
+!     &s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,maxlai,
+!     &wtfc,yld,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,chill,
+!     &dschill,dayra,leafresp,rootresp,stemresp)
+!        ELSE
+!          WRITE(*,*) 'No phenology defined for ',ftphen
+!          STOP
+!        ENDIF
+
+        CALL PHENOLOGY(ftphen,ftagh,ftdth,bbm,bb0,bbmax,bblim,ssm,sss,
+     &sslim,
      &nppstore,leafnpp,stemnpp,rootnpp,tran,rlai,lai,lairat,rem,leafls,
      &stemls,rootls,leafmol,respref,soil2g,wtwp,tmem,leafv,stemv,rootv,
      &daysoff,laimax,lflit,smlit,rtlit,mnth,day,s_ln,s_sr,s_sn,s_rr,
      &s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,maxlai,
      &wtfc,yld,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,chill,
      &dschill,dayra,leafresp,rootresp,stemresp,
-     &phen_cor,s070607)
-        ELSEIF (ftphen.EQ.2) THEN
-          CALL PHENOLOGY2(bbm,bb0,bbmax,bblim,ssm,sss,sslim,
-     &nppstore,leafnpp,stemnpp,rootnpp,tran,rlai,lai,lairat,rem,leafls,
-     &stemls,rootls,leafmol,respref,soil2g,wtwp,tmem,leafv,stemv,rootv,
-     &daysoff,laimax,lflit,smlit,rtlit,mnth,day,s_ln,s_sr,s_sn,s_rr,
-     &s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,maxlai,
-     &wtfc,yld,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,chill,
-     &dschill,dayra,leafresp,rootresp,stemresp)
-        ELSE
-          WRITE(*,*) 'No phenology defined for ',ftphen
-          STOP
-        ENDIF
+     &phen_cor,s070607,kg)
+
         leaflit = leaflit + lflit * 12.0d0 * leafmol
         yield   = yield   + yld   * 12.0d0 * leafmol
         stemlit = stemlit + smlit * 12.0d0
