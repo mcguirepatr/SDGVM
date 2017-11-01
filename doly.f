@@ -22,7 +22,7 @@
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,no_slw_lim,par_loops,s070607,
      &gs_func,ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,
      &sl,hrs,ttype,calc_zen,iyear,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,peak_lai)
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,peak_lai,ftkg)
 
 *----------------------------------------------------------------------*
       REAL*8 oi
@@ -44,7 +44,7 @@
       REAL*8 rootnpp,leafnpp,tfscale,s_gpp,s_rr,s_rn,s_sr,s_sn,canrd
       REAL*8 swr,tleaf_n,tleaf_p,tassim,tgs,tci,env_vcmax,env_jmax
       REAL*8 s_lr,s_ln,sswc(4),maxlai,yield,yld,resp,fpr,dayra,gsm
-      REAL*8 sm_trig(30),s1in,tsumam,stemfr,lmor_sc(3600),nleaf
+      REAL*8 sm_trig(30),s1in,tsumam,stemfr,lmor_sc(3600),nleaf,ftkg
       REAL*8 leaf_nit,vcmax(12),jmax(12),pnlc(12),enzs(12),leafresp
       REAL*8 rootresp,stemresp
       REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30),cos_zen,kg,can_clump
@@ -169,7 +169,8 @@ c Better: should be removed from nppcalc
 
       !Scaled by soil water limitation and temperature
       IF (soil2g.GT.wtwp) THEN
-        kg = maxc*((soil2g - wtwp)/(wtfc - wtwp))**p_kgw
+        !kg = maxc*((soil2g - wtwp)/(wtfc - wtwp))**p_kgw
+        kg = maxc*((soil2g - wtwp)/(wtfc - wtwp))**ftkg
         IF (kg.GT.maxc)  kg = maxc
       ELSE
         kg = 0.0d0

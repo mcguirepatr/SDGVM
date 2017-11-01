@@ -38,7 +38,7 @@
       REAL*8 sumbio,ans1,ftstmx(maxnft),leaflit(maxnft),stemlit(maxnft)
       REAL*8 rootlit(maxnft),ftwd(maxnft),ftxyl(maxnft),ftpd(maxnft)
       REAL*8 ftsla(maxnft),ftcov(maxnft),lon0,lonf,ftrat(maxnft),kd,kx
-      REAL*8 input_ftsla(maxnft),peak_lai
+      REAL*8 input_ftsla(maxnft),peak_lai,ftkg(maxnft)
       REAL*8 ftvna(maxnft),ftvnb(maxnft),ftjva(maxnft),ftjvb(maxnft)
       REAL*8 ftg0(maxnft),ftg1(maxnft),amax(maxnft),vcmax_from_amax
       REAL*8 stembio,rootbio,sum,solcoo,biotoo,lutab(255,100),awl(4)
@@ -1036,6 +1036,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       ftToptJ(ft) = 0.0d0
       ftHaJ(ft)   = 0.0d0
       ftHdJ(ft)   = 0.0d0
+      ftkg(ft)    = 0.0d0
       vcmax(:,ft) = 0.0d0
       jmax(:,ft)  = 0.0d0
       pnlc(:,ft)  = 0.0d0
@@ -1082,6 +1083,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       ftToptJ(ft) = 0.0d0
       ftHaJ(ft)   = 0.0d0
       ftHdJ(ft)   = 0.0d0
+      ftkg(ft)    = 0.0d0
       vcmax(:,ft) = 0.0d0
       jmax(:,ft)  = 0.0d0
       pnlc(:,ft)  = 0.0d0
@@ -1090,7 +1092,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
 *----------------------------------------------------------------------*
 * Read in functional type parameterisation.                            *
 *----------------------------------------------------------------------*
-      pft_nflds = 34
+      pft_nflds = 35
       IF(ttype.ge.1) pft_nflds = 40
 
       READ(98,'(A)') st1
@@ -1152,7 +1154,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
      &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
-     &ftg1(ft)
+     &ftg1(ft),ftkg(ft)
       ftToptV(ft) = 0.0d0
       ftHaV(ft)   = 0.0d0
       ftHdV(ft)   = 0.0d0
@@ -1243,7 +1245,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
      &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
-     &ftg1(ft)
+     &ftg1(ft),ftkg(ft)
       ftToptV(ft) = 0.0d0
       ftHaV(ft)   = 0.0d0
       ftHdV(ft)   = 0.0d0
@@ -3718,7 +3720,7 @@ C PCM2     &ft,soilc(ft),s1(ft),year,mnth,day
      &ce_maxlight(:,:,ft),ce_ga(:,:,ft),ce_rh,
      &sl,hrs,ttype,calc_zen,iyear,
      &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft),
-     &peak_lai)
+     &peak_lai,ftkg(ft))
 C PCM2      print*,'d2 ','tmp,prc,hum,cld,ft,soilc(ft),s1(ft),year,mnth,day'
 C PCM2      print*,'d2 ',tmp(mnth,day),prc(mnth,day),hum(mnth,day),cld(mnth), 
 C PCM2     &ft,soilc(ft),s1(ft),year,mnth,day
