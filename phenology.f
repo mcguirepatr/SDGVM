@@ -222,6 +222,7 @@
               !maint is the age-based mean resisdence time of leaves 
               maint = max(1.0d0,(real(leafls)/360.0d0))
               !reduce bottom layer C balance by the annual cost of leaves multiplied by p_opt
+              p_opt = 1.0d0
               tsuma = tsuma - leafmol*1.25d0/maint*p_opt
               !tsuma = tsuma -leafmol*1.25d0/maint -leafmol*1.25d0*p_opt
 
