@@ -12,7 +12,7 @@
      &s_rr,s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,
      &maxlai,wtfc,yield,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,
      &chill,dschill,s_lr,leafresp,rootresp,stemresp,
-     &phen_cor,s070607,kg)
+     &phen_cor,s070607,kg,peak_lai)
 *----------------------------------------------------------------------*
       IMPLICIT NONE
       REAL*8 nppstore,rootnpp,tran,rlai,lairat,leafmol,respref,soil2g
@@ -24,6 +24,7 @@
       REAL*8 suma(360),tsuma,tsumam,stemfr,maint,yy,lmor_sc(3600)
       REAL*8 leafresp,rootresp,stemresp,rtemp
       REAL*8 swc_bbthresh, swc_senthresh, minnppstore,lresp,kg,lgrowth
+      REAL*8 peak_lai 
       REAL*8 sumrr,sumsr,sumlr,summr,resp_r,resp_s,resp_m,resp_l
       ! not sure what this save line does
       SAVE sumrr,sumsr,sumlr,summr
@@ -218,7 +219,7 @@
               !leafls is leaf life span in days 
               !p_opt is the 'canopy optimisation correction' currently 1.5, 
               ! - can be thought of as the multipier on leaf C costs to account for roots and stem needed to support those leaves
-              !maint is the age-based annual turnover rate of leaves
+              !maint is the age-based mean resisdence time of leaves 
               maint = max(1.0d0,(real(leafls)/360.0d0))
               !reduce bottom layer C balance by the annual cost of leaves multiplied by p_opt
               tsuma = tsuma - leafmol*1.25d0/maint*p_opt
@@ -248,7 +249,8 @@
   
               !nppstorx = nppstore
               nppstorx = nppstore - nppstor2
-  
+              peak_lai = nppstorx/leafmol/1.25d0 
+
             ENDIF
           ENDIF
         ENDIF

@@ -22,7 +22,7 @@
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,no_slw_lim,par_loops,s070607,
      &gs_func,ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,
      &sl,hrs,ttype,calc_zen,iyear,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,peak_lai)
 
 *----------------------------------------------------------------------*
       REAL*8 oi
@@ -48,7 +48,7 @@
       REAL*8 leaf_nit,vcmax(12),jmax(12),pnlc(12),enzs(12),leafresp
       REAL*8 rootresp,stemresp
       REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30),cos_zen,kg,can_clump
-      REAL*8 ce_maxlight(30,12),ce_ga(30,12),ce_rh(30)
+      REAL*8 ce_maxlight(30,12),ce_ga(30,12),ce_rh(30),peak_lai
       INTEGER leafls,stemls,rootls,bbm,ssm,sss,ftphen,c3,thty_dys,ft
       INTEGER mnth,i,iter,no_day,ndsum(12),lai,day,year,bb,bbgs
       INTEGER ftdth,ss,dsbb,chill,dschill,ncalc_type,read_par,iyear
@@ -266,7 +266,7 @@ c     z0=roughness length
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,par_loops,s070607,gs_func,
      &ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,ttype,
      &calc_zen,cos_zen,iyear,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,peak_lai)
 
 c      write(*,*) 'o',canga,can2a,can2g,canres,suma
 
@@ -441,7 +441,7 @@ c     added by Ghislain 20/10/03
      &s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,maxlai,
      &wtfc,yld,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,chill,
      &dschill,dayra,leafresp,rootresp,stemresp,
-     &phen_cor,s070607,kg)
+     &phen_cor,s070607,kg,peak_lai)
 
         leaflit = leaflit + lflit * 12.0d0 * leafmol
         yield   = yield   + yld   * 12.0d0 * leafmol

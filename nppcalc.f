@@ -12,7 +12,8 @@
      &read_par,env_vcmax,env_jmax,soilp_map,ga,ftvna,ftvnb,ftjva,ftjvb,
      &ftg0,ftg1,par_loops,s070607,gs_func,ce_light,ce_ci,ce_t,
      &ce_maxlight,ce_ga,ce_rh,ttype,
-     &calc_zen,cos_zen,iyear,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
+     &calc_zen,cos_zen,iyear,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,
+     &peak_lai)
 *----------------------------------------------------------------------*
       
       IMPLICIT NONE
@@ -47,7 +48,7 @@
       REAL*8 fsunlit(12),fshade(12),tleaf_n,tleaf_p
       REAL*8 fsunlit_sd(12),fshade_sd(12)
       REAL*8 leaf_nit,vcmax(12),jmax(12),pnlc(12),enzs(12)
-      REAL*8 tassim,tgs,tci,c_p
+      REAL*8 tassim,tgs,tci,c_p,peak_lai
       REAL*8 max_daily_pchg, max_dpchg
 
       REAL*8 ax,amax,amx,lyr,qt,lat,swr,env_vcmax,env_jmax
@@ -120,7 +121,7 @@
       
       !if there are light and leaves - calculate canopy properties 
       !print*, '' 
-      IF ((rlai.GT.0.1d0).AND.(q.GT.0.0d0)) THEN
+      IF ((Rlai.GT.0.1d0).AND.(q.GT.0.0d0)) THEN
       !print*, 'calculate N and Vcmax'
 
 !      IF (soil2g.GT.wtwp) THEN
@@ -708,20 +709,20 @@
       tgs    = gs(1)
       tci    = ci(1)
 
-      ! Cumulate daily assimilation of the last lai layer, 'suma'
+      ! Cumulate daily C balance of the last lai layer, 'suma'
       IF (lai.GT.1) THEN
         suma = suma + (rem*a(lai) + (1.0d0 - rem)*a(lai - 1))*
      &3600.0d0*hrs - (rem*dresp(lai) + (1.0d0 - rem)*dresp(lai -
      &1))*3600.0d0*(24.0d0 - hrs)
         sumd = sumd + (rem*dresp(lai) + (1.0d0 - rem)*dresp(lai -
      &1))*3600.0d0*(24.0d0 - hrs)
+        ! adjust suma for lai not being at peak
+        suma = (rlai/peak_lai) * suma
       ELSE
-!            suma = suma + rem*a(lai)*3600.0d0*hrs - rem*dresp(lai)*
-!     &3600.0d0*(24.0d0 - hrs)
         sumd = sumd + rem*dresp(lai)*3600.0d0*(24.0d0 - hrs)
         suma = 0.0d0
       ENDIF
-        
+       
       if(output.and.(mnth.eq.omnth).and.(day.eq.oday)) then
         print*, '\n integrated daily means for each layer'
         print*,  a(:)

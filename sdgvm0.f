@@ -38,7 +38,7 @@
       REAL*8 sumbio,ans1,ftstmx(maxnft),leaflit(maxnft),stemlit(maxnft)
       REAL*8 rootlit(maxnft),ftwd(maxnft),ftxyl(maxnft),ftpd(maxnft)
       REAL*8 ftsla(maxnft),ftcov(maxnft),lon0,lonf,ftrat(maxnft),kd,kx
-      REAL*8 input_ftsla(maxnft)
+      REAL*8 input_ftsla(maxnft),peak_lai
       REAL*8 ftvna(maxnft),ftvnb(maxnft),ftjva(maxnft),ftjvb(maxnft)
       REAL*8 ftg0(maxnft),ftg1(maxnft),amax(maxnft),vcmax_from_amax
       REAL*8 stembio,rootbio,sum,solcoo,biotoo,lutab(255,100),awl(4)
@@ -2661,6 +2661,9 @@ c     &site_dat,lat,lon,ca
 
 !        soilt = 10.0d0
 
+      ! simple, non-robust initialisation of peak_lai
+      peak_lai = 0.0d0 
+
 *----------------------------------------------------------------------*
 *                               Year Loop                              *
 *----------------------------------------------------------------------*
@@ -3704,8 +3707,8 @@ C PCM2     &ft,soilc(ft),s1(ft),year,mnth,day
      &ce_light(:,:,ft),ce_ci(:,:,ft),ce_t,
      &ce_maxlight(:,:,ft),ce_ga(:,:,ft),ce_rh,
      &sl,hrs,ttype,calc_zen,iyear,
-     &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft))
-      
+     &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft),
+     &peak_lai)
 C PCM2      print*,'d2 ','tmp,prc,hum,cld,ft,soilc(ft),s1(ft),year,mnth,day'
 C PCM2      print*,'d2 ',tmp(mnth,day),prc(mnth,day),hum(mnth,day),cld(mnth), 
 C PCM2     &ft,soilc(ft),s1(ft),year,mnth,day
