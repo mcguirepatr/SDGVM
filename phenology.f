@@ -92,6 +92,7 @@
 *----------------------------------------------------------------------*
       IF ((nppstore.GT.0.0d0).AND.(daynpp.GT.0.0d0)) THEN
         yy = nppstore*p_rootfr
+        if(ftphen.eq.1) yy = nppstore*p_rootfr*kg
       ELSE
         yy = 0.0d0
       ENDIF
@@ -438,7 +439,15 @@
       ENDDO
 
       IF ((nppstore.GT.0.0d0).and.(daynpp.GT.0.0d0)) THEN
-        yy       = nppstore*p_stemfr
+       IF (ftphen.EQ.1) THEN
+         IF (laiinc.GT.0.0d0) THEN
+           yy = lgrowth * 0.10d0
+         ELSE
+           yy = 0.0d0
+         ENDIF
+       ELSE
+         yy = nppstore*p_stemfr
+       ENDIF
         stemv(1) = yy
         s_sn     = s_sn + yy
         stemnpp  = stemnpp + yy
