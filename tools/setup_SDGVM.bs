@@ -36,9 +36,10 @@ mkdir $RUNDIR/logs
 
 # copy template files
 cd $CPDIR
-cp *param* $RUNDIR
-cp *.bs    $RUNDIR
-cp *.pbs   $RUNDIR
+cp *param*  $RUNDIR
+cp *.pbs    $RUNDIR
+cp clean.bs $RUNDIR
+cp run_postprocessing.bs $RUNDIR
 
 # select and copy template input file
 DEFTIN=input_global.dat
@@ -50,6 +51,14 @@ else
 fi
 echo "Input file: " $INPUT
 cp $INPUT $RUNDIR
+
+# select and copy template run file
+DEFTRUN=run_SDGVM.bs
+RUNF=$DEFTRUN 
+SPECRUN=`echo $PROJECT | grep TRENDY`
+if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDY.bs; fi
+echo "Run file: " $RUNF
+cp $RUNF ${RUNDIR}$DEFTRUN
 
 # modify run files
 sed -i "s@#RUNDIR#@$RUNDIR@"   ${RUNDIR}submit*.pbs

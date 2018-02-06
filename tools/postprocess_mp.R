@@ -52,7 +52,7 @@ sty  <- 1901
 ny   <- 113
 
 # number of parallel grid directories 
-grids  <- 30
+grids  <- 32
 
 # number of cores to run the analysis over 
 cores  <- 32

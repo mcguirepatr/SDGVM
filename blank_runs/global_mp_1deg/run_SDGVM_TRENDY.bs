@@ -31,14 +31,14 @@ cp $MODEL/sdgvm0 ./src
 s4=0
 ((e=${#N_SITES[*]}))
 for s in `seq 1 $e` ;do
-((s1=$s - 1))
-((s3=1 + $s4))
-((s4=$s4 + ${N_SITES[$s1]}))
+ ((s1=$s - 1))
+ ((s3=1 + $s4))
+ ((s4=$s4 + ${N_SITES[$s1]}))
 
-mkdir ./$OUTPUT/grid$s
+ mkdir ./$OUTPUT/grid$s
 
-echo "./src/sdgvm0 $INPUT $SPINDIR/grid$s ./$OUTPUT/grid$s  $SITES $s3 $s4 > ./$OUTPUT/g${s}out.txt &"
-      ./src/sdgvm0 $INPUT $SPINDIR/grid$s ./$OUTPUT/grid$s  $SITES $s3 $s4 > ./$OUTPUT/g${s}out.txt &
+ echo "./src/sdgvm0 $INPUT $SPINDIR/grid$s ./$OUTPUT/grid$s  $SITES $s3 $s4 > ./$OUTPUT/g${s}out.txt &"
+       ./src/sdgvm0 $INPUT $SPINDIR/grid$s ./$OUTPUT/grid$s  $SITES $s3 $s4 > ./$OUTPUT/g${s}out.txt &
 
 done
 
