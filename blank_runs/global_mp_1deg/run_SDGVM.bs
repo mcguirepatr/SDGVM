@@ -3,16 +3,20 @@
 # script to run SDGVM in parallel on 30 cores 
 # designed to be run from within it's own directory
 
+#HOME=/home/alp
 MODEL=#HOME##MOD#
 INPUT=#INPUT#
+
+SPINDIR='./'
 OUTPUT=output
 
-SITES=#HOME##DATA#/sites/global_1deg.dat
-SITE_INDEX=( 0 450 950 1355 1730 2050 2360 2675 2990 3305 3620 4000 4490 5115 5740 6350 6780 7230 7730 8300 8825 9425 10000 10520 11040 11520 12150 12845 13490 14200 15417 )
-
+SITES=#HOME##DATA#/sites/global_1deg_CRUNCEPv7.dat
+N_SITES=( 1980 625 620 610  615  515 515  515 500  510
+          575  575 560 430  500  500 520  525 550  575
+          530  630 540 540  455  445 490  510 400  400
+          550  511   )
 
 # start script
-
 # clear output directories
 rm -r ./$OUTPUT
 rm -r ./src
@@ -24,16 +28,17 @@ cp $MODEL/*.f    ./src
 cp $MODEL/sdgvm0 ./src
 
 # run loop 
-((e=${#SITE_INDEX[*]} - 1 ))
-
+s4=0
+((e=${#N_SITES[*]}))
 for s in `seq 1 $e` ;do
-((s1=$s - 1))
-((s2=${SITE_INDEX[$s1]} + 1))
+ ((s1=$s - 1))
+ ((s3=1 + $s4))
+ ((s4=$s4 + ${N_SITES[$s1]}))
 
-mkdir ./$OUTPUT/grid$s
+ mkdir ./$OUTPUT/grid$s
 
-echo "./src/sdgvm0 $INPUT ./$OUTPUT/grid$s  $SITES $s2 ${SITE_INDEX[$s]} > ./$OUTPUT/g${s}out.txt &"
-./src/sdgvm0 $INPUT ./$OUTPUT/grid$s  $SITES $s2 ${SITE_INDEX[$s]} > ./$OUTPUT/g${s}out.txt &
+ echo "./src/sdgvm0 $INPUT ./$OUTPUT/grid$s  $SITES $s3 $s4 > ./$OUTPUT/g${s}out.txt &"
+       ./src/sdgvm0 $INPUT ./$OUTPUT/grid$s  $SITES $s3 $s4 > ./$OUTPUT/g${s}out.txt &
 
 done
 

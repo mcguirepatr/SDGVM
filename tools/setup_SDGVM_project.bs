@@ -11,7 +11,8 @@
 #SIMS=( NC_zen0_beers C_zen0_beers C_zen_beers C_zen0_beersC C_zen_beersC NC_zen0_LP C_zen0_LP C_zen_LP  )
 #SIMS=( Walker_N_ModA Walker_N_ModA_Tacc Kattge_ModA Kattge_ModA_Tacc  )
 #SIMS=( Constant Constant_ModA Constant_ModA_Tacc LUNA LUNA_ModA LUNA_ModA_Tacc  )
-SIMS=( spin_accel S0 S1 S2 S3  )
+#SIMS=( spin_accel S0 S1 S2 S3  )
+SIMS=( tpu0 tpu1 tpu2 tpu3  )
 
 # SDGVM directory - source code, run directories, input data are all subdirs of this dir
 HOME=~/models/SDGVM
