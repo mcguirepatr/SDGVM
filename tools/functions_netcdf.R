@@ -28,14 +28,18 @@ write_sdgvm_netcdf <- function(wd,afiles=NULL,mfiles=NULL,dfiles=NULL,
   setwd(wd)
  
   # scan the directory name for the simlation id, passed thru functions to generate output filename  
-  if(grepl('T1',wd)) fref <- 'T1'
-  if(grepl('T2',wd)) fref <- 'T2'
-  if(grepl('T3',wd)) fref <- 'T3'
+  if(grepl('T1',wd)) fref   <- 'T1'
+  if(grepl('T2',wd)) fref   <- 'T2'
+  if(grepl('T3',wd)) fref   <- 'T3'
   if(grepl('Stest',wd)) fref <- 'Stest'
-  if(grepl('S0',wd)) fref <- 'S0'
-  if(grepl('S1',wd)) fref <- 'S1'
-  if(grepl('S2',wd)) fref <- 'S2'
-  if(grepl('S3',wd)) fref <- 'S3'
+  if(grepl('S0',wd)) fref   <- 'S0'
+  if(grepl('S1',wd)) fref   <- 'S1'
+  if(grepl('S2',wd)) fref   <- 'S2'
+  if(grepl('S3',wd)) fref   <- 'S3'
+  if(grepl('tpu0',wd)) fref <- 'tpu0'
+  if(grepl('tpu1',wd)) fref <- 'tpu1'
+  if(grepl('tpu2',wd)) fref <- 'tpu2'
+  if(grepl('tpu3',wd)) fref <- 'tpu3'
 
   print('',quote=F)
   print('',quote=F)
