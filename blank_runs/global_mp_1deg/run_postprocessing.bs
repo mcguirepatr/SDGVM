@@ -4,6 +4,6 @@ SRCDIR=#HOME##MOD#/tools
 
 cd $SRCDIR
 # stich gridded output together
-Rscript postprocess_mp.R "ny<-157" "sty<-1860" "netcdf<-T" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"
+Rscript postprocess_mp.R "ny<-318" "sty<-1700" "netcdf<-T" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"
 # generate netcdf output 
-Rscript postprocess_mp.R "ny<-157" "sty<-1860" "stich<-F" "netcdf<-T" "nsites<-15729" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"
+Rscript postprocess_mp.R "ny<-318" "sty<-1700" "stich<-F" "netcdf<-T" "nsites<-15729" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"
