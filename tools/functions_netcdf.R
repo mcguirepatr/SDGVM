@@ -36,6 +36,7 @@ write_sdgvm_netcdf <- function(wd,afiles=NULL,mfiles=NULL,dfiles=NULL,
   if(grepl('S1',wd)) fref   <- 'S1'
   if(grepl('S2',wd)) fref   <- 'S2'
   if(grepl('S3',wd)) fref   <- 'S3'
+  if(grepl('S4',wd)) fref   <- 'S4'
   if(grepl('tpu0',wd)) fref <- 'tpu0'
   if(grepl('tpu1',wd)) fref <- 'tpu1'
   if(grepl('tpu2',wd)) fref <- 'tpu2'
@@ -260,6 +261,7 @@ make_netcdf_TRENDY <- function(varo,annual=F,monthly=F,daily=F,fref='',
   
 
   # set global attributes
+  ncatt_put(newnc,0,attname='title',attval='SDGVM output for TRENDYv7, 2018')
   ncatt_put(newnc,0,attname='Conventions',attval='CF-1.4 (or close)')
   ncatt_put(newnc,0,attname='Calendar',attval='no leap years, 360 day years')
   ncatt_put(newnc,0,attname='institution',attval='Oak Ridge National Laboratory')

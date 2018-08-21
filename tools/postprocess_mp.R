@@ -63,8 +63,8 @@ ncf    <- 'SDGVM'
 ncfend <- '.nc'
 
 # netcdf files to create
-#ncdf_avars <- c('cVeg','cLitter','cSoil','cVegpft','fFire','fLuc','cLeaf','cRoot','burntArea')
-ncdf_avars <- NULL 
+ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea')
+#ncdf_avars <- 'cVegpft' 
 
 ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai',
                 'evapotranspft','transpft','swepft','gpppft','npppft','tran','landCoverFrac')
@@ -104,6 +104,9 @@ if(length(commandArgs(T))>=1) {
   }
 }
 
+if(!annual)  ncdf_avars <- NULL
+if(!monthly) ncdf_mvars <- NULL
+
 
 
 ### Read in functions 
@@ -123,7 +126,7 @@ print(wd_list)
 if(!is.null(var)) {
   monthly <- daily <- annual <- F
   monthly <- grepl('monthly',var) 
-  daily   <- grepl('dailly',var)
+  daily   <- grepl('daily',var)
   annual  <- !(daily|monthly)
   pft     <- grepl('[A-Z]',var)
   wd      <- wd_list[1]  

@@ -61,12 +61,13 @@ stich_sdgvm_mp_apply <- function(wd,grids=4,mc=T,
   
   # output variable loops 
   ########################
+  data <- numeric(0)
   if(mc){
-    if(annual)      mclapply(afiles,stitch_annual,grids,wd,...)
-    if(monthly)     mclapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
-    if(daily)       mclapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)    
-    if(monthly&pft) mclapply(mpftfiles,stitch_subannual,grids,wd,atr=12,ad=1,...)
-    if(daily&pft)   mclapply(dpftfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)    
+    if(annual)      data[] <- mclapply(afiles,stitch_annual,grids,wd,...)
+    if(monthly)     data[] <- mclapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
+    if(daily)       data[] <- mclapply(dfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)    
+    if(monthly&pft) data[] <- mclapply(mpftfiles,stitch_subannual,grids,wd,atr=12,ad=1,...)
+    if(daily&pft)   data[] <- mclapply(dpftfiles,stitch_subannual,grids,wd,atr=360,ad=1,...)    
   } else {
     if(annual)      lapply(afiles,stitch_annual,grids,wd)
     if(monthly)     lapply(mfiles,stitch_subannual,grids,wd,atr=12,ad=2,...)
