@@ -941,7 +941,7 @@
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
       INTEGER ii,jj,stcmp,indx(4,4),years(1000),nrecl,yr0a,yrfa
-      INTEGER classes(1000),nclasses,kode,spinl
+      INTEGER classes(1000),nclasses,kode,spinl,yr_offset
       INTEGER ij,ij1,j1
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
       LOGICAL l_lu,year0set
@@ -989,17 +989,21 @@
         nrecl = 4
       ENDIF
 
+      yr_offset = 0 
       IF ((n.GT.1).AND.(yr0a.LT.years(1))) THEN
-        WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,*) 'Cannot start running in year',yr0a,
-     &        ' since landuse map begin in ',years(1),
-     &        '. Need to reduce spin length. OR:'
-        WRITE(*,*) 'If this error message is telling you that
+     &' since landuse map begins in ',years(1)
+        WRITE(*,*) 'The first year of land use data
+     &will be used and the first year of CO2 data will be used in',yr0a,
+     &'. This has the potential to uncouple the land use year from the
+     &CO2 year if their datasets start in different years.' 
+        WRITE(*,*) 'If this message is telling you that
      &the simulation was requested to start in year 1, then
-     &you have requested a spin only with co2const < 0.
-     &This option can only be used with land-use specified in the 
-     &input.dat file'
-        STOP
+     &you have requested a spin only with co2const < 0.'
+        WRITE(*,*) 'Alternatively you have requested a spin and a run
+     &proper and land use and CO2 will be out of sync with climate.'  
+        yr_offset = years(1) - yr0a 
+        !STOP
       ENDIF
 
 c     look for the first year
@@ -1017,7 +1021,7 @@ c     look for the first year
  
       j=1
  10   CONTINUE
-      IF ((j.LT.n).AND.(years(j).LT.yr0a)) THEN
+      IF ((j.LT.n).AND.(years(j)-yr_offset.LT.yr0a)) THEN
          j = j + 1
          GOTO 10
       ENDIF
@@ -1035,10 +1039,11 @@ c     look for the first year
 *----------------------------------------------------------------------*
 
       DO i=1,yrfa-yr0a+1
-        IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j))) THEN
-          !print*, j, years(j)
+        IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
+          !print*, j, years(j), i, years(j) - yr_offset
           st2=in2st(years(j))
           CALL STRIPB(st2)
+          !print*, st2(1:4) 
           j=j+1
 
           DO k=1,nclasses
@@ -1125,11 +1130,11 @@ c
       IF ((n-j1+1).ne.1) THEN
         print*, 'Linear interpolation of dynamic Land-Cover fractions'
         print*, n,j,n-j+1
-        DO i=1,years(n)-yr0a
-          IF ( (i.EQ.1).OR.((i+yr0a-1).EQ.years(j1)) ) THEN
+        DO i=1,years(n)-yr0a-yr_offset
+          IF ( (i.EQ.1).OR.((i+yr0a-1).EQ.(years(j1)-yr_offset)) ) THEN
             !print*, j, years(j1), years(j1+1)
             ij  = i
-            ij1 = ij + years(j1+1) - years(j1) 
+            ij1 = ij + years(j1+1) - years(j1)  
             j1  = j1 + 1
             !print*, i,j1,ij,ij1
           ELSE
@@ -1143,6 +1148,7 @@ c
       !      endif 
             ENDDO
           ENDIF
+          !write(*,'(I4,12F8.2)') yr0a+i-1, cluse(1:12,i)  
         ENDDO
       ENDIF
 
