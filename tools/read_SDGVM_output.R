@@ -7,10 +7,10 @@
 #
 ######################
 
-.libPaths('~/bin/Rlibs')
-library(plyr)
+# .libPaths('~/bin/Rlibs')
+# library(plyr)
 library(parallel)
-library(gdata)
+# library(gdata)
 
 
 # Function to concatenate SDGVM output when run across multiple cores

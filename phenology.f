@@ -204,6 +204,7 @@
             ELSEIF(phen_cor.eq.1) THEN 
               ! restricts the maximum amount of the npp store to be used for leaf growth to 62.5% (i.e. 50% ends up as leaf mass)
               nppstorx = 0.625 * nppstore
+              !nppstorx = 0.1 * nppstore
             ELSE
               nppstorx = nppstore
             ENDIF
