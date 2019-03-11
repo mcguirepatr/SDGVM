@@ -21,6 +21,7 @@ tas <- list(
   units = 'K',
   scale = 273.15
 )
+
 pr<- list(
   name  = 'pr',
   file  = 'prc',
@@ -29,6 +30,7 @@ pr<- list(
   units = 'kg m-2 s-1',
   scale = 1/(30*24*3600)
 )
+
 rsds<- list(
   name  = 'rsds',
   file  = c('qdr','qdf'),
@@ -38,6 +40,14 @@ rsds<- list(
   scale = 1/2.3
 )
 
+pot_evapotrans <- list(
+  name  = 'pot_evapotrans',
+  file  = 'pet',
+  pft   = F,
+  lname = 'Potential Evapo-Transpiration',
+  units = 'kg m-2',
+  scale = 1
+)
 
 cVeg <- list(
   name  = 'cVeg',
@@ -47,6 +57,7 @@ cVeg <- list(
   units = 'kg C m-2',
   scale = 1/1000
 )
+
 cVegpft <- list(
   name  = 'cVegpft',
   file  = 'bio',
@@ -55,6 +66,7 @@ cVegpft <- list(
   units = 'kg C m-2, per unit land area occupied by the PFT',
   scale = 1/1000
 )
+
 cLitter <- list(
   name  = 'cLitter',
   file  = 'abg_litter',
@@ -63,6 +75,7 @@ cLitter <- list(
   units = 'kg C m-2',
   scale = 1/1000
 )
+
 cSoil <- list(
   name  = 'cSoil',
   file  = 'blg_c',
@@ -71,6 +84,7 @@ cSoil <- list(
   units = 'kg C m-2',
   scale = 1/1000
 )
+
 cLeaf <- list(
   name  = 'cLeaf',
   file  = 'leafc',
@@ -79,6 +93,7 @@ cLeaf <- list(
   units = 'kg C m-2',
   scale = 1/1000
 )
+
 cRoot <- list(
   name = 'cRoot',
   file = 'rootbio',
@@ -87,6 +102,7 @@ cRoot <- list(
   units = 'kg C m-2',
   scale = 1/1000
 )
+
 fFire <- list(
   name = 'fFire',
   file = 'fcn',
@@ -96,6 +112,7 @@ fFire <- list(
   scale = 1/(1000*30*24*3600),
   annmonth =NULL
 )
+
 burntArea <- list(
   name = 'burntArea',
   file = 'fab',
@@ -104,6 +121,7 @@ burntArea <- list(
   units = '%',
   scale = 100
 )
+
 fLuc <- list(
   name = 'fLuc',
   file = 'lulccc',
@@ -127,6 +145,7 @@ mrso <- list(
   units = 'kg m-2',
   scale = 1
 )
+
 mrro <- list(
   name  = 'mrro',
   file  = 'rof',
@@ -135,6 +154,7 @@ mrro <- list(
   units = 'kg m-2 s-1',
   scale = 1/(30*24*3600)
 )
+
 evapotrans <- list(
   name  = 'evapotrans',
   file  = 'evt',
@@ -143,6 +163,7 @@ evapotrans <- list(
   units = 'kg m-2 s-1',
   scale = 1/(30*24*3600)
 )
+
 tran <- list(
   name  = 'tran',
   file  = 'trn',
@@ -151,6 +172,7 @@ tran <- list(
   units = 'kg m-2 s-1',
   scale = 1/(30*24*3600)
 )
+
 evapotranspft <- list(
   name  = 'evapotranspft',
   file  = 'evt',
@@ -160,6 +182,7 @@ evapotranspft <- list(
   scale = 2.257e6,
   notes = 'Converted to Wm-2 from kg m-2 s-1 (which is the standard SDGVM output) assuming a latent heat of vapourisation of 2257 kJ kg-1 at all times. This ignores the additional energy required for sublimation which is an order of magnitude smaller, but will lead to some discrepancy with other models when comparing this variable in cold regions.' 
 )
+
 evapo <- list(
   name  = 'evapo',
   file  = 'bse',
@@ -169,6 +192,7 @@ evapo <- list(
   scale = 2.257e6,
   notes = 'Converted to Wm-2 from kg m-2 s-1 (which is the standard SDGVM output) assuming a latent heat of vapourisation of 2257 kJ kg-1 at all times. This ignores the additional energy required for sublimation which is an order of magnitude smaller, but will lead to some discrepancy with other models when comparing this variable in cold regions. ' 
 )
+
 transpft <- list(
   name  = 'transpft',
   file  = 'trn',
@@ -178,6 +202,7 @@ transpft <- list(
   scale = 2.257e6,
   notes = 'Converted to Wm-2 from kg m-2 s-1 (which is the standard SDGVM output) assuming a latent heat of vapourisation of 2257 kJ kg-1 at all times. This ignores the additional energy required for sublimation which is an order of magnitude smaller, but will lead to some discrepancy with other models when comparing this variable in cold regions. ' 
 )
+
 swepft <- list(
   name  = 'swepft',
   file  = 'snw',
@@ -186,6 +211,7 @@ swepft <- list(
   units = 'kg m-2, per unit land area occupied by the PFT',
   scale = NA
 )
+
 # v4 <- list(
 #   name  = 'sh',
 #   file  = NA,
@@ -200,6 +226,7 @@ swepft <- list(
 #   lname = 'Air Temperature',
 #   units = 'K'
 # )
+
 gpp <- list(
   name = 'gpp',
   file = 'gpp',
@@ -208,6 +235,7 @@ gpp <- list(
   units = 'kg C m-2 s-1',
   scale = 1/(1000*30*24*3600)
 )
+
 gpppft <- list(
   name = 'gpppft',
   file = 'gpp',
@@ -216,6 +244,7 @@ gpppft <- list(
   units = 'kg C m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600)
 )
+
 ra <- list(
   name  = 'ra',
   file  = 'rsp',
@@ -224,6 +253,7 @@ ra <- list(
   units = 'kg C m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600)
 )
+
 npp <- list(
   name  = 'npp',
   file  = 'npp',
@@ -232,6 +262,7 @@ npp <- list(
   units = 'kg C m-2 s-1',
   scale = 1/(1000*30*24*3600)
 )
+
 npppft <- list(
   name  = 'npppft',
   file  = 'npp',
@@ -240,6 +271,7 @@ npppft <- list(
   units = 'kg C m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600)
 )
+
 rh <- list(
   name  = 'rh',
   file  = 'srp',
@@ -248,30 +280,36 @@ rh <- list(
   units = 'kg C m-2 s-1',
   scale = 1/(1000*30*24*3600)
 )
+
 nbp <- list(
-  name = 'nbp',
-  file = 'nep',
+  name  = 'nbp',
+  file  = 'nep',
   pft   = F,
   lname = 'Net Biome Production',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000*30*24*3600)
+  scale = 1/(1000*30*24*3600),
+  notes = 'These data include fire, lulcc, and leached C losses (which are annual fluxes distributed across the 12 months equally).'
 )
+
 nbppft <- list(
-  name = 'nbppft',
-  file = 'nep',
+  name  = 'nbppft',
+  file  = 'nep',
   pft   = T,
   lname = 'Vegtype level NBP',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000*30*24*3600)
+  scale = 1/(1000*30*24*3600),
+  notes = 'These data area per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
 )
+
 lai <- list(
-  name = 'lai',
-  file = 'lai',
+  name  = 'lai',
+  file  = 'lai',
   pft   = T,
   lname = 'Leaf Area Index',
   units = '-',
   scale = 1
 )
+
 landCoverFrac <- list(
   name = 'landCoverFrac',
   file = 'cov',

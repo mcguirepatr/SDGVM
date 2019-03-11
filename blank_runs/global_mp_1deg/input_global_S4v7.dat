@@ -1,22 +1,22 @@
 UNIX
-#HOME##DATA#/clim/global/cru-ncep_v8/30min
+#HOME##DATA#/clim/global/crujra_2018/30min
 #HOME##DATA#/stats/global/era40/30min
 #HOME##DATA#/soil/global/islscp2/2deg/0-150_plus_CtoN_soilP
-#HOME##DATA#/land_use/global/ESACCILCP2014/30min
-#HOME##DATA#/co2/global_co2_ann_1860_2016_TRENDY.dat
-30.06584
+#HOME##DATA#/land_use/global/ESACCILCP2014_LUH2v2h.1/30min
+#HOME##DATA#/co2/global_co2_ann_1700_2017_TRENDY_2017.dat
+-28.019
 #HOME##DATA#
 0
 0 1 1 0 0 0
 1 8 0 0 0 
 
-./
+ARGUMENT
 ARGUMENT
 
-0 0 0
-500 1901 20 0 1901 2016 116
-PIXEL    MONTHLY 116 tmp prc qdr qdf swc snw rof evt gpp rsp npp srp nep trn lai vcm jmx
-SUBPIXEL MONTHLY 116 evt trn bse snw bio gpp npp cov lai
+0 0 0 
+318 1901 20 0 318 
+PIXEL    MONTHLY 118 tmp prc qdr qdf swc snw rof evt gpp rsp npp srp nep trn lai vcm jmx
+SUBPIXEL MONTHLY 118 evt trn bse snw bio gpp npp cov lai
 SNAPSHOTS 
 
 BARE  1.0

@@ -2056,6 +2056,10 @@ c     create the continuous land use (cluse)
           DO year=yr0,yrf
             DO ft=1,nft
               cluse(ft,year-yr0+1) = lutab(luse(year-yr0+1),ft)
+              !print*, year,yr0
+              !print*, luse(year-yr0+1)
+              !print*, lutab(luse(year-yr0+1),ft)
+              !print*, cluse(ft,year-yr0+1) 
             ENDDO
           ENDDO
         ELSE            
@@ -2120,7 +2124,7 @@ c     create the continuous land use (cluse)
 *----------------------------------------------------------------------*
 * Start of climate data exists 'if' statement.                         *
 *----------------------------------------------------------------------*
-      IF ((l_clim).AND.(l_stats).AND.(l_soil(1)).AND.(l_soil(3)).AND.
+        IF((l_clim).AND.(l_stats).AND.(l_soil(1)).AND.(l_soil(3)).AND.
      &(l_soil(8)).AND.(l_lu).AND.(l_countries)) THEN
 
         site_dat = site_dat + 1
@@ -3314,6 +3318,7 @@ c        ENDIF
                 if(co2const.gt.0.0) then
                   ftprop(ft) = cluse(ft,1)
                 else
+              !print*, ft, iyear, iyear_adj, cluse(ft,iyear-iyear_adj)
                   ftprop(ft) = cluse(ft,iyear-iyear_adj)
                 endif  
               endif  

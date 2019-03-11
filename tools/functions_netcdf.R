@@ -28,14 +28,19 @@ write_sdgvm_netcdf <- function(wd,afiles=NULL,mfiles=NULL,dfiles=NULL,
   setwd(wd)
  
   # scan the directory name for the simlation id, passed thru functions to generate output filename  
-  if(grepl('T1',wd)) fref <- 'T1'
-  if(grepl('T2',wd)) fref <- 'T2'
-  if(grepl('T3',wd)) fref <- 'T3'
+  if(grepl('T1',wd)) fref   <- 'T1'
+  if(grepl('T2',wd)) fref   <- 'T2'
+  if(grepl('T3',wd)) fref   <- 'T3'
   if(grepl('Stest',wd)) fref <- 'Stest'
-  if(grepl('S0',wd)) fref <- 'S0'
-  if(grepl('S1',wd)) fref <- 'S1'
-  if(grepl('S2',wd)) fref <- 'S2'
-  if(grepl('S3',wd)) fref <- 'S3'
+  if(grepl('S0',wd)) fref   <- 'S0'
+  if(grepl('S1',wd)) fref   <- 'S1'
+  if(grepl('S2',wd)) fref   <- 'S2'
+  if(grepl('S3',wd)) fref   <- 'S3'
+  if(grepl('S4',wd)) fref   <- 'S4'
+  if(grepl('tpu0',wd)) fref <- 'tpu0'
+  if(grepl('tpu1',wd)) fref <- 'tpu1'
+  if(grepl('tpu2',wd)) fref <- 'tpu2'
+  if(grepl('tpu3',wd)) fref <- 'tpu3'
 
   print('',quote=F)
   print('',quote=F)
@@ -236,12 +241,13 @@ make_netcdf_TRENDY <- function(varo,annual=F,monthly=F,daily=F,fref='',
   } else if(daily){
     st <- 24        ; end <- 24*360*nyears ; sa <- 360   
   }
-  time_seq <- seq(st,end,st)
+  # provides time at mid-point of timestep 
+  time_seq <- seq(st,end,st) - st/2
   
 
   # create the nc dimensions
   nclon   <- ncdim_def( name='lon',units='degrees_east',vals=(seq(lon/2,360-lon/2,lon)) )
-  nclat   <- ncdim_def( name='lat',units='degrees_north',vals=(seq(lat/2,180-lat/2,lat)) )
+  nclat   <- ncdim_def( name='lat',units='degrees_north',vals=(seq(-90+lat/2,90-lat/2,lat)) )
   nctime  <- ncdim_def( name='time',units=paste('hours since ',styr,'-01-01 00:00:00',sep=''),vals=time_seq,unlim=T )
   if(!is.null(pft)) ncpft <- ncdim_def( name='vegtype',units='pft id, see notes',vals=1:length(pft) )
   
@@ -255,9 +261,14 @@ make_netcdf_TRENDY <- function(varo,annual=F,monthly=F,daily=F,fref='',
   newnc <- nc_create( paste('SDGVM_',fref,'_',var$name,'.nc',sep='') , ncvar )
   
 
+  # set attributes
+  ncatt_put(newnc,'time',attname='calendar',attval='360_day')
+
+
   # set global attributes
+  ncatt_put(newnc,0,attname='title',attval='SDGVM output for TRENDYv7, 2018')
   ncatt_put(newnc,0,attname='Conventions',attval='CF-1.4 (or close)')
-  ncatt_put(newnc,0,attname='Calendar',attval='no leap years, 360 day years')
+  ncatt_put(newnc,0,attname='calendar',attval='no leap years, 360 day years')
   ncatt_put(newnc,0,attname='institution',attval='Oak Ridge National Laboratory')
   ncatt_put(newnc,0,attname='history',attval=paste('created:',as.character(as.POSIXlt(Sys.time())),', by: Anthony Walker (walkerap@ornl.gov)'))
   if(!is.null(var$notes)) ncatt_put(newnc,0,attname='notes',attval=var$notes)
@@ -324,6 +335,38 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
   print(fname,quote=F)
   print(head(df),quote=F)
   print('',quote=F)
+
+  # for monthly grid square NBP remove fire flux, lulcc flux, and leached DOC flux
+  if(fname=='monthly_nep.dat') {
+
+    #print('Made it to routine to add C fluxes to nep')
+
+    m1 <- as.matrix(read.table('lch.dat'))
+    m2 <- as.matrix(read.table('lulccc.dat'))
+    m3 <- as.matrix(read.table('fcn.dat'))
+
+    #print('')
+    #print(df[1:12,cs:length(df)])  
+    #print('')
+    #print(apply(m1[,(dim(m1)[2]-length(df)+cs):dim(m1)[2]], 2, function(v) rep(v,each=12)/12 )[1:12,] )  
+    #print('')
+    #print(apply(m2[,(dim(m2)[2]-length(df)+cs):dim(m2)[2]], 2, function(v) rep(v,each=12)/12 )[1:12,] )  
+    #print('')
+    #print(apply(m3[,(dim(m3)[2]-length(df)+cs):dim(m3)[2]], 2, function(v) rep(v,each=12)/12 )[1:12,] ) 
+
+    #print('')
+    #print(sum(df[,cs:length(df)]))  
+    #print(sum(apply(m1[,(dim(m1)[2]-length(df)+cs):dim(m1)[2]], 2, function(v) rep(v,each=12)/12 )))  
+    #print(sum(apply(m2[,(dim(m2)[2]-length(df)+cs):dim(m2)[2]], 2, function(v) rep(v,each=12)/12 )))  
+    #print(sum(apply(m3[,(dim(m3)[2]-length(df)+cs):dim(m3)[2]], 2, function(v) rep(v,each=12)/12 ))) 
+
+    df[,cs:length(df)] <- df[,cs:length(df)] - 
+				apply(m1[,(dim(m1)[2]-length(df)+cs):dim(m1)[2]], 2, function(v) rep(v,each=12)/12 ) - 
+				apply(m2[,(dim(m2)[2]-length(df)+cs):dim(m2)[2]], 2, function(v) rep(v,each=12)/12 ) - 
+				apply(m3[,(dim(m3)[2]-length(df)+cs):dim(m3)[2]], 2, function(v) rep(v,each=12)/12 ) 
+    rm(m1,m2,m3)
+  } 
+
 
 
   # scale variable to correct output units
