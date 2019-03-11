@@ -178,6 +178,7 @@ c Better: should be removed from nppcalc
       
       !this is divided by maxc because SDGVM 070607 multipied the resp base rate by kg/maxc
       respref = sapresp*p_resp*kg/maxc
+      !respref = sapresp*p_resp
 
       IF (t.LT.0.0d0) then
         respref = 0.0d0
