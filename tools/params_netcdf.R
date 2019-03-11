@@ -40,6 +40,15 @@ rsds<- list(
   scale = 1/2.3
 )
 
+pot_evapotrans <- list(
+  name  = 'pot_evapotrans',
+  file  = 'pet',
+  pft   = F,
+  lname = 'Potential Evapo-Transpiration',
+  units = 'kg m-2',
+  scale = 1
+)
+
 cVeg <- list(
   name  = 'cVeg',
   file  = 'biot',
@@ -273,26 +282,28 @@ rh <- list(
 )
 
 nbp <- list(
-  name = 'nbp',
-  file = 'nep',
+  name  = 'nbp',
+  file  = 'nep',
   pft   = F,
   lname = 'Net Biome Production',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000*30*24*3600)
+  scale = 1/(1000*30*24*3600),
+  notes = 'These data include fire, lulcc, and leached C losses (which are annual fluxes distributed across the 12 months equally).'
 )
 
 nbppft <- list(
-  name = 'nbppft',
-  file = 'nep',
+  name  = 'nbppft',
+  file  = 'nep',
   pft   = T,
   lname = 'Vegtype level NBP',
   units = 'kg C m-2 s-1',
-  scale = 1/(1000*30*24*3600)
+  scale = 1/(1000*30*24*3600),
+  notes = 'These data area per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
 )
 
 lai <- list(
-  name = 'lai',
-  file = 'lai',
+  name  = 'lai',
+  file  = 'lai',
   pft   = T,
   lname = 'Leaf Area Index',
   units = '-',

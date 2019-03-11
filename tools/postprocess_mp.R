@@ -65,12 +65,16 @@ ncfend <- '.nc'
 # netcdf files to create
 ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea')
 #ncdf_avars <- 'cVegpft' 
+#ncdf_avars <- 'fLeach' 
+#ncdf_avars <- 'pot_evapotrans' 
+#ncdf_avars <- NULL 
 
 ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai',
                 'evapotranspft','transpft','swepft','gpppft','npppft','tran','landCoverFrac')
 #ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans')
 #ncdf_mvars <- c('gpp','ra','npp','rh','nbp','lai',
 #                'evapotranspft','transpft','swepft','gpppft','npppft','tran','landCoverFrac')
+#ncdf_mvars <- 'nbp' 
 #ncdf_mvars <- NULL 
 
 # nc file parameters
