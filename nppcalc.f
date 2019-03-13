@@ -828,7 +828,7 @@
        !       tpav  = brent_solver(1,0.d0,50.d0,
       !&oi,ca,vmx,0.d0,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,0.d0,0.d0,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0)
        !       cs    = ca - tpav*1.0e-6*p/ga
-       !       tpgsv = GS_LEAF(g0,g1,tpav,dv,t,cs,gs_func) * kg
+       !       tpgsv = g0 + GS_LEAF(g1,tpav,dv,t,cs,gs_func) * kg
        !       tppcv = cs - tpav*1.0e-6*p/tpgsv
        !     endif
 
@@ -841,7 +841,7 @@
         !        tpaj  = brent_solver(2,0.d0,40.d0,
       !&oi,ca,vmx,jshade,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,0.d0,0.d0,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0)
         !        cs    = ca - tpaj*1.0e-6*p/ga
-        !        tpgsj = GS_LEAF(g0,g1,tpaj,dv,t,cs,gs_func) * kg
+        !        tpgsj = g0 + GS_LEAF(g1,tpaj,dv,t,cs,gs_func) * kg
         !        tppcj = cs - tpaj*1.0e-6*p/tpgsj
         !      endif
 
@@ -861,7 +861,7 @@
         !        tpaj  = brent_solver(2,0.d0,40.d0,
       !&oi,ca,vmx,jsunlit,rh,kg,rd,ga,t,p,gs_func,g0,g1,dv,i,0.d0,0.d0,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,sum(ce_t(:))/30.d0)
         !        cs    = ca - tpaj*1.0e-6*p/ga
-        !        tpgsj = GS_LEAF(g0,g1,tpaj,dv,t,cs,gs_func) * kg
+        !        tpgsj = g0 + GS_LEAF(g1,tpaj,dv,t,cs,gs_func) * kg
         !        tppcj = cs - tpaj*1.0e-6*p/tpgsj
         !      endif
 
@@ -994,7 +994,7 @@
       cs = ca - a*1.0e-6*p/ga
 !      gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-      gs =  GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+      gs =  g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
 
       ci = cs - a*1.0e-6*p/gs
       gam = 1.0d0 - 0.5d0*oi/tau/ci
@@ -1010,7 +1010,7 @@
         cs = ca - a*1.0e-6*p/ga
 !        gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-        gs =  GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs =  g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci = cs - a*1.0e-6*p/gs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
         faf = a - (gam*vmx*ci/(ci + kc*(1.0d0 + oi/ko)) -
@@ -1028,7 +1028,7 @@
         cs = ca - a*1.0e-6*p/ga
 !        gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-        gs =  GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs =  g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci = cs - a*1.0e-6*p/gs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
       ELSE
@@ -1036,7 +1036,7 @@
         cs = ca - a*1.0e-6*p/ga
 !        gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-        gs =  GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs =  g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci = cs - a*1.0e-6*p/gs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
         fa = a - (gam*vmx*ci/(ci + kc*(1.0d0 + oi/ko)) -
@@ -1067,7 +1067,7 @@
         cs = ca - a*1.0e-6*p/ga
 !        gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-        gs =  GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs =  g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci = cs - a*1.0e-6*p/gs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
 *      print'(6f10.3)',a,fa0,cs,gs,ci,gam
@@ -1115,7 +1115,7 @@
       cs = ca - a*1.0e-6*p/ga
 !      gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-      gs =  GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+      gs =  g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
       ci = cs - a*1.0e-6*p/gs
       gam = 1.0d0 - 0.5d0*oi/tau/ci
       fa0 = a - (gam*j*ci/4.0d0/(ci + oi/tau) -
@@ -1130,7 +1130,7 @@
         cs = ca - a*1.0e-6*p/ga
 !        gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-        gs =  GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs =  g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci = cs - a*1.0e-6*p/gs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
         faf = a - (gam*j*ci/4.0d0/(ci + oi/tau) -
@@ -1149,7 +1149,7 @@
         cs = ca - a*1.0e-6*p/ga
 !        gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-        gs =  GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs =  g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci = cs - a*1.0e-6*p/gs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
       ELSE
@@ -1158,7 +1158,7 @@
         cs = ca - a*1.0e-6*p/ga
 !        gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-        gs =  GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs =  g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci = cs - a*1.0e-6*p/gs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
         fa = a - (gam*j*ci/4.0d0/(ci + oi/tau) -
@@ -1190,7 +1190,7 @@
       cs = ca - a*1.0e-6*p/ga
 !      gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-      gs =  GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+      gs =  g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
       ci = cs - a*1.0e-6*p/gs
       gam = 1.0d0 - 0.5d0*oi/tau/ci
 
@@ -1207,7 +1207,7 @@
       INTEGER gs_func,i
 
       cs  = ca - a*1.0e-6*p/ga
-      gs  = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+      gs  = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
       ci  = cs - a*1.0e-6*p/gs
       gam = 1.0d0 - gstar/ci
       fassv = (gam*vmx*ci/(ci + km) - rd)*1.0e6
@@ -1228,7 +1228,7 @@
       INTEGER gs_func,i
 
       cs  = ca - a*1.0e-6*p/ga
-      gs  = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+      gs  = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
       ci  = cs - a*1.0e-6*p/gs
       gam = 1.0d0 - gstar/ci
       fassj = (gam*j*ci/4.0d0/(ci + 2*gstar) - rd)*1.0e6
@@ -1243,18 +1243,18 @@
 *    assimilations calculations                                        *
 *----------------------------------------------------------------------*
 
-      FUNCTION GS_LEAF(g0,g1,a,dv,t,cs,gs_func)
+      FUNCTION GS_LEAF(g1,a,dv,t,cs,gs_func)
 
       IMPLICIT NONE
 
       REAL*8 :: gs_leaf,gs_wood,gs_med
-      REAL*8 :: g0,g1,a,dv,t,cs
+      REAL*8 :: g1,a,dv,t,cs
       INTEGER:: gs_func
 
       if(gs_func.eq.0) then
-        gs_leaf = GS_WOOD(g0,a,dv,t,cs) 
+        gs_leaf = GS_WOOD(a,dv,t,cs) 
       elseif(gs_func.eq.1) then
-        gs_leaf = GS_MED(g0,a,dv,g1,cs) 
+        gs_leaf = GS_MED(a,dv,g1,cs) 
       else
         print*, 'No gs function defined. STOPPING.'
         print*, 'gs function:',gs_func
@@ -1268,11 +1268,11 @@
 *    assimilations calculations                                        *
 *----------------------------------------------------------------------*
       
-      FUNCTION GS_WOOD(g0,a,dv,t,cs)
+      FUNCTION GS_WOOD(a,dv,t,cs)
 
       IMPLICIT NONE
 
-      real*8 :: gs_wood,g0,a,dv,t,cs
+      real*8 :: gs_wood,a,dv,t,cs
       real*8 :: x
       
       x = 3.0d0 + 0.2d0*t
@@ -1280,20 +1280,20 @@
 
 !      gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-      gs_wood = g0 + (x*a/(1.0d0 + dv/1.5d0)/(cs*10.0d0 - 
+      gs_wood = (x*a/(1.0d0 + dv/1.5d0)/(cs*10.0d0 - 
      &1.54d0*t))
       
       END
 
 *----------------------------------------------------------------------*
 
-      FUNCTION GS_MED(g0,a,dv,g1,cs)
+      FUNCTION GS_MED(a,dv,g1,cs)
 
       IMPLICIT NONE
 
-      real*8 :: gs_med,g0,a,dv,g1,cs
+      real*8 :: gs_med,a,dv,g1,cs
       
-      gs_med = g0 + (g1/(1.0d0 + dv**0.5d0))*(a/(cs/0.1013d0))
+      gs_med = (1.0d0 + g1/(dv**0.5d0))*(a/(cs/0.1013d0))
       
       END
 
@@ -1440,7 +1440,7 @@
       ca = 38   ! assumed value used in Woodward 1994
       t  = 25.d0 ! temperature - Woodward 1994 used Amax at optimum temp, for now assumed at 25oC
 
-      gs =  GS_LEAF(g0,g1,amx,dv,t,ca,gs_func)
+      gs =  g0 + GS_LEAF(g1,amx,dv,t,ca,gs_func)
       ci = ca - amx*0.101325/gs 
      
       CALL FARQ_PARS(t,kc,ko,tau,alpha,farq_pars_func)
@@ -1611,7 +1611,7 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
       step = 1.0d0
       a    = 0.0d0
       cs   = ca - a*1.0e-6*p/ga
-      gs   = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+      gs   = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
       ci   = cs - a*1.0e-6*p/gs
       fa0  = a - c4_jc(ci,p,rd,kt)
       a0   = a
@@ -1620,7 +1620,7 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
 50    CONTINUE
         a   = a + step
         cs  = ca - a*1.0e-6*p/ga
-        gs  = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs  = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci  = cs - a*1.0e-6*p/gs
         faf = a - c4_jc(ci,p,rd,kt)
         !print*, 'C4 solv loop:',ca,cs,ci,ga,gs,a,faf,p,rd
@@ -1635,12 +1635,12 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
         jc = 1000.0d0
         !print*, 'jc > maxa'
         !cs = ca - a*1.0e-6*p/ga
-        !gs = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        !gs = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         !ci = cs - a*1.0e-6*p/gs
       ELSE
         a  = (a0 + af)/2.0d0
         cs = ca - a*1.0e-6*p/ga
-        gs = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci = cs - a*1.0e-6*p/gs
         fa = a - c4_jc(ci,p,rd,kt)
 
@@ -1672,7 +1672,7 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
 
       ! calculate gs and ci from final a
       cs = ca - a*1.0e-6*p/ga
-      gs = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+      gs = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
       ci = cs - a*1.0e-6*p/gs
 
       RETURN
@@ -1720,7 +1720,7 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
       step = 1.0d0
       a    = 0.0d0
       cs   = ca - a*1.0e-6*p/ga
-      gs   = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+      gs   = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
       ci   = cs - a*1.0e-6*p/gs
       faf  = a - c4_colim(ci,p,rd,alpha,q,vmax,kt)
       a0   = a
@@ -1730,7 +1730,7 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
         !print*, 'C4 solv loop:',ca,cs,ci,ga,gs,a,faf,vmax,rd
         a   = a + step
         cs  = ca - a*1.0e-6*p/ga
-        gs  = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs  = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci  = cs - a*1.0e-6*p/gs
         faf = a - c4_colim(ci,p,rd,alpha,q,vmax,kt)
       !IF ((faf.LT.0.0d0).and.(a.le.maxa+1)) THEN
@@ -1748,12 +1748,12 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
         print*, 'FORTRAN STOP'
         stop
         !cs = ca - a*1.0e-6*p/ga
-        !gs = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        !gs = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         !ci = cs - a*1.0e-6*p/gs
       ELSE
         a  = (a0 + af)/2.0d0
         cs = ca - a*1.0e-6*p/ga
-        gs = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+        gs = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
         ci = cs - a*1.0e-6*p/gs
         fa = a - c4_colim(ci,p,rd,alpha,q,vmax,kt)
 
@@ -1785,7 +1785,7 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
 
       ! calculate gs and ci from final a
       cs = ca - a*1.0e-6*p/ga
-      gs = GS_LEAF(g0,g1,a,dv,t,cs,gs_func) * kg
+      gs = g0 + GS_LEAF(g1,a,dv,t,cs,gs_func) * kg
       ci = cs - a*1.0e-6*p/gs
 
       RETURN

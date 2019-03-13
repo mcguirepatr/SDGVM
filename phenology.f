@@ -204,6 +204,8 @@
             ELSEIF(phen_cor.eq.1) THEN 
               ! restricts the maximum amount of the npp store to be used for leaf growth to 62.5% (i.e. 50% ends up as leaf mass)
               nppstorx = 0.625 * nppstore
+              !nppstorx = 0.8 * nppstore
+              !nppstorx = 0.14 * nppstore
             ELSE
               nppstorx = nppstore
             ENDIF
@@ -218,9 +220,12 @@
 *----------------------------------------------------------------------*
       IF (bb.GT.0)  bbgs = bbgs + 1
       IF (bbgs-gs.gt.bb2bbmin) THEN
+      !IF (bbgs.gt.bb2bbmin) THEN
+      !IF (bbgs.gt.gs) THEN
         bb = 0
         bbgs = 0
       ENDIF
+
 
       IF (dsbb.LT.500) dsbb = dsbb + 1
 
@@ -233,6 +238,7 @@
           laiinc = lairat*(nppstorx)/leafmol/1.0d0
         ELSE
           laiinc = lairat*(nppstorx)/leafmol/1.25d0
+          !laiinc = 0.5*lairat*(nppstorx)/leafmol/1.25d0
         ENDIF
         IF (rlai+laiinc.GT.maxlai)  laiinc = maxlai - rlai
         IF (rlai+laiinc.GT.11.5d0)  laiinc = 11.5d0 - rlai
@@ -240,6 +246,8 @@
       ELSE
         laiinc = 0.0d0
       ENDIF
+
+      !print*,mnth,day,bb,bbgs,laiinc,gs,bb2bbmin
 
 *----------------------------------------------------------------------*
 * Senescence, if rlai is greater than zero, compute senescence.        *
@@ -652,6 +660,7 @@ c      print*, 'PHEN2:', rlai,ftvna,ftvnb
 *----------------------------------------------------------------------*
       IF (bb.GT.0)  bbgs = bbgs + 1
       IF (bbgs-gs.gt.bb2bbmin) THEN
+      !IF (bbgs.gt.gs) THEN
         bb = 0
         bbgs = 0
       ENDIF
