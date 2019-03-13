@@ -10,10 +10,7 @@ echo $DIRS
 
 for d in ${DIRS[@]}; do
   cd ${d}/output
-  for f in SDGVM*; do
-    tar -czvf $f.gz $f  
-  done
- 
+  for f in SDGVM*; do gzip $f; done
   cd ../..
 done 
 
