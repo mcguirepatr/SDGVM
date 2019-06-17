@@ -243,10 +243,6 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
   if( var$name %in% c('tas') )  df[,cs:length(df)] <- df[,cs:length(df)] + var$scale
   else                          df[,cs:length(df)] <- df[,cs:length(df)] * var$scale
 
-  # rename lats and lons
-  df$lats  <- (df[,1] + 90)/lat  + 1
-  df$lons  <- (df[,2] + 180)/lon + 1
-
   # expand annual SDGVM variables to monthly TRENDY output 
   if(!is.null(var$annmonth)) {
     df1        <- as.data.frame(matrix(0,dim(df)[1]*12,dim(df)[2]+1))
@@ -254,16 +250,20 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
     df1[,1]    <- rep(df[,1], each=12 )
     df1[,2]    <- rep(df[,2], each=12 )
     df1[,3]    <- 1:12
-    df1[,cs:dim(df1)[2]] <- apply(as.matrix(df[,cs:dim(df)[2]]), 2, function(v) rep(v,each=12)/12 )
+    df1[,4:dim(df1)[2]] <- apply(as.matrix(df[,cs:dim(df)[2]]), 2, function(v) rep(v,each=12)/12 )
     df <- df1
     cs <- 4
     rm(df1)
   } 
 
+  # rename lats and lons
+  df$lats  <- (df[,1] + 90)/lat  + 1
+  df$lons  <- (df[,2] + 180)/lon + 1
+
   # put the data into an nc ready array
-  time_sub <- unlist(lapply(1:nyears,slice,l=sa,nsites=nsites))
-  smat     <- if(!is.null(pftid)) cbind(rep(df$lons,nyears),rep(df$lats,nyears),1,time_sub) else 
-                                  cbind(rep(df$lons,nyears),rep(df$lats,nyears),time_sub)
+  time_sub <- unlist(lapply(1:nyears, slice, l=sa, nsites=nsites ))
+  smat     <- if(!is.null(pftid)) cbind(rep(df$lons,nyears), rep(df$lats,nyears), 1, time_sub ) else 
+                                  cbind(rep(df$lons,nyears), rep(df$lats,nyears), time_sub )
   rm(time_sub)
   
   # create an nc ready array 
@@ -271,11 +271,20 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
                                   c(360/lon,180/lat,nyears*sa)
   da       <- array(mv,dim=a_dim)
 
+  # remove unneeded columns from df & convert to matrix
+  # lat & lon
+  df       <- df[,-c(1:(cs-1))]
+  cdim     <- dim(df)[2] - 2
+  df       <- df[,-c((cdim+1):(cdim+2))]
+  # years of output not requested
+  if(nyears!=cdim) df <- df[,-(1:(cdim-nyears))]
+  df       <- as.matrix(df)
+
   # put the data into an nc ready array 
-  print(c(cs,nyears))
-  as.vector(as.matrix(df[,cs:(nyears+cs-1)]))
-  da[smat] 
-  da[smat] <- as.vector(as.matrix(df[,cs:(nyears+cs-1)]))
+  #as.vector(as.matrix(df[,cs:(nyears+cs-1)]))
+  #da[smat] 
+  #da[smat] <- as.vector(as.matrix(df[,cs:(nyears+cs-1)]))
+  da[smat] <- as.vector(df)
   rm(df); rm(smat)
   
   # put the data into the ncfile

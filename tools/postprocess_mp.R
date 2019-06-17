@@ -46,9 +46,8 @@ sim  <- c('blank/')
 # index array to index the above 'sim' vector
 pia  <- 1
 
-# start year and number of years of data in daily and monthly output
+# start year and number of years of data in daily and monthly SDGVM output
 sty  <- 1901
-#ny   <- 112
 ny   <- 113
 
 # number of parallel grid directories 
@@ -112,7 +111,8 @@ if(!monthly) ncdf_mvars <- NULL
 
 if(deg1){
   #nsites <- 15417
-  nsites <- 15729
+  #nsites <- 15729
+  #nsites <- 15789
   lon    <- 1
   lat    <- 1  
 }
@@ -151,7 +151,8 @@ if(!is.null(var)) {
  
   stich <- F
 }
- 
+
+
 # stich mp data
 if(stich) {
   lapply(wd_list[pia], stich_sdgvm_mp_apply,
@@ -159,20 +160,24 @@ if(stich) {
          annual=annual, monthly=monthly, daily=daily,
          mc.cores=cores, styear=sty, nyears=ny )
 
-  # remove grid output now that combined files have been created
-  if(delete) {
-    for( wdc in wd_list[pia]) {
-      setwd(wdc)
-      system("for i in grid*; do mv $i/simulation.dat $i/simulation.txt; done")
-      system("for i in grid*; do mv $i/site_info.dat  $i/site_info.txt; done")
-      system("for i in grid*; do mv $i/diag.dat       $i/diag.txt; done")
-      system('for i in grid*; do for f in init*.dat; do mv $i/$f $i/"`basename "$f" .dat`.txt"; done; done')
-      system("rm ./grid*/*.dat")
-      system('for i in grid*; do for f in init*.txt; do mv $i/$f $i/"`basename "$f" .txt`.dat"; done; done')
-  }} 
 }
 
+
+# remove grid output now that combined files have been created
+if(delete) {
+  for( wdc in wd_list[pia]) {
+    setwd(wdc)
+    system("for i in grid*; do mv $i/simulation.dat $i/simulation.txt; done")
+    system("for i in grid*; do mv $i/site_info.dat  $i/site_info.txt; done")
+    system("for i in grid*; do mv $i/diag.dat       $i/diag.txt; done")
+    system('for i in grid*; do for f in init*.dat; do mv $i/$f $i/"`basename "$f" .dat`.txt"; done; done')
+    system("rm ./grid*/*.dat")
+    system('for i in grid*; do for f in init*.txt; do mv $i/$f $i/"`basename "$f" .txt`.dat"; done; done')
+}} 
+
+
 # convert data to CMOR netcdf output
+#outnyears <- outeyear - outsyear + 1
 if(netcdf) lapply(wd_list[pia], write_sdgvm_netcdf,
                   afiles=ncdf_avars,
                   mfiles=ncdf_mvars,
