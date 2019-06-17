@@ -11,7 +11,6 @@
 # Total Veg C, Abg soil litter, Blg soil litter & SOM,   
 # trait workshop wants SOM and surface litter seperate - SDGVM does them combined in scn
 #                                                      - SDGVM surface litter: C1 & C5, below litter: C2 & C6, SOM: C3,4,7&8 
-# trait workshop wants monthly C flux from fire - SDGVM only simulates fire on an annual basis
 
 tas <- list(
   name  = 'tas',
@@ -95,8 +94,8 @@ cLeaf <- list(
 )
 
 cRoot <- list(
-  name = 'cRoot',
-  file = 'rootbio',
+  name  = 'cRoot',
+  file  = 'rootbio',
   pft   = F,
   lname = 'Carbon in Roots',
   units = 'kg C m-2',
@@ -104,18 +103,19 @@ cRoot <- list(
 )
 
 fFire <- list(
-  name = 'fFire',
-  file = 'fcn',
+  name  = 'fFire',
+  file  = 'fcn',
   pft   = F,
   lname = 'CO2 Emission from Fire',
   units = 'kg C m-2 s-1',
   scale = 1/(1000*30*24*3600),
-  annmonth =NULL
+  notes = 'SDGVM calculates this variable once per year, TRENDY output requires monthly data. Monthly data are calculated simply as the annual total divided by 12.',
+  annmonth = T 
 )
 
 burntArea <- list(
-  name = 'burntArea',
-  file = 'fab',
+  name  = 'burntArea',
+  file  = 'fab',
   pft   = F,
   lname = 'Burnt Area Fraction',
   units = '%',
@@ -123,16 +123,15 @@ burntArea <- list(
 )
 
 fLuc <- list(
-  name = 'fLuc',
-  file = 'lulccc',
+  name  = 'fLuc',
+  file  = 'lulccc',
   pft   = F,
   lname = 'CO2 Flux to Atmosphere from Land Use Change',
   units = 'kg C m-2 s-1',
   scale = 1/(1000*30*24*3600),
-  notes = 'In this instance of SDGVM all above-ground biomass is assumed to be lost immediately to the atmosphere, and this is what this variable records. Below-ground biomass is assumed to go into the soil as litter and this variable does not track subsequent decomposition of that litter.',
-  annmonth = NULL
+  notes = 'In this instance of SDGVM all above-ground biomass is assumed to be lost immediately to the atmosphere, and this is what this variable records. Below-ground biomass is assumed to go into the soil as litter and this variable does not track subsequent decomposition of that litter. SDGVM calculates this variable once per year, TRENDY output requires monthly data. Monthly data are calculated simply as the annual total divided by 12.',
+  annmonth = T
 )
-#afiles <- list(v1,v2,v3,v4,v5,v6)
 
 
 ### Monthly data
@@ -211,21 +210,6 @@ swepft <- list(
   units = 'kg m-2, per unit land area occupied by the PFT',
   scale = NA
 )
-
-# v4 <- list(
-#   name  = 'sh',
-#   file  = NA,
-#   pft   = F,
-#   lname = 'Sensible Heat Flux',
-#   units = 'W m-2'
-# )
-# v5 <- list(
-#   name = 'Ta',
-#   file = 'tmp',
-#   pft   = F,
-#   lname = 'Air Temperature',
-#   units = 'K'
-# )
 
 gpp <- list(
   name = 'gpp',
@@ -319,7 +303,6 @@ landCoverFrac <- list(
   scale = 1,
   notes = 'These are derived from the HYDE3.2 cropland and pasture cover dataset, 1860-2015, combined with the ESA CCI 2014 Land Cover maps (Poulter et al 2015) translated for the SDGVM PFT set. Cropland cover of the ESA dataset was reduced or increased according to HYDE while grassland cover in ESA was only increased by the psture cover in HYDE so as not to remoive natural grasslands. This likely high biased grassland cover in 1860. When deciding whether to run a site, SDGVM checks a high-resolution land-sea mask. if the grid cell is >50% land then the site is simulated assuming that the whole of the grid-cell is land. So the sum of the PFT landCoverFracs should always equal 1. Grid cells <50% land are not simulated.'
 )
-#mfiles <- list(v1,v2,v3,v6,v7,v8,v9,v10,v11)
 
 
 
@@ -332,3 +315,4 @@ landCoverFrac <- list(
 
 
 
+### END ###
