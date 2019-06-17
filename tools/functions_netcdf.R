@@ -75,8 +75,8 @@ slice <- function(i,l,nsites){
 }
 
 
-make_netcdf_TRENDY <- function(varo,annual=F,monthly=F,daily=F,fref='',
-                               nsites=1548,nyears=110,styr=1901,lon=3.75,lat=2.5,mv=-99999,
+make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
+                               nsites=1548, nyears=110, styr=1901, lon=3.75, lat=2.5, mv=-99999,
                                ... ) {
 
   # creates netcdf and call the read write function
@@ -123,13 +123,25 @@ make_netcdf_TRENDY <- function(varo,annual=F,monthly=F,daily=F,fref='',
   # set attributes
   ncatt_put(newnc,'time',attname='calendar',attval='360_day')
 
+  # determine global attributes
+  institution <- 
+    if(grepl('ORNL',inst))    'Oak Ridge National Laboratory' 
+    else if(grepl('UR',inst)) 'University of Reading' 
+    
+  if(grepl('APW',inst)) {
+    person <- 'Anthony P. Walker'
+    email  <- 'walkerap@ornl.gov'
+  } else if(grepl('PM',inst)) {
+    person <- 'Patrick McGuire'
+    email  <- '...'
+  }
 
   # set global attributes
-  ncatt_put(newnc,0,attname='title',attval='SDGVM output for TRENDYv7, 2018')
+  ncatt_put(newnc,0,attname='title',attval=paste('SDGVM output for', project ))
   ncatt_put(newnc,0,attname='Conventions',attval='CF-1.4 (or close)')
   ncatt_put(newnc,0,attname='calendar',attval='no leap years, 360 day years')
-  ncatt_put(newnc,0,attname='institution',attval='Oak Ridge National Laboratory')
-  ncatt_put(newnc,0,attname='history',attval=paste('created:',as.character(as.POSIXlt(Sys.time())),', by: Anthony Walker (walkerap@ornl.gov)'))
+  ncatt_put(newnc,0,attname='institution',attval=institution)
+  ncatt_put(newnc,0,attname='history',attval=paste('created:',as.character(as.POSIXlt(Sys.time())),', by:',person,paste0('(',email,')')))
   if(!is.null(var$notes)) ncatt_put(newnc,0,attname='notes',attval=var$notes)
   if(!is.null(pft))       ncatt_put(newnc,0,attname='PFTs',attval=paste(paste(pft,collapse=' '),'. These PFT distributions were derived by combining the HYDE 3.2 land-use and land-cover change database with the ESA GLCP 2014 data categorised according to SDGVM PFTs.',sep='') )
    

@@ -84,17 +84,16 @@ lon      <- 3.75
 lat      <- 2.5
 pftnames <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
 
-if(deg1){
-  #nsites <- 15417
-  nsites <- 15729
-  lon    <- 1
-  lat    <- 1  
-}
-
 # specifiy a variable to process, this should be the filename not including the extension
 # - used to test whether the outputting is working correctly 
 var      <- NULL
 
+# set variable for global attributes in netcdf files
+# institution and person (details and possible aliases are defined in functions_netcdf.R) 
+inst     <- 'ORNL_APW'
+
+# project name
+project  <- 'TRENDYv8, 2019'
 
 
 ### Parse command line arguments   
@@ -110,6 +109,13 @@ if(length(commandArgs(T))>=1) {
 
 if(!annual)  ncdf_avars <- NULL
 if(!monthly) ncdf_mvars <- NULL
+
+if(deg1){
+  #nsites <- 15417
+  nsites <- 15729
+  lon    <- 1
+  lat    <- 1  
+}
 
 
 
@@ -137,21 +143,21 @@ if(!is.null(var)) {
   ifile   <- paste(var,'.dat',sep='')
 
   print(c(annual,monthly,daily,pft))
-  if(annual)       lapply(ifile,stitch_annual,grids,wd)
-  if(monthly&!pft) lapply(ifile,stitch_subannual,grids,wd,atr=12,ad=2,styear=sty,nyears=ny)
-  if(daily&!pft)   lapply(ifile,stitch_subannual,grids,wd,atr=360,ad=1,styear=sty,nyears=ny)
-  if(monthly&pft)  lapply(ifile,stitch_subannual,grids,wd,atr=12,ad=1,styear=sty,nyears=ny)
-  if(daily&pft)    lapply(ifile,stitch_subannual,grids,wd,atr=360,ad=1,styear=sty,nyears=ny)
+  if(annual)       lapply(ifile, stitch_annual,    grids, wd )
+  if(monthly&!pft) lapply(ifile, stitch_subannual, grids, wd, atr=12,  ad=2, styear=sty, nyears=ny )
+  if(daily&!pft)   lapply(ifile, stitch_subannual, grids, wd, atr=360, ad=1, styear=sty, nyears=ny )
+  if(monthly&pft)  lapply(ifile, stitch_subannual, grids, wd, atr=12,  ad=1, styear=sty, nyears=ny )
+  if(daily&pft)    lapply(ifile, stitch_subannual, grids, wd, atr=360, ad=1, styear=sty, nyears=ny )
  
   stich <- F
 }
  
 # stich mp data
 if(stich) {
-  lapply(wd_list[pia],stich_sdgvm_mp_apply,
-         grids=grids,mc=T,
-         annual=annual,monthly=monthly,daily=daily,
-         mc.cores=cores,styear=sty,nyears=ny)
+  lapply(wd_list[pia], stich_sdgvm_mp_apply,
+         grids=grids, mc=T,
+         annual=annual, monthly=monthly, daily=daily,
+         mc.cores=cores, styear=sty, nyears=ny )
 
   # remove grid output now that combined files have been created
   if(delete) {
@@ -167,11 +173,11 @@ if(stich) {
 }
 
 # convert data to CMOR netcdf output
-if(netcdf) lapply(wd_list[pia],write_sdgvm_netcdf,
+if(netcdf) lapply(wd_list[pia], write_sdgvm_netcdf,
                   afiles=ncdf_avars,
                   mfiles=ncdf_mvars,
-                  mc=F,procs=cores,
-                  nsites=nsites,nyears=ny,styr=sty,lon=lon,lat=lat)
+                  mc=F, procs=cores,
+                  nsites=nsites, nyears=ny, styr=sty, lon=lon, lat=lat )
 
 
 
