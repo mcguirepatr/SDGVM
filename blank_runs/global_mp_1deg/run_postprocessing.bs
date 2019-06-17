@@ -4,6 +4,12 @@ SRCDIR=#HOME##MOD#/tools
 
 cd $SRCDIR
 # stich gridded output together
-Rscript postprocess_mp.R "ny<-318" "sty<-1700" "netcdf<-T" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"
+Rscript postprocess_mp.R "ny<-319" "sty<-1700" "nsites<-15789" "netcdf<-F" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'" "monthly<-F" "daily<-F"
 # generate netcdf output 
-Rscript postprocess_mp.R "ny<-318" "sty<-1700" "stich<-F" "netcdf<-T" "nsites<-15729" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"
+Rscript postprocess_mp.R "ny<-319" "sty<-1700" "stich<-F" "netcdf<-T" "nsites<-15789" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'" "monthly<-F" "daily<-F" 
+Rscript postprocess_mp.R "ny<-119" "sty<-1900" "stich<-T" "netcdf<-T" "nsites<-15789" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'" "monthly<-F" "daily<-F" "ncdf_avars<-'cVegpft'"
+Rscript postprocess_mp.R "ny<-319" "sty<-1700" "outsyear<-1900" "stich<-T" "netcdf<-T" "nsites<-15789" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'" "monthly<-F" "daily<-F" "ncdf_avars<-c('fFire','fLuc')"
+# stich sub-annual gridded output together - monthly
+Rscript postprocess_mp.R "ny<-119" "sty<-1900" "netcdf<-F" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'" "annual<-F" "daily<-F"
+# generate sub-annual netcdf output - monthly 
+Rscript postprocess_mp.R "ny<-119" "sty<-1900" "stich<-F" "netcdf<-T" "nsites<-15789" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'" "annual<-F" "daily<-F" 

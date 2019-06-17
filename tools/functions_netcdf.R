@@ -76,7 +76,7 @@ slice <- function(i,l,nsites){
 
 
 make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
-                               nsites=1548, nyears=110, styr=1901, lon=3.75, lat=2.5, mv=-99999,
+                               nsites=1548, nyears=110, osyr=1901, lon=3.75, lat=2.5, mv=-99999,
                                ... ) {
 
   # creates netcdf and call the read write function
@@ -107,7 +107,7 @@ make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
   # create the nc dimensions
   nclon   <- ncdim_def( name='lon',units='degrees_east',vals=(seq(-180+lon/2,180-lon/2,lon)) )
   nclat   <- ncdim_def( name='lat',units='degrees_north',vals=(seq(-90+lat/2,90-lat/2,lat)) )
-  nctime  <- ncdim_def( name='time',units=paste('hours since ',styr,'-01-01 00:00:00',sep=''),vals=time_seq,unlim=T )
+  nctime  <- ncdim_def( name='time',units=paste('hours since ',osyr,'-01-01 00:00:00',sep=''),vals=time_seq,unlim=T )
   if(!is.null(pft)) ncpft <- ncdim_def( name='vegtype',units='pft id, see notes',vals=1:length(pft) )
   
 
@@ -161,12 +161,12 @@ make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
   if(is.null(pft)) {
     fnamefull <- paste(fname,'dat',sep='.')  
     newnc     <- readSDGVM_writeNCDF(fnamefull,var,newnc,ncvar,cs,NULL,
-                                     lat,lon,nyears,nsites,sa,mv) 
+                                     lat,lon,nyears,nsites,sa,mv,osyr,...) 
   } else { 
     for( p in pft ) {
       fnamefull <- paste(fname,'_',p,'.dat',sep='')
       newnc     <- readSDGVM_writeNCDF(fnamefull,var,newnc,ncvar,cs,which(pft==p), 
-                                       lat,lon,nyears,nsites,sa,mv) 
+                                       lat,lon,nyears,nsites,sa,mv,osyr,...) 
     }
   }
 
@@ -178,7 +178,8 @@ make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
 
 
 readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
-                                lat,lon,nyears,nsites,sa,mv) {
+                                lat,lon,nyears,nsites,sa,mv,osyr,styr,
+                                ... ) {
 
   # if SDGVM output is the same variable as required
   if(length(var$file)==1) {
@@ -277,8 +278,13 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
   cdim     <- dim(df)[2] - 2
   df       <- df[,-c((cdim+1):(cdim+2))]
   # years of output not requested
-  if(nyears!=cdim) df <- df[,-(1:(cdim-nyears))]
-  df       <- as.matrix(df)
+  #if(nyears!=cdim) df <- df[,-(1:(cdim-nyears))]
+  if(nyears!=cdim) {
+    osyr_ss <- osyr - styr
+    df <- df[,-(1:osyr_ss)]
+    if(nyears!=dim(df)[2]) df <- df[,1:nyears]
+  }
+  df <- as.matrix(df)
 
   # put the data into an nc ready array 
   #as.vector(as.matrix(df[,cs:(nyears+cs-1)]))

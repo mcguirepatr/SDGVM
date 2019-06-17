@@ -50,6 +50,10 @@ pia  <- 1
 sty  <- 1901
 ny   <- 113
 
+# years of output requested for netcdf
+outsyear <- NULL 
+outeyear <- NULL
+
 # number of parallel grid directories 
 grids  <- 32
 
@@ -62,7 +66,9 @@ ncf    <- 'SDGVM'
 ncfend <- '.nc'
 
 # netcdf files to create
-ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea')
+ncdf_avars <- c('cVeg','cLitter','cSoil','cLeaf','cRoot','burntArea')
+#ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea')
+#ncdf_avars <- c('fFire','fLuc')
 #ncdf_avars <- 'cVegpft' 
 #ncdf_avars <- 'fLeach' 
 #ncdf_avars <- 'pot_evapotrans' 
@@ -117,6 +123,8 @@ if(deg1){
   lat    <- 1  
 }
 
+if(is.null(outsyear)) outsyear <- syr
+if(is.null(outeyear)) outeyear <- syr + ny - 1
 
 
 ### Read in functions 
@@ -177,12 +185,13 @@ if(delete) {
 
 
 # convert data to CMOR netcdf output
-#outnyears <- outeyear - outsyear + 1
+outnyears <- outeyear - outsyear + 1
 if(netcdf) lapply(wd_list[pia], write_sdgvm_netcdf,
                   afiles=ncdf_avars,
                   mfiles=ncdf_mvars,
                   mc=F, procs=cores,
-                  nsites=nsites, nyears=ny, styr=sty, lon=lon, lat=lat )
+                  nsites=nsites, nyears=outnyears, styr=sty, lon=lon, lat=lat,
+                  osyr=outsyear )
 
 
 
