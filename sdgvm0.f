@@ -297,13 +297,22 @@
 
       READ(98,'(A)') st1
       ii = n_fields(st1) 
+C      WRITE(*,*) '0000' 
+C      WRITE(*,*) st1
+C      WRITE(*,*) '0000' 
+C      WRITE(*,*) stinput
       CALL STRIPBS(st1,stinput)
-      !st1 = stinput
+      st1 = stinput
       
       met_seq = .FALSE.
       IF(ii.gt.1) THEN
         st3 = 'seq'
+C        WRITE(*,*) '1111' 
+C        WRITE(*,*) st1
+C        WRITE(*,*) 'aaaa' 
         CALL STRIPBS(st1,st2)
+C        WRITE(*,*) st2
+C        WRITE(*,*) 'bbbb' 
         IF (stcmp(st2,st3).EQ.1) THEN
           met_seq = .TRUE.
         ELSE
@@ -839,7 +848,9 @@
       DO i=1,nyears
         IF (i.LE.spinl) THEN
           IF (crand) THEN
-            IF ((mod(i-1,cycle).EQ.0).AND.(i.GT.2))
+C PCM            IF ((mod(i-1,cycle).EQ.0).AND.(i.GT.2))
+C PCM     & CALL RANDOMV(yearind,1,cycle,idum)
+            IF ((mod(i-1,cycle).EQ.0)) 
      & CALL RANDOMV(yearind,1,cycle,idum)
             yearv(i) = yearind(mod(i-1,cycle)+1) + yr0s - 1
           ELSE
@@ -1966,6 +1977,19 @@ c CLOSE added by Ghislain 15/12/03
         CALL EX_CLIM(st2,lat,lon,xlatf,xlatres,xlatresn,xlon0,xlonres,
      &xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,isite,xyear0,xyearf,
      &siteno,du,xswrv,read_par)
+        if(siteno.NE.0) THEN !PCM
+          l_clim = .TRUE.    !PCM
+          l_stats = .TRUE.   !PCM: we don't have or need this stats data,
+                             !PCM  but this flag needs to be set
+         ELSE                !PCM
+          l_clim = .FALSE.   !PCM
+          l_stats = .FALSE.   !PCM
+         ENDIF
+C PCM2        WRITE(*,*) 'aaaaaaaaa 1st year temperature'
+C PCM2        DO mnth=1,12
+C PCM2          WRITE(*,'(30f5.0)') xtmpv(1,mnth,1:30) 
+C PCM2        ENDDO
+C PCM2        WRITE(*,*) 'bbbbbbbbb'
         withcloudcover=.FALSE.
       ELSEIF (clim_type.EQ.2) THEN
 *----------------------------------------------------------------------*
@@ -2696,6 +2720,14 @@ c     &site_dat,lat,lon,ca
             ENDIF
           ENDDO
         ENDDO
+C PCM2        WRITE(*,*)'metyear,yr0m' 
+C PCM2        WRITE(*,*) metyear,yr0m 
+C PCM2        DO mnth=1,12
+C PCM2          WRITE(*,'(30f5.0)') xtmpv(metyear-yr0m+1,mnth,1:30) 
+C PCM2        ENDDO
+C PCM2        DO mnth=1,12
+C PCM2          WRITE(*,'(30f5.1)') tmp(mnth,1:30) 
+C PCM2        ENDDO
 
         !tmin       = 100.0d0
         yeartmp    = 0.0d0
@@ -3627,8 +3659,9 @@ c     monthly initialisations
             !print*, vcmax(1,ft)
 
             lflitold = leaflit(ft)
-!      print*,'dol ',tmp(mnth,day),prc(mnth,day),hum(mnth,day),cld(mnth), 
-!     &ft,soilc(ft),s1(ft),year,mnth
+C PCM2      print*,'d2 ','tmp,prc,hum,cld,ft,soilc(ft),s1(ft),year,mnth,day'
+C PCM2      print*,'dol ',tmp(mnth,day),prc(mnth,day),hum(mnth,day),cld(mnth), 
+C PCM2     &ft,soilc(ft),s1(ft),year,mnth,day
 !      stop
 !            soilt = 0.97d0*soilt + 0.03d0*tmp(mnth,day)
 !      write(*,*) mnth,day,tleaf_n
@@ -3659,6 +3692,11 @@ c     monthly initialisations
      &ce_maxlight(:,:,ft),ce_ga(:,:,ft),ce_rh,
      &sl,hrs,ttype,calc_zen,iyear,
      &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft))
+      
+C PCM2      print*,'d2 ','tmp,prc,hum,cld,ft,soilc(ft),s1(ft),year,mnth,day'
+C PCM2      print*,'d2 ',tmp(mnth,day),prc(mnth,day),hum(mnth,day),cld(mnth), 
+C PCM2     &ft,soilc(ft),s1(ft),year,mnth,day
+C PCM2      stop
 
 !            write(*,*) mnth,day,tleaf_n
 c      cbal = -1*(daygpp) + dayra + leafresp + rootresp + stemresp +
@@ -4638,6 +4676,10 @@ c       kg_beta    = kg_beta/wi
         WRITE(80,'(100E16.8)') avnpp
 
       ELSE
+C        WRITE(80,'(A4,F7.3,F9.3)') 'BAD',lat,lon        !PCM
+C        WRITE(80,*) '                  clm stt ssc blk wfs dep lus'
+C        WRITE(80,'(f7.3,f9.3,1x,20L4)') lat,lon,l_clim,l_stats, !PCM
+C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
 
         WRITE(11,*) '                  clm stt ssc blk wfs dep lus'
         WRITE(11,'(f7.3,f9.3,1x,20L4)') lat,lon,l_clim,l_stats,
