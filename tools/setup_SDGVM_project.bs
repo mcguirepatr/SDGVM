@@ -13,13 +13,15 @@
 #SIMS=( Constant Constant_ModA Constant_ModA_Tacc LUNA LUNA_ModA LUNA_ModA_Tacc  )
 #SIMS=( spin_accel S0 S1 S2 S3  )
 #SIMS=( tpu0 tpu1 tpu2 tpu3  )
-SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
+#SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
+SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
 
 # SDGVM directory - source code, run directories, input data are all subdirs of this dir
-HOME=~/models/SDGVM
+#HOME=~/models/SDGVM
+HOME=/group_workspaces/jasmin2/nexcs/pmcguire
 if [ ! -z $2 ]; then HOME=$2; fi
 # relative to HOME, where all SDGVM simulations live
-PROJECTS_DIR=/run
+PROJECTS_DIR=/sdgvmR
 PDIR=${HOME}${PROJECTS_DIR}
 # directory of specific project
 PROJECT=$1
