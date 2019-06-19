@@ -15,15 +15,19 @@
 # relative to root
 HOME=$1
 # relative to HOME
-PROJECTS_DIR=/run/
-DATA=/input_data
-MOD=/src/sdgvm
+PROJECTS_DIR=/sdgvmR/
+DATA=/sdgvmD/data
+#MOD=/src/sdgvm
+MOD=/Drought2018/sdgvm
 # relative to MOD
-CPRUN=/blank_runs/global_mp_1deg
+CPRUN=/blank_runs/Euro_mp_15min
 # relative to PROJECTS_DIR
 PROJECT=$2
 # relative to PROJECT
 RUN=$3
+
+#BATCHPROC=pbs
+BATCHPROC=bsub
 
 # copy blank run from:
 CPDIR=$HOME$MOD$CPRUN
@@ -37,7 +41,7 @@ mkdir $RUNDIR/logs
 # copy template files
 cd $CPDIR
 cp *param*  $RUNDIR
-cp *.pbs    $RUNDIR
+cp *.${BATCHPROC} $RUNDIR
 cp clean.bs $RUNDIR
 cp run_postprocessing.bs $RUNDIR
 
@@ -61,9 +65,9 @@ echo "Run file: " $RUNF
 cp $RUNF ${RUNDIR}$DEFTRUN
 
 # modify run files
-sed -i "s@#RUNDIR#@$RUNDIR@"   ${RUNDIR}submit*.pbs
-sed -i "s@#PROJECT#@$PROJECT@" ${RUNDIR}submit*.pbs
-sed -i "s@#SIM#@$RUN@"         ${RUNDIR}submit*.pbs
+sed -i "s@#RUNDIR#@$RUNDIR@"   ${RUNDIR}submit*.${BATCHPROC}
+sed -i "s@#PROJECT#@$PROJECT@" ${RUNDIR}submit*.${BATCHPROC}
+sed -i "s@#SIM#@$RUN@"         ${RUNDIR}submit*.${BATCHPROC}
 
 sed -i "s@#DATA#@$DATA@"       ${RUNDIR}$INPUT
 sed -i "s@#HOME#@$HOME@"       ${RUNDIR}$INPUT
