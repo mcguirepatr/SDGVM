@@ -5,7 +5,8 @@ SIMS=( #S# )
 for s in ${SIMS[*]}; do
   echo $s
   cd $s
-  qsub submit.pbs
+#  qsub submit.pbs
+  bsub < submit.bsub
   cd ..
 done
 
