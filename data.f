@@ -286,19 +286,14 @@ C     &form='unformatted',status='old')                      !PCM
      & REC=(siteno-1)*nyears+year-year0+1) jj,
      &((prcv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
             if(read_par.eq.1) 
-     &READ(fno+4,1002,                         !PCM
+     & READ(fno+4,1002,                          !PCM
      & REC=(siteno-1)*nyears+year-year0+1)
      &jj, ((swrv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
-            DO mnth=1,12
-              DO day=1,30
-                prcv(year-yr0+1,mnth,day) = 
-     &int(real(prcv(year-yr0+1,mnth,day))/100.0 )   !PCM
-C     PCM : I made the daily weather/climate precip files 
-C     PCM :   with multiplying the precip (in mm/day) by 100.
-C     PCM     Otherwise the lowest precip in the files was 1 mm/day,
-C     PCM     since the inputs were integers.
+C            DO mnth=1,12
+C              DO day=1,30
+C                prcv(year-yr0+1,mnth,day) = 
+C     &int(real(prcv(year-yr0+1,mnth,day))/100.0 )   !PCM
 C     &int(real(prcv(year-yr0+1,mnth,day))/10.0 + 0.5) !PCM
-C     PCM : Not sure what the 10.0 and 0.5 are for
               ENDDO
             ENDDO
           ENDDO
@@ -327,7 +322,6 @@ C PCM            DO mnth=1,12
 C PCM              DO day=1,30
 C PCM                prcv(year-yr0+1,mnth,day) = 
 C PCM  &int(real(prcv(year-yr0+1,mnth,day))/10.0 + 0.5) 
-C PCM   !PCM  Not sure what the 10.0 and 0.5 are for
 C PCM              ENDDO
 C PCM            ENDDO
           ENDDO
@@ -350,26 +344,21 @@ C PCM            ENDDO
       enddo
 
 C   PCM added the following triple DO loop
+C     PCM : Each of these 3 variables
+C           are required to be passed to sdgvm0 in units of
+C           0.01 oC, 0.1 mm, 0.01 % hum
+C           They are read as:
+C           0.1 oC, 0.01 mm, 0.1 % hum
+C     The following scalars convert from read units to sdgvm0 expected units
       TMP_MULT = 10.0                         
       HUM_MULT = 10.0
-      PRC_MULT = 10.0
-C     PCM : Each of these 3 variables, for different reasons
-C     PCM : seems to require that they be multiplied by 10.
-      PRC_MULT1 =  PRC_MULT/100.0 
-C     PCM : I made the daily weather/climate precip files 
-C     PCM :   with multiplying the precip (in mm/day) by 100.
-C     PCM     Otherwise the lowest precip in the files was 1 mm/day,
-C     PCM     since the inputs were integers.
-      PRC_MULT1 =  PRC_MULT1*24.0
-C     PCM : This fixes a bug in the SDGVM-formatted precip files,
-C     PCM : wherein I took daily averages with CDO of all
-C     PCM : hourly-variables. For precip, I should have computed daily totals.
+      PRC_MULT = 1/10.0 
       DO year=year0,yearf
        DO mnth=1,12
         DO day=1,no_days(year,mnth,0)
          IF ((year.LE.yrf).AND.(year.GE.yr0)) THEN
           xtmpv(year-yr0+1,mnth,day)= tmpv(year-yr0+1,mnth,day)*TMP_MULT
-          xprcv(year-yr0+1,mnth,day)=prcv(year-yr0+1,mnth,day)*PRC_MULT1
+          xprcv(year-yr0+1,mnth,day)= prcv(year-yr0+1,mnth,day)*PRC_MULT
           xhumv(year-yr0+1,mnth,day)= humv(year-yr0+1,mnth,day)*HUM_MULT
          ENDIF
         ENDDO
