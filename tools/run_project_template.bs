@@ -5,7 +5,7 @@ SIMS=( #S# )
 for s in ${SIMS[*]}; do
   echo $s
   cd $s
-  qsub submit.pbs
+  #BATCHPROCCOM#
   cd ..
 done
 

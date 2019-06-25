@@ -176,37 +176,51 @@
 *                                                                      *
 *            UNIX                DOS                                   *
 *                                                                      *
-*            ii(4)               ii(5)   for beginning of binary file  *
+*            ii(4)          PCM  jj(5)   for beginning of binary file  *
+*                                        records                       *
+*            ii(7)          PCM  jj(8)   for beginning of binary file  *
 *                                        records                       *
 *            recl = 728          recl = 730     for binary climate     *
 *            recl = 577          recl = 578     for text map           *
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLIM(stinput,lat,lon,xlatf,xlatres,xlatresn,xlon0,
-     &xlonres,xlonresn,yr0,yrf,tmpv,humv,prcv,isite,year0,yearf,
+     &xlonres,xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,isite,year0,yearf,
      &siteno,du,swrv,read_par)
 *----------------------------------------------------------------------*
       REAL*8 lat,lon,xlon0,xlatf,xlatres,xlonres,ans(12)
-      INTEGER*2 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31)
+      REAL*8  xtmpv(500,12,31),xhumv(500,12,31),xprcv(500,12,31) !PCM
       REAL*8  swrv(500,12,31)
       INTEGER year,year0,yearf,nrec,ncol,ans2(1000),siteno,i,du
       INTEGER nyears,yr0,mnth,day,isite,yrf,blank,recl1,recl2
+      INTEGER no_days
+      INTEGER recl3                      !PCM
       INTEGER xlatresn,xlonresn,fno,read_par
-      CHARACTER ii(4),jj(5),fname4*1000
-      CHARACTER fname1*1000,fname2*1000,fname3*1000,stinput*1000,num*3
+      !CHARACTER ii(4),jj(5),fname4*1000 !PCM
+      CHARACTER ii*7,jj*8,fname4*1000 !PCM
+      CHARACTER fname1*1000,fname2*1000,fname3*1000,stinput*1000
+      CHARACTER num*15 !PCM
+      INTEGER*2 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31) !PCM
+      REAL*8 TMP_MULT,PRC_MULT,HUM_MULT,PRC_MULT1
 
       IF (du.eq.1) THEN
-        recl1 = 730
+        !recl1 = 730  !PCM
+        recl1 = 7 + 4*360 !PCM 
         recl2 = 6*xlonresn
+        recl3 = 7 + 7*360 !PCM
       ELSE
-        recl1 = 728
+        !recl1 = 728  !PCM
+        recl1 = 7 + 4*360 + 1 !PCM
         recl2 = 6*xlonresn + 1
+        recl3 = 7 +  7*360 + 1 !PCM
       ENDIF
 
       nyears = yearf - year0 + 1
 
       nrec = int((xlatf - lat)/xlatres + 1.0d0)
       ncol = int((lon - xlon0)/xlonres + 1.0d0)
+C      write(*,*) 'nrec,ncol,xlatf,lat,xlatres,lon,xlon0,xlonres'
+C      write(*,*) nrec,ncol,xlatf,lat,xlatres,lon,xlon0,xlonres
 
       IF ((nrec.LE.xlatresn).AND.(ncol.LE.xlonresn)) THEN
 
@@ -214,20 +228,28 @@
       lon = xlon0 + xlonres/2.0 + real(ncol - 1)*xlonres
 
       fno = 90
+C      write(*,*) 'nrec,ncol,xlatf,lat,xlatres,lon,xlon0,xlonres in IF'
+C      write(*,*) nrec,ncol,xlatf,lat,xlatres,lon,xlon0,xlonres
 
       OPEN(fno+1,file=stinput(1:blank(stinput))//'/maskmap.dat',
      &ACCESS='DIRECT',RECL=recl2,FORM='formatted',STATUS='OLD')
 
-      READ(fno+1,'(96i6)',REC=nrec) (ans2(i),i=1,xlonresn)
+      !READ(fno+1,'(96i6)',REC=nrec) (ans2(i),i=1,xlonresn) !PCM
+      READ(fno+1,'(305i6)',REC=nrec) (ans2(i),i=1,xlonresn) !PCM
       CLOSE(fno+1)
       siteno = ans2(ncol)
+C      write(*,*) 'siteno after maskmap.dat read'
+C      write(*,*) siteno
 
       isite = 0
       IF (siteno.GT.0) THEN
 
         isite = 1
 
-        WRITE(num,'(i3.3)') (siteno-1)/100
+C PCM        WRITE(num,'(i3.3)') (siteno-1)/100
+C       PCM I kept the trailing zeroes, and I had no leading zeroes 
+C       PCM added trailing '.dat'
+        WRITE(num,'(i0,a4)')  100*((siteno-1)/100),'.dat'
         WRITE(fname1,'(100a)') (stinput(i:i),i=1,blank(stinput)),
      &'/tmp_',num
         WRITE(fname2,'(100a)') (stinput(i:i),i=1,blank(stinput)),
@@ -237,55 +259,73 @@
         WRITE(fname4,'(100a)') (stinput(i:i),i=1,blank(stinput)),
      &'/swr_',num
 
+C        write(*,*) 'siteno before mod'
+C        write(*,*) siteno
         siteno = mod(siteno-1,100) + 1
 
         OPEN(fno+1,file=fname1,access='direct',recl=recl1,
-     &form='unformatted',status='old')
+     &form='formatted',status='old')                         !PCM
         OPEN(fno+2,file=fname2,access='direct',recl=recl1,
-     &form='unformatted',status='old')
+     &form='formatted',status='old')                         !PCM
         OPEN(fno+3,file=fname3,access='direct',recl=recl1,
-     &form='unformatted',status='old')
-        OPEN(fno+4,file=fname4,access='direct',recl=recl1,
-     &form='unformatted',status='old')
+     &form='formatted',status='old')                         !PCM
+C         OPEN(fno+4,file=fname4,access='direct',recl=recl1, !PCM
+C     &form='unformatted',status='old')                      !PCM
+        OPEN(fno+4,file=fname4,access='direct',recl=recl3,   !PCM
+     &form='formatted',status='old')                         !PCM
 
         IF (du.eq.1) THEN
         DO year=yr0,yrf
-            READ(fno+1,REC=(siteno-1)*nyears+year-year0+1) jj,
+            READ(fno+1,1001,                     !PCM
+     & REC=(siteno-1)*nyears+year-year0+1) jj,
      &((tmpv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
-            READ(fno+2,REC=(siteno-1)*nyears+year-year0+1) jj,
+            READ(fno+2,1001,                     !PCM
+     & REC=(siteno-1)*nyears+year-year0+1) jj,
      &((humv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
-            READ(fno+3,REC=(siteno-1)*nyears+year-year0+1) jj,
+            READ(fno+3,1001,                     !PCM
+     & REC=(siteno-1)*nyears+year-year0+1) jj,
      &((prcv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
             if(read_par.eq.1) 
-     &READ(fno+3,REC=(siteno-1)*nyears+year-year0+1)
+     & READ(fno+4,1002,                          !PCM
+     & REC=(siteno-1)*nyears+year-year0+1)
      &jj, ((swrv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
-            DO mnth=1,12
-              DO day=1,30
-                prcv(year-yr0+1,mnth,day) = 
-     &int(real(prcv(year-yr0+1,mnth,day))/10.0 + 0.5)
+C            DO mnth=1,12
+C              DO day=1,30
+C                prcv(year-yr0+1,mnth,day) = 
+C     &int(real(prcv(year-yr0+1,mnth,day))/100.0 )   !PCM
+C     &int(real(prcv(year-yr0+1,mnth,day))/10.0 + 0.5) !PCM
               ENDDO
             ENDDO
           ENDDO
         ELSE
           DO year=yr0,yrf
-            READ(fno+1,REC=(siteno-1)*nyears+year-year0+1) ii,
+C            write(*,*) 'year,siteno,year0,nyears,yr0,yrf'
+C            write(*,*) year,siteno,year0,nyears,yr0,yrf
+C            write(*,*) '(siteno-1)*nyears+year-year0+1'
+C            write(*,*) (siteno-1)*nyears+year-year0+1
+            READ(fno+1,1001, !PCM
+     & REC=(siteno-1)*nyears+year-year0+1) ii,
      &((tmpv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
-            READ(fno+2,REC=(siteno-1)*nyears+year-year0+1) ii,
+1001        FORMAT(A7,360I4)                
+1002        FORMAT(A7,360F7.2)                
+            READ(fno+2,1001,                   !PCM
+     & REC=(siteno-1)*nyears+year-year0+1) ii,
      &((humv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
-            READ(fno+3,REC=(siteno-1)*nyears+year-year0+1) ii,
+            READ(fno+3,1001,                   !PCM
+     & REC=(siteno-1)*nyears+year-year0+1) ii,
      &((prcv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
             if(read_par.eq.1)
-     &READ(fno+3,REC=(siteno-1)*nyears+year-year0+1)
+     &READ(fno+4,1002,                       !PCM
+     & REC=(siteno-1)*nyears+year-year0+1)
      &ii, ((swrv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
-            DO mnth=1,12
-              DO day=1,30
-                prcv(year-yr0+1,mnth,day) = 
-     &int(real(prcv(year-yr0+1,mnth,day))/10.0 + 0.5)
-              ENDDO
-            ENDDO
+C PCM            DO mnth=1,12
+C PCM              DO day=1,30
+C PCM                prcv(year-yr0+1,mnth,day) = 
+C PCM  &int(real(prcv(year-yr0+1,mnth,day))/10.0 + 0.5) 
+C PCM              ENDDO
+C PCM            ENDDO
           ENDDO
         ENDIF
-
         CLOSE(fno+1)
         CLOSE(fno+2)
         CLOSE(fno+3)
@@ -303,6 +343,42 @@
         enddo
       enddo
 
+C   PCM added the following triple DO loop
+C     PCM : Each of these 3 variables
+C           are required to be passed to sdgvm0 in units of
+C           0.01 oC, 0.1 mm, 0.01 % hum
+C           They are read as:
+C           0.1 oC, 0.01 mm, 0.1 % hum
+C     The following scalars convert from read units to sdgvm0 expected units
+      TMP_MULT = 10.0                         
+      HUM_MULT = 10.0
+      PRC_MULT = 1/10.0 
+      DO year=year0,yearf
+       DO mnth=1,12
+        DO day=1,no_days(year,mnth,0)
+         IF ((year.LE.yrf).AND.(year.GE.yr0)) THEN
+          xtmpv(year-yr0+1,mnth,day)= tmpv(year-yr0+1,mnth,day)*TMP_MULT
+          xprcv(year-yr0+1,mnth,day)= prcv(year-yr0+1,mnth,day)*PRC_MULT
+          xhumv(year-yr0+1,mnth,day)= humv(year-yr0+1,mnth,day)*HUM_MULT
+         ENDIF
+        ENDDO
+      ENDDO
+      ENDDO
+
+C PCM2      WRITE(*,*) '00000000'
+C PCM2      WRITE(*,*) 'TEMPERATURE (deg C)'
+C PCM2      DO mnth=1,12
+C PCM2        WRITE(*,'(30F5.1)') xtmpv(1,mnth,1:30)/TMP_MULT/TMP_MULT
+C PCM2      ENDDO
+C PCM2      WRITE(*,*) 'PRECIP/DAY'
+C PCM2      DO mnth=1,12
+C PCM2        WRITE(*,'(30F5.2)') xprcv(1,mnth,1:30)/PRC_MULT
+C PCM2      ENDDO
+C PCM2      WRITE(*,*) 'HUMIDITY (%)'
+C PCM2      DO mnth=1,12
+C PCM2        WRITE(*,'(30F5.1)') xhumv(1,mnth,1:30)/HUM_MULT/HUM_MULT 
+C PCM2      ENDDO
+C PCM2      WRITE(*,*) '111111111'
 
       RETURN
       END

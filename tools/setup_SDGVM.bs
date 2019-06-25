@@ -7,23 +7,43 @@
 # once a run is setup the only file that needs editing is the input file (input*.dat)
 
 # Arguments:
-# $1 - HOME directory (required)
-# $2 - project name (required)
-# $3 - run name (required)
+# $1 - SDGVMUSER (required) - options: ORNL_APW, UR_PCM
+# $2 - HOME directory (required)
+# $3 - project name (required)
+# $4 - run name (required)
+
+# directory from which to copy template runs 
+# relative to MOD
+CPRUN=/blank_runs/global_mp_1deg
+
+# institute and user tag to customise simulation to user space and machine
+SDGVMUSER=$1
 
 # directories 
 # relative to root
-HOME=$1
-# relative to HOME
-PROJECTS_DIR=/run/
-DATA=/input_data
-MOD=/src/sdgvm
-# relative to MOD
-CPRUN=/blank_runs/global_mp_1deg
+HOME=$2
+
+if [$SDGVMUSER=='ORNL_APW']; then
+  # relative to HOME
+  PROJECTS_DIR=/run/
+  DATA=/input_data
+  MOD=/src/sdgvm
+  # cluster queuing variables
+  BATCHPROC=pbs
+
+elif [$SDGVMUSER=='UR_PCM']; then
+  # relative to HOME
+  PROJECTS_DIR=/sdgvmR/
+  DATA=/sdgvmD/data
+  MOD=/Drought2018/sdgvm
+  # cluster queuing variables
+  BATCHPROC=bsub
+fi
+
 # relative to PROJECTS_DIR
-PROJECT=$2
+PROJECT=$3
 # relative to PROJECT
-RUN=$3
+RUN=$4
 
 # copy blank run from:
 CPDIR=$HOME$MOD$CPRUN
@@ -36,9 +56,9 @@ mkdir $RUNDIR/logs
 
 # copy template files
 cd $CPDIR
-cp *param*  $RUNDIR
-cp *.pbs    $RUNDIR
-cp clean.bs $RUNDIR
+cp *param*        $RUNDIR
+cp *.${BATCHPROC} $RUNDIR
+cp clean.bs       $RUNDIR
 cp run_postprocessing.bs $RUNDIR
 
 # select and copy template input file
@@ -61,9 +81,9 @@ echo "Run file: " $RUNF
 cp $RUNF ${RUNDIR}$DEFTRUN
 
 # modify run files
-sed -i "s@#RUNDIR#@$RUNDIR@"   ${RUNDIR}submit*.pbs
-sed -i "s@#PROJECT#@$PROJECT@" ${RUNDIR}submit*.pbs
-sed -i "s@#SIM#@$RUN@"         ${RUNDIR}submit*.pbs
+sed -i "s@#RUNDIR#@$RUNDIR@"   ${RUNDIR}submit*.${BATCHPROC}
+sed -i "s@#PROJECT#@$PROJECT@" ${RUNDIR}submit*.${BATCHPROC}
+sed -i "s@#SIM#@$RUN@"         ${RUNDIR}submit*.${BATCHPROC}
 
 sed -i "s@#DATA#@$DATA@"       ${RUNDIR}$INPUT
 sed -i "s@#HOME#@$HOME@"       ${RUNDIR}$INPUT
@@ -80,4 +100,5 @@ sed -i "s@#PDIR#@$HOME$PROJECTS_DIR$PROJECT@"   ${RUNDIR}run_postprocessing.bs
 sed -i "s@#SIM#@$RUN@"                          ${RUNDIR}run_postprocessing.bs
 
 
- 
+
+### END ### 
