@@ -98,6 +98,7 @@ sed -i "s@#MOD#@$MOD@"                          ${RUNDIR}run_postprocessing.bs
 sed -i "s@#DIR#@$HOME$PROJECT_DIR@"             ${RUNDIR}run_postprocessing.bs
 sed -i "s@#PDIR#@$HOME$PROJECTS_DIR$PROJECT@"   ${RUNDIR}run_postprocessing.bs
 sed -i "s@#SIM#@$RUN@"                          ${RUNDIR}run_postprocessing.bs
+sed -i "s@#SDGVMUSER#@$SDGVMUSER@"              ${RUNDIR}run_postprocessing.bs
 
 
 

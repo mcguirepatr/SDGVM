@@ -83,22 +83,23 @@ ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','r
 #ncdf_mvars <- NULL 
 
 # nc file parameters
-mis_val  <- -99999
-nsites   <- 1548
-lon      <- 3.75
-lat      <- 2.5
-pftnames <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
+mis_val   <- -99999
+nsites    <- 1548
+lon       <- 3.75
+lat       <- 2.5
+pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
 
 # specifiy a variable to process, this should be the filename not including the extension
 # - used to test whether the outputting is working correctly 
-var      <- NULL
+var       <- NULL
 
 # set variable for global attributes in netcdf files
-# institution and person (details and possible aliases are defined in functions_netcdf.R) 
-inst     <- 'ORNL_APW'
+# institution and person (details and possible aliases are defined in functions_netcdf.R)
+# current options: ORNL_APW, UR_PCM 
+sdgvmuser <- 'ORNL_APW'
 
 # project name
-project  <- 'TRENDYv8, 2019'
+project   <- 'TRENDYv8, 2019'
 
 
 ### Parse command line arguments   
@@ -191,7 +192,7 @@ if(netcdf) lapply(wd_list[pia], write_sdgvm_netcdf,
                   mfiles=ncdf_mvars,
                   mc=F, procs=cores,
                   nsites=nsites, nyears=outnyears, styr=sty, lon=lon, lat=lat,
-                  osyr=outsyear )
+                  osyr=outsyear, sdgvmuser=sdgvmuser )
 
 
 

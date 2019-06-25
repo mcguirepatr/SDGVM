@@ -77,7 +77,7 @@ slice <- function(i,l,nsites){
 
 make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
                                nsites=1548, nyears=110, osyr=1901, lon=3.75, lat=2.5, mv=-99999,
-                               ... ) {
+                               sdgvmuser='ORNL_APW', ... ) {
 
   # creates netcdf and call the read write function
   var <- get(varo)
@@ -125,15 +125,15 @@ make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
 
   # determine global attributes
   institution <- 
-    if(grepl('ORNL',inst))    'Oak Ridge National Laboratory' 
-    else if(grepl('UR',inst)) 'University of Reading' 
+    if(grepl('ORNL',sdgvmuser))    'Oak Ridge National Laboratory' 
+    else if(grepl('UR',sdgvmuser)) 'University of Reading' 
     
-  if(grepl('APW',inst)) {
+  if(grepl('APW',sdgvmuser)) {
     person <- 'Anthony P. Walker'
     email  <- 'walkerap@ornl.gov'
-  } else if(grepl('PM',inst)) {
-    person <- 'Patrick McGuire'
-    email  <- '...'
+  } else if(grepl('PCM',sdgvmuser)) {
+    person <- 'Patrick C. McGuire'
+    email  <- 'mcguirepatr@gmail.com'
   }
 
   # set global attributes
