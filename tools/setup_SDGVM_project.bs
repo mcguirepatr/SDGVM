@@ -1,11 +1,13 @@
 #!/bin/bash
 
 # Sets up an SDGVM project composed of multiple related runs of SDGVM
+# calls setup_SDGVM.bs which sets up each individual run 
 
 # Arguments:
-# $1 - project name (required)
-# $2 - HOME directory path relative to root (optional)
-# $3 - SUBPROJECT name (optional, but $2 must be specified if a subproject is to be created)
+# $1 - SDGVMUSER (required) - options: ORNL_APW, UR_PCM
+# $2 - project name (required)
+# $3 - HOME directory path relative to root (optional)
+# $4 - SUBPROJECT name (optional, but $3 must be specified if a subproject is to be created)
 
 # Currently the names of the various runs are hgard coded in the environment variable SIMS 
 #SIMS=( NC_zen0_beers C_zen0_beers C_zen_beers C_zen0_beersC C_zen_beersC NC_zen0_LP C_zen0_LP C_zen_LP  )
@@ -16,19 +18,37 @@
 #SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
 SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
 
-# SDGVM directory - source code, run directories, input data are all subdirs of this dir
-#HOME=~/models/SDGVM
-HOME=/group_workspaces/jasmin2/nexcs/pmcguire
-if [ ! -z $2 ]; then HOME=$2; fi
+# institute and user tag to customise simulation to user space and machine
+SDGVMUSER=$1
+if [$SDGVMUSER=='ORNL_APW']; then
+  HOME=~/models/SDGVM
+  # relative to HOME
+  PROJECTS_DIR=/run/
+  # cluster queuing variables
+  BATCHPROC=pbs
+  BATCHPROCCOM="qsub submit.pbs"
+
+elif [$SDGVMUSER=='UR_PCM']; then
+  HOME=/group_workspaces/jasmin2/nexcs/pmcguire
+  # relative to HOME
+  PROJECTS_DIR=/sdgvmR/
+  # cluster queuing variables
+  BATCHPROC=bsub
+  BATCHPROCCOM="bsub < submit.bsub"
+fi
+
+# SDGVM directory - source code, run directories, input data are all subdirs of HOME
+if [ ! -z $3 ]; then HOME=$3; fi
+
 # relative to HOME, where all SDGVM simulations live
-PROJECTS_DIR=/sdgvmR
 PDIR=${HOME}${PROJECTS_DIR}
-# directory of specific project
-PROJECT=$1
 
+# directory of specific project, relative to PDIR
+PROJECT=$2
 
+# a label for additional simulations within PROJECT 
 SUBPROJECT=''
-if [ ! -z $3 ]; then SUBPROJECT=_$3; fi
+if [ ! -z $4 ]; then SUBPROJECT=_$4; fi
 
 # setup project directories
 mkdir -p $PDIR/$PROJECT
@@ -38,6 +58,7 @@ mkdir -p $PDIR/$PROJECT/tools/logs
 # setup project run script 
 cp run_project_template.bs  $PDIR/$PROJECT/run_${PROJECT}${SUBPROJECT}.bs
 sed -i "s@#S#@${SIMS[*]}@"  $PDIR/$PROJECT/run_${PROJECT}${SUBPROJECT}.bs
+sed -i "s@#BATCHPROCCOM#@${BATCHPROCCOM}@"  $PDIR/$PROJECT/run_${PROJECT}${SUBPROJECT}.bs
 
 # setup project tools
 cp ./project_tools/* $PDIR/$PROJECT/tools
@@ -47,7 +68,9 @@ sed -i "s@#PROJDIR#@${PDIR}${PROJECT}@" $PDIR/$PROJECT/tools/*bs
 # set up runs within project
 for s in ${SIMS[*]};do
  echo $s
- ./setup_SDGVM.bs $HOME $PROJECT $s 
+ ./setup_SDGVM.bs $SDGVMUSER $HOME $PROJECT $s 
 done
 
 
+
+### END ###
