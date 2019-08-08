@@ -153,7 +153,8 @@ vars <- c('npp','gpp','nbp','anlfn','antlfn',
           'kg_beta','swr','qtotal','tmp','prc',
           'swc','field_capacity','wilting_point','cov_C3','cov_C4',
           'cov_C3crop','cov_C4crop','cov_Dc_Bl','cov_Dc_Nl','cov_Ev_Bl',
-          'cov_Ev_Nl','cov_BARE','fcn','lulccc','fab')
+          'cov_Ev_Nl','cov_BARE','fcn','lulccc','fab',
+          'nppstore')
 
 # land-cover is fixed and so has only a single column in the output file
 cov_fixed  <- T

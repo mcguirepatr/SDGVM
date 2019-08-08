@@ -196,6 +196,17 @@ biot <- list(
   at    = c(0,1000,2000,3000,5000,7500,10000,15000,20000,25000,30000,35000),
   cols  = col.inc
 )
+nppstore <- list(
+  name  = '"Vegetation_Stored_Carbon"',
+  nsub  = '',
+  unit  = 'gCm^-2',
+  sunit = 'PgC',
+  gsum  = T,
+  gmean = F,
+  printsum = T,
+  at    = c(0,100,200,400,600,800,1000,1200,1400,1600,1800,2000),
+  cols  = col.inc
+)
 kg_beta<- list(
   name  = 'Soil_Water_Limitation_Scalar',
   nsub  = '',
