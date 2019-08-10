@@ -23,7 +23,7 @@ SDGVMUSER=$1
 # relative to root
 HOME=$2
 
-if [$SDGVMUSER=='ORNL_APW']; then
+if [ "$SDGVMUSER" = "ORNL_APW" ]; then
   # relative to HOME
   PROJECTS_DIR=/run/
   DATA=/input_data
@@ -31,7 +31,7 @@ if [$SDGVMUSER=='ORNL_APW']; then
   # cluster queuing variables
   BATCHPROC=pbs
 
-elif [$SDGVMUSER=='UR_PCM']; then
+elif [ "$SDGVMUSER" = "UR_PCM" ]; then
   # relative to HOME
   PROJECTS_DIR=/sdgvmR/
   DATA=/sdgvmD/data

@@ -16,11 +16,18 @@
 #SIMS=( spin_accel S0 S1 S2 S3  )
 #SIMS=( tpu0 tpu1 tpu2 tpu3  )
 #SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
-SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
+#SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
+SIMS=( spin_accelv7 S0v7 S1v7 S3v7 spin_accelv7_npslim S0v7_npslim S1v7_npslim S3v7_npslim spin_accelv7_bamort S0v7_bamort S1v7_bamort S3v7_bamort )
+#SIMS=( spin_accelv7 ) 
 
 # institute and user tag to customise simulation to user space and machine
-SDGVMUSER=$1
-if [$SDGVMUSER=='ORNL_APW']; then
+echo ""
+SDGVMUSER="$1"
+#SDGVMUSER="ORNL_APW"
+echo $SDGVMUSER
+
+#if [ "${SDGVMUSER}" = "ORNL_APW" ]; then
+if [ "${SDGVMUSER}" = "${SDGVMUSER}" ]; then
   HOME=~/models/SDGVM
   # relative to HOME
   PROJECTS_DIR=/run/
@@ -28,7 +35,7 @@ if [$SDGVMUSER=='ORNL_APW']; then
   BATCHPROC=pbs
   BATCHPROCCOM="qsub submit.pbs"
 
-elif [$SDGVMUSER=='UR_PCM']; then
+elif [ "${SDGVMUSER}" = "UR_PCM" ]; then
   HOME=/group_workspaces/jasmin2/nexcs/pmcguire
   # relative to HOME
   PROJECTS_DIR=/sdgvmR/

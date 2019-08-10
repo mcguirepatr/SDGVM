@@ -21,6 +21,7 @@ daily   <- T
 
 # stich output files from all grids into a single file
 stich   <- T
+mc      <- T
 
 # delete sub-grid files once processesed
 delete  <- F 
@@ -165,7 +166,7 @@ if(!is.null(var)) {
 # stich mp data
 if(stich) {
   lapply(wd_list[pia], stich_sdgvm_mp_apply,
-         grids=grids, mc=T,
+         grids=grids, mc=mc,
          annual=annual, monthly=monthly, daily=daily,
          mc.cores=cores, styear=sty, nyears=ny )
 
