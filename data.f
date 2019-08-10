@@ -294,8 +294,8 @@ C              DO day=1,30
 C                prcv(year-yr0+1,mnth,day) = 
 C     &int(real(prcv(year-yr0+1,mnth,day))/100.0 )   !PCM
 C     &int(real(prcv(year-yr0+1,mnth,day))/10.0 + 0.5) !PCM
-              ENDDO
-            ENDDO
+C              ENDDO
+C            ENDDO
           ENDDO
         ELSE
           DO year=yr0,yrf
