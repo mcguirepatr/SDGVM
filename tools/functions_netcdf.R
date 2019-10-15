@@ -30,11 +30,15 @@ write_sdgvm_netcdf <- function(wd, afiles=NULL, mfiles=NULL, dfiles=NULL,
   if(grepl('T2',wd)) fref   <- 'T2'
   if(grepl('T3',wd)) fref   <- 'T3'
   if(grepl('Stest',wd)) fref <- 'Stest'
+  if(grepl('spin_short',wd)) fref   <- 'spin_short'
+  if(grepl('spin_accel',wd)) fref   <- 'spin_accel'
   if(grepl('S0',wd)) fref   <- 'S0'
   if(grepl('S1',wd)) fref   <- 'S1'
   if(grepl('S2',wd)) fref   <- 'S2'
   if(grepl('S3',wd)) fref   <- 'S3'
   if(grepl('S4',wd)) fref   <- 'S4'
+  if(grepl('S5',wd)) fref   <- 'S5'
+  if(grepl('S6',wd)) fref   <- 'S6'
   if(grepl('tpu0',wd)) fref <- 'tpu0'
   if(grepl('tpu1',wd)) fref <- 'tpu1'
   if(grepl('tpu2',wd)) fref <- 'tpu2'
@@ -56,13 +60,17 @@ write_sdgvm_netcdf <- function(wd, afiles=NULL, mfiles=NULL, dfiles=NULL,
   # data processing - call make_netcdf_TRENDY function
   ########################
 
-  # parrallel process or not
+  # parallel process or not
   if(mc){
     if(annual)  mclapply(afiles,make_netcdf_TRENDY,mc.cores=procs,annual=annual,fref=fref,...)
   } else {
     if(annual)  lapply(afiles,make_netcdf_TRENDY,annual=annual,fref=fref,...)
   }
-  if(monthly) lapply(mfiles,make_netcdf_TRENDY,monthly=monthly,fref=fref,...)
+  if(mc){
+    if(monthly) mclapply(mfiles,make_netcdf_TRENDY,mc.cores=procs,monthly=monthly,fref=fref,...)
+  } else {
+    if(monthly) lapply(mfiles,make_netcdf_TRENDY,monthly=monthly,fref=fref,...)
+  }
   if(daily)   lapply(dfiles,make_netcdf_TRENDY,daily=daily,fref=fref,...)        
 
 }
@@ -263,6 +271,11 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
 
   # put the data into an nc ready array
   time_sub <- unlist(lapply(1:nyears, slice, l=sa, nsites=nsites ))
+#  print(nyears)
+#  print(sa)
+#  print(nsites)
+#  print(time_sub)
+#  print(df)
   smat     <- if(!is.null(pftid)) cbind(rep(df$lons,nyears), rep(df$lats,nyears), 1, time_sub ) else 
                                   cbind(rep(df$lons,nyears), rep(df$lats,nyears), time_sub )
   rm(time_sub)
@@ -272,25 +285,38 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
                                   c(360/lon,180/lat,nyears*sa)
   da       <- array(mv,dim=a_dim)
 
-  # remove unneeded columns from df & convert to matrix
-  # lat & lon
-  df       <- df[,-c(1:(cs-1))]
-  cdim     <- dim(df)[2] - 2
-  df       <- df[,-c((cdim+1):(cdim+2))]
-  # years of output not requested
-  #if(nyears!=cdim) df <- df[,-(1:(cdim-nyears))]
-  if(nyears!=cdim) {
-    osyr_ss <- osyr - styr
-    df <- df[,-(1:osyr_ss)]
-    if(nyears!=dim(df)[2]) df <- df[,1:nyears]
-  }
-  df <- as.matrix(df)
+#  PCM: commented out the following block
+#  # remove unneeded columns from df & convert to matrix
+#  # lat & lon
+#  df       <- df[,-c(1:(cs-1))]
+#  cdim     <- dim(df)[2] - 2
+#  df       <- df[,-c((cdim+1):(cdim+2))]
+#  # years of output not requested
+#  #if(nyears!=cdim) df <- df[,-(1:(cdim-nyears))]
+#  if(nyears!=cdim) {
+#    osyr_ss <- osyr - styr
+#    df <- df[,-(1:osyr_ss)]
+#    if(nyears!=dim(df)[2]) df <- df[,1:nyears]
+#  }
+#  df <- as.matrix(df)
 
   # put the data into an nc ready array 
   #as.vector(as.matrix(df[,cs:(nyears+cs-1)]))
   #da[smat] 
-  #da[smat] <- as.vector(as.matrix(df[,cs:(nyears+cs-1)]))
-  da[smat] <- as.vector(df)
+  #print('Read file2(s):',quote=F)
+  #print(fname,quote=F)
+  #print(head(df),quote=F)
+  #print('',quote=F)
+  #print('Read file3(s):',quote=F)
+  #print(fname,quote=F)
+  #print(head(df[,cs:(nyears+cs-1)]),quote=F)
+  #print('',quote=F)
+  da[smat] <- as.vector(as.matrix(df[,cs:(nyears+cs-1)])) #PCM
+  #print('Read file4(s):',quote=F)
+  #print(fname,quote=F)
+  #print(da[smat],quote=F)
+  #print('',quote=F)
+#PCM  #da[smat] <- as.vector(df)
   rm(df); rm(smat)
   
   # put the data into the ncfile
