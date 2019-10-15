@@ -1,0 +1,56 @@
+#!/bin/csh -f
+#===============================================================================
+# GENERIC_USER
+# This is where the batch submission is set.  The above code computes
+# the total number of tasks, nodes, and other things that can be useful
+# here.  Use PBS, BSUB, or whatever the local environment supports.
+#===============================================================================
+
+#BSUB -J pp_#PROJECT#_#SIM#
+#BSUB -q par-multi 
+#BSUB -n 32
+#BSUB -W 18:00
+#BSUB -L /bin/csh
+#BSUB -o #RUNDIR#logs/pp_#PROJECT#_#SIM#.%J.pp.out
+#BSUB -e #RUNDIR#logs/pp_#PROJECT#_#SIM#.%J.pp.err
+
+
+
+
+#limit coredumpsize 1000000
+#limit stacksize unlimited
+
+
+# ---------------------------------------- 
+# PE LAYOUT: 
+#   total number of tasks  = 1 
+#   maximum threads per task = 1 
+#   cpl ntasks=1  nthreads=1 rootpe=0 
+#   datm ntasks=1  nthreads=1 rootpe=0 
+#   clm ntasks=1  nthreads=1 rootpe=0 
+#   sice ntasks=1  nthreads=1 rootpe=0 
+#   socn ntasks=1  nthreads=1 rootpe=0 
+#   sglc ntasks=1  nthreads=1 rootpe=0 
+#   
+#   total number of hw pes = 1 
+#     cpl hw pe range ~ from 0 to 0 
+#     datm hw pe range ~ from 0 to 0 
+#     clm hw pe range ~ from 0 to 0 
+#     sice hw pe range ~ from 0 to 0 
+#     socn hw pe range ~ from 0 to 0 
+#     sglc hw pe range ~ from 0 to 0 
+# ---------------------------------------- 
+#-----------------------------------------------------------------------
+# Determine necessary environment variables
+#-----------------------------------------------------------------------
+
+cd #RUNDIR#
+
+setenv OMP_NUM_THREADS 1
+
+
+
+
+./run_postprocessing.bs
+
+echo "`date` -- PP EXECUTION HAS FINISHED" 

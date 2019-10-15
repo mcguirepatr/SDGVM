@@ -1,0 +1,9 @@
+#!/bin/bash
+
+SRCDIR=#HOME##MOD#/tools
+
+cd $SRCDIR
+# stich gridded output together
+Rscript postprocess_mp.R "ny<-118" "sty<-1901" "netcdf<-T" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"
+# generate netcdf output 
+Rscript postprocess_mp.R "ny<-118" "sty<-1901" "stich<-F" "netcdf<-T" "nsites<-62220" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"

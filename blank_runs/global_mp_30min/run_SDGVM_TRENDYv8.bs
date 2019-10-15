@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# script to run SDGVM in parallel on 32 cores 
+# designed to be run from within its own directory
+
+#HOME=/home/alp
+MODEL=#HOME##MOD#
+INPUT=#INPUT#
+
+SPINDIR='../spin_accelv8/output'
+OUTPUT=output
+
+SITES=#HOME##DATA#/sites/gl_30min_CRUJRAv8.dat
+N_SITES=( 496 676 676 676 676 676 676 676 676 676
+          676 676 676 676 676 676 676 676 676 676
+          676 676 676 676 676 676 676 676 676 676
+          676 676 676 676 676 676 676 676 676 676
+          676 676 676 676 676 676 676 676 676 676
+          676 676 676 676 676 676 676 676 676 676
+          676 676 676 676 676 676 676 676 676 676
+          676 676 676 676 676 676 676 676 676 676
+          676 676 676 676 676 676 676 676 676 676
+          676 676 676 676 676 676 676 676 676 676 ) 
+
+# start script
+# clear output directories
+rm -r ./$OUTPUT
+rm -r ./src
+
+# copy source code and compiled model run file
+mkdir ./$OUTPUT
+mkdir ./src
+cp $MODEL/*.f    ./src
+cp $MODEL/sdgvm0 ./src
+
+# run loop 
+s4=0
+((e=${#N_SITES[*]}))
+for s in `seq 1 $e` ;do
+ ((s1=$s - 1))
+ ((s3=1 + $s4))
+ ((s4=$s4 + ${N_SITES[$s1]}))
+
+ mkdir ./$OUTPUT/grid$s
+
+ echo "./src/sdgvm0 $INPUT $SPINDIR/grid$s ./$OUTPUT/grid$s  $SITES $s3 $s4 > ./$OUTPUT/g${s}out.txt &"
+       ./src/sdgvm0 $INPUT $SPINDIR/grid$s ./$OUTPUT/grid$s  $SITES $s3 $s4 > ./$OUTPUT/g${s}out.txt &
+
+done
+
+wait
