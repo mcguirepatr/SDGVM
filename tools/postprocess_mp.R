@@ -17,7 +17,7 @@ rm(list=ls())
 # output timesteps to process
 annual  <- T
 monthly <- T
-daily   <- T
+daily   <- F
 
 # stich output files from all grids into a single file
 stich   <- T
@@ -28,14 +28,16 @@ delete  <- F
 # write CMOR netcdf output
 netcdf  <- F
 
-# simulation res 1x1 degree, F - 3.75 x 2.5
-deg1    <- T
+# simulation res 1x1 degree, F - 0.5 x 0.5 
+deg1    <- F
 
 # main directory
-dir  <- '~/models/SDGVM/'
+#dir  <- '~/models/SDGVM/'
+dir <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/'
 
 # source code tools directory
-fd   <- paste(dir,'src/sdgvm/tools/',sep='/')
+#fd   <- paste(dir,'src/sdgvm/tools/',sep='/')
+fd   <- paste(dir,'sdgvm/tools/',sep='/')
 
 # directory in which simulation directory lives
 wd   <- paste(dir,'run/',sep='/')
@@ -47,26 +49,27 @@ sim  <- c('blank/')
 pia  <- 1
 
 # start year and number of years of data in daily and monthly SDGVM output
-sty  <- 1901
-ny   <- 113
+sty  <- 1700 
+ny   <- 319 
 
 # years of output requested for netcdf
-outsyear <- NULL 
-outeyear <- NULL
+outsyear <- 1700 
+outeyear <- 2018 
 
 # number of parallel grid directories 
-grids  <- 32
+grids  <- 64 
 
 # number of cores to run the analysis over 
-cores  <- 32
+cores  <- 8 
 
 #file names etc
 fend   <- '.dat'
 ncf    <- 'SDGVM'
 ncfend <- '.nc'
 
+
 # netcdf files to create
-ncdf_avars <- c('cVeg','cLitter','cSoil','cLeaf','cRoot','burntArea')
+ncdf_avars <- c('cVeg','cLitter','cSoil','cRoot','burntArea','landCoverFrac')
 #ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea')
 #ncdf_avars <- c('fFire','fLuc')
 #ncdf_avars <- 'cVegpft' 
@@ -74,20 +77,24 @@ ncdf_avars <- c('cVeg','cLitter','cSoil','cLeaf','cRoot','burntArea')
 #ncdf_avars <- 'pot_evapotrans' 
 #ncdf_avars <- NULL 
 
+#ncdf_mvars <- c('tas','pr')
+#ncdf_mvars <- 'snow_depthpft' 
+#ncdf_mvars <- c('gpppft','tran','npppft')
 ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai',
-                'evapotranspft','transpft','swepft','gpppft','npppft','tran','landCoverFrac')
+                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran')
 #ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans')
 #ncdf_mvars <- c('gpp','ra','npp','rh','nbp','lai',
-#                'evapotranspft','transpft','swepft','gpppft','npppft','tran','landCoverFrac')
+#                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran','landCoverFrac')
 #ncdf_mvars <- 'nbp' 
 #ncdf_mvars <- NULL 
 
 # nc file parameters
 mis_val   <- -99999
-nsites    <- 1548
-lon       <- 3.75
-lat       <- 2.5
+nsites    <- 62220 
+lon       <- 0.5 
+lat       <- 0.5
 pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
+#pftnames  <- c('BARE','CITY','C3')
 
 # specifiy a variable to process, this should be the filename not including the extension
 # - used to test whether the outputting is working correctly 
@@ -96,7 +103,7 @@ var       <- NULL
 # set variable for global attributes in netcdf files
 # institution and person (details and possible aliases are defined in functions_netcdf.R)
 # current options: ORNL_APW, UR_PCM 
-sdgvmuser <- 'ORNL_APW'
+sdgvmuser <- 'UR_PCM'
 
 # project name
 project   <- 'TRENDYv8, 2019'
@@ -124,8 +131,8 @@ if(deg1){
   lat    <- 1  
 }
 
-if(is.null(outsyear)) outsyear <- syr
-if(is.null(outeyear)) outeyear <- syr + ny - 1
+if(is.null(outsyear)) outsyear <- sty
+if(is.null(outeyear)) outeyear <- sty + ny - 1
 
 
 ### Read in functions 
@@ -170,6 +177,7 @@ if(stich) {
          mc.cores=cores, styear=sty, nyears=ny )
 
 }
+print("finished stich_sdgvm_mp_apply")
 
 
 # remove grid output now that combined files have been created
@@ -190,7 +198,7 @@ outnyears <- outeyear - outsyear + 1
 if(netcdf) lapply(wd_list[pia], write_sdgvm_netcdf,
                   afiles=ncdf_avars,
                   mfiles=ncdf_mvars,
-                  mc=F, procs=cores,
+                  mc=T, procs=cores,
                   nsites=nsites, nyears=outnyears, styr=sty, lon=lon, lat=lat,
                   osyr=outsyear, sdgvmuser=sdgvmuser )
 
