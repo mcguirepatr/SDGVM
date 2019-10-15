@@ -14,7 +14,10 @@
 
 # directory from which to copy template runs 
 # relative to MOD
-CPRUN=/blank_runs/global_mp_1deg
+#For TRENDY2018
+#CPRUN=/blank_runs/global_mp_1deg
+#For TRENDY2019
+CPRUN=/blank_runs/global_mp_30min
 
 # institute and user tag to customise simulation to user space and machine
 SDGVMUSER=$1
@@ -23,7 +26,7 @@ SDGVMUSER=$1
 # relative to root
 HOME=$2
 
-if [$SDGVMUSER=='ORNL_APW']; then
+if [ $SDGVMUSER == 'ORNL_APW' ]; then
   # relative to HOME
   PROJECTS_DIR=/run/
   DATA=/input_data
@@ -31,11 +34,14 @@ if [$SDGVMUSER=='ORNL_APW']; then
   # cluster queuing variables
   BATCHPROC=pbs
 
-elif [$SDGVMUSER=='UR_PCM']; then
+elif [ $SDGVMUSER == 'UR_PCM' ]; then
   # relative to HOME
   PROJECTS_DIR=/sdgvmR/
   DATA=/sdgvmD/data
-  MOD=/Drought2018/sdgvm
+  # For Drought2018
+  #MOD=/Drought2018/sdgvm
+  # For TRENDY2019
+  MOD=/TRENDYv8/sdgvm
   # cluster queuing variables
   BATCHPROC=bsub
 fi
@@ -76,7 +82,7 @@ cp $INPUT $RUNDIR
 DEFTRUN=run_SDGVM.bs
 RUNF=$DEFTRUN 
 SPECRUN=`echo $PROJECT | grep TRENDY`
-if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDY.bs; fi
+if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv8.bs; fi
 echo "Run file: " $RUNF
 cp $RUNF ${RUNDIR}$DEFTRUN
 
