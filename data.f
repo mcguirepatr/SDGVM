@@ -294,8 +294,8 @@ C              DO day=1,30
 C                prcv(year-yr0+1,mnth,day) = 
 C     &int(real(prcv(year-yr0+1,mnth,day))/100.0 )   !PCM
 C     &int(real(prcv(year-yr0+1,mnth,day))/10.0 + 0.5) !PCM
-              ENDDO
-            ENDDO
+C              ENDDO
+C            ENDDO
           ENDDO
         ELSE
           DO year=yr0,yrf
@@ -858,9 +858,9 @@ C PCM2      WRITE(*,*) '111111111'
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 lat,lon,lon0,latf,latr,lonr,xlat,xlon
-      INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,kode
+      INTEGER i,n_fields4000,n,j,du,latn,lonn,blank,row,col,recn,kode
       INTEGER luse(maxyrs),yr0,yrf,rep,years(1000),lu(1000),nrecl
-      CHARACTER fname1*1000,st1*1000
+      CHARACTER fname1*1000,st1*4000
 
       OPEN(99,FILE=fname1(1:blank(fname1))//'/readme.dat')
       READ(99,*)
@@ -873,8 +873,8 @@ C PCM2      WRITE(*,*) '111111111'
       READ(99,'(A)') st1
       CLOSE(99)
 
-      n = n_fields(st1)
-      CALL ST2ARR(st1,years,1000,n)
+      n = n_fields4000(st1)
+      CALL ST2ARR4000(st1,years,4000,n)
 
       IF (du.eq.1) THEN
         nrecl = 16+n*3
@@ -1020,6 +1020,8 @@ C PCM2      WRITE(*,*) '111111111'
       INTEGER classes(1000),nclasses,kode,spinl,yr_offset
       INTEGER ij,ij1,j1
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
+      CHARACTER st4*4000
+      INTEGER n_fields4000
       LOGICAL l_lu,year0set
 
 *----------------------------------------------------------------------*
@@ -1049,9 +1051,9 @@ C PCM2      WRITE(*,*) '111111111'
       READ(99,*)
       READ(99,*) latn,lonn
       READ(99,*)
-      READ(99,'(A)') st1
-      n = n_fields(st1)
-      CALL ST2ARR(st1,years,1000,n)
+      READ(99,'(A)') st4
+      n = n_fields4000(st4)
+      CALL ST2ARR4000(st4,years,1000,n)
       READ(99,*)
       READ(99,'(A)') st1
       CLOSE(99)
@@ -1205,7 +1207,7 @@ c
       !specified in input dataset
       IF ((n-j1+1).ne.1) THEN
         print*, 'Linear interpolation of dynamic Land-Cover fractions'
-        print*, n,j,n-j+1
+        print*, n,j1,n-j1+1
         DO i=1,years(n)-yr0a-yr_offset
           IF ( (i.EQ.1).OR.((i+yr0a-1).EQ.(years(j1)-yr_offset)) ) THEN
             !print*, j, years(j1), years(j1+1)
