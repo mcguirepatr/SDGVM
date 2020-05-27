@@ -8,10 +8,10 @@
 ###################################
 
 .libPaths('~/bin/Rlibs')
-library(lattice)
-library(latticeExtra)
-library(rworldmap)
-library(rworldxtra)
+#library(lattice)
+#library(latticeExtra)
+#library(rworldmap)
+#library(rworldxtra)
 
   
   

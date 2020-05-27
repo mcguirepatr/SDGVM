@@ -154,6 +154,7 @@
       REAL*8 zsumadp(360,maxnft),zstemfr(maxnft),av_hgt(maxnft),max_hgt
       INTEGER zbb(maxnft),zbbgs(maxnft),zdsbb(maxnft)
       INTEGER hi,xi,gs_func
+      INTEGER PHASE !PCM
 
 *----------------------------------------------------------------------*
 * Read input filename.                                                 *
@@ -828,13 +829,18 @@ C        WRITE(*,*) 'bbbb'
       yr0a = yr0
       yrfa = yrf
       year0set = .TRUE.
-      if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then 
+C PCM changed the following line for TRENDY S4-S6
+      if( (co2const.lt.0.0) .and. (spinl.gt.0) ) then !For TRENDY S1-S3 
+C PCM      if( spinl.gt.0 ) then  !For TRENDY S4-S6
         if (spinl.lt.nyears) then
           yr0a = yr0 - spinl
         else
           year0set = .FALSE.
-          yr0a = 1
-          yrfa = spinl
+C PCM changed the following two lines for TRENDY S4-S6
+          yr0a = 1     !For TRENDY S1-S3
+          yrfa = spinl !For TRENDY S1-S3 
+C          yr0a = 1700 !For TRENDY S4-S6 
+C          yrfa = 2018 !For TRENDY S4-S6 
         endif
       endif
 
@@ -845,6 +851,8 @@ C        WRITE(*,*) 'bbbb'
         yearind(i) = i
       ENDDO
       idum = 1
+      PHASE = 0 !PCM 0-year offset for TRENDY 2018 S1-S3
+C      PHASE = 1 !PCM 1-year offset for TRENDY 2018 S4-S6
       DO i=1,nyears
         IF (i.LE.spinl) THEN
           IF (crand) THEN
@@ -854,7 +862,9 @@ C PCM     & CALL RANDOMV(yearind,1,cycle,idum)
      & CALL RANDOMV(yearind,1,cycle,idum)
             yearv(i) = yearind(mod(i-1,cycle)+1) + yr0s - 1
           ELSE
-            yearv(i) = mod(i-1,cycle) + yr0s
+C PCM  changed the following line for TRENDY 2018 S4-S6
+            yearv(i) = mod(i-1,cycle) + yr0s !For TRENDY S1-S3
+C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
           ENDIF
           met_yearv(i) = yearv(i)
         ELSE
@@ -2252,7 +2262,7 @@ c     &site_dat,lat,lon,ca
      &wtswc,l_parameter)
 
 *----------------------------------------------------------------------*
-* Write site info to 'site_indo.dat'.                                  *
+* Write site info to 'site_info.dat'.                                  *
 *----------------------------------------------------------------------*
       CALL CO2_0_F(co20,co2f,yearv,yr0,spinl,co2,co2const,nyears)
       
@@ -3347,7 +3357,9 @@ c        ENDIF
               if((spinl.gt.0).and.(iyear.gt.spinl)) then
                 ftprop(ft) = cluse(ft,iyear-iyear_adj)
               else
-                if(co2const.gt.0.0) then
+C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
+                if(co2const.gt.0.0) then !For TRENDY S1-S3
+C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
                   ftprop(ft) = cluse(ft,1)
                 else
               !print*, ft, iyear, iyear_adj, cluse(ft,iyear-iyear_adj)
@@ -3640,6 +3652,7 @@ c     monthly initialisations
             leafresp = 0.0d0
             rootresp = 0.0d0
             stemresp = 0.0d0
+            resp     = 0.0d0 !PCM
              
 *----------------------------------------------------------------------*
 * nppstore mols
