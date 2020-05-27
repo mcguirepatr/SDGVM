@@ -32,7 +32,8 @@ if [ $SDGVMUSER == 'ORNL_APW' ]; then
   DATA=/input_data
   MOD=/src/sdgvm
   # cluster queuing variables
-  BATCHPROC=pbs
+  #BATCHPROC=pbs
+  BATCHPROC=sbatch
 
 elif [ $SDGVMUSER == 'UR_PCM' ]; then
   # relative to HOME
@@ -82,7 +83,8 @@ cp $INPUT $RUNDIR
 DEFTRUN=run_SDGVM.bs
 RUNF=$DEFTRUN 
 SPECRUN=`echo $PROJECT | grep TRENDY`
-if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv8.bs; fi
+if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv7.bs; fi
+#if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv8.bs; fi
 echo "Run file: " $RUNF
 cp $RUNF ${RUNDIR}$DEFTRUN
 
