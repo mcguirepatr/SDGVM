@@ -9,18 +9,18 @@
 # $3 - HOME directory path relative to root (optional)
 # $4 - SUBPROJECT name (optional, but $3 must be specified if a subproject is to be created)
 
-# Currently the names of the various runs are hgard coded in the environment variable SIMS 
+# Currently the names of the various runs are hard coded in the environment variable SIMS 
 #SIMS=( NC_zen0_beers C_zen0_beers C_zen_beers C_zen0_beersC C_zen_beersC NC_zen0_LP C_zen0_LP C_zen_LP  )
 #SIMS=( Walker_N_ModA Walker_N_ModA_Tacc Kattge_ModA Kattge_ModA_Tacc  )
 #SIMS=( Constant Constant_ModA Constant_ModA_Tacc LUNA LUNA_ModA LUNA_ModA_Tacc  )
 #SIMS=( spin_accel S0 S1 S2 S3  )
 #SIMS=( tpu0 tpu1 tpu2 tpu3  )
 #For TRENDYv7:
-#SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
+SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
 #For Droughtv8:
 #SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
 #For TRENDYv8:
-SIMS=( spin_accelv8 spin_shortv8 S0v8 S1v8 S2v8 S3v8 S4v8  )
+#SIMS=( spin_accelv8 spin_shortv8 S0v8 S1v8 S2v8 S3v8 S4v8  )
 
 # institute and user tag to customise simulation to user space and machine
 SDGVMUSER=$1
@@ -29,8 +29,10 @@ if [ $SDGVMUSER == 'ORNL_APW' ]; then
   # relative to HOME
   PROJECTS_DIR=/run/
   # cluster queuing variables
-  BATCHPROC=pbs
-  BATCHPROCCOM="qsub submit.pbs"
+  #BATCHPROC=pbs
+  #BATCHPROCCOM="qsub submit.pbs"
+  BATCHPROC=sbatch
+  BATCHPROCCOM="sbatch submit.sbatch"
 
 elif [ $SDGVMUSER == 'UR_PCM' ]; then
   HOME=/group_workspaces/jasmin2/nexcs/pmcguire

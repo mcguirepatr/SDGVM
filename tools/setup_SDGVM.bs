@@ -15,9 +15,9 @@
 # directory from which to copy template runs 
 # relative to MOD
 #For TRENDY2018
-#CPRUN=/blank_runs/global_mp_1deg
+CPRUN=/blank_runs/global_mp_1deg
 #For TRENDY2019
-CPRUN=/blank_runs/global_mp_30min
+#CPRUN=/blank_runs/global_mp_30min
 
 # institute and user tag to customise simulation to user space and machine
 SDGVMUSER=$1
