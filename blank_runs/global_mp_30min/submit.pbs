@@ -1,0 +1,60 @@
+#!/bin/csh -f
+#===============================================================================
+# GENERIC_USER
+# This is where the batch submission is set.  The above code computes
+# the total number of tasks, nodes, and other things that can be useful
+# here.  Use PBS, BSUB, or whatever the local environment supports.
+#===============================================================================
+
+#PBS -N SDGVM_#PROJECT#_#SIM#
+#PBS -W group_list=cades-ccsi
+#PBS -l nodes=1:ppn=32
+#PBS -l walltime=12:00:00
+#PBS -r n
+#PBS -j oe
+#PBS -S /bin/csh -V
+#PBS -M walkerap@ornl.gov
+#PBS -m ea
+#PBS -o #RUNDIR#/logs/${PBS_JOBNAME}.o${PBS_JOBID}
+
+
+#limit coredumpsize 1000000
+#limit stacksize unlimited
+
+
+# ---------------------------------------- 
+# PE LAYOUT: 
+#   total number of tasks  = 1 
+#   maximum threads per task = 1 
+#   cpl ntasks=1  nthreads=1 rootpe=0 
+#   datm ntasks=1  nthreads=1 rootpe=0 
+#   clm ntasks=1  nthreads=1 rootpe=0 
+#   sice ntasks=1  nthreads=1 rootpe=0 
+#   socn ntasks=1  nthreads=1 rootpe=0 
+#   sglc ntasks=1  nthreads=1 rootpe=0 
+#   
+#   total number of hw pes = 1 
+#     cpl hw pe range ~ from 0 to 0 
+#     datm hw pe range ~ from 0 to 0 
+#     clm hw pe range ~ from 0 to 0 
+#     sice hw pe range ~ from 0 to 0 
+#     socn hw pe range ~ from 0 to 0 
+#     sglc hw pe range ~ from 0 to 0 
+# ---------------------------------------- 
+#-----------------------------------------------------------------------
+# Determine necessary environment variables
+#-----------------------------------------------------------------------
+
+cd #RUNDIR#
+
+setenv OMP_NUM_THREADS 1
+
+
+./run_SDGVM.bs
+
+echo "`date` -- SDGVM EXECUTION HAS FINISHED" 
+
+
+./run_postprocessing.bs
+
+echo "`date` -- PP EXECUTION HAS FINISHED" 

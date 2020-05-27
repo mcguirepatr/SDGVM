@@ -9,27 +9,38 @@
 
 rm(list=ls())
 
-.libPaths('~/bin/Rlibs')
+#.libPaths('~/bin/Rlibs')
 library(lattice)
 library(plyr)
 #library(dplyr)
 library(viridis)
+library(latticeExtra)
+library(rworldmap)
+library(rworldxtra)
 
 
 ##################################
 ###user defined inputs
 
 #directory paths
-date    <- '180815'
-dir     <- '/home/alp/models/SDGVM/'
-rdir    <- 'run'
+#date    <- '180815'
+#dir     <- '/home/alp/models/SDGVM/'
+#rdir    <- 'run'
+date    <- '190816a'
+dir     <- '/group_workspaces/jasmin2/nexcs/pmcguire/sdgvmR/'
+rdir    <- 'TRENDY2019_v2'
 edir    <- 'eval_data'
+tdir    <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/sdgvm/tools/'
 
 # project directory
-project <- 'vcmax'
+#project <- 'vcmax'
+project <- ''
 
 # simulations
-sim     <- c('Constant','Kattge','Kattge_oxisol','LUNA','Maire','vBodegom_env','vBodegom_mean','Walker_N','Walker_NP','Woodward_95')
+#sim     <- c('Constant','Kattge','Kattge_oxisol','LUNA','Maire','vBodegom_env','vBodegom_mean','Walker_N','Walker_NP','Woodward_95')
+#sim     <- c('S0v8_accel','S1v8','S2v8','S3v8_accel')
+#sim     <- c('S0v8_accel','S1v8','S3v8_accel')
+sim     <- c('S3v8_accel')
 
 # simulations index array (which simulations to plot from the vector 'sim', when 'sim' is arranged in alphabetical order, i.e. order(sim)[sia], simulations appear on the plot in the sia order)
 sia     <- NULL
@@ -61,13 +72,16 @@ skip    <- NULL
 icon    <- NULL
 
 # map data resolution  
-deg1    <- T
+#deg1    <- T
+deg1    <- F
 
 # data start year
-styr    <- 1901
+#styr    <- 1901 
+styr    <- 1700 
 
 # data end year
-endyr   <- 2012
+#endyr   <- 2012
+endyr   <- 2018
 
 # plotting region
 pregion <- 'global'
@@ -101,6 +115,7 @@ scatter   <- F
 norm      <- NULL 
 
 # output a table of global integrated NBP values for each year, for TRENDY project 
+#trendy    <- F 
 trendy    <- F 
 
 # make a difference plot, takes the value of the simulation/dataset id string and uses it as the base for the differences
@@ -157,12 +172,14 @@ vars <- c('npp','gpp','nbp','anlfn','antlfn',
           'nppstore')
 
 # land-cover is fixed and so has only a single column in the output file
-cov_fixed  <- T
+#cov_fixed  <- F
+cov_fixed  <- F
 
 # variable index array (which variables to plot, in the order they appear in the 'vars' vector)
 via <- 1:length(vars)
 #via <- 24:length(vars)
-via <- 1:16
+#via <- 1:16
+via <- c(1:3,12,17,19:32,34)
 
 
 
@@ -194,7 +211,7 @@ if(is.null(col_trend)) col_trend <- viridis(length(sia))
 year <- if(is.null(pyear)) yr_mean[2] else pyear
 
 # set model resolution
-         mod_res <- c(3.75,2.5)
+         mod_res <- c(0.5,0.5)
 if(deg1) mod_res <- c(1,1)
 
 # create output directory
@@ -241,7 +258,8 @@ fnorm <- function(df,norm) {
 ###############################
 ### start program
 
-setwd(paste(dir,'src/sdgvm/tools/',sep='/'))
+#setwd(paste(dir,'src/sdgvm/tools/',sep='/'))
+setwd(tdir)
 source('params_map_plot.R')
 source('functions_map_plot.R')
 
@@ -353,6 +371,8 @@ vars <- vars[via]
 # change this to an mclapply -  so far there are a few too many arguments
 #mclapply(1:length(vars),,)
 
+print('length(vars)',quote=F)
+print(length(vars),quote=F)
 for( v in 1:length(vars) ) {
   print('',quote=F)
   print(vars[v],quote=F)

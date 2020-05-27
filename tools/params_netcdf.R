@@ -53,7 +53,7 @@ cVeg <- list(
   file  = 'biot',
   pft   = F,
   lname = 'Carbon in Vegetation',
-  units = 'kg C m-2',
+  units = 'kg m-2',
   scale = 1/1000
 )
 
@@ -62,7 +62,7 @@ cVegpft <- list(
   file  = 'bio',
   pft   = T,
   lname = 'Vegtype level Carbon in Vegetation',
-  units = 'kg C m-2, per unit land area occupied by the PFT',
+  units = 'kg m-2, per unit land area occupied by the PFT',
   scale = 1/1000
 )
 
@@ -71,7 +71,7 @@ cLitter <- list(
   file  = 'abg_litter',
   pft   = F,
   lname = 'Carbon in Above-ground Litter Pool',
-  units = 'kg C m-2',
+  units = 'kg m-2',
   scale = 1/1000
 )
 
@@ -80,7 +80,7 @@ cSoil <- list(
   file  = 'blg_c',
   pft   = F,
   lname = 'Carbon in Soil (including below-ground litter)',
-  units = 'kg C m-2',
+  units = 'kg m-2',
   scale = 1/1000
 )
 
@@ -89,7 +89,7 @@ cLeaf <- list(
   file  = 'leafc',
   pft   = F,
   lname = 'Carbon in Leaves',
-  units = 'kg C m-2',
+  units = 'kg m-2',
   scale = 1/1000
 )
 
@@ -98,7 +98,7 @@ cRoot <- list(
   file  = 'rootbio',
   pft   = F,
   lname = 'Carbon in Roots',
-  units = 'kg C m-2',
+  units = 'kg m-2',
   scale = 1/1000
 )
 
@@ -107,7 +107,7 @@ fFire <- list(
   file  = 'fcn',
   pft   = F,
   lname = 'CO2 Emission from Fire',
-  units = 'kg C m-2 s-1',
+  units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
   notes = 'SDGVM calculates this variable once per year, TRENDY output requires monthly data. Monthly data are calculated simply as the annual total divided by 12.',
   annmonth = T 
@@ -118,8 +118,8 @@ burntArea <- list(
   file  = 'fab',
   pft   = F,
   lname = 'Burnt Area Fraction',
-  units = '%',
-  scale = 100
+  units = '-',
+  scale = 1
 )
 
 fLuc <- list(
@@ -127,7 +127,7 @@ fLuc <- list(
   file  = 'lulccc',
   pft   = F,
   lname = 'CO2 Flux to Atmosphere from Land Use Change',
-  units = 'kg C m-2 s-1',
+  units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
   notes = 'In this instance of SDGVM all above-ground biomass is assumed to be lost immediately to the atmosphere, and this is what this variable records. Below-ground biomass is assumed to go into the soil as litter and this variable does not track subsequent decomposition of that litter. SDGVM calculates this variable once per year, TRENDY output requires monthly data. Monthly data are calculated simply as the annual total divided by 12.',
   annmonth = T
@@ -178,7 +178,7 @@ evapotranspft <- list(
   pft   = T,
   lname = 'Vegtype level evapotranspiration',
   units = 'W m-2, per unit land area occupied by the PFT',
-  scale = 2.257e6,
+  scale = 2.257e6/(30*24*3600),
   notes = 'Converted to Wm-2 from kg m-2 s-1 (which is the standard SDGVM output) assuming a latent heat of vapourisation of 2257 kJ kg-1 at all times. This ignores the additional energy required for sublimation which is an order of magnitude smaller, but will lead to some discrepancy with other models when comparing this variable in cold regions.' 
 )
 
@@ -188,7 +188,7 @@ evapo <- list(
   pft   = T,
   lname = 'Vegtype level Soil evaporation',
   units = 'W m-2',
-  scale = 2.257e6,
+  scale = 2.257e6/(30*24*3600),
   notes = 'Converted to Wm-2 from kg m-2 s-1 (which is the standard SDGVM output) assuming a latent heat of vapourisation of 2257 kJ kg-1 at all times. This ignores the additional energy required for sublimation which is an order of magnitude smaller, but will lead to some discrepancy with other models when comparing this variable in cold regions. ' 
 )
 
@@ -198,17 +198,17 @@ transpft <- list(
   pft   = T,
   lname = 'Vegtype level transpiration',
   units = 'W m-2, per unit land area occupied by the PFT',
-  scale = 2.257e6,
+  scale = 2.257e6/(30*24*3600),
   notes = 'Converted to Wm-2 from kg m-2 s-1 (which is the standard SDGVM output) assuming a latent heat of vapourisation of 2257 kJ kg-1 at all times. This ignores the additional energy required for sublimation which is an order of magnitude smaller, but will lead to some discrepancy with other models when comparing this variable in cold regions. ' 
 )
 
-swepft <- list(
-  name  = 'swepft',
+snow_depthpft <- list(
+  name  = 'snow_depthpft',
   file  = 'snw',
   pft   = T,
   lname = 'Vegtype level snow water equivalent',
-  units = 'kg m-2, per unit land area occupied by the PFT',
-  scale = NA
+  units = 'm m-2, per unit land area occupied by the PFT',
+  scale =  0.001 
 )
 
 gpp <- list(
@@ -216,7 +216,7 @@ gpp <- list(
   file = 'gpp',
   pft   = F,
   lname = 'Gross Primary Production',
-  units = 'kg C m-2 s-1',
+  units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600)
 )
 
@@ -225,7 +225,7 @@ gpppft <- list(
   file = 'gpp',
   pft   = T,
   lname = 'Vegtype level GPP',
-  units = 'kg C m-2 s-1, per unit land area occupied by the PFT',
+  units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600)
 )
 
@@ -234,7 +234,7 @@ ra <- list(
   file  = 'rsp',
   pft   = F,
   lname = 'Autotrophic (Plant) respiration',
-  units = 'kg C m-2 s-1, per unit land area occupied by the PFT',
+  units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600)
 )
 
@@ -243,7 +243,7 @@ npp <- list(
   file  = 'npp',
   pft   = F,
   lname = 'Net Primary Production',
-  units = 'kg C m-2 s-1',
+  units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600)
 )
 
@@ -252,7 +252,7 @@ npppft <- list(
   file  = 'npp',
   pft   = T,
   lname = 'Vegtype level NPP',
-  units = 'kg C m-2 s-1, per unit land area occupied by the PFT',
+  units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600)
 )
 
@@ -261,7 +261,7 @@ rh <- list(
   file  = 'srp',
   pft   = F,
   lname = 'Heterotrophic Respiration',
-  units = 'kg C m-2 s-1',
+  units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600)
 )
 
@@ -270,7 +270,7 @@ nbp <- list(
   file  = 'nep',
   pft   = F,
   lname = 'Net Biome Production',
-  units = 'kg C m-2 s-1',
+  units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
   notes = 'These data include fire, lulcc, and leached C losses (which are annual fluxes distributed across the 12 months equally).'
 )
@@ -280,7 +280,7 @@ nbppft <- list(
   file  = 'nep',
   pft   = T,
   lname = 'Vegtype level NBP',
-  units = 'kg C m-2 s-1',
+  units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
   notes = 'These data area per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
 )

@@ -253,6 +253,95 @@
 
 *----------------------------------------------------------------------*
 *                                                                      *
+*                          ST2ARR4000                                  *
+*                          ******                                      *
+*                                                                      *
+* Strips leading blanks and first integer from the string which is its *
+* argument.                                                            *
+* Extension of ST2ARR, which allowed for only 1000 characters.         *
+* This one allows for 4000 characters.                                 *
+*                                                                      *
+*----------------------------------------------------------------------*
+      SUBROUTINE ST2ARR4000(st1,x,ix,no)
+      INTEGER x(ix),ix,i,no
+      CHARACTER st1*4000
+
+      DO i=1,ix
+        CALL STRIPBN4000(st1,x(i))
+      ENDDO
+
+      no = 0
+      DO i=1,ix
+        IF (x(i).GT.0)  no = no + 1
+      ENDDO
+
+
+      RETURN
+      END
+
+*----------------------------------------------------------------------*
+*                                                                      *
+*                          STRIPBN4000                                 *
+*                          *******                                     *
+*                                                                      *
+* Strips leading blanks and first integer from the string which is its *
+* argument.                                                            *
+* Extension of STRIPBN, which allowed for only 1000 characters.        *
+* This one allows for 4000 characters.                                 *
+*                                                                      *
+*----------------------------------------------------------------------*
+      SUBROUTINE STRIPBN4000(st1,ans)
+      CHARACTER st1*4000
+      INTEGER blanks4000,nb,i,ans,blank4000,check
+      LOGICAL minus
+
+      nb = blanks4000(st1)
+      IF (nb.lt.4000) THEN
+
+      minus = .false.
+      IF (ichar(st1(nb+1:nb+1)).EQ.45) THEN
+        minus = .true.
+        nb = nb + 1
+      ENDIF
+      IF (nb.GT.0) THEN
+        DO i=1,4000-nb
+          st1(i:i) = st1(i+nb:i+nb)
+        ENDDO
+        DO i=4000-nb+1,4000
+          st1(i:i) = ' '
+        ENDDO
+      ENDIF
+
+      check = 0
+      nb = blank4000(st1)
+      ans = 0
+      DO i=1,nb
+        IF ((ichar(st1(i:i)).LT.48).OR.(ichar(st1(i:i)).GT.57)) 
+     &check = 1 
+        ans = ans + 10**(nb-i)*(ichar(st1(i:i))-48)
+      ENDDO
+
+      IF (nb.GT.0) THEN
+        DO i=1,4000-nb
+          st1(i:i) = st1(i+nb:i+nb)
+        ENDDO
+        DO i=4000-nb+1,4000
+          st1(i:i) = ' '
+        ENDDO
+      ENDIF
+
+      IF (minus)  ans =-ans
+
+      IF (check.EQ.1) ans = -9999
+
+      ELSE
+        ans = -9999
+      ENDIF
+
+      RETURN
+      END
+*----------------------------------------------------------------------*
+*                                                                      *
 *                          ST2ARR                                      *
 *                          ******                                      *
 *                                                                      *
@@ -339,6 +428,47 @@
 
 *----------------------------------------------------------------------*
 *                                                                      *
+*                          STRIPBS4000                                 *
+*                          *******                                     *
+*                                                                      *
+* Strips leading blanks and first string from the string which is its  *
+* argument.                                                            *
+* Extension of STRIPBS, which allowed for only 1000 characters.        *
+* This one allows for 4000 characters.                                 *
+*                                                                      *
+*----------------------------------------------------------------------*
+      SUBROUTINE STRIPBS4000(st1,st2)
+      CHARACTER st1*4000,st2*4000
+      INTEGER blanks4000,nb,i,blank4000
+
+      nb = blanks4000(st1)
+      DO i=1,4000-nb
+        st1(i:i) = st1(i+nb:i+nb)
+      ENDDO
+      DO i=4000-nb+1,4000
+        st1(i:i) = ' '
+      ENDDO
+
+      nb = blank4000(st1)
+      DO i=1,nb
+        st2(i:i) = st1(i:i)
+      ENDDO
+      st2(nb+1:nb+1) = ' '
+
+      IF (nb.GT.0) THEN
+        DO i=1,4000-nb
+          st1(i:i) = st1(i+nb:i+nb)
+        ENDDO
+        DO i=4000-nb+1,4000
+          st1(i:i) = ' '
+        ENDDO
+      ENDIF
+
+
+      RETURN
+      END
+*----------------------------------------------------------------------*
+*                                                                      *
 *                          STRIPBS                                     *
 *                          *******                                     *
 *                                                                      *
@@ -405,6 +535,33 @@
 
 *----------------------------------------------------------------------*
 *                                                                      *
+*                          FUNCTION blank4000                          *
+*                          **************                              *
+*                                                                      *
+* 'blank4000' returns the number of characters before the space in the *
+* string which is its argument.                                        *
+* Extension of blank, which allowed for only 1000 characters.          *
+* This one allows for 4000 characters.                                 *
+*                                                                      *
+*----------------------------------------------------------------------*
+      FUNCTION blank4000(st1)
+*----------------------------------------------------------------------*
+      CHARACTER st1*4000
+      INTEGER blank4000
+
+      blank4000 = 0
+10    CONTINUE
+      blank4000 = blank4000 + 1
+      IF ((blank4000.LE.100).AND.(ichar(st1(blank4000:blank4000)).NE.32)
+     &     .AND.(ichar(st1(blank4000:blank4000)).NE.9))  GOTO 10
+c space and tabulation
+      blank4000 = blank4000 - 1
+
+
+      RETURN
+      END
+*----------------------------------------------------------------------*
+*                                                                      *
 *                          FUNCTION blank                              *
 *                          **************                              *
 *                                                                      *
@@ -430,7 +587,7 @@ c space and tabulation
       END
 
 *----------------------------------------------------------------------*
-*                                                                      *
+*                                                                     *
 *                          FUNCTION last_blank                         *
 *                          *******************                         *
 *                                                                      *
@@ -454,6 +611,33 @@ c space and tabulation
       RETURN
       END
 
+*----------------------------------------------------------------------*
+*                                                                      *
+*                          FUNCTION blanks4000                         *
+*                          ***************                             *
+*                                                                      *
+* 'blanks' returns the number of leading blanks.                       *
+* Extension of blanks, which allowed for only 1000 characters.         *
+* This one allows for 4000 characters.                                 *
+*                                                                      *
+*----------------------------------------------------------------------*
+      FUNCTION blanks4000(st1)
+*----------------------------------------------------------------------*
+      CHARACTER st1*4000
+      INTEGER blanks4000
+
+      blanks4000 = 0
+10    CONTINUE
+      blanks4000 = blanks4000 + 1
+      IF (blanks4000.LE.4000) THEN
+        IF ((ichar(st1(blanks4000:blanks4000)).EQ.32).OR. 
+     &(ichar(st1(blanks4000:blanks4000)).EQ.9)) GOTO 10
+      ENDIF
+      blanks4000 = blanks4000 - 1
+
+
+      RETURN
+      END
 *----------------------------------------------------------------------*
 *                                                                      *
 *                          FUNCTION blanks                             *
@@ -480,6 +664,34 @@ c space and tabulation
       RETURN
       END
 
+*----------------------------------------------------------------------*
+*                                                                      *
+*                          FUNCTION n_fields4000                       *
+*                          *****************                           *
+*                                                                      *
+* Returns the number of space delimited fields.                        *
+* Extension of n_fields, which allowed for only 1000 characters.       *
+* This one allows for 4000 characters.                                 *
+*                                                                      *
+*----------------------------------------------------------------------*
+      FUNCTION n_fields4000(st1)
+*----------------------------------------------------------------------*
+      CHARACTER st1*4000,st2*4000,st3*4000
+      INTEGER blanks4000,n_fields4000
+
+      n_fields4000 = 0
+      st2 = st1
+
+10    CONTINUE
+      IF (blanks4000(st2).LT.4000) THEN
+        CALL STRIPBS4000(st2,st3)
+        n_fields4000 = n_fields4000 + 1
+        GOTO 10
+      ENDIF
+
+
+      RETURN
+      END
 *----------------------------------------------------------------------*
 *                                                                      *
 *                          FUNCTION n_fields                           *
