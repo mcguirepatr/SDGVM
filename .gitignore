@@ -10,7 +10,7 @@
 
 # backup files
 *~
-.*~
+.~*
 .*.swp
 
 # files created by compiler

@@ -12,6 +12,7 @@
 # $3 - project name (required)
 # $4 - run name (required)
 
+#### TAGGED FOR ADDITION TO a RUNTYPE ARGUMENT 
 # directory from which to copy template runs 
 # relative to MOD
 #For TRENDY2018
@@ -19,12 +20,15 @@ CPRUN=/blank_runs/global_mp_1deg
 #For TRENDY2019
 #CPRUN=/blank_runs/global_mp_30min
 
-# institute and user tag to customise simulation to user space and machine
-SDGVMUSER=$1
-
 # directories 
 # relative to root
 HOME=$2
+
+
+
+#### TAGGED FOR REMOVAL
+# institute and user tag to customise simulation to user space and machine
+SDGVMUSER=$1
 
 if [ $SDGVMUSER == 'ORNL_APW' ]; then
   # relative to HOME
@@ -39,21 +43,24 @@ elif [ $SDGVMUSER == 'UR_PCM' ]; then
   # relative to HOME
   PROJECTS_DIR=/sdgvmR/
   DATA=/sdgvmD/data
-  # For Drought2018
   #MOD=/Drought2018/sdgvm
-  # For TRENDY2019
   MOD=/TRENDYv8/sdgvm
   # cluster queuing variables
   BATCHPROC=bsub
+
 fi
 
 # relative to PROJECTS_DIR
 PROJECT=$3
+#### TAGGED FOR REMOVAL
+
 # relative to PROJECT
 RUN=$4
 
 # copy blank run from:
 CPDIR=$HOME$MOD$CPRUN
+
+#### TAGGED FOR MOD 
 # to:
 RUNDIR=$HOME$PROJECTS_DIR$PROJECT/$RUN/
 
@@ -88,19 +95,25 @@ if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv7.bs; fi
 echo "Run file: " $RUNF
 cp $RUNF ${RUNDIR}$DEFTRUN
 
+
+
 # modify run files
+# submit script
 sed -i "s@#RUNDIR#@$RUNDIR@"   ${RUNDIR}submit*.${BATCHPROC}
 sed -i "s@#PROJECT#@$PROJECT@" ${RUNDIR}submit*.${BATCHPROC}
 sed -i "s@#SIM#@$RUN@"         ${RUNDIR}submit*.${BATCHPROC}
 
-sed -i "s@#DATA#@$DATA@"       ${RUNDIR}$INPUT
-sed -i "s@#HOME#@$HOME@"       ${RUNDIR}$INPUT
-
+# SDGVM run file (called by submit script)
 sed -i "s@#HOME#@$HOME@"       ${RUNDIR}run_SDGVM.bs
 sed -i "s@#MOD#@$MOD@"         ${RUNDIR}run_SDGVM.bs
 sed -i "s@#DATA#@$DATA@"       ${RUNDIR}run_SDGVM.bs
 sed -i "s@#INPUT#@$INPUT@"     ${RUNDIR}run_SDGVM.bs
 
+# SDGVM input file (commandline argument to SDGVM in run file, configures model run)
+sed -i "s@#DATA#@$DATA@"       ${RUNDIR}$INPUT
+sed -i "s@#HOME#@$HOME@"       ${RUNDIR}$INPUT
+
+# postprocessing script (called by submit sccript after completion of SDGVM run file execution)
 sed -i "s@#HOME#@$HOME@"                        ${RUNDIR}run_postprocessing.bs
 sed -i "s@#MOD#@$MOD@"                          ${RUNDIR}run_postprocessing.bs
 sed -i "s@#DIR#@$HOME$PROJECT_DIR@"             ${RUNDIR}run_postprocessing.bs

@@ -2,11 +2,11 @@
 
 
 # project tool - tars and zips all SDGVM output in all run output directories
+# - run from within the PROJECT tools directory
 
 AFILE='archive.tar'
 AFILEG='archive_grids.tar'
 
-# - run from within the tools directory
 cd ..
 DIRS=`ls --hide=*.* --hide=results --hide=tools`
 echo $DIRS
@@ -33,3 +33,5 @@ for d in $DIRS; do
 done 
 
 
+
+### END ###

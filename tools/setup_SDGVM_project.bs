@@ -30,8 +30,7 @@ SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
 # institute and user tag to customise simulation to user space and machine
 echo ""
 SDGVMUSER="$1"
-#SDGVMUSER="ORNL_APW"
-echo $SDGVMUSER
+echo "User: ${SDGVMUSER}"
 echo ""
 echo ""
 if [ $SDGVMUSER == 'ORNL_APW' ]; then
@@ -51,6 +50,13 @@ elif [ $SDGVMUSER == 'UR_PCM' ]; then
   # cluster queuing variables
   BATCHPROC=bsub
   BATCHPROCCOM="bsub < submit.bsub"
+else
+  echo ""
+  echo "No institute and username tag: ${SDGVMUSER}"
+  echo "pick one of: ORNL_APW, UR_PCM;"
+  echo " or define your own"
+  echo "SDGVM project setup ABORTED."
+  stop
 fi
 
 # SDGVM directory - source code, run directories, input data are all subdirs of HOME
