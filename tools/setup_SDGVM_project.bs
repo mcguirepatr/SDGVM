@@ -4,93 +4,148 @@
 # calls setup_SDGVM.bs which sets up each individual run 
 
 # Arguments:
-# $1 - SDGVMUSER (required) - options: ORNL_APW, UR_PCM
-# $2 - project name (required)
-# $3 - HOME directory path relative to root (optional)
-# $4 - SUBPROJECT name (optional, but $3 must be specified if a subproject is to be created)
+# $1 - SDGVM_USER (required) -- options: ORNL_APW, UR_PCM
+# $2 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PDIR, houses a collection of runs (i.e. a project)
+# $3 - SDGVM_RUNTYPE (optional) -- use a predefined 'runtype' 
+# $4 - SUBPROJECT name (optional) -- a label for a subgroup of simulations within a SDGVM_PROJECT 
 
-# Currently the names of the various runs are hard coded in the environment variable SIMS 
-#SIMS=( NC_zen0_beers C_zen0_beers C_zen_beers C_zen0_beersC C_zen_beersC NC_zen0_LP C_zen0_LP C_zen_LP  )
-#SIMS=( Walker_N_ModA Walker_N_ModA_Tacc Kattge_ModA Kattge_ModA_Tacc  )
-#SIMS=( Constant Constant_ModA Constant_ModA_Tacc LUNA LUNA_ModA LUNA_ModA_Tacc  )
-#SIMS=( spin_accel S0 S1 S2 S3  )
-#SIMS=( tpu0 tpu1 tpu2 tpu3  )
-#SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
-#SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
-#SIMS=( spin_accelv7 S0v7 S1v7 S3v7 spin_accelv7_npslim S0v7_npslim S1v7_npslim S3v7_npslim spin_accelv7_bamort S0v7_bamort S1v7_bamort S3v7_bamort )
-#SIMS=( spin_accelv7 ) 
-#For TRENDYv7:
-#SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
-SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
-#For Droughtv8:
-#SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
-#For TRENDYv8:
-#SIMS=( spin_accelv8 spin_shortv8 S0v8 S1v8 S2v8 S3v8 S4v8  )
+SDGVM_USER="$1"
+SDGVM_PROJECT="$2"
+SDGVM_RUNTYPE="$3"
+if [ ! -z $4 ]; then SUBPROJECT="_$4"; else SUBPROJECT=''; fi
+
+
+# Define runtype variables
+if [ $SDGVM_RUNTYPE == 'TRENDYv7' ]; then
+
+  # For TRENDYv7
+  # - and later TRENDY iterations
+  #SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
+  #SIMS=( spin_accelv7 ) 
+  SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
+  
+  # Spinup directory 
+  SDGVM_SPIN='spin_accelv7'
+
+  # directory where template simulations are to be copied from, relative to model source code 
+  SDGVM_CPRUN=/blank_runs/global_mp
+
+  # run script that calls SDGVM, defines sites and resolution
+  SDGVM_RUN='run_SDGVM_TRENDYv7.bs'
+
+
+elif [ $SDGVM_RUNTYPE == 'scratch' ]; then
+
+  #SIMS=( NC_zen0_beers C_zen0_beers C_zen_beers C_zen0_beersC C_zen_beersC NC_zen0_LP C_zen0_LP C_zen_LP  )
+  #SIMS=( Walker_N_ModA Walker_N_ModA_Tacc Kattge_ModA Kattge_ModA_Tacc  )
+  #SIMS=( Constant Constant_ModA Constant_ModA_Tacc LUNA LUNA_ModA LUNA_ModA_Tacc  )
+  #SIMS=( spin_accel S0 S1 S2 S3  )
+  #SIMS=( tpu0 tpu1 tpu2 tpu3  )
+  #SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
+  #SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
+  #SIMS=( spin_accelv7 S0v7 S1v7 S3v7 spin_accelv7_npslim S0v7_npslim S1v7_npslim S3v7_npslim spin_accelv7_bamort S0v7_bamort S1v7_bamort S3v7_bamort )
+  #SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
+  SIMS=( spin run ) 
+
+  # Spinup directory 
+  SDGVM_SPIN='spin_accel'
+
+  # directory where template simulations are to be copied from, relative to model source code 
+  SDGVM_CPRUN=/blank_runs/
+
+  # run script that calls SDGVM, defines sites and resolution
+  SDGVM_RUN='run_SDGVM.bs'
+
+
+else
+  echo ""
+  echo "No runtype: ${SDGVM_RUNTYPE}"
+  echo "pick one of: " 
+  echo " or define your own"
+  echo "SDGVM project setup ABORTED."
+  stop
+fi
+
 
 # institute and user tag to customise simulation to user space and machine
 echo ""
-SDGVMUSER="$1"
-echo "User: ${SDGVMUSER}"
-echo ""
-echo ""
-if [ $SDGVMUSER == 'ORNL_APW' ]; then
-  HOME=~/models/SDGVM
-  # relative to HOME
-  PROJECTS_DIR=/run/
-  # cluster queuing variables
-  #BATCHPROC=pbs
-  #BATCHPROCCOM="qsub submit.pbs"
-  BATCHPROC=sbatch
-  BATCHPROCCOM="sbatch submit.sbatch"
+echo "User: ${SDGVM_USER}"
 
-elif [ $SDGVMUSER == 'UR_PCM' ]; then
-  HOME=/group_workspaces/jasmin2/nexcs/pmcguire
-  # relative to HOME
-  PROJECTS_DIR=/sdgvmR/
-  # cluster queuing variables
-  BATCHPROC=bsub
-  BATCHPROCCOM="bsub < submit.bsub"
+if [ $SDGVM_USER == 'ORNL_APW' ]; then
+
+  # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
+  SDGVM_HOME=~/models/SDGVM
+  # relative to SDGVM_HOME
+  SDGVM_PROJECTS_DIR=/run/
+  SDGVM_DATA=/input_data/
+  SDGVM_MOD=/src/sdgvm/
+  # cluster scheduling variables
+  #SDGVM_BATCHPROC=pbs
+  #BATCHPROCCOM="qsub submit.pbs"
+  SDGVM_BATCHPROC=sbatch
+  SDGVM_BATCHPROCCOM="sbatch submit.sbatch"
+
+elif [ $SDGVM_USER == 'UR_PCM' ]; then
+
+  # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
+  SDGVM_HOME=/group_workspaces/jasmin2/nexcs/pmcguire
+  # relative to SDGVM_HOME
+  SDGVM_PROJECTS_DIR=/sdgvmR/
+  SDGVM_DATA=/sdgvmD/data/
+  SDGVM_MOD=/TRENDYv8/sdgvm/
+  # cluster scheduling variables
+  SDGVM_BATCHPROC=bsub
+  SDGVM_BATCHPROCCOM="bsub < submit.bsub"
+
 else
   echo ""
-  echo "No institute and username tag: ${SDGVMUSER}"
+  echo "No institute and username tag: ${SDGVM_USER}"
   echo "pick one of: ORNL_APW, UR_PCM;"
   echo " or define your own"
   echo "SDGVM project setup ABORTED."
   stop
 fi
 
-# SDGVM directory - source code, run directories, input data are all subdirs of HOME
-if [ ! -z $3 ]; then HOME=$3; fi
-
-# relative to HOME, where all SDGVM simulations live
-PDIR=${HOME}${PROJECTS_DIR}
-
-# directory of specific project, relative to PDIR
-PROJECT=$2
-
-# a label for additional simulations within PROJECT 
-SUBPROJECT=''
-if [ ! -z $4 ]; then SUBPROJECT=_$4; fi
 
 # setup project directories
-mkdir -p $PDIR/$PROJECT
-mkdir -p $PDIR/$PROJECT/tools
-mkdir -p $PDIR/$PROJECT/tools/logs
+# relative to SDGVM_HOME, where all SDGVM simulations live
+SDGVM_PDIR=${SDGVM_HOME}${SDGVM_PROJECTS_DIR}
+mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT
+mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT/tools
+mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT/tools/logs
 
-# setup project run script 
-cp run_project_template.bs  $PDIR/$PROJECT/run_${PROJECT}${SUBPROJECT}.bs
-sed -i "s@#S#@${SIMS[*]}@"  $PDIR/$PROJECT/run_${PROJECT}${SUBPROJECT}.bs
-sed -i "s@#BATCHPROCCOM#@${BATCHPROCCOM}@"  $PDIR/$PROJECT/run_${PROJECT}${SUBPROJECT}.bs
 
 # setup project tools
-cp ./project_tools/* $PDIR/$PROJECT/tools
-sed -i "s@#PROJECT#@$PROJECT@"          $PDIR/$PROJECT/tools/*bs
-sed -i "s@#PROJDIR#@${PDIR}${PROJECT}@" $PDIR/$PROJECT/tools/*bs
+cp ./project_tools/* $SDGVM_PDIR/$SDGVM_PROJECT/tools
+sed -i "s@#PROJECT#@$SDGVM_PROJECT@"                $SDGVM_PDIR/$SDGVM_PROJECT/tools/*bs
+sed -i "s@#PROJDIR#@${SDGVM_PDIR}${SDGVM_PROJECT}@" $SDGVM_PDIR/$SDGVM_PROJECT/tools/*bs
+
+
+# setup project/subproject run script 
+cp run_project_template.bs  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#S#@${SIMS[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+
+
+# export variables
+export SDGVM_USER
+export SDGVM_HOME 
+export SDGVM_PROJECT
+export SDGVM_DATA 
+export SDGVM_MOD 
+export SDGVM_PDIR
+export SDGVM_BATCHPROC
+export SDGVM_BATCHPROCCOM
+export SDGVM_SPIN 
+export SDGVM_RUN 
+export SDGVM_CPRUN 
+
 
 # set up runs within project
 for s in ${SIMS[*]};do
+ echo "" 
  echo $s
- ./setup_SDGVM.bs $SDGVMUSER $HOME $PROJECT $s 
+ ./setup_SDGVM.bs $s 
 done
 
 

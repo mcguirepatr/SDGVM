@@ -1,79 +1,48 @@
 #!/bin/bash
 
 # This script is designed to copy a template SDGVM directory into an actual run directory
-# script can be run by the user to create a single SDGVM run directory or, more commonly, called from the script 'setup_SDGVM_project.bs' to set up multiple runs within a project
-# the script takes the model project directory (pre-existing) as first argument and run directory (will be created) as second argument
+# must be called from the script 'setup_SDGVM_project.bs' to set up multiple runs within a project
 # the script renames the directories specified in the run and submit scripts
 # once a run is setup the only file that needs editing is the input file (input*.dat)
 
 # Arguments:
-# $1 - SDGVMUSER (required) - options: ORNL_APW, UR_PCM
-# $2 - HOME directory (required)
-# $3 - project name (required)
-# $4 - run name (required)
-
-#### TAGGED FOR ADDITION TO a RUNTYPE ARGUMENT 
-# directory from which to copy template runs 
-# relative to MOD
-#For TRENDY2018
-CPRUN=/blank_runs/global_mp_1deg
-#For TRENDY2019
-#CPRUN=/blank_runs/global_mp_30min
-
-# directories 
-# relative to root
-HOME=$2
+# $1 - run name (required) -- relative to SDGVM_PDIR/SDGVM_PROJECT
+RUN=$1
 
 
-
-#### TAGGED FOR REMOVAL
-# institute and user tag to customise simulation to user space and machine
-SDGVMUSER=$1
-
-if [ $SDGVMUSER == 'ORNL_APW' ]; then
-  # relative to HOME
-  PROJECTS_DIR=/run/
-  DATA=/input_data
-  MOD=/src/sdgvm
-  # cluster queuing variables
-  #BATCHPROC=pbs
-  BATCHPROC=sbatch
-
-elif [ $SDGVMUSER == 'UR_PCM' ]; then
-  # relative to HOME
-  PROJECTS_DIR=/sdgvmR/
-  DATA=/sdgvmD/data
-  #MOD=/Drought2018/sdgvm
-  MOD=/TRENDYv8/sdgvm
-  # cluster queuing variables
-  BATCHPROC=bsub
-
-fi
-
-# relative to PROJECTS_DIR
-PROJECT=$3
-#### TAGGED FOR REMOVAL
-
-# relative to PROJECT
-RUN=$4
-
+#### TAGGED FOR RESTORATION TO ORIGINAL 
 # copy blank run from:
-CPDIR=$HOME$MOD$CPRUN
+CPDIR=$SDGVM_HOME$SDGVM_MOD$SDGVM_CPRUN
+#CPDIR=/mnt/disk2/models/sdgvm/$SDGVM_CPRUN
 
-#### TAGGED FOR MOD 
 # to:
-RUNDIR=$HOME$PROJECTS_DIR$PROJECT/$RUN/
+RUNDIR=$SDGVM_PDIR/$SDGVM_PROJECT/$RUN/
+
 
 # set up run directories
 mkdir $RUNDIR
 mkdir $RUNDIR/logs
 
+
 # copy template files
 cd $CPDIR
-cp *param*        $RUNDIR
-cp *.${BATCHPROC} $RUNDIR
-cp clean.bs       $RUNDIR
+cp *param* $RUNDIR
+cp *.${SDGVM_BATCHPROC} $RUNDIR
+cp clean.bs $RUNDIR
 cp run_postprocessing.bs $RUNDIR
+
+
+#### TAGGED FOR ADDITION TO a RUNTYPE ARGUMENT 
+# select and copy template run file
+DEFTRUN=run_SDGVM.bs
+RUNF=$DEFTRUN 
+SPECRUN=`echo $SDGVM_PROJECT | grep TRENDY`
+if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv7.bs; fi
+#if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv8.bs; fi
+echo "Run file: " $RUNF
+cp $RUNF ${RUNDIR}$DEFTRUN
+cp $SDGVM_RUN ${RUNDIR}$DEFTRUN
+
 
 # select and copy template input file
 DEFTIN=input_global.dat
@@ -86,40 +55,31 @@ fi
 echo "Input file: " $INPUT
 cp $INPUT $RUNDIR
 
-# select and copy template run file
-DEFTRUN=run_SDGVM.bs
-RUNF=$DEFTRUN 
-SPECRUN=`echo $PROJECT | grep TRENDY`
-if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv7.bs; fi
-#if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv8.bs; fi
-echo "Run file: " $RUNF
-cp $RUNF ${RUNDIR}$DEFTRUN
-
-
 
 # modify run files
 # submit script
-sed -i "s@#RUNDIR#@$RUNDIR@"   ${RUNDIR}submit*.${BATCHPROC}
-sed -i "s@#PROJECT#@$PROJECT@" ${RUNDIR}submit*.${BATCHPROC}
-sed -i "s@#SIM#@$RUN@"         ${RUNDIR}submit*.${BATCHPROC}
+sed -i "s@#RUNDIR#@$RUNDIR@"          ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#PROJECT#@$SDGVM_PROJECT@"  ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#SIM#@$RUN@"                ${RUNDIR}submit*.${SDGVM_BATCHPROC}
 
 # SDGVM run file (called by submit script)
-sed -i "s@#HOME#@$HOME@"       ${RUNDIR}run_SDGVM.bs
-sed -i "s@#MOD#@$MOD@"         ${RUNDIR}run_SDGVM.bs
-sed -i "s@#DATA#@$DATA@"       ${RUNDIR}run_SDGVM.bs
-sed -i "s@#INPUT#@$INPUT@"     ${RUNDIR}run_SDGVM.bs
+sed -i "s@#HOME#@$SDGVM_HOME@"        ${RUNDIR}run_SDGVM.bs
+sed -i "s@#MOD#@$SDGVM_MOD@"          ${RUNDIR}run_SDGVM.bs
+sed -i "s@#DATA#@$SDGVM_DATA@"        ${RUNDIR}run_SDGVM.bs
+sed -i "s@#INPUT#@$INPUT@"            ${RUNDIR}run_SDGVM.bs
+sed -i "s@#SPIN#@$SDGVM_SPIN@"        ${RUNDIR}run_SDGVM.bs
 
 # SDGVM input file (commandline argument to SDGVM in run file, configures model run)
-sed -i "s@#DATA#@$DATA@"       ${RUNDIR}$INPUT
-sed -i "s@#HOME#@$HOME@"       ${RUNDIR}$INPUT
+sed -i "s@#DATA#@$SDGVM_DATA@"        ${RUNDIR}$INPUT
+sed -i "s@#HOME#@$SDGVM_HOME@"        ${RUNDIR}$INPUT
 
 # postprocessing script (called by submit sccript after completion of SDGVM run file execution)
-sed -i "s@#HOME#@$HOME@"                        ${RUNDIR}run_postprocessing.bs
-sed -i "s@#MOD#@$MOD@"                          ${RUNDIR}run_postprocessing.bs
-sed -i "s@#DIR#@$HOME$PROJECT_DIR@"             ${RUNDIR}run_postprocessing.bs
-sed -i "s@#PDIR#@$HOME$PROJECTS_DIR$PROJECT@"   ${RUNDIR}run_postprocessing.bs
-sed -i "s@#SIM#@$RUN@"                          ${RUNDIR}run_postprocessing.bs
-sed -i "s@#SDGVMUSER#@$SDGVMUSER@"              ${RUNDIR}run_postprocessing.bs
+sed -i "s@#HOME#@$SDGVM_HOME@"                 ${RUNDIR}run_postprocessing.bs
+sed -i "s@#MOD#@$SDGVM_MOD@"                   ${RUNDIR}run_postprocessing.bs
+sed -i "s@#DIR#@$SDGVM_PDIR@"                  ${RUNDIR}run_postprocessing.bs
+sed -i "s@#PDIR#@$SDGVM_PDIR$SDGVM_PROJECT@"   ${RUNDIR}run_postprocessing.bs
+sed -i "s@#SIM#@$RUN@"                         ${RUNDIR}run_postprocessing.bs
+sed -i "s@#SDGVMUSER#@$SDGVM_USER@"            ${RUNDIR}run_postprocessing.bs
 
 
 
