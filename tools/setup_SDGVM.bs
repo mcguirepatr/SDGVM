@@ -12,8 +12,8 @@ RUN=$1
 
 #### TAGGED FOR RESTORATION TO ORIGINAL 
 # copy blank run from:
-CPDIR=$SDGVM_HOME$SDGVM_MOD$SDGVM_CPRUN
-#CPDIR=/mnt/disk2/models/sdgvm/$SDGVM_CPRUN
+#CPDIR=$SDGVM_HOME$SDGVM_MOD$SDGVM_CPRUN
+CPDIR=/mnt/disk2/models/sdgvm/$SDGVM_CPRUN
 
 # to:
 RUNDIR=$SDGVM_PDIR/$SDGVM_PROJECT/$RUN/
@@ -58,20 +58,24 @@ cp $INPUT $RUNDIR
 
 # modify run files
 # submit script
-sed -i "s@#RUNDIR#@$RUNDIR@"          ${RUNDIR}submit*.${SDGVM_BATCHPROC}
-sed -i "s@#PROJECT#@$SDGVM_PROJECT@"  ${RUNDIR}submit*.${SDGVM_BATCHPROC}
-sed -i "s@#SIM#@$RUN@"                ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#RUNDIR#@$RUNDIR@"                   ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#PROJECT#@$SDGVM_PROJECT@"           ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#SIM#@$RUN@"                         ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s/#EMAIL#/$SDGVM_USER_EMAIL/"          ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#ACCOUNT#@$SDGVM_USER_ACCOUNT@"      ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#QUEUE#@$SDGVM_USER_QUEUE@"          ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION@"  ${RUNDIR}submit*.${SDGVM_BATCHPROC}
 
 # SDGVM run file (called by submit script)
-sed -i "s@#HOME#@$SDGVM_HOME@"        ${RUNDIR}run_SDGVM.bs
-sed -i "s@#MOD#@$SDGVM_MOD@"          ${RUNDIR}run_SDGVM.bs
-sed -i "s@#DATA#@$SDGVM_DATA@"        ${RUNDIR}run_SDGVM.bs
-sed -i "s@#INPUT#@$INPUT@"            ${RUNDIR}run_SDGVM.bs
-sed -i "s@#SPIN#@$SDGVM_SPIN@"        ${RUNDIR}run_SDGVM.bs
+sed -i "s@#HOME#@$SDGVM_HOME@"                 ${RUNDIR}run_SDGVM.bs
+sed -i "s@#MOD#@$SDGVM_MOD@"                   ${RUNDIR}run_SDGVM.bs
+sed -i "s@#DATA#@$SDGVM_DATA@"                 ${RUNDIR}run_SDGVM.bs
+sed -i "s@#INPUT#@$INPUT@"                     ${RUNDIR}run_SDGVM.bs
+sed -i "s@#SPIN#@$SDGVM_SPIN@"                 ${RUNDIR}run_SDGVM.bs
 
 # SDGVM input file (commandline argument to SDGVM in run file, configures model run)
-sed -i "s@#DATA#@$SDGVM_DATA@"        ${RUNDIR}$INPUT
-sed -i "s@#HOME#@$SDGVM_HOME@"        ${RUNDIR}$INPUT
+sed -i "s@#DATA#@$SDGVM_DATA@"                 ${RUNDIR}$INPUT
+sed -i "s@#HOME#@$SDGVM_HOME@"                 ${RUNDIR}$INPUT
 
 # postprocessing script (called by submit sccript after completion of SDGVM run file execution)
 sed -i "s@#HOME#@$SDGVM_HOME@"                 ${RUNDIR}run_postprocessing.bs

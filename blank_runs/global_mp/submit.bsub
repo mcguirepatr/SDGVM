@@ -6,17 +6,13 @@
 # here.  Use PBS, BSUB, or whatever the local environment supports.
 #===============================================================================
 
-#PBS -N pp_#PROJECT#_#SIM#
-#PBS -W group_list=#ACCOUNT#
-#PBS -l nodes=1:ppn=32
-#PBS -l walltime=02:00:00
-#PBS -r n
-#PBS -j oe
-#PBS -S /bin/csh -V
-#PBS -M #EMAIL# 
-#PBS -m ea
-#PBS -o #RUNDIR#/logs/${PBS_JOBNAME}.o${PBS_JOBID}
-
+#BSUB -J SDGVM_#PROJECT#_#SIM#
+#BSUB -q #ACCOUNT# 
+#BSUB -n 100 
+#BSUB -W 10:00
+#BSUB -L /bin/csh
+#BSUB -o #RUNDIR#logs/SDGVM_#PROJECT#_#SIM#.%J.out
+#BSUB -e #RUNDIR#logs/SDGVM_#PROJECT#_#SIM#.%J.err
 
 
 #limit coredumpsize 1000000
@@ -50,6 +46,12 @@ cd #RUNDIR#
 
 setenv OMP_NUM_THREADS 1
 
-./run_postprocessing.bs
 
-echo "`date` -- PP EXECUTION HAS FINISHED" 
+./run_SDGVM.bs
+
+echo "`date` -- SDGVM EXECUTION HAS FINISHED" 
+
+
+#./run_postprocessing.bs
+
+#echo "`date` -- PP EXECUTION HAS FINISHED" 

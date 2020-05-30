@@ -6,16 +6,14 @@
 # here.  Use PBS, BSUB, or whatever the local environment supports.
 #===============================================================================
 
-#PBS -N pp_#PROJECT#_#SIM#
-#PBS -W group_list=#ACCOUNT#
-#PBS -l nodes=1:ppn=32
-#PBS -l walltime=02:00:00
-#PBS -r n
-#PBS -j oe
-#PBS -S /bin/csh -V
-#PBS -M #EMAIL# 
-#PBS -m ea
-#PBS -o #RUNDIR#/logs/${PBS_JOBNAME}.o${PBS_JOBID}
+#BSUB -J pp_#PROJECT#_#SIM#
+#BSUB -q #QUEUE# 
+#BSUB -n 32
+#BSUB -W 18:00
+#BSUB -L /bin/csh
+#BSUB -o #RUNDIR#logs/pp_#PROJECT#_#SIM#.%J.pp.out
+#BSUB -e #RUNDIR#logs/pp_#PROJECT#_#SIM#.%J.pp.err
+
 
 
 
@@ -49,6 +47,9 @@
 cd #RUNDIR#
 
 setenv OMP_NUM_THREADS 1
+
+
+
 
 ./run_postprocessing.bs
 

@@ -15,7 +15,59 @@ SDGVM_RUNTYPE="$3"
 if [ ! -z $4 ]; then SUBPROJECT="_$4"; else SUBPROJECT=''; fi
 
 
+
+# institute and user tag to customise simulation to user space and machine
+#=================================================================================#
+echo ""
+echo "User: ${SDGVM_USER}"
+
+if [ $SDGVM_USER == 'ORNL_APW' ]; then
+
+  # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
+  SDGVM_HOME=~/models/SDGVM
+  # relative to SDGVM_HOME
+  SDGVM_PROJECTS_DIR=/run/
+  SDGVM_DATA=/input_data/
+  SDGVM_MOD=/src/sdgvm/
+  # cluster scheduling variables
+  #SDGVM_BATCHPROC=pbs
+  #BATCHPROCCOM="qsub submit.pbs"
+  SDGVM_BATCHPROC=sbatch
+  SDGVM_BATCHPROCCOM="sbatch submit.sbatch"
+  SDGVM_USER_EMAIL="walkerap@ornl.gov"
+  SDGVM_USER_ACCOUNT="ccsi"
+  SDGVM_USER_QUEUE=""
+  SDGVM_USER_PARTITION="batch"
+
+elif [ $SDGVM_USER == 'UR_PCM' ]; then
+
+  # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
+  SDGVM_HOME=/group_workspaces/jasmin2/nexcs/pmcguire
+  # relative to SDGVM_HOME
+  SDGVM_PROJECTS_DIR=/sdgvmR/
+  SDGVM_DATA=/sdgvmD/data/
+  SDGVM_MOD=/TRENDYv8/sdgvm/
+  # cluster scheduling variables
+  SDGVM_BATCHPROC=bsub
+  SDGVM_BATCHPROCCOM="bsub < submit.bsub"
+  SDGVM_USER_EMAIL=""
+  SDGVM_USER_ACCOUNT=""
+  SDGVM_USER_QUEUE="par-multi"
+  SDGVM_USER_PARTITION=""
+
+else
+  echo ""
+  echo "No institute and username tag: ${SDGVM_USER}"
+  echo "pick one of: ORNL_APW, UR_PCM;"
+  echo " or define your own"
+  echo "SDGVM project setup ABORTED."
+  stop
+fi
+
+
+
 # Define runtype variables
+#=================================================================================#
 if [ $SDGVM_RUNTYPE == 'TRENDYv7' ]; then
 
   # For TRENDYv7
@@ -67,45 +119,9 @@ else
 fi
 
 
-# institute and user tag to customise simulation to user space and machine
-echo ""
-echo "User: ${SDGVM_USER}"
 
-if [ $SDGVM_USER == 'ORNL_APW' ]; then
-
-  # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
-  SDGVM_HOME=~/models/SDGVM
-  # relative to SDGVM_HOME
-  SDGVM_PROJECTS_DIR=/run/
-  SDGVM_DATA=/input_data/
-  SDGVM_MOD=/src/sdgvm/
-  # cluster scheduling variables
-  #SDGVM_BATCHPROC=pbs
-  #BATCHPROCCOM="qsub submit.pbs"
-  SDGVM_BATCHPROC=sbatch
-  SDGVM_BATCHPROCCOM="sbatch submit.sbatch"
-
-elif [ $SDGVM_USER == 'UR_PCM' ]; then
-
-  # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
-  SDGVM_HOME=/group_workspaces/jasmin2/nexcs/pmcguire
-  # relative to SDGVM_HOME
-  SDGVM_PROJECTS_DIR=/sdgvmR/
-  SDGVM_DATA=/sdgvmD/data/
-  SDGVM_MOD=/TRENDYv8/sdgvm/
-  # cluster scheduling variables
-  SDGVM_BATCHPROC=bsub
-  SDGVM_BATCHPROCCOM="bsub < submit.bsub"
-
-else
-  echo ""
-  echo "No institute and username tag: ${SDGVM_USER}"
-  echo "pick one of: ORNL_APW, UR_PCM;"
-  echo " or define your own"
-  echo "SDGVM project setup ABORTED."
-  stop
-fi
-
+# create project and run directories and scripts
+#=================================================================================#
 
 # setup project directories
 # relative to SDGVM_HOME, where all SDGVM simulations live
@@ -139,6 +155,10 @@ export SDGVM_BATCHPROCCOM
 export SDGVM_SPIN 
 export SDGVM_RUN 
 export SDGVM_CPRUN 
+export SDGVM_USER_EMAIL
+export SDGVM_USER_ACCOUNT
+export SDGVM_USER_QUEUE
+export SDGVM_USER_PARTITION
 
 
 # set up runs within project

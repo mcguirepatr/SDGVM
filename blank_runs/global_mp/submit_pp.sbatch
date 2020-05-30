@@ -3,9 +3,9 @@
 
 #===============================================================================
 
-#SBATCH -A ccsi                           ### account to run job under
+#SBATCH -A #ACCOUNT#                      ### account to run job under
 #SBATCH -J #SIM#_#PROJECT#_SDGVM          ### jobname 
-#SBATCH -p batch                          ### partition to run job in (sinfo)
+#SBATCH -p #PARTITION#                    ### partition to run job in (sinfo)
 #SBATCH --mem=0                           ### <number>[unit], when 0, all available memory requested
 #SBATCH -N 1                              ### nodes requested for job
 #SBATCH -n 32                             ### tasks job will run per node
@@ -13,7 +13,7 @@
 #SBATCH -t 02:00:00                       ### requested walltime
 #SBATCH --no-requeue
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=walkerap@ornl.gov
+#SBATCH --mail-user=#EMAIL#
 #SBATCH -o #RUNDIR#/logs/#PROJECT#_#SIM#.o%j
 
 #===============================================================================
