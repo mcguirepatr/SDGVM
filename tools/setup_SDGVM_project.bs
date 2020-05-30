@@ -21,6 +21,7 @@ if [ ! -z $5 ]; then SUBPROJECT="_$5"; else SUBPROJECT=''; fi
 # institute and user tag to customise simulation to user space and machine
 #=================================================================================#
 echo ""
+echo "Project: ${SDGVM_PROJECT}"
 echo "User: ${SDGVM_USER}"
 
 if [ $SDGVM_USER == 'ORNL_APW' ]; then
@@ -28,13 +29,13 @@ if [ $SDGVM_USER == 'ORNL_APW' ]; then
   # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
   SDGVM_HOME=~/models/SDGVM
   # relative to SDGVM_HOME
-  SDGVM_PROJECTS_DIR=/run/
-  SDGVM_DATA=/input_data/
-  SDGVM_MOD=/src/sdgvm/
+  SDGVM_PROJECTS_DIR="/run/"
+  SDGVM_DATA="/input_data/"
+  SDGVM_MOD="/src/sdgvm/"
   # cluster scheduling variables
   #SDGVM_BATCHPROC=pbs
   #BATCHPROCCOM="qsub submit.pbs"
-  SDGVM_BATCHPROC=sbatch
+  SDGVM_BATCHPROC="sbatch"
   SDGVM_BATCHPROCCOM="sbatch submit.sbatch"
   SDGVM_USER_EMAIL="walkerap@ornl.gov"
   SDGVM_USER_ACCOUNT="ccsi"
@@ -44,13 +45,13 @@ if [ $SDGVM_USER == 'ORNL_APW' ]; then
 elif [ $SDGVM_USER == 'UR_PCM' ]; then
 
   # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
-  SDGVM_HOME=/group_workspaces/jasmin2/nexcs/pmcguire
+  SDGVM_HOME="/group_workspaces/jasmin2/nexcs/pmcguire"
   # relative to SDGVM_HOME
-  SDGVM_PROJECTS_DIR=/sdgvmR/
-  SDGVM_DATA=/sdgvmD/data/
-  SDGVM_MOD=/TRENDYv8/sdgvm/
+  SDGVM_PROJECTS_DIR="/sdgvmR/"
+  SDGVM_DATA="/sdgvmD/data/"
+  SDGVM_MOD="/TRENDYv8/sdgvm/"
   # cluster scheduling variables
-  SDGVM_BATCHPROC=bsub
+  SDGVM_BATCHPROC="bsub"
   SDGVM_BATCHPROCCOM="bsub < submit.bsub"
   SDGVM_USER_EMAIL=""
   SDGVM_USER_ACCOUNT=""
@@ -74,18 +75,13 @@ if [ $SDGVM_RUNTYPE == 'TRENDYv7' ]; then
 
   # For TRENDYv7
   # - and later TRENDY iterations
-  #SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
-  #SIMS=( spin_accelv7 ) 
-  SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
+  MAIN_SIMS=( S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
   
   # Spinup directory 
   SDGVM_SPIN='spin_accelv7'
 
   # directory where template simulations are to be copied from, relative to model source code 
   SDGVM_CPRUN=/blank_runs/global_mp
-
-  # run script that calls SDGVM, defines sites and resolution
-  #SDGVM_RUN='run_SDGVM_TRENDYv7.bs'
 
 
 elif [ $SDGVM_RUNTYPE == 'scratch' ]; then
@@ -99,16 +95,13 @@ elif [ $SDGVM_RUNTYPE == 'scratch' ]; then
   #SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
   #SIMS=( spin_accelv7 S0v7 S1v7 S3v7 spin_accelv7_npslim S0v7_npslim S1v7_npslim S3v7_npslim spin_accelv7_bamort S0v7_bamort S1v7_bamort S3v7_bamort )
   #SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
-  SIMS=( spin run ) 
+  MAIN_SIMS=( run ) 
 
   # Spinup directory 
   SDGVM_SPIN='spin'
 
   # directory where template simulations are to be copied from, relative to model source code 
   SDGVM_CPRUN=/blank_runs/
-
-  # run script that calls SDGVM, defines sites and resolution
-  #SDGVM_RUN='run_SDGVM.bs'
 
 
 else
@@ -119,6 +112,18 @@ else
   echo "SDGVM project setup ABORTED."
   stop
 fi
+
+# print input vars 
+echo ""
+echo "Runtype: ${SDGVM_RUNTYPE}"
+echo "Spin run: ${SDGVM_SPIN}"
+echo "Main runs: ${MAIN_SIMS[*]}"
+echo "Copy directory: ${SDGVM_CPRUN}"
+echo "Sites file: sites_${SDGVM_SITESCORES}.bs"
+#cp ../blank_runs/sites/sites_${SDGVM_SITESCORES}.bs $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
+#sed -i "s@#HOME#@$SDGVM_HOME@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
+#sed -i "s@#DATA#@$SDGVM_DATA@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
+
 
 
 
@@ -137,19 +142,6 @@ mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT/tools/logs
 cp ./project_tools/* $SDGVM_PDIR/$SDGVM_PROJECT/tools
 sed -i "s@#PROJECT#@$SDGVM_PROJECT@"                $SDGVM_PDIR/$SDGVM_PROJECT/tools/*bs
 sed -i "s@#PROJDIR#@${SDGVM_PDIR}${SDGVM_PROJECT}@" $SDGVM_PDIR/$SDGVM_PROJECT/tools/*bs
-
-
-# setup project/subproject run script 
-cp run_project_template.bs  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
-sed -i "s@#S#@${SIMS[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
-sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
-
-
-# copy sites and cores file
-echo "Sites file: sites_${SDGVM_SITESCORES}.bs"
-#cp ../blank_runs/sites/sites_${SDGVM_SITESCORES}.bs $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
-#sed -i "s@#HOME#@$SDGVM_HOME@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
-#sed -i "s@#DATA#@$SDGVM_DATA@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
 
 
 # export variables
@@ -172,11 +164,30 @@ export SDGVM_USER_PARTITION
 
 
 # set up runs within project
+SIMS=( $SDGVM_SPIN ${MAIN_SIMS[@]} )
 for s in ${SIMS[*]};do
  echo "" 
  echo $s
  ./setup_SDGVM.bs $s 
 done
+
+
+# could add code here to allow for the situation where there are more than one spin per project
+# var called SPIN2, if then reconfigure a few things and then run the above sims loop that calls setup_SDGVM 
+# would need to alter the run script setup, adding all spins to one scripts, all main runs to the next
+
+
+
+# setup project/subproject spin script
+cp run_project_template.bs  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#S#@${SDGVM_SPIN[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
+
+
+# setup project/subproject run script
+cp run_project_template.bs  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#S#@${MAIN_SIMS[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
 
 
 
