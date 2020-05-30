@@ -8,7 +8,7 @@
 
 #BSUB -J SDGVM_#PROJECT#_#SIM#
 #BSUB -q #ACCOUNT# 
-#BSUB -n 100 
+#BSUB -n #NP# 
 #BSUB -W 10:00
 #BSUB -L /bin/csh
 #BSUB -o #RUNDIR#logs/SDGVM_#PROJECT#_#SIM#.%J.out

@@ -6,13 +6,15 @@
 # Arguments:
 # $1 - SDGVM_USER (required) -- options: ORNL_APW, UR_PCM
 # $2 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PDIR, houses a collection of runs (i.e. a project)
-# $3 - SDGVM_RUNTYPE (optional) -- use a predefined 'runtype' 
-# $4 - SUBPROJECT name (optional) -- a label for a subgroup of simulations within a SDGVM_PROJECT 
+# $3 - SDGVM_RUNTYPE (required) -- use a predefined 'runtype' 
+# $4 - SDGVM_SITESCORES (required) -- use a predefined iset of sites, resolution, and cores  
+# $5 - SUBPROJECT name (optional) -- a label for a subgroup of simulations within a SDGVM_PROJECT 
 
 SDGVM_USER="$1"
 SDGVM_PROJECT="$2"
 SDGVM_RUNTYPE="$3"
-if [ ! -z $4 ]; then SUBPROJECT="_$4"; else SUBPROJECT=''; fi
+if [ ! -z $4 ]; then SDGVM_SITESCORES="$4"; else SDGVM_SITESCORES='CRUJRA_1deg_32cores'; fi
+if [ ! -z $5 ]; then SUBPROJECT="_$5"; else SUBPROJECT=''; fi
 
 
 
@@ -83,7 +85,7 @@ if [ $SDGVM_RUNTYPE == 'TRENDYv7' ]; then
   SDGVM_CPRUN=/blank_runs/global_mp
 
   # run script that calls SDGVM, defines sites and resolution
-  SDGVM_RUN='run_SDGVM_TRENDYv7.bs'
+  #SDGVM_RUN='run_SDGVM_TRENDYv7.bs'
 
 
 elif [ $SDGVM_RUNTYPE == 'scratch' ]; then
@@ -100,13 +102,13 @@ elif [ $SDGVM_RUNTYPE == 'scratch' ]; then
   SIMS=( spin run ) 
 
   # Spinup directory 
-  SDGVM_SPIN='spin_accel'
+  SDGVM_SPIN='spin'
 
   # directory where template simulations are to be copied from, relative to model source code 
   SDGVM_CPRUN=/blank_runs/
 
   # run script that calls SDGVM, defines sites and resolution
-  SDGVM_RUN='run_SDGVM.bs'
+  #SDGVM_RUN='run_SDGVM.bs'
 
 
 else
@@ -143,6 +145,13 @@ sed -i "s@#S#@${SIMS[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUB
 sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
 
 
+# copy sites and cores file
+echo "Sites file: sites_${SDGVM_SITESCORES}.bs"
+#cp ../blank_runs/sites/sites_${SDGVM_SITESCORES}.bs $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
+#sed -i "s@#HOME#@$SDGVM_HOME@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
+#sed -i "s@#DATA#@$SDGVM_DATA@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
+
+
 # export variables
 export SDGVM_USER
 export SDGVM_HOME 
@@ -152,8 +161,9 @@ export SDGVM_MOD
 export SDGVM_PDIR
 export SDGVM_BATCHPROC
 export SDGVM_BATCHPROCCOM
+export SDGVM_SITESCORES 
 export SDGVM_SPIN 
-export SDGVM_RUN 
+#export SDGVM_RUN 
 export SDGVM_CPRUN 
 export SDGVM_USER_EMAIL
 export SDGVM_USER_ACCOUNT

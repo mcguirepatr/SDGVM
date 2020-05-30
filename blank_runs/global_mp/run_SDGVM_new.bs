@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# script to run SDGVM according to the sites, respolution, and cores specified in sites.bs 
+# designed to be run from within the directory of a specific, single run
+
+MODEL=#HOME##MOD#
+INPUT=#INPUT#
+
+SPINDIR='../#SPIN#/output'
+OUTPUT=output
+
+
+# start script
+# clear output directories
+rm -r ./$OUTPUT
+rm -r ./src
+
+
+# copy source code and compiled model run file
+mkdir ./$OUTPUT
+mkdir ./src
+cp $MODEL/*.f    ./src
+cp $MODEL/sdgvm0 ./src
+
+
+# load sites variables
+../sites.bs
+echo "Sites file: $SDGVM_SITES"
+echo "Sites on each processor: ${SDGVM_N_SITES[*]}"
+
+
+# run loop 
+s4=0
+((e=${#SDGVM_N_SITES[*]}))
+for s in `seq 1 $e` ;do
+ ((s1=$s - 1))
+ ((s3=1 + $s4))
+ ((s4=$s4 + ${SDGVM_N_SITES[$s1]}))
+
+ mkdir ./$OUTPUT/grid$s
+ echo "./src/sdgvm0 $INPUT $SPINDIR/grid$s ./$OUTPUT/grid$s  $SDGVM_SITES $s3 $s4 > ./$OUTPUT/g${s}out.txt &"
+       ./src/sdgvm0 $INPUT $SPINDIR/grid$s ./$OUTPUT/grid$s  $SDGVM_SITES $s3 $s4 > ./$OUTPUT/g${s}out.txt &
+
+done
+
+wait

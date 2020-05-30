@@ -8,7 +8,7 @@
 
 #PBS -N SDGVM_#PROJECT#_#SIM#
 #PBS -W group_list=#ACCOUNT#
-#PBS -l nodes=1:ppn=32
+#PBS -l nodes=#NODES#:ppn=#NP#
 #PBS -l walltime=12:00:00
 #PBS -r n
 #PBS -j oe

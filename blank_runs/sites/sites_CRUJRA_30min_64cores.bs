@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# CRUJRA sites
+# 0.5 degree resolution
+# 64 cores 
+
+
+SDGVM_SITES=#HOME##DATA#/sites/gl_30min_CRUJRAv8.dat
+SDGVM_NODES='' 
+SDGVM_NP=64   # processors per node; if nodes empty total processors  
+SDGVM_N_SITES=( 1081 1053 1053 1053 1053 1053 1053 1053 1053 1053
+                1053 1053 1053 1053 1053 1053 1053 1053 1053 1053
+                1053 1053 1053 1053 1053 1053 1053 1053 1053 1053
+                1053 1053 1053 1053 1053 1053 1053 1053 1053 1053
+                1053 1053 1053 1053 1053 1053 1053 1053 1053 1053
+                1053 1053 1053 1053 1053 1053 1053 1053 1053 1053
+                1053 1053 1053 1053 ) 
+
+export SDGVM_SITES
+export SDGVM_NODES
+export SDGVM_NP
+export SDGVM_N_SITES
+
+
+
+### END ###      

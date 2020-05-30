@@ -32,16 +32,23 @@ cp clean.bs $RUNDIR
 cp run_postprocessing.bs $RUNDIR
 
 
-#### TAGGED FOR ADDITION TO a RUNTYPE ARGUMENT 
 # select and copy template run file
 DEFTRUN=run_SDGVM.bs
 RUNF=$DEFTRUN 
-SPECRUN=`echo $SDGVM_PROJECT | grep TRENDY`
-if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv7.bs; fi
-#if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv8.bs; fi
+RUNF=run_SDGVM_new2.bs
+#SPECRUN=`echo $SDGVM_PROJECT | grep TRENDY`
+#if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv7.bs; fi
+##if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv8.bs; fi
 echo "Run file: " $RUNF
 cp $RUNF ${RUNDIR}$DEFTRUN
-cp $SDGVM_RUN ${RUNDIR}$DEFTRUN
+#cp $SDGVM_RUN ${RUNDIR}$DEFTRUN
+#cp ../blank_runs/sites/sites_${SDGVM_SITESCORES}.bs $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
+#sed -i "s@#HOME#@$SDGVM_HOME@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
+#sed -i "s@#DATA#@$SDGVM_DATA@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
+#source $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
+source ../sites/sites_${SDGVM_SITESCORES}.bs 
+echo "Sites: ${SDGVM_SITES}"
+echo "Sites on each processor: ${SDGVM_N_SITES[*]}"
 
 
 # select and copy template input file
@@ -65,8 +72,12 @@ sed -i "s/#EMAIL#/$SDGVM_USER_EMAIL/"          ${RUNDIR}submit*.${SDGVM_BATCHPRO
 sed -i "s@#ACCOUNT#@$SDGVM_USER_ACCOUNT@"      ${RUNDIR}submit*.${SDGVM_BATCHPROC}
 sed -i "s@#QUEUE#@$SDGVM_USER_QUEUE@"          ${RUNDIR}submit*.${SDGVM_BATCHPROC}
 sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION@"  ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#NODES#@$SDGVM_NODES@"               ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#NP#@$SDGVM_NP@"                     ${RUNDIR}submit*.${SDGVM_BATCHPROC}
 
 # SDGVM run file (called by submit script)
+sed -i "s@#SITES#@$SDGVM_SITES@"               ${RUNDIR}run_SDGVM.bs
+sed -i "s@#N_SITES#@${SDGVM_N_SITES[*]}@"      ${RUNDIR}run_SDGVM.bs
 sed -i "s@#HOME#@$SDGVM_HOME@"                 ${RUNDIR}run_SDGVM.bs
 sed -i "s@#MOD#@$SDGVM_MOD@"                   ${RUNDIR}run_SDGVM.bs
 sed -i "s@#DATA#@$SDGVM_DATA@"                 ${RUNDIR}run_SDGVM.bs
