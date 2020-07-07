@@ -12,11 +12,13 @@ SDGVM_N_SITES=( 1980 625 620 610  615  515 515  515 500  510
                 575  575 560 430  500  500 520  525 550  575
                 530  630 540 540  455  445 490  510 400  400
                 550  511   )
+SDGVM_SITES_TOTAL=? # this is not sum(N_SITES) but is a combination of that and the SDGVM landmask, needs to be determined after a first run of SDGVM with a new sites list
 
 export SDGVM_SITES
 export SDGVM_NODES
 export SDGVM_NP
 export SDGVM_N_SITES
+export SDGVM_SITES_TOTAL
 
 
 

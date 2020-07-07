@@ -88,6 +88,7 @@ sed -i "s@#DIR#@$SDGVM_PDIR@"                  run_postprocessing.bs
 sed -i "s@#PDIR#@$SDGVM_PDIR$SDGVM_PROJECT@"   run_postprocessing.bs
 sed -i "s@#SIM#@$RUN@"                         run_postprocessing.bs
 sed -i "s@#SDGVMUSER#@$SDGVM_USER@"            run_postprocessing.bs
+sed -i "s@#TSITES#@$SDGVM_SITES_TOTAL@"        run_postprocessing.bs
 
 
 

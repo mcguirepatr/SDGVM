@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SRCDIR=#HOME##MOD#/tools
-ARGS="nsites<-15789 dir<-'#DIR#' wd<-'#PDIR#' sim<-'#SIM#' sdgvmuser<-'#SDGVMUSER#'" 
+ARGS="nsites<-#TSITES# dir<-'#DIR#' wd<-'#PDIR#' sim<-'#SIM#' sdgvmuser<-'#SDGVMUSER#'" 
 cd $SRCDIR
 
 # stich gridded output together
