@@ -10,12 +10,7 @@
 RUN=$1
 
 
-#### TAGGED FOR RESTORATION TO ORIGINAL 
-# copy blank run from:
-CPDIR=$SDGVM_HOME$SDGVM_MOD$SDGVM_CPRUN
-#CPDIR=/mnt/disk2/models/sdgvm/$SDGVM_CPRUN
-
-# to:
+# Run directory to copy files into:
 RUNDIR=$SDGVM_PDIR/$SDGVM_PROJECT/$RUN/
 
 
@@ -24,34 +19,28 @@ mkdir $RUNDIR
 mkdir $RUNDIR/logs
 
 
-# copy template files
-cd $CPDIR
-cp *param* $RUNDIR
-cp *.${SDGVM_BATCHPROC} $RUNDIR
-cp clean.bs $RUNDIR
-cp run_postprocessing.bs $RUNDIR
+# copy cleaning file
+cp ./project_tools/clean.bs $RUNDIR 
 
 
-# select and copy template run file
-DEFTRUN=run_SDGVM.bs
-RUNF=$DEFTRUN 
-RUNF=run_SDGVM_new2.bs
-#SPECRUN=`echo $SDGVM_PROJECT | grep TRENDY`
-#if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv7.bs; fi
-##if [ ! -z $SPECRUN ]; then RUNF=run_SDGVM_TRENDYv8.bs; fi
-echo "Run file: " $RUNF
-cp $RUNF ${RUNDIR}$DEFTRUN
-#cp $SDGVM_RUN ${RUNDIR}$DEFTRUN
-#cp ../blank_runs/sites/sites_${SDGVM_SITESCORES}.bs $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
-#sed -i "s@#HOME#@$SDGVM_HOME@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
-#sed -i "s@#DATA#@$SDGVM_DATA@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
-#source $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
-source ../sites/sites_${SDGVM_SITESCORES}.bs 
-echo "Sites: ${SDGVM_SITES}"
-echo "Sites on each processor: ${SDGVM_N_SITES[*]}"
+cd ../templates/
+# copy template submit scripts 
+cp ./submit_scripts/*.${SDGVM_BATCHPROC} $RUNDIR
 
 
-# select and copy template input file
+# copy template run scripts
+RUNF=run_SDGVM.bs
+#echo "Run file: " $RUNF
+cp ./run_scripts/$RUNF                 ${RUNDIR}$DEFTRUN
+cp ./run_scripts/run_postprocessing.bs $RUNDIR
+
+
+# run sites script
+source ./sites/sites_${SDGVM_SITESCORES}.bs 
+
+
+# select and copy template input and param files
+cd ./$SDGVM_CPRUN
 DEFTIN=input_global.dat
 SPECIN=`ls input* | grep $RUN`
 if [ ! -z $SPECIN ]; then 
@@ -60,41 +49,45 @@ else
  INPUT=$DEFTIN 
 fi
 echo "Input file: " $INPUT
-cp $INPUT $RUNDIR
+cp $INPUT  $RUNDIR
+cp *param* $RUNDIR
 
 
 # modify run files
+cd ${RUNDIR}
+echo "Sites: ${SDGVM_SITES}"
+echo "Sites on each processor: ${SDGVM_N_SITES[*]}"
 # submit script
-sed -i "s@#RUNDIR#@$RUNDIR@"                   ${RUNDIR}submit*.${SDGVM_BATCHPROC}
-sed -i "s@#PROJECT#@$SDGVM_PROJECT@"           ${RUNDIR}submit*.${SDGVM_BATCHPROC}
-sed -i "s@#SIM#@$RUN@"                         ${RUNDIR}submit*.${SDGVM_BATCHPROC}
-sed -i "s/#EMAIL#/$SDGVM_USER_EMAIL/"          ${RUNDIR}submit*.${SDGVM_BATCHPROC}
-sed -i "s@#ACCOUNT#@$SDGVM_USER_ACCOUNT@"      ${RUNDIR}submit*.${SDGVM_BATCHPROC}
-sed -i "s@#QUEUE#@$SDGVM_USER_QUEUE@"          ${RUNDIR}submit*.${SDGVM_BATCHPROC}
-sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION@"  ${RUNDIR}submit*.${SDGVM_BATCHPROC}
-sed -i "s@#NODES#@$SDGVM_NODES@"               ${RUNDIR}submit*.${SDGVM_BATCHPROC}
-sed -i "s@#NP#@$SDGVM_NP@"                     ${RUNDIR}submit*.${SDGVM_BATCHPROC}
+sed -i "s@#RUNDIR#@$RUNDIR@"                   submit*.${SDGVM_BATCHPROC}
+sed -i "s@#PROJECT#@$SDGVM_PROJECT@"           submit*.${SDGVM_BATCHPROC}
+sed -i "s@#SIM#@$RUN@"                         submit*.${SDGVM_BATCHPROC}
+sed -i "s/#EMAIL#/$SDGVM_USER_EMAIL/"          submit*.${SDGVM_BATCHPROC}
+sed -i "s@#ACCOUNT#@$SDGVM_USER_ACCOUNT@"      submit*.${SDGVM_BATCHPROC}
+sed -i "s@#QUEUE#@$SDGVM_USER_QUEUE@"          submit*.${SDGVM_BATCHPROC}
+sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION@"  submit*.${SDGVM_BATCHPROC}
+sed -i "s@#NODES#@$SDGVM_NODES@"               submit*.${SDGVM_BATCHPROC}
+sed -i "s@#NP#@$SDGVM_NP@"                     submit*.${SDGVM_BATCHPROC}
 
-# SDGVM run file (called by submit script)
-sed -i "s@#SITES#@$SDGVM_SITES@"               ${RUNDIR}run_SDGVM.bs
-sed -i "s@#N_SITES#@${SDGVM_N_SITES[*]}@"      ${RUNDIR}run_SDGVM.bs
-sed -i "s@#HOME#@$SDGVM_HOME@"                 ${RUNDIR}run_SDGVM.bs
-sed -i "s@#MOD#@$SDGVM_MOD@"                   ${RUNDIR}run_SDGVM.bs
-sed -i "s@#DATA#@$SDGVM_DATA@"                 ${RUNDIR}run_SDGVM.bs
-sed -i "s@#INPUT#@$INPUT@"                     ${RUNDIR}run_SDGVM.bs
-sed -i "s@#SPIN#@$SDGVM_SPIN@"                 ${RUNDIR}run_SDGVM.bs
+# SDGVM run script (called by submit script)
+sed -i "s@#SITES#@$SDGVM_SITES@"               run_SDGVM.bs
+sed -i "s@#N_SITES#@${SDGVM_N_SITES[*]}@"      run_SDGVM.bs
+sed -i "s@#HOME#@$SDGVM_HOME@"                 run_SDGVM.bs
+sed -i "s@#MOD#@$SDGVM_MOD@"                   run_SDGVM.bs
+sed -i "s@#DATA#@$SDGVM_DATA@"                 run_SDGVM.bs
+sed -i "s@#INPUT#@$INPUT@"                     run_SDGVM.bs
+sed -i "s@#SPIN#@$SDGVM_SPIN@"                 run_SDGVM.bs
 
 # SDGVM input file (commandline argument to SDGVM in run file, configures model run)
-sed -i "s@#DATA#@$SDGVM_DATA@"                 ${RUNDIR}$INPUT
-sed -i "s@#HOME#@$SDGVM_HOME@"                 ${RUNDIR}$INPUT
+sed -i "s@#DATA#@$SDGVM_DATA@"                 $INPUT
+sed -i "s@#HOME#@$SDGVM_HOME@"                 $INPUT
 
-# postprocessing script (called by submit sccript after completion of SDGVM run file execution)
-sed -i "s@#HOME#@$SDGVM_HOME@"                 ${RUNDIR}run_postprocessing.bs
-sed -i "s@#MOD#@$SDGVM_MOD@"                   ${RUNDIR}run_postprocessing.bs
-sed -i "s@#DIR#@$SDGVM_PDIR@"                  ${RUNDIR}run_postprocessing.bs
-sed -i "s@#PDIR#@$SDGVM_PDIR$SDGVM_PROJECT@"   ${RUNDIR}run_postprocessing.bs
-sed -i "s@#SIM#@$RUN@"                         ${RUNDIR}run_postprocessing.bs
-sed -i "s@#SDGVMUSER#@$SDGVM_USER@"            ${RUNDIR}run_postprocessing.bs
+# postprocessing script (called by submit script after completion of SDGVM run file execution)
+sed -i "s@#HOME#@$SDGVM_HOME@"                 run_postprocessing.bs
+sed -i "s@#MOD#@$SDGVM_MOD@"                   run_postprocessing.bs
+sed -i "s@#DIR#@$SDGVM_PDIR@"                  run_postprocessing.bs
+sed -i "s@#PDIR#@$SDGVM_PDIR$SDGVM_PROJECT@"   run_postprocessing.bs
+sed -i "s@#SIM#@$RUN@"                         run_postprocessing.bs
+sed -i "s@#SDGVMUSER#@$SDGVM_USER@"            run_postprocessing.bs
 
 
 

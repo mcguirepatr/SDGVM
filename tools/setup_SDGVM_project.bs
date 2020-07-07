@@ -13,8 +13,8 @@
 SDGVM_USER="$1"
 SDGVM_PROJECT="$2"
 SDGVM_RUNTYPE="$3"
-if [ ! -z $4 ]; then SDGVM_SITESCORES="$4"; else SDGVM_SITESCORES='CRUJRA_1deg_32cores'; fi
-if [ ! -z $5 ]; then SUBPROJECT="_$5"; else SUBPROJECT=''; fi
+if [ ! -z $4 ]; then SDGVM_SITESCORES="$4"; else SDGVM_SITESCORES="CRUJRA_1deg_32cores"; fi
+if [ ! -z $5 ]; then SUBPROJECT="_$5"; else SUBPROJECT=""; fi
 
 
 
@@ -28,10 +28,12 @@ if [ $SDGVM_USER == 'ORNL_APW' ]; then
 
   # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
   SDGVM_HOME=~/models/SDGVM
+
   # relative to SDGVM_HOME
   SDGVM_PROJECTS_DIR="/run/"
   SDGVM_DATA="/input_data/"
   SDGVM_MOD="/src/sdgvm/"
+
   # cluster scheduling variables
   #SDGVM_BATCHPROC=pbs
   #BATCHPROCCOM="qsub submit.pbs"
@@ -42,14 +44,17 @@ if [ $SDGVM_USER == 'ORNL_APW' ]; then
   SDGVM_USER_QUEUE=""
   SDGVM_USER_PARTITION="batch"
 
+
 elif [ $SDGVM_USER == 'UR_PCM' ]; then
 
   # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
   SDGVM_HOME="/group_workspaces/jasmin2/nexcs/pmcguire"
+
   # relative to SDGVM_HOME
   SDGVM_PROJECTS_DIR="/sdgvmR/"
   SDGVM_DATA="/sdgvmD/data/"
   SDGVM_MOD="/TRENDYv8/sdgvm/"
+
   # cluster scheduling variables
   SDGVM_BATCHPROC="bsub"
   SDGVM_BATCHPROCCOM="bsub < submit.bsub"
@@ -75,39 +80,43 @@ if [ $SDGVM_RUNTYPE == 'TRENDYv7' ]; then
 
   # For TRENDYv7
   # - and later TRENDY iterations
-  MAIN_SIMS=( S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
-  
-  # Spinup directory 
-  SDGVM_SPIN='spin_accelv7'
 
   # directory where template simulations are to be copied from, relative to model source code 
-  SDGVM_CPRUN=/blank_runs/global_mp
+  SDGVM_CPRUN="master_mp"
 
+  # Spinup directory 
+  SDGVM_SPIN="spin_accelv7"
+
+  # Main simulation ensemble  
+  MAIN_SIMS=( S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
+  #SIMS=( spin_accel S0 S1 S2 S3  ) ## pre v7 TRENDY
+  
 
 elif [ $SDGVM_RUNTYPE == 'scratch' ]; then
 
-  #SIMS=( NC_zen0_beers C_zen0_beers C_zen_beers C_zen0_beersC C_zen_beersC NC_zen0_LP C_zen0_LP C_zen_LP  )
-  #SIMS=( Walker_N_ModA Walker_N_ModA_Tacc Kattge_ModA Kattge_ModA_Tacc  )
-  #SIMS=( Constant Constant_ModA Constant_ModA_Tacc LUNA LUNA_ModA LUNA_ModA_Tacc  )
-  #SIMS=( spin_accel S0 S1 S2 S3  )
-  #SIMS=( tpu0 tpu1 tpu2 tpu3  )
-  #SIMS=( spin_accelv7 S0v7 S1v7 S2v7 S3v7 S4v7  )
-  #SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
-  #SIMS=( spin_accelv7 S0v7 S1v7 S3v7 spin_accelv7_npslim S0v7_npslim S1v7_npslim S3v7_npslim spin_accelv7_bamort S0v7_bamort S1v7_bamort S3v7_bamort )
-  #SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
-  MAIN_SIMS=( run ) 
+  # for user-defined runtypes
 
   # Spinup directory 
-  SDGVM_SPIN='spin'
+  SDGVM_SPIN="spin"
 
   # directory where template simulations are to be copied from, relative to model source code 
-  SDGVM_CPRUN=/blank_runs/
+  SDGVM_CPRUN=""
+
+  # Main simulation ensemble  
+  #MAIN_SIMS=( NC_zen0_beers C_zen0_beers C_zen_beers C_zen0_beersC C_zen_beersC NC_zen0_LP C_zen0_LP C_zen_LP  )
+  #MAIN_SIMS=( Walker_N_ModA Walker_N_ModA_Tacc Kattge_ModA Kattge_ModA_Tacc  )
+  #MAIN_SIMS=( Constant Constant_ModA Constant_ModA_Tacc LUNA LUNA_ModA LUNA_ModA_Tacc  )
+  #MAIN_SIMS=( tpu0 tpu1 tpu2 tpu3  )
+  #MAIN_SIMS=( spin_accelv7 S0v7 S1v7 S3v7 spin_accelv7_npslim S0v7_npslim S1v7_npslim S3v7_npslim spin_accelv7_bamort S0v7_bamort S1v7_bamort S3v7_bamort )
+  #MAIN_SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
+  #MAIN_SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
+  MAIN_SIMS=( run ) 
 
 
 else
   echo ""
   echo "No runtype: ${SDGVM_RUNTYPE}"
-  echo "pick one of: " 
+  echo "pick one of: TRENDYv7, scratch" 
   echo " or define your own"
   echo "SDGVM project setup ABORTED."
   stop
@@ -120,11 +129,7 @@ echo "Spin run: ${SDGVM_SPIN}"
 echo "Main runs: ${MAIN_SIMS[*]}"
 echo "Copy directory: ${SDGVM_CPRUN}"
 echo "Sites file: sites_${SDGVM_SITESCORES}.bs"
-#cp ../blank_runs/sites/sites_${SDGVM_SITESCORES}.bs $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
-#sed -i "s@#HOME#@$SDGVM_HOME@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
-#sed -i "s@#DATA#@$SDGVM_DATA@" $SDGVM_PDIR/$SDGVM_PROJECT/sites.bs
-
-
+echo
 
 
 # create project and run directories and scripts
@@ -175,7 +180,7 @@ done
 # could add code here to allow for the situation where there are more than one spin per project
 # var called SPIN2, if then reconfigure a few things and then run the above sims loop that calls setup_SDGVM 
 # would need to alter the run script setup, adding all spins to one scripts, all main runs to the next
-
+# would also need code that assigns the correct spin to the correct run script -- could provide as a second argument to setup_SDGVM.bs 
 
 
 # setup project/subproject spin script

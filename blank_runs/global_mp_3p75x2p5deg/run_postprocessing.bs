@@ -1,6 +1,0 @@
-#!/bin/bash
-
-SRCDIR=#HOME##MOD#/tools
-
-cd $SRCDIR
-Rscript postprocess_mp.R "deg1<-F" "ny<-22" "sty<-1991" "dir<-'#DIR#'" "wd<-'#PDIR#'" "sim<-'#SIM#'"  #"daily<-F" "monthly<-F" 

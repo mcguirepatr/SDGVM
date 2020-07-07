@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# script to run SDGVM according to the sites, respolution, and cores specified in sites.bs 
+# script to run SDGVM according to the sites, resolution, and cores specified in sites.bs 
 # designed to be run from within the directory of a specific, single run
 
 MODEL=#HOME##MOD#
