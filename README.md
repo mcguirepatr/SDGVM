@@ -1,13 +1,15 @@
 # The SDGVM (est. 1995) #
 
 The Sheffield Dynamic Vegetation Model of Woodward et al 1995 & Woodward & Lomas 2004. Updated with as yet unpublished revisions. 
-* Version (versioning system TBD): master used in TRENDY v8, Friedlingstein et al. (2019) ESSD  
+
 
 Primary authors:
+
 * Ian Woodward
 * Mark Lomas
 
 Contributing authors:
+
 * Anthony Walker
 * Tristan Quaife
 * Ghislain Picard
@@ -16,18 +18,22 @@ Contributing authors:
 
 ### How do I get set up? ###
 
-* Summary of set up - read included files input.doc (up to date, sdescribes hwo to run model) and sdgvm.doc (somewhat out of date, but decribes model science)
+* Summary of set up - read included files in `documentation` directory input.doc (up to date, describes how to run model) and sdgvm.doc (somewhat out of date, but decribes model science), check `tools` directory for using templates and running simulations on a cluster.
 * Configuration - run `make clean` then `make` -- requires gfortran
 * Dependencies - FORTRAN compiler (gfortran), some R dependencies for post-processing (inc. netcdf libraries if TRENDY output required)
 * Database configuration - need met data sets etc, comes separately, not included
 * How to run tests - comes with none
 
 ### Contribution guidelines ###
-Please preserve original model configurations, do not comment out and replace code. 
+Fork repo and make changes on your own branch, make pull requests to 'next' branch.
+Preserve original model configurations.
 
-* Writing tests
-* Code review
-* Other guidelines - fork repo and make changes on your own branch, pull requests to 'next' branch
+* do not comment out and replace code unless a bug, use input file switches for new development
+* do not change defaults in code  
+
+* Writing tests - none
+* Code review - ad hoc, when I have time 
+* Other guidelines - 
 
 ### Who do I talk to? ###
 
