@@ -5,14 +5,14 @@
 
 # Arguments:
 # $1 - SDGVM_USER (required) -- options: ORNL_APW, UR_PCM
-# $2 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PDIR, houses a collection of runs (i.e. a project)
+# $2 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PROJECTS_DIR, houses a collection of runs (i.e. a project)
 # $3 - SDGVM_RUNTYPE (required) -- use a predefined 'runtype' 
-# $4 - SDGVM_SITESCORES (required) -- use a predefined iset of sites, resolution, and cores  
+# $4 - SDGVM_SITESCORES (required) -- use a predefined set of sites, resolution, and cores  
 # $5 - SUBPROJECT name (optional) -- a label for a subgroup of simulations within a SDGVM_PROJECT 
 
 SDGVM_USER="$1"
-SDGVM_PROJECT="$2"
-SDGVM_RUNTYPE="$3"
+SDGVM_RUNTYPE="$2"
+SDGVM_PROJECT="$3"
 if [ ! -z $4 ]; then SDGVM_SITESCORES="$4"; else SDGVM_SITESCORES="CRUJRA_1deg_32cores"; fi
 if [ ! -z $5 ]; then SUBPROJECT="_$5"; else SUBPROJECT=""; fi
 
@@ -30,19 +30,17 @@ if [ $SDGVM_USER == 'ORNL_APW' ]; then
   SDGVM_HOME=~/models/SDGVM
 
   # relative to SDGVM_HOME
-  SDGVM_PROJECTS_DIR="/run/"
-  SDGVM_DATA="/input_data/"
-  SDGVM_MOD="/src/sdgvm/"
+  SDGVM_PROJECTS_DIR="/run/"                 # all SDGVM projects are housed in subdirectories of this directory
+  SDGVM_DATA="/input_data/"                  # all SDGVM input data should be housed in subdirectories of this directory 
+  SDGVM_MOD="/src/sdgvm/"                    # SDGVM source code is found in this directory
 
   # cluster scheduling variables
-  #SDGVM_BATCHPROC=pbs
-  #BATCHPROCCOM="qsub submit.pbs"
-  SDGVM_BATCHPROC="sbatch"
-  SDGVM_BATCHPROCCOM="sbatch submit.sbatch"
-  SDGVM_USER_EMAIL="walkerap@ornl.gov"
-  SDGVM_USER_ACCOUNT="ccsi"
-  SDGVM_USER_QUEUE=""
-  SDGVM_USER_PARTITION="batch"
+  SDGVM_BATCHPROC="sbatch"                   # type of job submission system, copies submission script templates that have this file extension 
+  SDGVM_BATCHPROCCOM="sbatch submit.sbatch"  # command to run job submission scripts
+  SDGVM_USER_EMAIL="walkerap@ornl.gov"    
+  SDGVM_USER_ACCOUNT="ccsi"                  # user account on scheduling system
+  SDGVM_USER_QUEUE=""                        # user queue on scheduling system
+  SDGVM_USER_PARTITION="batch"               # user partition on scheduling system
 
 
 elif [ $SDGVM_USER == 'UR_PCM' ]; then
@@ -81,15 +79,16 @@ if [ $SDGVM_RUNTYPE == 'TRENDYv7' ]; then
   # For TRENDYv7
   # - and later TRENDY iterations
 
-  # directory where template simulations are to be copied from, relative to model source code 
+  # directory where template simulations are to be copied from 
+  # - relative to "template" directory in model source code directory 
   SDGVM_CPRUN="master_mp"
 
-  # Spinup directory 
+  # Spinup 
   SDGVM_SPIN="spin_accelv7"
 
   # Main simulation ensemble  
   MAIN_SIMS=( S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
-  #SIMS=( spin_accel S0 S1 S2 S3  ) ## pre v7 TRENDY
+  #MAIN_SIMS=( S0 S1 S2 S3  ) ## pre v7 TRENDY
   
 
 elif [ $SDGVM_RUNTYPE == 'scratch' ]; then
