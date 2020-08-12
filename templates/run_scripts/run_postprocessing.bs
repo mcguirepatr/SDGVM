@@ -11,9 +11,9 @@ Rscript postprocess_mp.R ${ALLARGS}
 # generate netcdf output
 ALLARGS="${ARGS} ny<-319 syr<-1700 stich<-F netcdf<-T monthly<-F daily<-F" 
 Rscript postprocess_mp.R ${ALLARGS}
-ALLARGS="${ARGS} ny<-119 syr<-1900 stich<-T netcdf<-T monthly<-F daily<-F" "ncdf_avars<-'cVegpft'"
+ALLARGS="${ARGS} ny<-119 syr<-1900 stich<-F netcdf<-T monthly<-F daily<-F" "ncdf_avars<-'cVegpft'"
 Rscript postprocess_mp.R ${ALLARGS}
-ALLARGS="${ARGS} ny<-319 syr<-1700 outsyear<-1900 stich<-T netcdf<-T monthly<-F daily<-F ncdf_avars<-c('fFire','fLuc')"
+ALLARGS="${ARGS} ny<-319 syr<-1700 outsyear<-1900 stich<-F netcdf<-T monthly<-F daily<-F ncdf_avars<-c('fFire','fLuc')"
 Rscript postprocess_mp.R ${ALLARGS}
 
 # stich sub-annual gridded output together - monthly

@@ -23,14 +23,14 @@ library(rworldxtra)
 ###user defined inputs
 
 #directory paths
-#date    <- '180815'
-#dir     <- '/home/alp/models/SDGVM/'
-#rdir    <- 'run'
-date    <- '190816a'
-dir     <- '/group_workspaces/jasmin2/nexcs/pmcguire/sdgvmR/'
-rdir    <- 'TRENDY2019_v2'
+date    <- '200811'
+dir     <- '/home/alp/models/SDGVM/'
+rdir    <- 'run'
 edir    <- 'eval_data'
-tdir    <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/sdgvm/tools/'
+#date    <- '190816a'
+#dir     <- '/group_workspaces/jasmin2/nexcs/pmcguire/sdgvmR/'
+#rdir    <- 'TRENDY2019_v2'
+#tdir    <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/sdgvm/tools/'
 
 # project directory
 #project <- 'vcmax'
@@ -72,8 +72,8 @@ skip    <- NULL
 icon    <- NULL
 
 # map data resolution  
-#deg1    <- T
-deg1    <- F
+deg1    <- T
+#deg1    <- F
 
 # data start year
 #styr    <- 1901 
@@ -258,8 +258,8 @@ fnorm <- function(df,norm) {
 ###############################
 ### start program
 
-#setwd(paste(dir,'src/sdgvm/tools/',sep='/'))
-setwd(tdir)
+setwd(paste(dir,'src/sdgvm/tools/',sep='/'))
+#setwd(tdir)
 source('params_map_plot.R')
 source('functions_map_plot.R')
 
@@ -429,7 +429,7 @@ for( v in 1:length(vars) ) {
     if((lab$gsum|lab$gmean)&is.null(diff)) {
 
       # area integrate
-      areai   <- area_integrate(mydata[,1:2],mydata[,3:length(mydata)],mod_res,lab$gmean)
+      areai   <- area_integrate(mydata[,1:2], mydata[,3:length(mydata)], mod_res, lab$gmean )
       gs      <- apply(as.matrix(areai),2,sum,na.rm=T)   
       mean_gs <- mean(gs[(yr_mean[1]-styr+1):(yr_mean[2]-styr+1)])  
       global_sum      <- if(m==sia[1])      gs else rbind(global_sum,gs)

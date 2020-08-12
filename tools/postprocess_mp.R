@@ -19,26 +19,26 @@ annual  <- T
 monthly <- T
 daily   <- F
 
-# stich output files from all grids into a single file
+# stich output files from all grids into a single file, use multiple processors
 stich   <- T
 mc      <- T
 
 # delete sub-grid files once processesed
 delete  <- F 
 
-# write CMOR netcdf output
+# write CMOR(ish) netcdf output
 netcdf  <- F
 
 # simulation res 1x1 degree, F - 0.5 x 0.5 
-deg1    <- F
+deg1    <- T
 
 # main directory
-#dir  <- '~/models/SDGVM/'
-dir <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/'
+dir  <- '~/models/SDGVM/'
+#dir <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/'
 
 # source code tools directory
-#fd   <- paste(dir,'src/sdgvm/tools/',sep='/')
-fd   <- paste(dir,'sdgvm/tools/',sep='/')
+fd   <- paste(dir,'src/sdgvm/tools/',sep='/')
+#fd   <- paste(dir,'sdgvm/tools/',sep='/')
 
 # directory in which simulation directory lives
 wd   <- paste(dir,'run/',sep='/')
@@ -49,16 +49,16 @@ sim  <- c('blank/')
 # index array to index the above 'sim' vector
 pia  <- 1
 
-# start year and number of years of data in daily and monthly SDGVM output
+# start year and number of years of data in SDGVM output files
 sty  <- 1700 
 ny   <- 319 
 
 # years of output requested for netcdf
 outsyear <- 1700 
-outeyear <- 2018 
+outeyear <- 2019 
 
 # number of parallel grid directories 
-grids  <- 64 
+grids  <- 32 
 
 # number of cores to run the analysis over 
 cores  <- 8 
@@ -82,12 +82,12 @@ ncdf_avars <- c('cVeg','cLitter','cSoil','cRoot','burntArea','landCoverFrac')
 #ncdf_mvars <- 'snow_depthpft' 
 #ncdf_mvars <- c('gpppft','tran','npppft')
 ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai',
-                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran')
+                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran','laipft')
 #ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans')
 #ncdf_mvars <- c('gpp','ra','npp','rh','nbp','lai',
 #                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran','landCoverFrac')
 #ncdf_mvars <- 'nbp' 
-#ncdf_mvars <- NULL 
+#ncdf_mvars <- 'laipft' 
 
 # nc file parameters
 mis_val   <- -99999
@@ -104,10 +104,10 @@ var       <- NULL
 # set variable for global attributes in netcdf files
 # institution and person (details and possible aliases are defined in functions_netcdf.R)
 # current options: ORNL_APW, UR_PCM 
-sdgvmuser <- 'UR_PCM'
+sdgvmuser <- 'ORNL_APW'
 
 # project name
-project   <- 'TRENDYv8, 2019'
+project   <- 'TRENDYv9, 2020'
 
 
 ### Parse command line arguments   

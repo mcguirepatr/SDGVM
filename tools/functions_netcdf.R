@@ -151,7 +151,7 @@ make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
   ncatt_put(newnc,0,attname='institution',attval=institution)
   ncatt_put(newnc,0,attname='history',attval=paste('created:',as.character(as.POSIXlt(Sys.time())),', by:',person,paste0('(',email,')')))
   if(!is.null(var$notes)) ncatt_put(newnc,0,attname='notes',attval=var$notes)
-  if(!is.null(pft))       ncatt_put(newnc,0,attname='PFTs',attval=paste(paste(pft,collapse=' '),'. These PFT distributions were derived by combining the HYDE 3.2 land-use and land-cover change database with the ESA GLCP 2014 data categorised according to SDGVM PFTs.',sep='') )
+  if(!is.null(pft))       ncatt_put(newnc,0,attname='PFTs',attval=paste(paste(pft,collapse=' '),'. PFT distributions were derived by combining the LUH2v2h land-use and land-cover change database with the ESA GLCP 2014 data categorised according to SDGVM PFTs.',sep='') )
    
 
   # data filename 

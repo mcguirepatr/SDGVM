@@ -280,7 +280,7 @@ nbppft <- list(
   file  = 'nep',
   pft   = T,
   lname = 'Vegtype level NBP',
-  units = 'kg m-2 s-1',
+  units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600),
   notes = 'These data area per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
 )
@@ -288,9 +288,18 @@ nbppft <- list(
 lai <- list(
   name  = 'lai',
   file  = 'lai',
-  pft   = T,
+  pft   = F,
   lname = 'Leaf Area Index',
   units = '-',
+  scale = 1
+)
+
+laipft <- list(
+  name  = 'laipft',
+  file  = 'lai',
+  pft   = T,
+  lname = 'Vegtype level Leaf Area Index',
+  units = '-, per unit land area occupied by the PFT',
   scale = 1
 )
 
@@ -301,7 +310,7 @@ landCoverFrac <- list(
   lname = 'Fractional Cover of PFT',
   units = '-',
   scale = 1,
-  notes = 'These are derived from the HYDE3.2 cropland and pasture cover dataset, 1860-2015, combined with the ESA CCI 2014 Land Cover maps (Poulter et al 2015) translated for the SDGVM PFT set. Cropland cover of the ESA dataset was reduced or increased according to HYDE while grassland cover in ESA was only increased by the psture cover in HYDE so as not to remoive natural grasslands. This likely high biased grassland cover in 1860. When deciding whether to run a site, SDGVM checks a high-resolution land-sea mask. if the grid cell is >50% land then the site is simulated assuming that the whole of the grid-cell is land. So the sum of the PFT landCoverFracs should always equal 1. Grid cells <50% land are not simulated.'
+  notes = 'These are derived from the LUH2v2h cropland and pasture cover dataset, 850-2020, combined with the ESA CCI 2014 Land Cover maps (Poulter et al 2015) translated for the SDGVM PFT set. Cropland cover of the ESA dataset was reduced or increased according to LUH2v2h while grassland cover in ESA was only increased by the pasture cover in LUH2v2h so as not to remove natural grasslands. This likely high biased grassland cover in 1700. When deciding whether to run a site, SDGVM checks a high-resolution land-sea mask. If the grid cell is >50% land then the site is simulated assuming that the whole of the grid-cell is land. So the sum of the PFT landCoverFracs should always equal 1. Grid cells <50% land are not simulated.'
 )
 
 
