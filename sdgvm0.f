@@ -3652,7 +3652,7 @@ c     monthly initialisations
             leafresp = 0.0d0
             rootresp = 0.0d0
             stemresp = 0.0d0
-            resp     = 0.0d0 !PCM
+            resp     = 0.0d0 
              
 *----------------------------------------------------------------------*
 * nppstore mols
@@ -4058,7 +4058,7 @@ c     check water cycle closure
 *----------------------------------------------------------------------*
 * Average outputs by cover proportions.                                *
 *----------------------------------------------------------------------*
-      avlai   = 0.0d0
+        avlai   = 0.0d0
 	avnpp   = 0.0d0
         avnppst = 0.0d0
 	avdof   = 0.0d0

@@ -21,6 +21,7 @@
 
 cd #RUNDIR#
 
+echo "`date` -- SDGVM EXECUTION HAS STARTED" 
 ./run_SDGVM.bs
 echo "`date` -- SDGVM EXECUTION HAS FINISHED" 
 

@@ -49,6 +49,7 @@ cd #RUNDIR#
 
 setenv OMP_NUM_THREADS 1
 
+echo "`date` -- SDGVM EXECUTION HAS STARTED" 
 
 ./run_SDGVM.bs
 

@@ -15,8 +15,8 @@ RUNDIR=$SDGVM_PDIR/$SDGVM_PROJECT/$RUN/
 
 
 # set up run directories
-mkdir $RUNDIR
-mkdir $RUNDIR/logs
+mkdir -p $RUNDIR
+mkdir -p $RUNDIR/logs
 
 
 # copy cleaning file
@@ -36,7 +36,7 @@ cp ./run_scripts/run_postprocessing.bs $RUNDIR
 
 
 # run sites script
-source ./sites/sites_${SDGVM_SITESCORES}.bs 
+#source ./sites/sites_${SDGVM_SITESCORES}.bs 
 
 
 # select and copy template input and param files
@@ -55,8 +55,9 @@ cp *param* $RUNDIR
 
 # modify run files
 cd ${RUNDIR}
-echo "Sites: ${SDGVM_SITES}"
-echo "Sites on each processor: ${SDGVM_N_SITES[*]}"
+#echo "Sites: ${SDGVM_SITES}"
+#echo "Sites on each processor: ${SDGVM_N_SITES[@]}"
+
 # submit script
 sed -i "s@#RUNDIR#@$RUNDIR@"                   submit*.${SDGVM_BATCHPROC}
 sed -i "s@#PROJECT#@$SDGVM_PROJECT@"           submit*.${SDGVM_BATCHPROC}
@@ -89,6 +90,7 @@ sed -i "s@#PDIR#@$SDGVM_PDIR$SDGVM_PROJECT@"   run_postprocessing.bs
 sed -i "s@#SIM#@$RUN@"                         run_postprocessing.bs
 sed -i "s@#SDGVMUSER#@$SDGVM_USER@"            run_postprocessing.bs
 sed -i "s@#TSITES#@$SDGVM_SITES_TOTAL@"        run_postprocessing.bs
+sed -i "s@#NP#@$SDGVM_NP@"                     run_postprocessing.bs
 
 
 

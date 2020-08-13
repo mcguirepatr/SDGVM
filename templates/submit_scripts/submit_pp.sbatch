@@ -21,6 +21,7 @@
 
 cd #RUNDIR#
 
+echo "`date` -- PP EXECUTION HAS STARTED" 
 ./run_postprocessing.bs
 echo "`date` -- PP EXECUTION HAS FINISHED" 
 

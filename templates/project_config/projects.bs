@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Sets up an SDGVM project, setup for a specific project within the broad class of simulations defined by runtype
+# called by setup_SDGVM_project.bs 
+# expects SDGVM_PROJECT to exist as an environment variable
+
+# to add a new project simply add an additional case to the below case statement 
+
+if [ $SDGVM_PROJECT == '' ]; then
+
+  # For TRENDYv7
+  # - relative to "template" directory in model source code directory 
+  SDGVM_CPRUN="master_mp"
+
+  # Spinup 
+  SDGVM_SPIN="spin_accelv7"
+
+  # Main simulation ensemble  
+  SDGVM_MAIN_SIMS=( S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
+  
+
+elif [ $SDGVM_PROJECT == '' ]; then
+
+  # for user-defined runtypes
+
+  # Spinup directory 
+  SDGVM_SPIN="spin"
+
+  # directory where template simulations are to be copied from, relative to model source code 
+  SDGVM_CPRUN=""
+
+  # Main simulation ensemble  
+  SDGVM_MAIN_SIMS=( run ) 
+
+
+else
+  SDGVM_SETUP_KILL=TRUE
+  export SDGVM_SETUP_KILL
+  echo ""
+  echo "No runtype: ${SDGVM_PROJECT}"
+  echo "pick one of: TRENDYv7, scratch" 
+  echo " or define your own in: ./projects.bs"
+  echo "SDGVM project setup ABORTED."
+  stop
+fi
+
+
+# export variables
+export SDGVM_SPIN 
+export SDGVM_MAIN_SIMS
+export SDGVM_CPRUN 
+
+
+
+### END ###

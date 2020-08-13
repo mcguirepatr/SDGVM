@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# Sets up an SDGVM user 
+# called by setup_SDGVM_project.bs 
+# expects SDGVM_USER to exist as an environment variable
+
+# to add a new user simply add an additional case to the below case statement 
+
+
+if [ $SDGVM_USER == 'ORNL_APW' ]; then
+
+  # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
+  SDGVM_HOME=~/models/SDGVM
+
+  # relative to SDGVM_HOME
+  SDGVM_PROJECTS_DIR="/run/"                 # all SDGVM projects are housed in subdirectories of this directory
+  SDGVM_DATA="/input_data/"                  # all SDGVM input data should be housed in subdirectories of this directory 
+  SDGVM_MOD="/src/sdgvm/"                    # SDGVM source code is found in this directory
+
+  # cluster scheduling variables
+  SDGVM_BATCHPROC="sbatch"                   # type of job submission system, copies submission script templates that have this file extension 
+  SDGVM_BATCHPROCCOM="sbatch submit.sbatch"  # command to run job submission scripts
+  SDGVM_USER_EMAIL="walkerap@ornl.gov"    
+  SDGVM_USER_ACCOUNT="ccsi"                  # user account on scheduling system
+  SDGVM_USER_QUEUE=""                        # user queue on scheduling system
+  SDGVM_USER_PARTITION="batch"               # user partition on scheduling system
+
+
+elif [ $SDGVM_USER == 'UR_PCM' ]; then
+
+  # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
+  SDGVM_HOME="/group_workspaces/jasmin2/nexcs/pmcguire"
+
+  # relative to SDGVM_HOME
+  SDGVM_PROJECTS_DIR="/sdgvmR/"
+  SDGVM_DATA="/sdgvmD/data/"
+  SDGVM_MOD="/TRENDYv8/sdgvm/"
+
+  # cluster scheduling variables
+  SDGVM_BATCHPROC="bsub"
+  SDGVM_BATCHPROCCOM="bsub < submit.bsub"
+  SDGVM_USER_EMAIL=""
+  SDGVM_USER_ACCOUNT=""
+  SDGVM_USER_QUEUE="par-multi"
+  SDGVM_USER_PARTITION=""
+
+else
+  SDGVM_SETUP_KILL=TRUE
+  export SDGVM_SETUP_KILL
+  echo ""
+  echo "No institute and username tag: ${SDGVM_USER}"
+  echo "pick one of: ORNL_APW, UR_PCM;"
+  echo " or define your own in: ./users.bs."
+  echo "SDGVM project setup ABORTED."
+  stop
+fi
+
+
+# export variables
+export SDGVM_HOME 
+export SDGVM_PROJECTS_DIR
+export SDGVM_DATA 
+export SDGVM_MOD 
+export SDGVM_BATCHPROC
+export SDGVM_BATCHPROCCOM
+export SDGVM_USER_EMAIL
+export SDGVM_USER_ACCOUNT
+export SDGVM_USER_QUEUE
+export SDGVM_USER_PARTITION
+
+
+
+### END ###

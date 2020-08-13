@@ -1,0 +1,164 @@
+#!/bin/bash
+
+# Sets up an SDGVM project composed of multiple related runs of SDGVM
+# calls setup_SDGVM.bs which sets up each individual run 
+
+# Arguments:
+# $1 - SDGVM_USER (required) -- options: ORNL_APW, UR_PCM
+# $2 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PROJECTS_DIR, houses a collection of runs (i.e. a project)
+# $3 - SDGVM_RUNTYPE (required) -- use a predefined 'runtype' 
+# $4 - SDGVM_SITESCORES (required) -- use a predefined set of sites, resolution, and cores  
+# $5 - SUBPROJECT name (optional) -- a label for a subgroup of simulations within a SDGVM_PROJECT 
+
+SDGVM_USER="$1"
+SDGVM_RUNTYPE="$2"
+SDGVM_PROJECT="$3"
+if [ ! -z $4 ]; then SDGVM_SITESCORES="$4"; else SDGVM_SITESCORES="CRUJRA_1deg_32cores"; fi
+if [ ! -z $5 ]; then SUBPROJECT="_$5"; else SUBPROJECT=""; fi
+
+
+
+# institute and user tag to customise simulation to user space and machine
+#=================================================================================#
+echo ""
+echo "User: ${SDGVM_USER}"
+echo "Runtype: ${SDGVM_RUNTYPE}"
+echo "Project: ${SDGVM_PROJECT}"
+
+
+cd ../templates/project_config/
+# set user-specific environment variables
+export SDGVM_USER
+source ./users.bs
+if [ ! -z $SDGVM_SETUP_KILL ]; then stop; fi
+
+# print input vars 
+echo ""
+echo "User specific variables"
+echo "Path to base SDGVM directory (SDGVM_HOME): $SDGVM_HOME "
+echo "Relative path to simulations directory (SDGVM_PROJECTS_DIR): $SDGVM_PROJECTS_DIR"
+echo "Relative path to input directory (SDGVM_DATA): $SDGVM_DATA "
+echo "Relative path to model source code directory (SDGVM_MOD): $SDGVM_MOD "
+echo "Cluster job submission type (SDGVM_BATCHPROC): $SDGVM_BATCHPROC"
+echo "Cluster job submission command (SDGVM_BATCHPROCCOM): $SDGVM_BATCHPROCCOM"
+echo "User email (SDGVM_USER_EMAIL): $SDGVM_USER_EMAIL"
+echo "User account on cluser (SDGVM_USER_ACCOUNT): $SDGVM_USER_ACCOUNT"
+echo "User queue (SDGVM_USER_QUEUE: $SDGVM_USER_QUEUE"
+echo "User partition (SDGVM_USER_PARTITION): $SDGVM_USER_PARTITION"
+
+
+# set runtype-specific environment variables
+export SDGVM_RUNTYPE
+source ./runtypes.bs
+if [ ! -z $SDGVM_SETUP_KILL ]; then stop; fi
+
+# print input vars 
+echo ""
+echo "Runtype specific variables"
+echo "Spin run (SDGVM_SPIN): ${SDGVM_SPIN}"
+echo "Main runs (SDGVM_MAIN_SIMS): ${SDGVM_MAIN_SIMS[*]}"
+echo "Copy directory (SDGVM_CPDIR): ${SDGVM_CPRUN}"
+
+
+# set project-specific environment variables
+export SDGVM_PROJECT
+#source ./projects.bs
+#if [ ! -z $SDGVM_SETUP_KILL ]; then stop; fi
+
+# print input vars 
+#echo ""
+#echo "Runtype specific variables"
+#echo "Spin run (SDGVM_SPIN): ${SDGVM_SPIN}"
+#echo "Main runs (SDGVM_MAIN_SIMS): ${SDGVM_MAIN_SIMS[*]}"
+#echo "Copy directory (SDGVM_CPDIR): ${SDGVM_CPRUN}"
+
+# run sites script
+cd ../sites
+source ./sites_${SDGVM_SITESCORES}.bs 
+
+# print input vars 
+echo
+echo "Site and parallel variables"
+echo "Sites file (SDGVM_SITES): $SDGVM_SITES "
+echo "Number of nodes (SDGVM_NODES): $SDGVM_NODES "
+echo "Number of processors, per node or total depending on submit script (SDGVM_NP): $SDGVM_NP "
+echo "Number of sites to run on each processor (SDGVM_N_SITES): ${SDGVM_N_SITES[*]} "
+echo "Number of sites in output files (SDGVM_SITES_TOTAL): $SDGVM_SITES_TOTAL "
+
+
+
+# create project and run directories and scripts
+#=================================================================================#
+
+# setup project directories
+# relative to SDGVM_HOME, where all SDGVM simulations live
+SDGVM_PDIR=${SDGVM_HOME}${SDGVM_PROJECTS_DIR}
+mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT
+mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT/tools
+mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT/tools/logs
+mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT/results
+
+
+cd ${SDGVM_HOME}${SDGVM_MOD}/tools 
+# setup project tools
+cp ./project_tools/* $SDGVM_PDIR/$SDGVM_PROJECT/tools
+sed -i "s@#PROJECT#@$SDGVM_PROJECT@"                $SDGVM_PDIR/$SDGVM_PROJECT/tools/*bs
+sed -i "s@#PROJDIR#@${SDGVM_PDIR}${SDGVM_PROJECT}@" $SDGVM_PDIR/$SDGVM_PROJECT/tools/*bs
+
+
+# setup project plotting scripts
+#cp ./plotting/plot_${SDGVM_PROJECT}.bs      $SDGVM_PDIR/$SDGVM_PROJECT/results
+#cp ./plotting/plot_spin_${SDGVM_PROJECT}.bs $SDGVM_PDIR/$SDGVM_PROJECT/results
+#sed -i "s@#PROJECT#@$SDGVM_PROJECT@"                $SDGVM_PDIR/$SDGVM_PROJECT/results/*bs
+#sed -i "s@#PROJDIR#@${SDGVM_PDIR}${SDGVM_PROJECT}@" $SDGVM_PDIR/$SDGVM_PROJECT/results/*bs
+
+
+# export additional variables
+export SDGVM_PDIR
+#export SDGVM_SITESCORES 
+export SDGVM_N_SITES
+
+
+# set up runs within project
+echo
+echo
+echo
+echo "Set up each simulation directory"
+echo "in SDGVM projects directory: $SDGVM_PDIR$SDGVM_PROJECT"
+SIMS=( $SDGVM_SPIN ${SDGVM_MAIN_SIMS[@]} )
+for s in ${SIMS[*]};do
+ echo "" 
+ echo $s
+ cd ${SDGVM_HOME}${SDGVM_MOD}/tools 
+ source ./setup_SDGVM.bs $s 
+done
+
+
+# could add code here to allow for the situation where there are more than one spin per project
+# var called SPIN2, if then reconfigure a few things and then run the above sims loop that calls setup_SDGVM 
+# would need to alter the run script setup, adding all spins to one scripts, all main runs to the next
+# would also need code that assigns the correct spin to the correct run script -- could provide as a second argument to setup_SDGVM.bs 
+
+
+cd ${SDGVM_HOME}${SDGVM_MOD}/tools 
+# setup project/subproject spin script
+cp run_project_template.bs  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#S#@${SDGVM_SPIN[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
+
+
+# setup project/subproject run script
+cp run_project_template.bs  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#S#@${MAIN_SIMS[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+
+
+echo
+echo
+echo "SDGVM project setup completed. "
+echo "Check run files in simulation directories to confirm correct setup."
+echo
+
+
+
+### END ###
