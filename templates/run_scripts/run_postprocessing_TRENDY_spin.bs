@@ -1,0 +1,19 @@
+#!/bin/bash
+
+SRCDIR=#HOME##MOD#/tools
+ARGS="nsites<-#TSITES# grids<-#NP# cores<-#NP# fd<-'${SRCDIR}' dir<-'#DIR#' wd<-'#PDIR#' sim<-'#SIM#' person<-'#NAME#' email<-'#EMAIL#' institution<-'#INSTITUTION#'" 
+TIMEARGS="ny<-#SPINNY# sty<-1"
+TIMEARGSMON="ny<-#SPINNY#"
+
+cd $SRCDIR
+# stich annual gridded output together
+ALLARGS="${ARGS} ${TIMEARGS} monthly<-F daily<-F netcdf<-F"
+Rscript postprocess_mp.R ${ALLARGS}
+
+# stich sub-annual gridded output together - monthly
+ALLARGS="${ARGS} ${TIMEARGS} annual<-F daily<-F netcdf<-F"
+Rscript postprocess_mp.R ${ALLARGS}
+
+
+
+### END ###

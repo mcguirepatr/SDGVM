@@ -6,49 +6,42 @@
 
 # to add a new project simply add an additional case to the below case statement 
 
-if [ $SDGVM_PROJECT == '' ]; then
+if [ $SDGVM_PROJECT == 'TRENDYv9test' ]; then
 
-  # For TRENDYv7
-  # - relative to "template" directory in model source code directory 
-  SDGVM_CPRUN="master_mp"
+  # For TRENDYv9
+  SDGVM_CLIMSTY=1901
+  SDGVM_SIMSTY=1700
+  SDGVM_SIMENDY=2019
+  SDGVM_OUTSTY=1900
 
-  # Spinup 
-  SDGVM_SPIN="spin_accelv7"
+  # data directories 
+  SDGVM_CLIMDIR="crujra_2020"           
+  SDGVM_LANDDIR="ESACCILCP2014_LUH2v2h_2020"           
 
-  # Main simulation ensemble  
-  SDGVM_MAIN_SIMS=( S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
-  
+elif [ $SDGVM_PROJECT == 'TRENDYv8' ]; then
 
-elif [ $SDGVM_PROJECT == '' ]; then
-
-  # for user-defined runtypes
-
-  # Spinup directory 
-  SDGVM_SPIN="spin"
-
-  # directory where template simulations are to be copied from, relative to model source code 
-  SDGVM_CPRUN=""
-
-  # Main simulation ensemble  
-  SDGVM_MAIN_SIMS=( run ) 
-
+  # For TRENDYv8
+  # Default specific time variables 
+  SDGVM_CLIMSTY=1901
+  SDGVM_SIMSTY=1700
+  SDGVM_SIMENDY=2018
+  SDGVM_OUTSTY=1900
 
 else
-  SDGVM_SETUP_KILL=TRUE
-  export SDGVM_SETUP_KILL
   echo ""
-  echo "No runtype: ${SDGVM_PROJECT}"
-  echo "pick one of: TRENDYv7, scratch" 
-  echo " or define your own in: ./projects.bs"
-  echo "SDGVM project setup ABORTED."
-  stop
+  echo "No project: ${SDGVM_PROJECT}"
+  echo "define your own in: ./projects.bs,"
+  echo "for now defaults associated with runtype are used."
 fi
 
 
 # export variables
-export SDGVM_SPIN 
-export SDGVM_MAIN_SIMS
-export SDGVM_CPRUN 
+export SDGVM_CLIMSTY
+export SDGVM_SIMSTY
+export SDGVM_SIMENDY
+export SDGVM_OUTSTY
+export SDGVM_CLIMDIR
+export SDGVM_LANDDIR
 
 
 

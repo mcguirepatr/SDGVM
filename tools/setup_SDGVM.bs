@@ -6,9 +6,10 @@
 # once a run is setup the only file that needs editing is the input file (input*.dat)
 
 # Arguments:
-# $1 - run name (required) -- relative to SDGVM_PDIR/SDGVM_PROJECT
+# $1 - run name (required) -- used as directory name, relative to SDGVM_PDIR/SDGVM_PROJECT
+# $2 - spin-up name (directory) associated with run name (required) -- relative to SDGVM_PDIR/SDGVM_PROJECT
 RUN=$1
-
+SPIN=$2
 
 # Run directory to copy files into:
 RUNDIR=$SDGVM_PDIR/$SDGVM_PROJECT/$RUN/
@@ -19,11 +20,11 @@ mkdir -p $RUNDIR
 mkdir -p $RUNDIR/logs
 
 
+cd ../templates/
 # copy cleaning file
 cp ./project_tools/clean.bs $RUNDIR 
 
 
-cd ../templates/
 # copy template submit scripts 
 cp ./submit_scripts/*.${SDGVM_BATCHPROC} $RUNDIR
 
@@ -31,12 +32,15 @@ cp ./submit_scripts/*.${SDGVM_BATCHPROC} $RUNDIR
 # copy template run scripts
 RUNF=run_SDGVM.bs
 #echo "Run file: " $RUNF
-cp ./run_scripts/$RUNF                 ${RUNDIR}$DEFTRUN
-cp ./run_scripts/run_postprocessing.bs $RUNDIR
-
-
-# run sites script
-#source ./sites/sites_${SDGVM_SITESCORES}.bs 
+cp ./run_scripts/$RUNF ${RUNDIR}$DEFTRUN
+if [[ ${RUN} == *spin* ]]; then
+ SPIN=''
+ echo "this run is a spin-up"
+ cp ./run_scripts/run_postprocessing_${SDGVM_RUNTYPE}_spin.bs $RUNDIR/run_postprocessing.bs
+else
+  cp ./run_scripts/run_postprocessing_${SDGVM_RUNTYPE}.bs $RUNDIR/run_postprocessing.bs
+fi
+echo "Spin-up for this run: $SPIN"
 
 
 # select and copy template input and param files
@@ -55,8 +59,6 @@ cp *param* $RUNDIR
 
 # modify run files
 cd ${RUNDIR}
-#echo "Sites: ${SDGVM_SITES}"
-#echo "Sites on each processor: ${SDGVM_N_SITES[@]}"
 
 # submit script
 sed -i "s@#RUNDIR#@$RUNDIR@"                   submit*.${SDGVM_BATCHPROC}
@@ -76,21 +78,38 @@ sed -i "s@#HOME#@$SDGVM_HOME@"                 run_SDGVM.bs
 sed -i "s@#MOD#@$SDGVM_MOD@"                   run_SDGVM.bs
 sed -i "s@#DATA#@$SDGVM_DATA@"                 run_SDGVM.bs
 sed -i "s@#INPUT#@$INPUT@"                     run_SDGVM.bs
-sed -i "s@#SPIN#@$SDGVM_SPIN@"                 run_SDGVM.bs
+sed -i "s@#SPIN#@$SPIN@"                       run_SDGVM.bs
 
 # SDGVM input file (commandline argument to SDGVM in run file, configures model run)
-sed -i "s@#DATA#@$SDGVM_DATA@"                 $INPUT
-sed -i "s@#HOME#@$SDGVM_HOME@"                 $INPUT
+sed -i "s@#DATA#@$SDGVM_DATA@"                  $INPUT
+sed -i "s@#HOME#@$SDGVM_HOME@"                  $INPUT
+sed -i "s@#CLIMDIR#@$SDGVM_CLIMDIR@"            $INPUT
+sed -i "s@#LANDDIR#@$SDGVM_LANDDIR@"            $INPUT
+sed -i "s@#NY#@$SDGVM_NY@g"                     $INPUT
+sed -i "s@#OUTNY#@$SDGVM_OUTNY@"                $INPUT
+sed -i "s@#SIMSTY#@$SDGVM_SIMSTY@g"             $INPUT
+sed -i "s@#SIMENDY#@$SDGVM_SIMENDY@g"           $INPUT
+sed -i "s@#OUTSTY#@$SDGVM_OUTSTY@g"             $INPUT
+sed -i "s@#CLIMSTY#@$SDGVM_CLIMSTY@g"           $INPUT
+sed -i "s@#PRECLIMNY#@$SDGVM_PRECLIMNY@g"       $INPUT
+sed -i "s@#SPINNY#@$SDGVM_SPINNY@g"             $INPUT
 
 # postprocessing script (called by submit script after completion of SDGVM run file execution)
-sed -i "s@#HOME#@$SDGVM_HOME@"                 run_postprocessing.bs
-sed -i "s@#MOD#@$SDGVM_MOD@"                   run_postprocessing.bs
-sed -i "s@#DIR#@$SDGVM_PDIR@"                  run_postprocessing.bs
-sed -i "s@#PDIR#@$SDGVM_PDIR$SDGVM_PROJECT@"   run_postprocessing.bs
-sed -i "s@#SIM#@$RUN@"                         run_postprocessing.bs
-sed -i "s@#SDGVMUSER#@$SDGVM_USER@"            run_postprocessing.bs
-sed -i "s@#TSITES#@$SDGVM_SITES_TOTAL@"        run_postprocessing.bs
-sed -i "s@#NP#@$SDGVM_NP@"                     run_postprocessing.bs
+sed -i "s@#HOME#@$SDGVM_HOME@"                    run_postprocessing.bs
+sed -i "s@#MOD#@$SDGVM_MOD@"                      run_postprocessing.bs
+sed -i "s@#DIR#@$SDGVM_PDIR@"                     run_postprocessing.bs
+sed -i "s@#PDIR#@$SDGVM_PDIR$SDGVM_PROJECT@"      run_postprocessing.bs
+sed -i "s@#SIM#@$RUN@"                            run_postprocessing.bs
+sed -i "s@#NAME#@$SDGVM_USER_NAME@"               run_postprocessing.bs
+sed -i "s/#EMAIL#/$SDGVM_USER_EMAIL/"             run_postprocessing.bs
+sed -i "s@#INSTITUTION#@$SDGVM_USER_INSTITUTION@" run_postprocessing.bs
+sed -i "s@#TSITES#@$SDGVM_SITES_TOTAL@"           run_postprocessing.bs
+sed -i "s@#NP#@$SDGVM_NP@g"                       run_postprocessing.bs
+sed -i "s@#NY#@$SDGVM_NY@"                        run_postprocessing.bs
+sed -i "s@#OUTNY#@$SDGVM_OUTNY@"                  run_postprocessing.bs
+sed -i "s@#STY#@$SDGVM_SIMSTY@"                   run_postprocessing.bs
+sed -i "s@#OUTSTY#@$SDGVM_OUTSTY@"                run_postprocessing.bs
+sed -i "s@#SPINNY#@$SDGVM_SPINNY@"                run_postprocessing.bs
 
 
 

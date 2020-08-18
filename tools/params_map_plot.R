@@ -126,18 +126,20 @@ sresp <- list(
   cols  = col.inc
 )
 presp <- list(
-  name  = 'Canopy_Respiration',
+  name  = 'Autotrophic_Respiration',
   nsub  = '',
   unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',
   gsum  = T,
   gmean = F,
   printsum = T,
-  at    = c(0,10,25,50,75,100,150,200,250,300,350,400),
-  cols  = col.inc
+  #at    = c(0,10,25,50,75,100,150,200,250,300,400,500),
+  #cols  = col.inc
+  at    = c(0,50,125,250,375,500,750,1000,1250,1500,1750,2000),
+  cols  = col.inc.gpp
 )
 mgresp <- list(
-  name  = 'Plant_Respiration',
+  name  = 'Plant_Respiration_check_(shouldbe0)',
   nsub  = '',
   unit  = 'gCm^-2*y^-1',
   sunit = 'PgC',

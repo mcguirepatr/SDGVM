@@ -21,10 +21,12 @@ if [ $SDGVM_USER == 'ORNL_APW' ]; then
   SDGVM_BATCHPROC="sbatch"                   # type of job submission system, copies submission script templates that have this file extension 
   SDGVM_BATCHPROCCOM="sbatch submit.sbatch"  # command to run job submission scripts
   SDGVM_USER_EMAIL="walkerap@ornl.gov"    
+  SDGVM_USER_NAME="Anthony P. Walker"    
+  SDGVM_USER_INSTITUTION="Oak Ridge National Laboratory"    
   SDGVM_USER_ACCOUNT="ccsi"                  # user account on scheduling system
   SDGVM_USER_QUEUE=""                        # user queue on scheduling system
   SDGVM_USER_PARTITION="batch"               # user partition on scheduling system
-
+    
 
 elif [ $SDGVM_USER == 'UR_PCM' ]; then
 
@@ -39,20 +41,22 @@ elif [ $SDGVM_USER == 'UR_PCM' ]; then
   # cluster scheduling variables
   SDGVM_BATCHPROC="bsub"
   SDGVM_BATCHPROCCOM="bsub < submit.bsub"
-  SDGVM_USER_EMAIL=""
+  SDGVM_USER_EMAIL="mcguirepatr@gmail.com"
+  SDGVM_USER_NAME="Patrick C. McGuire"    
+  SDGVM_USER_INSTITUTION="University of Reading"    
   SDGVM_USER_ACCOUNT=""
   SDGVM_USER_QUEUE="par-multi"
   SDGVM_USER_PARTITION=""
 
 else
-  SDGVM_SETUP_KILL=TRUE
-  export SDGVM_SETUP_KILL
   echo ""
-  echo "No institute and username tag: ${SDGVM_USER}"
-  echo "pick one of: ORNL_APW, UR_PCM;"
-  echo " or define your own in: ./users.bs."
+  echo "No institute and username tag:"
+  echo "  ${SDGVM_USER}"
+  echo "pick one of:"
+  echo "  ORNL_APW, UR_PCM"
+  echo " or define your own in: ../project_config/users.bs."
   echo "SDGVM project setup ABORTED."
-  stop
+  exit 1
 fi
 
 
@@ -64,6 +68,8 @@ export SDGVM_MOD
 export SDGVM_BATCHPROC
 export SDGVM_BATCHPROCCOM
 export SDGVM_USER_EMAIL
+export SDGVM_USER_NAME
+export SDGVM_USER_INSTITUTION
 export SDGVM_USER_ACCOUNT
 export SDGVM_USER_QUEUE
 export SDGVM_USER_PARTITION

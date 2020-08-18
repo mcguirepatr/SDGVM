@@ -88,7 +88,7 @@ slice <- function(i,l,nsites){
 
 make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
                                nsites=1548, nyears=110, osyr=1901, lon=3.75, lat=2.5, mv=-99999,
-                               sdgvmuser='ORNL_APW', ... ) {
+                               person='Anthony P. Walker', email='walkerap@ornl.gov', institution='Oak Ridge National Laboratory',  ... ) {
 
   # creates netcdf and call the read write function
   var <- get(varo)
@@ -112,14 +112,19 @@ make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
     st <- 24        ; end <- 24*360*nyears ; sa <- 360   
   }
   # provides time at mid-point of timestep 
+  print('')
+  print('')
+  print(st)
+  print(end)
+  print(nyears)
   time_seq <- seq(st,end,st) - st/2
   
 
   # create the nc dimensions
-  nclon   <- ncdim_def( name='lon',units='degrees_east',vals=(seq(-180+lon/2,180-lon/2,lon)) )
-  nclat   <- ncdim_def( name='lat',units='degrees_north',vals=(seq(-90+lat/2,90-lat/2,lat)) )
+  nclon   <- ncdim_def( name='longitude',units='degrees_east',vals=(seq(-180+lon/2,180-lon/2,lon)) )
+  nclat   <- ncdim_def( name='latitude',units='degrees_north',vals=(seq(-90+lat/2,90-lat/2,lat)) )
   nctime  <- ncdim_def( name='time',units=paste('hours since ',osyr,'-01-01 00:00:00',sep=''),vals=time_seq,unlim=T )
-  if(!is.null(pft)) ncpft <- ncdim_def( name='vegtype',units='pft id, see notes',vals=1:length(pft) )
+  if(!is.null(pft)) ncpft <- ncdim_def( name='PFT',units='pft id, see global attributes',vals=1:length(pft) )
   
 
   # create the ncdf4 object of the var
@@ -135,17 +140,6 @@ make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
   ncatt_put(newnc,'time',attname='calendar',attval='360_day')
 
   # determine global attributes
-  institution <- 
-    if(grepl('ORNL',sdgvmuser))    'Oak Ridge National Laboratory' 
-    else if(grepl('UR',sdgvmuser)) 'University of Reading' 
-    
-  if(grepl('APW',sdgvmuser)) {
-    person <- 'Anthony P. Walker'
-    email  <- 'walkerap@ornl.gov'
-  } else if(grepl('PCM',sdgvmuser)) {
-    person <- 'Patrick C. McGuire'
-    email  <- 'mcguirepatr@gmail.com'
-  }
 
   # set global attributes
   ncatt_put(newnc,0,attname='title',attval=paste('SDGVM output for', project ))

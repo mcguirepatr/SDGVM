@@ -10,7 +10,7 @@ echo $DIRS
 
 for d in ${DIRS[@]}; do
   cd ${d}/output
-  for f in SDGVM*; do gzip $f; done
+  for f in SDGVM*.nc; do gzip $f; done
   cd ../..
 done 
 

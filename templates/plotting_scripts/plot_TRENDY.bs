@@ -1,0 +1,34 @@
+#!/bin/bash
+
+SRCDIR=#HOME##MOD#/tools
+ARGS="of<-'#PROJECT#' sim<-c( #S#  ) styr<-#STY# endyr<-#ENDY# yr_mean<-c(#ENDY#-9,#ENDY#) project<-'#PROJECT#'"
+
+
+cd $SRCDIR
+
+# general plots
+ALLARGS="${ARGS} via<-c(1:15,18:21,33:35)"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+# NBP TRENDY csv files
+ALLARGS="${ARGS} via<-3 of<-'#PROJECT#_NBP' trendy<-T"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+# NPP store plots 
+ALLARGS="${ARGS} via<-36 of<-'#PROJECT#_NPP_store'"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+# cover variables
+ALLARGS="${ARGS} via<-24:32 cov_fixed<-T"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+# early
+ALLARGS="${ARGS} via<-c(3,8,15) of<-'#PROJECT#_nbp#STY#' yr_mean<-c(#STY#,#STY#+1)) pyear<-#STY#"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+
+
+### END ###
+
+
+

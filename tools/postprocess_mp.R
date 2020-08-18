@@ -21,7 +21,7 @@ daily   <- F
 
 # stich output files from all grids into a single file, use multiple processors
 stich   <- T
-mc      <- T
+mc      <- F 
 
 # delete sub-grid files once processesed
 delete  <- F 
@@ -54,8 +54,8 @@ sty  <- 1700
 ny   <- 319 
 
 # years of output requested for netcdf
-outsyear <- 1700 
-outeyear <- 2019 
+outsyear <- NULL 
+outeyear <- NULL 
 
 # number of parallel grid directories 
 grids  <- 32 
@@ -102,9 +102,10 @@ pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl'
 var       <- NULL
 
 # set variable for global attributes in netcdf files
-# institution and person (details and possible aliases are defined in functions_netcdf.R)
-# current options: ORNL_APW, UR_PCM 
-sdgvmuser <- 'ORNL_APW'
+# person, email, institution
+person      <- 'Anthony P. Walker'
+email       <- 'walkerap@ornl.gov'
+institution <- 'Oak Ridge National Laboratory'
 
 # project name
 project   <- 'TRENDYv9, 2020'
@@ -134,7 +135,10 @@ if(deg1){
 
 if(is.null(outsyear)) outsyear <- sty
 if(is.null(outeyear)) outeyear <- sty + ny - 1
-
+print('')
+print('')
+print(sty)
+print(ny)
 
 ### Read in functions 
 ##########################
@@ -201,7 +205,7 @@ if(netcdf) lapply(wd_list[pia], write_sdgvm_netcdf,
                   mfiles=ncdf_mvars,
                   mc=T, procs=cores,
                   nsites=nsites, nyears=outnyears, styr=sty, lon=lon, lat=lat,
-                  osyr=outsyear, sdgvmuser=sdgvmuser )
+                  osyr=outsyear, person=person, email=email, institution=institution )
 
 
 
