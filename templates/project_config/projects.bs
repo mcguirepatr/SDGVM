@@ -6,7 +6,7 @@
 
 # to add a new project simply add an additional case to the below case statement 
 
-if [ $SDGVM_PROJECT == 'TRENDYv9test' ]; then
+if [ $SDGVM_PROJECT == 'TRENDYv9' ]; then
 
   # For TRENDYv9
   SDGVM_CLIMSTY=1901
