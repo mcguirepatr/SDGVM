@@ -5,8 +5,8 @@
 
 # Arguments:
 # $1 - SDGVM_USER (required) -- options: ORNL_APW, UR_PCM
-# $2 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PROJECTS_DIR, houses a collection of runs (i.e. a project)
-# $3 - SDGVM_RUNTYPE (required) -- use a predefined 'runtype' 
+# $2 - SDGVM_RUNTYPE (required) -- use a predefined 'runtype' 
+# $3 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PROJECTS_DIR, houses a collection of runs (i.e. a project)
 # $4 - SDGVM_SITESCORES (required) -- use a predefined set of sites, resolution, and cores  
 # $5 - SUBPROJECT name (optional) -- a label for a subgroup of simulations within a SDGVM_PROJECT 
 
@@ -21,158 +21,205 @@ if [ ! -z $5 ]; then SUBPROJECT="_$5"; else SUBPROJECT=""; fi
 # institute and user tag to customise simulation to user space and machine
 #=================================================================================#
 echo ""
-echo "Project: ${SDGVM_PROJECT}"
+echo ""
 echo "User: ${SDGVM_USER}"
-
-if [ $SDGVM_USER == 'ORNL_APW' ]; then
-
-  # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
-  SDGVM_HOME=~/models/SDGVM
-
-  # relative to SDGVM_HOME
-  SDGVM_PROJECTS_DIR="/run/"                 # all SDGVM projects are housed in subdirectories of this directory
-  SDGVM_DATA="/input_data/"                  # all SDGVM input data should be housed in subdirectories of this directory 
-  SDGVM_MOD="/src/sdgvm/"                    # SDGVM source code is found in this directory
-
-  # cluster scheduling variables
-  SDGVM_BATCHPROC="sbatch"                   # type of job submission system, copies submission script templates that have this file extension 
-  SDGVM_BATCHPROCCOM="sbatch submit.sbatch"  # command to run job submission scripts
-  SDGVM_USER_EMAIL="walkerap@ornl.gov"    
-  SDGVM_USER_ACCOUNT="ccsi"                  # user account on scheduling system
-  SDGVM_USER_QUEUE=""                        # user queue on scheduling system
-  SDGVM_USER_PARTITION="batch"               # user partition on scheduling system
+echo "Runtype: ${SDGVM_RUNTYPE}"
+echo "Project: ${SDGVM_PROJECT}"
 
 
-elif [ $SDGVM_USER == 'UR_PCM' ]; then
-
-  # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
-  SDGVM_HOME="/group_workspaces/jasmin2/nexcs/pmcguire"
-
-  # relative to SDGVM_HOME
-  SDGVM_PROJECTS_DIR="/sdgvmR/"
-  SDGVM_DATA="/sdgvmD/data/"
-  SDGVM_MOD="/TRENDYv8/sdgvm/"
-
-  # cluster scheduling variables
-  SDGVM_BATCHPROC="bsub"
-  SDGVM_BATCHPROCCOM="bsub < submit.bsub"
-  SDGVM_USER_EMAIL=""
-  SDGVM_USER_ACCOUNT=""
-  SDGVM_USER_QUEUE="par-multi"
-  SDGVM_USER_PARTITION=""
-
-else
-  echo ""
-  echo "No institute and username tag: ${SDGVM_USER}"
-  echo "pick one of: ORNL_APW, UR_PCM;"
-  echo " or define your own"
-  echo "SDGVM project setup ABORTED."
-  stop
-fi
-
-
-
-# Define runtype variables
-#=================================================================================#
-if [ $SDGVM_RUNTYPE == 'TRENDYv7' ]; then
-
-  # For TRENDYv7
-  # - and later TRENDY iterations
-
-  # directory where template simulations are to be copied from 
-  # - relative to "template" directory in model source code directory 
-  SDGVM_CPRUN="master_mp"
-
-  # Spinup 
-  SDGVM_SPIN="spin_accelv7"
-
-  # Main simulation ensemble  
-  MAIN_SIMS=( S0v7 S1v7 S2v7 S3v7 S4v7 S8v7 )
-  #MAIN_SIMS=( S0 S1 S2 S3  ) ## pre v7 TRENDY
-  
-
-elif [ $SDGVM_RUNTYPE == 'scratch' ]; then
-
-  # for user-defined runtypes
-
-  # Spinup directory 
-  SDGVM_SPIN="spin"
-
-  # directory where template simulations are to be copied from, relative to model source code 
-  SDGVM_CPRUN=""
-
-  # Main simulation ensemble  
-  #MAIN_SIMS=( NC_zen0_beers C_zen0_beers C_zen_beers C_zen0_beersC C_zen_beersC NC_zen0_LP C_zen0_LP C_zen_LP  )
-  #MAIN_SIMS=( Walker_N_ModA Walker_N_ModA_Tacc Kattge_ModA Kattge_ModA_Tacc  )
-  #MAIN_SIMS=( Constant Constant_ModA Constant_ModA_Tacc LUNA LUNA_ModA LUNA_ModA_Tacc  )
-  #MAIN_SIMS=( tpu0 tpu1 tpu2 tpu3  )
-  #MAIN_SIMS=( spin_accelv7 S0v7 S1v7 S3v7 spin_accelv7_npslim S0v7_npslim S1v7_npslim S3v7_npslim spin_accelv7_bamort S0v7_bamort S1v7_bamort S3v7_bamort )
-  #MAIN_SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
-  #MAIN_SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
-  MAIN_SIMS=( run ) 
-
-
-else
-  echo ""
-  echo "No runtype: ${SDGVM_RUNTYPE}"
-  echo "pick one of: TRENDYv7, scratch" 
-  echo " or define your own"
-  echo "SDGVM project setup ABORTED."
-  stop
-fi
+cd ../templates/project_config/
+# set user-specific environment variables
+#======================================#
+export SDGVM_USER
+source ./users.bs
+if [ $? == 1 ]; then exit; fi
 
 # print input vars 
 echo ""
-echo "Runtype: ${SDGVM_RUNTYPE}"
-echo "Spin run: ${SDGVM_SPIN}"
-echo "Main runs: ${MAIN_SIMS[*]}"
-echo "Copy directory: ${SDGVM_CPRUN}"
-echo "Sites file: sites_${SDGVM_SITESCORES}.bs"
+echo "User specific variables"
+echo "======================================"
+echo "Path to base SDGVM directory (SDGVM_HOME):"
+echo "  $SDGVM_HOME "
+echo "Relative path to simulations directory (SDGVM_PROJECTS_DIR):"
+echo "  $SDGVM_PROJECTS_DIR"
+echo "Relative path to input directory (SDGVM_DATA):"
+echo "  $SDGVM_DATA "
+echo "Relative path to model source code directory (SDGVM_MOD):"
+echo "  $SDGVM_MOD "
+echo "Cluster job submission type (SDGVM_BATCHPROC):"
+echo "  $SDGVM_BATCHPROC"
+echo "Cluster job submission command (SDGVM_BATCHPROCCOM):"
+echo "  $SDGVM_BATCHPROCCOM"
+echo "User name (SDGVM_USER_NAME):"
+echo "  $SDGVM_USER_NAME"
+echo "User email (SDGVM_USER_EMAIL):"
+echo "  $SDGVM_USER_EMAIL"
+echo "User email (SDGVM_USER_INSTITUTION):"
+echo "  $SDGVM_USER_INSTITUTION"
+echo "User account on cluser (SDGVM_USER_ACCOUNT):"
+echo "  $SDGVM_USER_ACCOUNT"
+echo "User queue (SDGVM_USER_QUEUE):"
+echo "  $SDGVM_USER_QUEUE"
+echo "User partition (SDGVM_USER_PARTITION):"
+echo "  $SDGVM_USER_PARTITION"
+
+
+# set runtype-specific environment variables
+#======================================#
+export SDGVM_RUNTYPE
+source ./runtypes.bs
+if [ $? == 1 ]; then exit; fi
+TEMPINT="${SDGVM_SPIN[*]}"
+SDGVM_SPIN_STR=`echo ${TEMPINT// /,\ }`
+TEMPINT="${SDGVM_MAIN_SIMS[*]}"
+SDGVM_MAIN_SIMS_STR=`echo ${TEMPINT// /,\ }`
+
+# print input vars 
+echo ""
+echo "Runtype specific variables"
+echo "======================================"
+echo "Copy directory (SDGVM_CPDIR):"
+echo "  ${SDGVM_CPRUN}"
+echo "Spin runs (SDGVM_SPIN):"
+echo "  ${SDGVM_SPIN[*]}"
+echo "Spin runs string (SDGVM_SPIN_STR):"
+echo "  ${SDGVM_SPIN_STR}"
+echo "Main runs (SDGVM_MAIN_SIMS):"
+echo "  ${SDGVM_MAIN_SIMS[*]}"
+echo "Main runs string (SDGVM_MAIN_SIMS_STR):"
+echo "  ${SDGVM_MAIN_SIMS_STR}"
+echo "Number of spin up years (SDGVM_SPINNY):"
+echo "  ${SDGVM_SPINNY}"
+
+
+# set project-specific environment variables
+#======================================#
+export SDGVM_PROJECT
+source ./projects.bs
+((SDGVM_NY=$SDGVM_SIMENDY - $SDGVM_SIMSTY + 1))
+((SDGVM_PRECLIMNY=$SDGVM_CLIMSTY - $SDGVM_SIMSTY))
+((SDGVM_OUTNY=$SDGVM_SIMENDY - $SDGVM_OUTSTY + 1))
+export SDGVM_NY
+export SDGVM_PRECLIMNY
+export SDGVM_OUTNY
+
+# print input vars 
+echo ""
+echo "Project specific variables"
+echo "======================================"
+echo "Climate data directory (SDGVM_CLIMDIR):"
+echo "  ${SDGVM_CLIMDIR}"
+echo "Land-use data directory (SDGVM_LANDDIR):"
+echo "  ${SDGVM_LANDDIR}"
+echo "First year of climate data (SDGVM_CLIMSTY):"
+echo "  ${SDGVM_CLIMSTY}"
+echo "First year of simulation (SDGVM_SIMSTY):"
+echo "  ${SDGVM_SIMSTY}"
+echo "Final year of simulation (SDGVM_SIMENDY):"
+echo "  ${SDGVM_SIMENDY}"
+echo "First year of output if not first year of simulation (SDGVM_OUTSTY):"
+echo "  ${SDGVM_OUTSTY}"
+echo "Number of simulation years (SDGVM_NY):"
+echo "  ${SDGVM_NY}"
+echo "Number of simulation years prior to start of climate (SDGVM_PRECLIMNY):"
+echo "  ${SDGVM_PRECLIMNY}"
+echo "Number of output years for reduced output (SDGVM_OUTNY):"
+echo "  ${SDGVM_OUTNY}"
+
+
+# run sites script
+#======================================#
+cd ../sites
+source ./sites_${SDGVM_SITESCORES}.bs 
+
+# print input vars 
 echo
+echo "Site and parallel variables"
+echo "======================================"
+echo "Sites file (SDGVM_SITES):"
+echo "  $SDGVM_SITES "
+echo "Number of nodes (SDGVM_NODES):"
+echo "  $SDGVM_NODES "
+echo "Number of processors, per node or total depending on submit script (SDGVM_NP):"
+echo "  $SDGVM_NP "
+echo "Number of sites to run on each processor (SDGVM_N_SITES):"
+echo "  ${SDGVM_N_SITES[*]} "
+echo "Number of sites in output files (SDGVM_SITES_TOTAL):"
+echo "  $SDGVM_SITES_TOTAL "
 
 
-# create project and run directories and scripts
+
+# create project level directories and scripts
 #=================================================================================#
 
 # setup project directories
 # relative to SDGVM_HOME, where all SDGVM simulations live
 SDGVM_PDIR=${SDGVM_HOME}${SDGVM_PROJECTS_DIR}
+export SDGVM_PDIR
 mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT
 mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT/tools
 mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT/tools/logs
+mkdir -p $SDGVM_PDIR/$SDGVM_PROJECT/results
 
 
+cd ${SDGVM_HOME}${SDGVM_MOD}/templates 
 # setup project tools
 cp ./project_tools/* $SDGVM_PDIR/$SDGVM_PROJECT/tools
-sed -i "s@#PROJECT#@$SDGVM_PROJECT@"                $SDGVM_PDIR/$SDGVM_PROJECT/tools/*bs
-sed -i "s@#PROJDIR#@${SDGVM_PDIR}${SDGVM_PROJECT}@" $SDGVM_PDIR/$SDGVM_PROJECT/tools/*bs
+sed -i "s@#PROJECT#@$SDGVM_PROJECT@"                $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#PROJDIR#@${SDGVM_PDIR}${SDGVM_PROJECT}@" $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s/#EMAIL#/$SDGVM_USER_EMAIL/"               $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.* 
+sed -i "s@#ACCOUNT#@$SDGVM_USER_ACCOUNT@"           $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#QUEUE#@$SDGVM_USER_QUEUE@"               $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION@"       $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#NODES#@$SDGVM_NODES@"                    $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#NP#@$SDGVM_NP@"                          $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
 
 
-# export variables
-export SDGVM_USER
-export SDGVM_HOME 
-export SDGVM_PROJECT
-export SDGVM_DATA 
-export SDGVM_MOD 
-export SDGVM_PDIR
-export SDGVM_BATCHPROC
-export SDGVM_BATCHPROCCOM
-export SDGVM_SITESCORES 
-export SDGVM_SPIN 
-#export SDGVM_RUN 
-export SDGVM_CPRUN 
-export SDGVM_USER_EMAIL
-export SDGVM_USER_ACCOUNT
-export SDGVM_USER_QUEUE
-export SDGVM_USER_PARTITION
+cd ${SDGVM_HOME}${SDGVM_MOD}/tools 
+# setup project/subproject spin script
+cp run_project_template.bs  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#S#@${SDGVM_SPIN[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
+
+
+# setup project/subproject run script
+cp run_project_template.bs  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#S#@${SDGVM_MAIN_SIMS[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+
+
+# setup project plotting scripts
+cd $SDGVM_PDIR/$SDGVM_PROJECT/results/ 
+cp ${SDGVM_HOME}${SDGVM_MOD}/templates/plotting_scripts/plot*${SDGVM_RUNTYPE}.bs .
+sed -i "s@#HOME#@$SDGVM_HOME@"         plot*${SDGVM_RUNTYPE}.bs 
+sed -i "s@#MOD#@$SDGVM_MOD@"           plot*${SDGVM_RUNTYPE}.bs 
+sed -i "s@#S#@${SDGVM_SPIN_STR}@"      plot_spin_${SDGVM_RUNTYPE}.bs 
+sed -i "s@#S#@${SDGVM_MAIN_SIMS_STR}@" plot_${SDGVM_RUNTYPE}.bs 
+sed -i "s@#PROJECT#@$SDGVM_PROJECT@g"  plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#SPINNY#@$SDGVM_SPINNY@g"    plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#STY#@$SDGVM_SIMSTY@g"       plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#ENDY#@$SDGVM_SIMENDY@g"     plot*${SDGVM_RUNTYPE}.bs   
+
 
 
 # set up runs within project
-SIMS=( $SDGVM_SPIN ${MAIN_SIMS[@]} )
+#=================================================================================#
+# export additional variables
+#export SDGVM_SITESCORES 
+#export SDGVM_N_SITES
+
+echo
+echo
+echo
+echo "Set up each simulation directory"
+echo "in SDGVM projects directory: $SDGVM_PDIR$SDGVM_PROJECT"
+echo "======================================"
+SIMS=( $SDGVM_SPIN ${SDGVM_MAIN_SIMS[@]} )
 for s in ${SIMS[*]};do
  echo "" 
  echo $s
- ./setup_SDGVM.bs $s 
+ cd ${SDGVM_HOME}${SDGVM_MOD}/tools 
+ source ./setup_SDGVM.bs $s $SDGVM_SPIN
 done
 
 
@@ -182,16 +229,12 @@ done
 # would also need code that assigns the correct spin to the correct run script -- could provide as a second argument to setup_SDGVM.bs 
 
 
-# setup project/subproject spin script
-cp run_project_template.bs  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
-sed -i "s@#S#@${SDGVM_SPIN[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
-sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_spin_${SDGVM_PROJECT}${SUBPROJECT}.bs
-
-
-# setup project/subproject run script
-cp run_project_template.bs  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
-sed -i "s@#S#@${MAIN_SIMS[*]}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
-sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run_${SDGVM_PROJECT}${SUBPROJECT}.bs
+# print completion
+echo
+echo
+echo "SDGVM project setup completed."
+echo "Check run files in simulation directories to confirm correct setup."
+echo
 
 
 

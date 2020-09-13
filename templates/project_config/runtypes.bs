@@ -48,11 +48,11 @@ elif [ $SDGVM_RUNTYPE == 'scratch' ]; then
   #MAIN_SIMS=( NC_zen0_beers C_zen0_beers C_zen_beers C_zen0_beersC C_zen_beersC NC_zen0_LP C_zen0_LP C_zen_LP  )
   #MAIN_SIMS=( Walker_N_ModA Walker_N_ModA_Tacc Kattge_ModA Kattge_ModA_Tacc  )
   #MAIN_SIMS=( Constant Constant_ModA Constant_ModA_Tacc LUNA LUNA_ModA LUNA_ModA_Tacc  )
-  #MAIN_SIMS=( tpu0 tpu1 tpu2 tpu3  )
+  SDGVM_MAIN_SIMS=( tpu0 tpu1 tpu2 tpu3  )
   #MAIN_SIMS=( spin_accelv7 S0v7 S1v7 S3v7 spin_accelv7_npslim S0v7_npslim S1v7_npslim S3v7_npslim spin_accelv7_bamort S0v7_bamort S1v7_bamort S3v7_bamort )
   #MAIN_SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
   #MAIN_SIMS=( spin_accelv8 spin_shortv8 S0v8 S2p1v8 S2p1_2017_v8 S2p2v8 S2p3v8 )
-  SDGVM_MAIN_SIMS=( run ) 
+  #SDGVM_MAIN_SIMS=( run ) 
 
   # Default specific time variables that can be over-written when projects.bs is run
   SDGVM_CLIMSTY=1901
