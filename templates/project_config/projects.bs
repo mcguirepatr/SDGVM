@@ -27,6 +27,18 @@ elif [ $SDGVM_PROJECT == 'TRENDYv8' ]; then
   SDGVM_SIMENDY=2018
   SDGVM_OUTSTY=1900
 
+elif [ $SDGVM_PROJECT == 'TRENDYv7' ]; then
+
+  # For TRENDYv7
+  SDGVM_CLIMSTY=1901
+  SDGVM_SIMSTY=1700
+  SDGVM_SIMENDY=2017
+  SDGVM_OUTSTY=1900
+
+  # data directories 
+  SDGVM_CLIMDIR="crujra_2018"           
+  SDGVM_LANDDIR="ESACCILCP2014_LUH2v2h.1"           
+
 else
   echo ""
   echo "No project: ${SDGVM_PROJECT}"
