@@ -183,6 +183,7 @@ process_sdgvm_matrix <- function(dv,atr,ad,nyears,...){
          dmatstack )
 }
 
+
 read_grid <- function(g,ifile,wd){
   print(paste('read_grid:',ifile,'grid:',g))
   print(paste('read_grid:',wd,'grid',g,'/',sep=''))
@@ -190,6 +191,7 @@ read_grid <- function(g,ifile,wd){
   setwd(paste(wd,'grid',g,'/',sep=''))
   read.table(ifile,na.strings=c('*******','********','*********','**********','***********','************'))
 }
+
 
 scan_grid <- function(g,ifile,wd){
   print(paste('scan_grid:','grid',g))
@@ -199,10 +201,52 @@ scan_grid <- function(g,ifile,wd){
   scan(ifile,na.strings=c('*******','********','*********','**********','***********','************'))
 }
 
+
 write_sdgvm <- function(df,file,w=10){
   print(paste("writing",file,sep=" "))
   write.table(format(df,width=w),file,row.names=F,col.names=F,quote=F) #PCM
   #write.fwf(df,file,width=w,justify='left',rownames=F,colnames=F,na='NA') #PCM
+}
+
+
+read_SDGVM_daily <- function(ifile, sy, ey ) {
+  ny = ey - sy + 1
+
+  print(sy)
+  print(ey)
+
+  # read lat lon
+  v1 <- scan(ifile, nlines=1, quiet=T )
+  
+  # read years
+  skip <- 1
+  for( y in 1:ny ) {
+    v2 <- scan(ifile, skip=skip, nlines=1, quiet=T  )
+    v3 <- scan(ifile, skip=skip+1, nlines=12, quiet=T  )
+    skip <- skip + 1 + 12
+    df1 <- data.frame(year=v2, doy=1:length(v3), var=v3 )
+    df2 <- if(y==1) df1 else rbind(df2,df1)  
+  }
+  df2
+}
+
+
+read_SDGVM_site_info <- function(npft=10) {
+
+  ifile   <- 'site_info.dat'
+  nfields <- 15+2*npft
+  l  <- list('character')
+  for(i in 1:(nfields-1)) l <- c(l,list('numeric'))
+# read lat lon
+  v1 <- scan(ifile, nlines=1, what='character' )
+  
+  # read years
+  v2 <- scan(ifile, skip=1, nlines=1, what=l )
+
+  m  <- t(as.matrix(as.numeric(unlist(v2[2:(nfields)]))))
+  df1 <- as.data.frame(m)
+  names(df1) <- c(v1[2:13], rep(v1[16:(15+npft)], each=2) )
+  df1
 }
 
 

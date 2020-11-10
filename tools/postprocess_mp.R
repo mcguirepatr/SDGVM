@@ -89,6 +89,16 @@ ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','r
 #ncdf_mvars <- 'nbp' 
 #ncdf_mvars <- 'laipft' 
 
+# site variables for single site output with multiple vars
+site_vars <- c('tas', 'ta', 'tsl', 'pr', 'hur', 'rsds', 'pot_evapotrans', 
+               'cVegd',
+               'cLitterd', 'cSoild', 'cLeafd', 'cRootd', 'cWoodd','cMiscd', 
+               'fVegLitter', 'fLitterSoil', 
+               'mrso', 'rzwc', 'mrsos', 'mrro', 'snw', 'mrsow', 
+               'evapotrans', 'tran', 'es', 'hfls',
+               'gpp', 'npp', 'nep', 'ra', 'rh', 'lai' )
+#site_vars <- NULL
+
 # nc file parameters
 mis_val   <- -99999
 nsites    <- 62220 
@@ -110,6 +120,9 @@ institution <- 'Oak Ridge National Laboratory'
 # project name
 project   <- 'TRENDYv9, 2020'
 
+# site name
+site      <- NULL
+
 
 ### Parse command line arguments   
 ##########################
@@ -124,6 +137,8 @@ if(length(commandArgs(T))>=1) {
 
 if(!annual)  ncdf_avars <- NULL
 if(!monthly) ncdf_mvars <- NULL
+
+fref <- if(!is.null(site)) paste(project,site,sep='_') else NULL
 
 if(deg1){
   #nsites <- 15417
@@ -151,6 +166,7 @@ if(netcdf) source('functions_netcdf.R')
 ### Start Program
 ##########################
 wd_list <- paste(wd,sim,'output/',sep='/')
+if(!is.null(site)) wd_list <- paste0(wd_list, 'run' )
 print(wd_list)
 
 # if single variable specified process that and nothing else
@@ -181,8 +197,8 @@ if(stich) {
          annual=annual, monthly=monthly, daily=daily,
          mc.cores=cores, styear=sty, nyears=ny )
 
+  print("finished stich_sdgvm_mp_apply")
 }
-print("finished stich_sdgvm_mp_apply")
 
 
 # remove grid output now that combined files have been created
@@ -203,6 +219,8 @@ outnyears <- outeyear - outsyear + 1
 if(netcdf) lapply(wd_list[pia], write_sdgvm_netcdf,
                   afiles=ncdf_avars,
                   mfiles=ncdf_mvars,
+                  site_vars=site_vars,
+                  fref=fref,
                   mc=T, procs=cores,
                   nsites=nsites, nyears=outnyears, styr=sty, lon=lon, lat=lat,
                   osyr=outsyear, person=person, email=email, institution=institution )
