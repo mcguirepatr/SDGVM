@@ -91,8 +91,7 @@ ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','r
 
 # site variables for single site output with multiple vars
 site_vars <- c('tas', 'ta', 'tsl', 'pr', 'hur', 'rsds', 'pot_evapotrans', 
-               'cVegd',
-               'cLitterd', 'cSoild', 'cLeafd', 'cRootd', 'cWoodd','cMiscd', 
+               'cVegd', 'cLitterd', 'cSoild', 'cLeafd', 'cRootd', 'cWoodd','cMiscd', 
                'fVegLitter', 'fLitterSoil', 
                'mrso', 'rzwc', 'mrsos', 'mrro', 'snw', 'mrsow', 
                'evapotrans', 'tran', 'es', 'hfls',
@@ -100,12 +99,14 @@ site_vars <- c('tas', 'ta', 'tsl', 'pr', 'hur', 'rsds', 'pot_evapotrans',
 #site_vars <- NULL
 
 # nc file parameters
-mis_val   <- -99999
-nsites    <- 62220 
-lon       <- 0.5 
-lat       <- 0.5
-pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
-#pftnames  <- c('BARE','CITY','C3')
+ncdf_file   <- NULL # only used for simulations of multiple sites that are spearate simulations but output is combined into a sinlge netcdf file
+mis_val     <- -99999
+nsites      <- 62220 
+site_number <- 1
+lon         <- 0.5 
+lat         <- 0.5
+pftnames    <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
+#pftnames    <- c('BARE','CITY','C3')
 
 # specifiy a variable to process, this should be the filename not including the extension
 # - used to test whether the outputting is working correctly 
@@ -222,7 +223,8 @@ if(netcdf) lapply(wd_list[pia], write_sdgvm_netcdf,
                   site_vars=site_vars,
                   fref=fref,
                   mc=T, procs=cores,
-                  nsites=nsites, nyears=outnyears, styr=sty, lon=lon, lat=lat,
+                  nsites=nsites, nyears=outnyears, site_number=site_number, ncdf_file=ncdf_file,
+                  styr=sty, lon=lon, lat=lat,
                   osyr=outsyear, person=person, email=email, institution=institution )
 
 
