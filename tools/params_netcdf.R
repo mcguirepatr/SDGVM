@@ -275,6 +275,15 @@ nbp <- list(
   notes = 'These data include fire, lulcc, and leached C losses (which are annual fluxes distributed across the 12 months equally).'
 )
 
+nbp_annual <- list(
+  name  = 'nbpAnnual',
+  file  = 'nbp',
+  pft   = F,
+  lname = 'Net Biome Production',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600)
+)
+
 nbppft <- list(
   name  = 'nbppft',
   file  = 'nep',
@@ -282,7 +291,7 @@ nbppft <- list(
   lname = 'Vegtype level NBP',
   units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600),
-  notes = 'These data area per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
+  notes = 'These data are per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
 )
 
 lai <- list(

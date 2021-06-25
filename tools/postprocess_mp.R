@@ -70,24 +70,25 @@ ncfend <- '.nc'
 
 
 # netcdf files to create
-ncdf_avars <- c('cVeg','cLitter','cSoil','cRoot','burntArea','landCoverFrac')
+ncdf_avars <- c('cVeg','cLitter','cSoil','cRoot','burntArea')
 #ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea')
 #ncdf_avars <- c('fFire','fLuc')
 #ncdf_avars <- 'cVegpft' 
-#ncdf_avars <- 'fLeach' 
+#ncdf_avars <- 'landCoverFrac' 
 #ncdf_avars <- 'pot_evapotrans' 
 #ncdf_avars <- NULL 
 
 #ncdf_mvars <- c('tas','pr')
 #ncdf_mvars <- 'snow_depthpft' 
 #ncdf_mvars <- c('gpppft','tran','npppft')
-ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai',
-                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran','laipft')
+ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai','tran',
+                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft')
 #ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans')
 #ncdf_mvars <- c('gpp','ra','npp','rh','nbp','lai',
 #                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran','landCoverFrac')
 #ncdf_mvars <- 'nbp' 
 #ncdf_mvars <- 'laipft' 
+ncdf_mvars <- c('evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft')
 
 # nc file parameters
 mis_val   <- -99999

@@ -37,6 +37,7 @@ stich_sdgvm_mp_apply <- function(wd,grids=4,mc=T,
   files  <- files[-which(files=='site_info.dat')]
   files  <- files[-which(files=='simulation.dat')] #PCM
   files  <- files[-which(files=='diag.dat')]
+  files  <- files[-which(grepl('init',files))]
 
 # set the following switch if there is a subset of files that need rerunning
   #file_subset <- T
