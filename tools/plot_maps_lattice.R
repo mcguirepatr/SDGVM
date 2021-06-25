@@ -23,7 +23,7 @@ library(rworldxtra)
 ###user defined inputs
 
 #directory paths
-date    <- '200817'
+date    <- '201128'
 dir     <- '/home/alp/models/SDGVM/'
 rdir    <- 'run'
 edir    <- 'eval_data'
