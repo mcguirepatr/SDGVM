@@ -15,58 +15,58 @@ rm(list=ls())
 ########################
 
 # output timesteps to process
-annual  <- T
-monthly <- T
-daily   <- F
+annual   <- T
+monthly  <- T
+daily    <- F
 
 # stich output files from all grids into a single file, use multiple processors
-stich   <- T
-mc      <- F 
+stich    <- T
+mc       <- F 
 
 # delete sub-grid files once processesed
-delete  <- F 
+delete   <- F 
 
 # write CMOR(ish) netcdf output
-netcdf  <- F
+netcdf   <- F
 
 # simulation res 1x1 degree, F - 0.5 x 0.5 
-deg1    <- T
+deg1     <- T
 
 # main directory
-dir  <- '~/models/SDGVM/'
-#dir <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/'
+dir      <- '~/models/SDGVM/'
+#dir     <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/'
 
 # source code tools directory
-fd   <- paste(dir,'src/sdgvm/tools/',sep='/')
-#fd   <- paste(dir,'sdgvm/tools/',sep='/')
+fd       <- paste(dir,'src/sdgvm/tools/',sep='/')
+#fd       <- paste(dir,'sdgvm/tools/',sep='/')
 
 # directory in which simulation directory lives
-wd   <- paste(dir,'run/',sep='/')
+wd       <- paste(dir,'run/',sep='/')
 
 # simulation directory
-sim  <- c('blank/')
+sim      <- c('blank/')
 
 # index array to index the above 'sim' vector
-pia  <- 1
+pia      <- 1
 
 # start year and number of years of data in SDGVM output files
-sty  <- 1700 
-ny   <- 319 
+sty      <- 1700 
+ny       <- 319 
 
 # years of output requested for netcdf
 outsyear <- NULL 
 outeyear <- NULL 
 
 # number of parallel grid directories 
-grids  <- 32 
+grids    <- 32 
 
 # number of cores to run the analysis over 
-cores  <- 8 
+cores    <- 8 
 
 #file names etc
-fend   <- '.dat'
-ncf    <- 'SDGVM'
-ncfend <- '.nc'
+fend     <- '.dat'
+ncf      <- 'SDGVM'
+ncfend   <- '.nc'
 
 
 # netcdf files to create
@@ -110,7 +110,7 @@ pftnames    <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_B
 
 # specifiy a variable to process, this should be the filename not including the extension
 # - used to test whether the outputting is working correctly 
-var       <- NULL
+var         <- NULL
 
 # set variable for global attributes in netcdf files
 # person, email, institution
@@ -119,10 +119,13 @@ email       <- 'walkerap@ornl.gov'
 institution <- 'Oak Ridge National Laboratory'
 
 # project name
-project   <- 'TRENDYv9, 2020'
+project     <- 'TRENDYv9, 2020'
 
-# site name
-site      <- NULL
+# site name & and output directories for simulations at a site
+site            <- NULL
+rundir          <- 'run'
+rundir_previous <- '../ind'
+climgrass       <- F # switch for climgrass output style, not passsed properly, also alma is built into writenetcdf function
 
 
 ### Parse command line arguments   
@@ -167,7 +170,7 @@ if(netcdf) source('functions_netcdf.R')
 ### Start Program
 ##########################
 wd_list <- paste(wd,sim,'output/',sep='/')
-if(!is.null(site)) wd_list <- paste0(wd_list, 'run' )
+if(!is.null(site)) wd_list <- paste0(wd_list, rundir )
 print(wd_list)
 
 # if single variable specified process that and nothing else

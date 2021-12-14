@@ -89,7 +89,8 @@ cVeg <- list(
   pft   = F,
   lname = 'Carbon in Vegetation',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cVegpft <- list(
@@ -98,7 +99,8 @@ cVegpft <- list(
   pft   = T,
   lname = 'Vegtype level Carbon in Vegetation',
   units = 'kg m-2, per unit land area occupied by the PFT',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cLitter <- list(
@@ -107,7 +109,8 @@ cLitter <- list(
   pft   = F,
   lname = 'Carbon in Above-ground Litter Pool',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cSoil <- list(
@@ -116,7 +119,8 @@ cSoil <- list(
   pft   = F,
   lname = 'Carbon in Soil (including below-ground litter)',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cLeaf <- list(
@@ -125,7 +129,8 @@ cLeaf <- list(
   pft   = F,
   lname = 'Carbon in Leaves',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cRoot <- list(
@@ -134,7 +139,8 @@ cRoot <- list(
   pft   = F,
   lname = 'Carbon in Roots',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cVegd <- list(
@@ -144,7 +150,8 @@ cVegd <- list(
   pft   = F,
   lname = 'Carbon in Vegetation',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cLitterd <- list(
@@ -154,7 +161,8 @@ cLitterd <- list(
   pft   = F,
   lname = 'Carbon in Above and Below Ground Litter Pools',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cSoild <- list(
@@ -164,7 +172,8 @@ cSoild <- list(
   pft   = F,
   lname = 'Carbon in Soil (including below-ground litter)',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cLeafd <- list(
@@ -174,7 +183,8 @@ cLeafd <- list(
   pft   = F,
   lname = 'Carbon in Leaves',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cRootd <- list(
@@ -184,7 +194,8 @@ cRootd <- list(
   pft   = F,
   lname = 'Carbon in Live Roots',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cWoodd <- list(
@@ -194,17 +205,20 @@ cWoodd <- list(
   pft   = F,
   lname = 'Carbon in Sapwood',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 cMiscd <- list(
   name  = 'cMisc',
   alma_name  = NULL,
+  climgrass_name  = 'cStore',
   file  = 'nps',
   pft   = F,
   lname = 'Carbon Mass in Other Living Compartments on Land',
   units = 'kg m-2',
-  scale = 1/1000
+  scale = 1/1000,
+  scale_to_g = 1000
 )
 
 fVegLitter <- list(
@@ -215,6 +229,7 @@ fVegLitter <- list(
   lname = 'Total Carbon Mass Flux from Vegetation to Litter',
   units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   scale_day = 30
 )
 
@@ -226,6 +241,7 @@ fLitterSoil <- list(
   lname = 'Total Carbon Mass Flux from Litter to Soil',
   units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   scale_day = 30
 )
 
@@ -236,6 +252,7 @@ fFire <- list(
   lname = 'CO2 Emission from Fire',
   units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   notes = 'SDGVM calculates this variable once per year, TRENDY output requires monthly data. Monthly data are calculated simply as the annual total divided by 12.',
   annmonth = T 
 )
@@ -256,6 +273,7 @@ fLuc <- list(
   lname = 'CO2 Flux to Atmosphere from Land Use Change',
   units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   notes = 'In this instance of SDGVM all above-ground biomass is assumed to be lost immediately to the atmosphere, and this is what this variable records. Below-ground biomass is assumed to go into the soil as litter and this variable does not track subsequent decomposition of that litter. SDGVM calculates this variable once per year, TRENDY output requires monthly data. Monthly data are calculated simply as the annual total divided by 12.',
   annmonth = T
 )
@@ -266,6 +284,7 @@ fLuc <- list(
 mrso <- list(
   name  = 'mrso',
   alma_name = NULL, 
+  climgrass_name = 'SoilMoist', 
   #file  = c('swc','snw'),
   file  = 'swc',
   pft   = F,
@@ -289,7 +308,7 @@ mrsos <- list(
   alma_name = 'SoilMoistTop',
   file  = 'ssm',
   pft   = F,
-  lname = 'Moisture (Water) in Top Soil Layer',
+  lname = 'Moisture (Water) in Top Soil Layer (for SDGVM typically top 5 cm)',
   units = 'kg m-2',
   scale = 1
 )
@@ -328,6 +347,7 @@ mrro <- list(
 evapotrans <- list(
   name  = 'evapotrans',
   alma_name = 'Evap',
+  climgrass_name = 'ET',
   file  = 'evt',
   pft   = F,
   lname = 'Total Evapo-Transpiration',
@@ -351,6 +371,7 @@ hfls <- list(
 tran <- list(
   name  = 'tran',
   alma_name = 'Tveg',
+  climgrass_name = 'TVeg',
   file  = 'trn',
   pft   = F,
   lname = 'Transpiration',
@@ -386,6 +407,7 @@ evapo <- list(
 es <- list(
   name  = 'es',
   alma_name = 'Esoil',
+  climgrass_name = 'ESoil',
   file  = 'bse',
   pft   = F,
   lname = 'Bare soil evaporation',
@@ -422,9 +444,10 @@ gpp <- list(
   alma_name = 'GPP',
   file = 'gpp',
   pft   = F,
-  lname = 'Gross Primary Production',
+  lname = 'Gross Primary Production in carbon units',
   units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   scale_day = 30
 )
 
@@ -432,9 +455,10 @@ gpppft <- list(
   name = 'gpppft',
   file = 'gpp',
   pft   = T,
-  lname = 'Vegtype level GPP',
+  lname = 'Vegtype level GPP carbon',
   units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   scale_day = 30
 )
 
@@ -443,9 +467,10 @@ ra <- list(
   alma_name = 'AutoResp',
   file  = 'rsp',
   pft   = F,
-  lname = 'Autotrophic (Plant) respiration',
+  lname = 'Autotrophic (Plant) respiration in carbon units',
   units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   scale_day = 30
 )
 
@@ -454,9 +479,10 @@ npp <- list(
   alma_name = 'NPP',
   file  = 'npp',
   pft   = F,
-  lname = 'Net Primary Production',
+  lname = 'Net Primary Production in carbon units',
   units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   scale_day = 30
 )
 
@@ -464,9 +490,10 @@ npppft <- list(
   name  = 'npppft',
   file  = 'npp',
   pft   = T,
-  lname = 'Vegtype level NPP',
+  lname = 'Vegtype level NPP in carbon units',
   units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   scale_day = 30
 )
 
@@ -478,17 +505,20 @@ rh <- list(
   lname = 'Heterotrophic Respiration',
   units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   scale_day = 30
 )
 
 nep <- list(
   name  = 'nep',
   alma_name = 'NEE',
+  climgrass_name = 'NEP',
   file  = 'nep',
   pft   = F,
   lname = 'Net Ecosystem Production',
   units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   scale_day = 30
 )
 
@@ -500,6 +530,7 @@ nbp <- list(
   lname = 'Net Biome Production',
   units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   scale_day = 30,
   notes = 'These data include fire, lulcc, and leached C losses (which are annual fluxes distributed across the 12 months equally).'
 )
@@ -511,6 +542,7 @@ nbppft <- list(
   lname = 'Vegtype level NBP',
   units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600),
+  scale_to_g = 1000,
   notes = 'These data area per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
 )
 

@@ -128,9 +128,9 @@ make_netcdf_TRENDY <- function(varo,
   
 
   # create the nc dimensions
-  nclon   <- ncdim_def( name='longitude',units='degrees_east',vals=(seq(-180+lon/2,180-lon/2,lon)) )
-  nclat   <- ncdim_def( name='latitude',units='degrees_north',vals=(seq(-90+lat/2,90-lat/2,lat)) )
-  nctime  <- ncdim_def( name='time',units=paste('hours since ',osyr,'-01-01 00:00:00',sep=''),vals=time_seq,unlim=T )
+  nclon   <- ncdim_def(name='longitude', units='degrees_east',  vals=(seq(-180+lon/2,180-lon/2,lon)) )
+  nclat   <- ncdim_def(name='latitude',  units='degrees_north', vals=(seq(-90+lat/2,90-lat/2,lat)) )
+  nctime  <- ncdim_def(name='time', units=paste('hours since ',osyr,'-01-01 00:00:00',sep=''),vals=time_seq,unlim=T )
   if(!is.null(pft)) ncpft <- ncdim_def( name='PFT',units='pft id, see global attributes',vals=1:length(pft) )
   
 
@@ -275,11 +275,17 @@ make_netcdf_site <- function(vars='gpp', alma=T, pftfile=F, annual=F, monthly=F,
     print('Processing dynamic variable:',quote=F)
     for( varo in vars ) {
       var <- get(varo)
+ 
       vname <- if(alma&!is.null(var$alma_name)) var$alma_name else var$name 
-      print(vname,quote=F)
-  
-      if(!is.null(pft)) ncvar <- ncvar_def( name=vname, units=var$units, dim=list(nclon,nclat,ncpft,nctime), missval=mv, longname=var$lname )
-      else              ncvar <- ncvar_def( name=vname, units=var$units, dim=list(nclon,nclat,nctime), missval=mv, longname=var$lname )
+      vname <- if(climgrass&!is.null(var$climgrass_name)) var$climgrass_name else vname 
+      print(vname, quote=F )
+ 
+      vunits <- if(climgrass) gsub('s-1', 'd-1', var$units ) else var$units
+      vunits <- if(climgrass & !is.null(var$scale_to_g)) gsub('kg', 'g', vunits ) else vunits
+      print(vunits, quote=F )
+
+      if(!is.null(pft)) ncvar <- ncvar_def( name=vname, units=vunits, dim=list(nclon,nclat,ncpft,nctime), missval=mv, longname=var$lname )
+      else              ncvar <- ncvar_def( name=vname, units=vunits, dim=list(nclon,nclat,nctime), missval=mv, longname=var$lname )
   
       # create ncvars vector
       ncvars <- if(varo==vars[1]) list(ncvar) else c(ncvars,list(ncvar)) 
@@ -299,7 +305,7 @@ make_netcdf_site <- function(vars='gpp', alma=T, pftfile=F, annual=F, monthly=F,
     }
   
     # determine netcdf filename
-    if(is.null(ncdf_file) & nsites==1) ncdf_file <- paste0(paste('SDGVM',fref,osyr,osyr+nyears-1,sep='_'),'.nc')
+    if(is.null(ncdf_file) & nsites==1) ncdf_file <- paste0(paste('SDGVM',fref,rundir,osyr,osyr+nyears-1,sep='_'),'.nc')
 
     # create the nc file given the vars
     print('',quote=F)
@@ -312,6 +318,7 @@ make_netcdf_site <- function(vars='gpp', alma=T, pftfile=F, annual=F, monthly=F,
   
     # set global attributes
     conventions <- if(alma) 'ALMA' else 'CF-1.4 (or close)'
+    conventions <- if(climgrass) 'ClimGrass (sort of ALMA)' else conventions 
     ncatt_put(newnc,0,attname='title',attval=paste('SDGVM output for', project ))
     ncatt_put(newnc,0,attname='Conventions',attval=conventions)
     ncatt_put(newnc,0,attname='institution',attval=institution)
@@ -383,7 +390,8 @@ make_netcdf_site <- function(vars='gpp', alma=T, pftfile=F, annual=F, monthly=F,
 
     # if by pft output required 
     if(is.null(pft)) {
-      fnamefull <- paste(fname,'dat',sep='.')  
+      fnamefull <- paste(fname,'dat',sep='.') 
+      #print(paste('  from file:',fnamefull), quote=F ) 
       newnc     <- readSDGVM_writeNCDF(fnamefull, var, newnc, ncvars[[v]], cs, site_number, NULL, 
                                        180, 360, nyears, 1, sa, mv, osyr, daily=daily, preosyr_ndays=preosyr_ndays, ... ) 
      
@@ -478,7 +486,7 @@ readSDGVM_writeNCDF <- function(fname, var, newnc, ncvar, cs, site_number=1, pft
     
     ifile <- if(var$name=='cWood') 'stembio.dat' else 'rootbio.dat'
     v_bio  <- scan(ifile) 
-    v_pbio <- scan(paste0('../ind/',ifile)) 
+    v_pbio <- scan(paste(rundir_previous,ifile, sep='/' )) 
     v_cbio <- c(v_pbio[length(v_pbio)], v_bio[3:(length(v_bio)-1)] )
 
     days_in_y <- lyears <- leap_year(osyr:(osyr+nyears-1))
@@ -492,9 +500,17 @@ readSDGVM_writeNCDF <- function(fname, var, newnc, ncvar, cs, site_number=1, pft
 
 
   # scale variable to correct output units
-  scale_day <- if(daily&!is.null(var$scale_day)) var$scale_day else 1 
+  print('Native SDGVM scale:', quote=F )
+  print(df[,cs:length(df)][1:6])
+  scale_day  <- if(daily&!is.null(var$scale_day)) var$scale_day else 1 
+  scale_day  <- if(climgrass & scale_day!=1) scale_day * 3600 * 24 else 1 
+  scale_to_g <- if(climgrass & !is.null(var$scale_to_g)) var$scale_to_g else 1 
   if( var$name %in% c('tas','ta','tsl') )  df[,cs:length(df)] <- df[,cs:length(df)] + var$scale
-  else                                     df[,cs:length(df)] <- df[,cs:length(df)] * var$scale * scale_day
+  else                                     df[,cs:length(df)] <- df[,cs:length(df)] * var$scale * scale_day * scale_to_g
+  print('Scaling factor:', quote=F )
+  print(var$scale * scale_day * scale_to_g)
+  print('Scaled data:', quote=F )
+  print(df[,cs:length(df)][1:6])
 
 
   # expand annual SDGVM variables to monthly TRENDY output 
