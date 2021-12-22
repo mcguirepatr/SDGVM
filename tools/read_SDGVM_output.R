@@ -222,7 +222,7 @@ read_SDGVM_daily <- function(ifile, sy, ey ) {
   skip <- 1
   for( y in 1:ny ) {
     v2 <- scan(ifile, skip=skip, nlines=1, quiet=T  )
-    v3 <- scan(ifile, skip=skip+1, nlines=12, quiet=T  )
+    v3 <- scan(ifile, skip=skip+1, nlines=12, na.strings=c('*******','********','*********','**********','***********','************'), quiet=T  )
     skip <- skip + 1 + 12
     df1 <- data.frame(year=v2, doy=1:length(v3), var=v3 )
     df2 <- if(y==1) df1 else rbind(df2,df1)  
