@@ -24,12 +24,13 @@
       REAL*8 suma(360),tsuma,tsumam,stemfr,maint,yy,lmor_sc(3600)
       REAL*8 leafresp,rootresp,stemresp,rtemp
       REAL*8 swc_bbthresh, swc_senthresh, minnppstore,lresp,kg,lgrowth
-      REAL*8 peak_lai, current_lai, lls_scalar, tscalar 
+      REAL*8 peak_lai, current_lai, lls_scalar, tscalar, nonleaf_cost 
       REAL*8 sumrr,sumsr,sumlr,summr,resp_r,resp_s,resp_m,resp_l
+      REAL*8 swc_thresh, leaf_senfrac
       ! APW: not sure what this save line does
       SAVE sumrr,sumsr,sumlr,summr
       INTEGER lai,leafls,stemls,rootls,mnth,day,ij,i,bb,gs,bbgs,sssum
-      INTEGER bb2bbmin,bb2bbmax,bbm,ssm,sss,ss,dsbb
+      INTEGER bb2bbmin,bb2bbmax,bbm,ssm,sss,ss,dsbb, gs_count
       INTEGER ftphen,ftdth,harvest,chill,dschill,phen_cor,s070607
       INCLUDE 'param.inc'
 
@@ -38,10 +39,8 @@
       ! grass 
       IF (ftphen.EQ.1) THEN
         ! minimum number of days between bud burst
-        ! APW: this doesn't seem to be accurate
-        !      the only place this is used is to stop the growing season when 
-        !      the current growing season (bbgs) minus the max gs (gs)
-        !      is greater than this (bb2bbmin)   
+        ! original SDGVM this is min days bwteen end of gs and beginning
+        ! of next one, updated/grasses this is min days between starts
         bb2bbmin      = 300
         ! maximum number of days between bud burst
         bb2bbmax      = 390
@@ -53,6 +52,13 @@
         swc_senthresh = 0.25d0
         ! minimum nppstore required for leaf growth
         minnppstore   = 0.0d0
+        nonleaf_cost  = 1.d0
+
+        IF (s070607.eq.1) THEN
+          bb2bbmin      = 285
+          gs            = 60
+        ENDIF 
+
 
       ! tree 
       ELSEIF (ftphen.EQ.2) THEN
@@ -62,6 +68,7 @@
         swc_bbthresh  = 0.5d0
         swc_senthresh = 0.5d0
         minnppstore   = 5.0d0
+        nonleaf_cost  = p_opt 
       ENDIF
 
       ! zero variables 
@@ -208,11 +215,15 @@
 *----------------------------------------------------------------------*
               
 * Original SDGVM for grasses proportion of store going into leaf production *
-            IF((s070607.eq.1) .AND. (phen_cor.eq.1)) THEN
-              nppstorx = nppstore
-!              ! restricts the maximum amount of the npp store to be used for leaf growth to 62.5% (i.e. 50% ends up as leaf mass)
-!              nppstorx = 0.5 * 1.25 * nppstore
-!              !nppstorx = 0.1 * 1.25 * nppstore
+            IF ((s070607.eq.1) .AND. (ftphen.eq.1)) THEN
+              ! modification for lower draw on store for leaves
+              IF (phen_cor.eq.1) THEN
+                ! restricts the maximum amount of the npp store to be used for leaf growth to 62.5% (i.e. 50% ends up as leaf mass)
+                nppstorx = 0.5 * 1.25 * nppstore
+                !nppstorx = 0.1 * 1.25 * nppstore
+              ELSE
+                nppstorx = nppstore
+              ENDIF
               
 * For trees (and grasses now) adjust proportion of store available for
 * leaf and stem production based on suma *
@@ -224,48 +235,45 @@
                 tsuma = tsuma + suma(i)
               ENDDO
               ! leafls is leaf life span in days 
-              ! p_opt is the 'canopy optimisation correction' currently 1.5, 
+              ! nonleaf_cost is the 'canopy optimisation correction' currently 1.5, 
               !  - can be thought of as the multipier on leaf C costs to account for roots and stem needed to support those leaves
               ! maint is the age-based mean residence time of leaves 
               ! APW: maint is limited to 1
-              maint = max(1.0d0,(real(leafls)/360.0d0))
-              !maint = max(0.1d0,(real(leafls)/360.0d0))
-              ! reduce bottom layer C balance by the annual cost of leaves multiplied by p_opt
-              ! APW: p_opt would likely be lower for grasses than trees  
-              p_opt = 1.0d0
-              tsuma = tsuma - leafmol*1.25d0/maint*p_opt
-              ! tsuma = tsuma -leafmol*1.25d0/maint -leafmol*1.25d0*p_opt
+              IF ((s070607.eq.1) .OR. (ftphen.eq.2)) THEN
+                maint = max(1.0d0,(real(leafls)/360.0d0))
+                lls_scalar = 1.0d0  
+              ELSE
+                maint = max(1.0d0,(real(leafls)/360.0d0))
+                !maint = max(0.1d0,(real(leafls)/360.0d0))
+                ! APW: new
+                ! lls_scalar is the scalar to increase needed leaf C when
+                ! leaf lifespan < growing season
+                IF (leafls .LT. gs) THEN
+                  lls_scalar = gs / leafls
+                ELSE
+                  lls_scalar = 1.0d0  
+                ENDIF
+              ENDIF
+
+              ! reduce bottom layer C balance by the annual cost of leaves multiplied by nonleaf_cost
+              tsuma = tsuma - leafmol*1.25d0/maint*nonleaf_cost
 
               ! restrict the bottom layer C balance to be within +/- the
-              ! annual cost of 1 LAI of leaves * p_opt
-              IF (tsuma.GT.leafmol*1.25d0/maint*p_opt)
-     &tsuma = leafmol*1.25d0/maint*p_opt
-              IF (tsuma.LT.-leafmol*1.25d0/maint*p_opt)
-     &tsuma = -leafmol*1.25d0/maint*p_opt
+              ! annual cost of 1 LAI of leaves * nonleaf_cost
+              IF (tsuma.GT.leafmol*1.25d0/maint*nonleaf_cost)
+     &tsuma = leafmol*1.25d0/maint*nonleaf_cost
+              IF (tsuma.LT.-leafmol*1.25d0/maint*nonleaf_cost)
+     &tsuma = -leafmol*1.25d0/maint*nonleaf_cost
               
               ! stemfr is the target C needed to make LAI leaves (inc. growth respiration) once 
-              ! p_laimem is the 'LAI memory' currently 0.5, effectively smoothing the rate of change of LAI from one year to the next 
+              ! p_laimem is the 'LAI memory' currently 0.5, effectively
+              ! smoothing the LAI rate of change 
               stemfr = stemfr + tsuma*p_laimem
-  
               IF (stemfr.LT.10.0d0) stemfr = 10.0d0
   
               ! if target leaf allocation is more than 75% of the nppstore allow only 75% of the store for leaf allocation 
               ! and reduce the value of lai which is passed to next year by 5%  
               ! nppstor2 is the nppstore - leaf C allocation 
-              ! APW: new
-              ! lls_scalar is the scalar to increase needed leaf C when
-              ! leaf lifespan < growing season
-              IF (leafls .LT. gs) THEN
-                lls_scalar = gs / leafls
-              ELSE
-                lls_scalar = 1.0d0  
-              ENDIF
-              !IF (stemfr.LT.0.75d0*nppstore) THEN
-              !  nppstor2 = nppstore - stemfr
-              !ELSE
-              !  nppstor2 = nppstore*0.25d0
-              !  stemfr = stemfr*0.95
-              !ENDIF
               IF (lls_scalar*stemfr.LT.0.75d0*nppstore) THEN
                 nppstor2 = nppstore - lls_scalar*stemfr
               ELSE
@@ -274,9 +282,8 @@
               ENDIF
   
   
-              ! nppstorx = nppstore
+              ! C to allocate to leaves and target peak LAI
               nppstorx = nppstore - nppstor2
-              !peak_lai = nppstorx/leafmol/1.25d0 
               peak_lai = nppstorx/lls_scalar/leafmol/1.25d0 
 
             ENDIF
@@ -288,23 +295,27 @@
 * Compute length of current leaf growing season (bbgs), 
 * and stop leaf growth when current growing season (bbgs) = max growing season (gs)                                                      *
 *----------------------------------------------------------------------*
+
+      ! increment growing season
       IF (bb.GT.0)  bbgs = bbgs + 1
-      !  APW: standard SDGVM below but seems not as intended, this
-      !       effectively resets bb to 0 only when bbgs+gs == bb2bbmin
-      !       it seems that then bb almost always is reset to not 0
-      !       almost immediately so bbgs+gs spans a whole year effectively so
-      !       bb2bbmin is the min days between the end of one season and
-      !       the start of another, 
-      !       with the new setting bb is able to be reset much sooner
+
+      ! increment days since budburst
+      IF (dsbb.LT.500) dsbb = dsbb + 1
+
+      ! test whether end of growing season
       !IF (bbgs-gs.gt.bb2bbmin) THEN
-      !IF (bbgs.gt.gs) THEN
-      IF (bbgs.gt.bb2bbmin) THEN
+      IF ((s070607.eq.1) .OR. (ftphen.eq.2)) THEN
+        ! effectively resets bb to 0 only when bbgs+gs == bb2bbmin
+        ! so bb2bbmin is the min days between the end of one season and
+        ! the start of another, 
+        gs_count = bbgs - gs
+      ELSE 
+        gs_count = bbgs
+      ENDIF
+      IF (gs_count.gt.bb2bbmin) THEN
         bb   = 0
         bbgs = 0
       ENDIF
-
-      !  calculate days since budburst
-      IF (dsbb.LT.500) dsbb = dsbb + 1
 
 
 *----------------------------------------------------------------------*
@@ -334,9 +345,6 @@
             !  with growth to maintain LAI or increase growth
 
             ! calculate LAI
-            !DO i=1,leafls
-            !  leafv(leafls+1-i) = leafv(leafls-i)
-            !ENDDO
             current_lai = sum(leafv(1:leafls))
             ! calculate peakLAI - LAI in carbon units
             ! lai_c_deficit = (peak_lai - current_lai) 
@@ -352,8 +360,8 @@
               
               ! function of soil water & temperature
               tscalar = min(1.d0, max(0.d0, (tmem(1)-5.d0)/15.d0 ))
-              !laiinc  = lairat*tscalar*kg*nppstorx/leafmol/lresp
               IF(nppstorx.GT.0.0d0) THEN
+                !laiinc  = lairat*tscalar*kg*nppstorx/leafmol/lresp
                 laiinc = lairat*tscalar*kg/leafmol/lresp
               ELSE IF(nppstore.GT.minnppstore .AND. 
      &xdaynpp.GT.0.d0) THEN
@@ -396,12 +404,19 @@ c     &real((mnth-1)*30 + day)
 
 * Soil water based  
 *   - drop all leaves               *
+          IF ((s070607.eq.1) .OR. (ftphen.eq.2)) THEN
           ! APW: this would trigger all leaves to be lost, but only when
           !      SWC is < 0 - i.e. never 
+            swc_thresh   = wtwp*0.0d0
+            leaf_senfrac = 1.0d0
+          ELSE
+            swc_thresh   = wtwp+swc_senthresh*(wtfc-wtwp)
+            leaf_senfrac = 0.1d0
+          ENDIF
           !IF (soil2g.LT.wtwp*0.0d0) THEN
-          IF (soil2g.LT.wtwp+swc_senthresh*(wtfc-wtwp)) THEN
+          IF (soil2g.LT.swc_thresh) THEN
             !laiinc = -rlai
-            laiinc = -0.1d0*rlai
+            laiinc = -leaf_senfrac*rlai
             ss = day + (mnth - 1)*30
   
 * Temperature based, senescence occurs there are 'sss' days colder     *
@@ -454,6 +469,7 @@ c     &real((mnth-1)*30 + day)
           lgrowth  = laiinc*leafmol
           leafresp = 0.25d0*laiinc*leafmol
         ENDIF
+
         !  update store
         nppstore = nppstore - lgrowth - leafresp
         !  update tracking variables
@@ -529,15 +545,15 @@ c     &real((mnth-1)*30 + day)
       ENDDO
 
       IF ((nppstore.GT.0.0d0).and.(daynpp.GT.0.0d0)) THEN
-       IF (ftphen.EQ.1) THEN
-         IF (laiinc.GT.0.0d0) THEN
-           yy = lgrowth * 0.10d0
-         ELSE
-           yy = 0.0d0
-         ENDIF
-       ELSE
-         yy = nppstore*p_stemfr
-       ENDIF
+        IF ((s070607.eq.1) .OR. (ftphen.eq.2)) THEN
+          yy = nppstore*p_stemfr
+        ELSE
+          IF (laiinc.GT.0.0d0) THEN
+            yy = lgrowth * 0.10d0
+          ELSE
+            yy = 0.0d0
+          ENDIF
+        ENDIF
         stemv(1) = yy
         s_sn     = s_sn + yy
         stemnpp  = stemnpp + yy
