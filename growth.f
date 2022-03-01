@@ -17,6 +17,7 @@
       REAL*8 fprob,ftprop(maxnft),ngcov,gold,c3old,c4old,fri,norm
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
       REAL*8 ftloss_prop(maxnft),sum_cov(maxnft),flulccc
+      REAL*8 cneed, cneed_leaf, cneed_store
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       LOGICAL burn,harvest
@@ -186,15 +187,30 @@
           cov(1,ft) = ftprop(ft)*ngcov/100.0d0
           ppm(1,ft) = ftppm0(ft)
           hgt(1,ft) = 0.004d0
-          slc(ft) = slc(ft) - (nppstore(ft) + bioleaf(ft))*cov(1,ft)
+
+          ! take new cohort carbon from stem litter (slc), then soil C
+          cneed_leaf   = bioleaf(ft)*cov(1,ft)
+          cneed_store  = nppstore(ft)*cov(1,ft)
+          cneed        = cneed_leaf + cneed_store
+          slc(ft) = slc(ft) - cneed 
+          !slc(ft) = slc(ft) - (nppstore(ft) + bioleaf(ft))*cov(1,ft)
           IF (slc(ft).LT.0.0d0) THEN
             sumc = 0.0d0
             DO i=1,8
                sumc = sumc + ic0(i)
             ENDDO
-            DO i=1,8
-              ic0(i) = ic0(i)*(1.0d0+slc(ft)/sumc)
-            ENDDO
+
+            ! if soil C is insufficient to support required C do not use 
+            IF ((slc(ft)+sumc) .LT. 0.0d0 ) THEN
+              nppstore(ft) = nppstore(ft) + slc(ft)*cneed_store/cneed 
+              bioleaf(ft)  = bioleaf(ft)  + slc(ft)*cneed_leaf/cneed 
+              cov(1,ft)    = cov(1,ft) * (1.0d0 + slc(ft)/cneed)  
+            ELSE
+              DO i=1,8
+                ic0(i) = ic0(i)*(1.0d0+slc(ft)/sumc)
+              ENDDO
+            ENDIF
+
             slc(ft) = 0.0d0
           ENDIF
 
