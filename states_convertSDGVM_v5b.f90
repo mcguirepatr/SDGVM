@@ -22,6 +22,8 @@
       !                                        cdo gridboxmean,2,2 states.nc states2b.nc
       CHARACTER (LEN = *), PARAMETER :: fname = "states2b.nc" !half-resolution version of states.nc
       CHARACTER (LEN = *), PARAMETER :: fname_t = "transitions2b.nc" !half-resolution version of transitions.nc
+      CHARACTER (LEN = *), PARAMETER :: wdh = &
+       "/gws/nopw/j04/nexcs/pmcguire/TRENDYv10/db/LUH2_GCB_2021/"
       CHARACTER (LEN = *), PARAMETER :: wdg = "/gws/nopw/j04/nexcs/pmcguire/sdgvmD/data/land_use/global/ESACCILCP2014/30min/"
       CHARACTER (LEN = *), PARAMETER :: fname_s = "cont_lu"
       CHARACTER (LEN = *), PARAMETER :: esadate = "2009"
@@ -150,14 +152,14 @@
 
       ! Open the file. NF90_NOWRITE tells netCDF we want read-only access to
       ! the file.
-      CALL CHECK( NF90_OPEN(fname, NF90_NOWRITE, ncid) )
+      CALL CHECK( NF90_OPEN(wdh//fname, NF90_NOWRITE, ncid) )
 
       DO v=1,NV
       ! Get the varid of the data variable, based on its name.
         CALL check( nf90_inq_varid(ncid, varname(v), varid(v)) )
       END DO
 
-      CALL CHECK( NF90_OPEN(fname_t, NF90_NOWRITE, ncid_t) )
+      CALL CHECK( NF90_OPEN(wdh//fname_t, NF90_NOWRITE, ncid_t) )
 
       DO v=1,NVT
       ! Get the varid of the data variable, based on its name.
@@ -323,7 +325,7 @@
       CALL CHECK( NF90_CLOSE(ncid) )
       CALL CHECK( NF90_CLOSE(ncid_t) )
 
-      PRINT *,"*** SUCCESS reading file ", fname, "! "
+      PRINT *,"*** SUCCESS reading file ", wdh//fname, "! "
 
     CONTAINS
       SUBROUTINE CHECK(status)

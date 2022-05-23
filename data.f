@@ -1009,80 +1009,115 @@ C PCM2      WRITE(*,*) '111111111'
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl)
+     &yr0a,yrfa,year0set,spinl,ilanduse)
 *----------------------------------------------------------------------*
+      USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
+      INTEGER, PARAMETER :: NX = 720, NY = 360
+      INTEGER, PARAMETER :: NE = 10
+      INTEGER, PARAMETER :: NYR = 322 !PCM Hardwire for now
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
+      REAL*8 SDGVM_LUC(NYR, NE, 4, 4),xf
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
       INTEGER ii,jj,stcmp,indx(4,4),years(1000),nrecl,yr0a,yrfa
       INTEGER classes(1000),nclasses,kode,spinl,yr_offset
-      INTEGER ij,ij1,j1
+      INTEGER ij,ij1,j1,num_land
+      INTEGER ilanduse
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
       CHARACTER st4*4000
       INTEGER n_fields4000
       LOGICAL l_lu,year0set
+      LOGICAL compute_next_year,mindx(4,4)
 
+
+      IF(ilanduse.EQ.3) THEN !PCM Use states2b.nc file: half-res
+       !PCM hardwire these numbers for now
+        latf = 89.75
+        lon0 = -179.75
+        latr = 0.5
+        lonr = 0.5
+        latn = 360
+        lonn = 720
+        n    = 322
+        years(1:n) = (/(i, i=1700,1700+n-1)/)
+        nclasses   = 10
+        classes(1:nclasses) = (/(i, i=1,nclasses)/)
+      ELSEIF(ilanduse.EQ.4) THEN !PCM Use transitions2b.nc file:half-res
+       !PCM hardwire these numbers for now
+        latf = 89.75
+        lon0 = -179.75
+        latr = 0.5
+        lonr = 0.5
+        latn = 360
+        lonn = 720
+        n    = 322
+        years(1:n) = (/(i, i=1700,1700+n-1)/) 
+        nclasses   = 10
+        classes(1:nclasses) = (/(i, i=1,nclasses)/)
+      ELSEIF(ilanduse.EQ.0) THEN !PCM original method of using SDGVM LUC
 *----------------------------------------------------------------------*
 * Read in the readme file 'readme.dat'.                                *
 *----------------------------------------------------------------------*
-      OPEN(99,FILE=fname1(1:blank(fname1))//'/readme.dat',status='old',
-     &iostat=kode)
-      IF (kode.NE.0) THEN
-        WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'Land use file does not exist.'
-        WRITE(*,'('' "'',A,''/readme.dat"'')') fname1(1:blank(fname1))
-        STOP
-      ENDIF
+        OPEN(99,FILE=fname1(1:blank(fname1))//'/readme.dat',
+     &   status='old',iostat=kode)
+        IF (kode.NE.0) THEN
+          WRITE(*,'('' PROGRAM TERMINATED'')')
+          WRITE(*,*) 'Land use file does not exist.'
+          WRITE(*,'('' "'',A,''/readme.dat"'')') fname1(1:blank(fname1))
+          STOP
+        ENDIF
 
-      READ(99,*) st1
-      st2='CONTINUOUS'
-      IF (stcmp(st1,st2).EQ.0) THEN
-        WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'landuse is not a continuous field ?'
-        WRITE(*,*) 'readme.dat should begin with CONTINUOUS'
-        STOP
-      ENDIF
-      READ(99,*)
-      READ(99,*) latf,lon0
-      READ(99,*)
-      READ(99,*) latr,lonr
-      READ(99,*)
-      READ(99,*) latn,lonn
-      READ(99,*)
-      READ(99,'(A)') st4
-      n = n_fields4000(st4)
-      CALL ST2ARR4000(st4,years,1000,n)
-      READ(99,*)
-      READ(99,'(A)') st1
-      CLOSE(99)
-      nclasses = n_fields(st1)
-      CALL ST2ARR(st1,classes,1000,nclasses)
+        READ(99,*) st1
+        st2='CONTINUOUS'
+        IF (stcmp(st1,st2).EQ.0) THEN
+          WRITE(*,'('' PROGRAM TERMINATED'')')
+          WRITE(*,*) 'landuse is not a continuous field ?'
+          WRITE(*,*) 'readme.dat should begin with CONTINUOUS'
+          STOP
+        ENDIF
+        READ(99,*)
+        READ(99,*) latf,lon0
+        READ(99,*)
+        READ(99,*) latr,lonr
+        READ(99,*)
+        READ(99,*) latn,lonn
+        READ(99,*)
+        READ(99,'(A)') st4
+        n = n_fields4000(st4)
+        CALL ST2ARR4000(st4,years,1000,n)
+        READ(99,*)
+        READ(99,'(A)') st1
+        CLOSE(99)
+        nclasses = n_fields(st1)
+        CALL ST2ARR(st1,classes,1000,nclasses)
 *----------------------------------------------------------------------*
 
-      IF (du.eq.1) THEN
-        nrecl = 3
-      ELSE
-        nrecl = 4
-      ENDIF
+        IF (du.eq.1) THEN
+          nrecl = 3
+        ELSE
+          nrecl = 4
+        ENDIF
+      ENDIF !PCM 
 
       yr_offset = 0 
       IF ((n.GT.1).AND.(yr0a.LT.years(1))) THEN
-        WRITE(*,*) 'Cannot start running in year',yr0a,
-     &' since landuse map begins in ',years(1)
-        WRITE(*,*) 'The first year of land use data
-     &will be used and the first year of CO2 data will be used in',yr0a,
-     &'. This has the potential to uncouple the land use year from the
-     &CO2 year if their datasets start in different years.' 
-        WRITE(*,*) 'If this message is telling you that
+          WRITE(*,*) 'Cannot start running in year',yr0a,
+     &      ' since landuse map begins in ',years(1)
+          WRITE(*,*) 'The first year of land use data
+     &will be used and the first year of CO2 data will be used in',
+     & yr0a,'. This has the potential to uncouple the land use year
+     &from theCO2 year if their datasets start in different years.' 
+          WRITE(*,*) 'If this message is telling you that
      &the simulation was requested to start in year 1, then
      &you have requested a spin only with co2const < 0.'
-        WRITE(*,*) 'Alternatively you have requested a spin and a run
+          WRITE(*,*) 'Alternatively you have requested a spin and a run
      &proper and land use and CO2 will be out of sync with climate.'  
-        yr_offset = years(1) - yr0a 
-        !STOP
+          yr_offset = years(1) - yr0a 
+          !STOP
       ENDIF
+
 
 c     look for the first year
       ! Currently this selects the starting landuse of the simulation to be the landuse specified in the 
@@ -1096,9 +1131,9 @@ c     look for the first year
       ! co2const > 0, that landuse data is taken only from the range of run proper years even if land use 
       ! data are available for the effective spin years. 
       ! This also applies to land-use specified in the input.dat file.
- 
+   
       j=1
- 10   CONTINUE
+   10 CONTINUE
       IF ((j.LT.n).AND.(years(j)-yr_offset.LT.yr0a)) THEN
          j = j + 1
          GOTO 10
@@ -1116,6 +1151,20 @@ c     look for the first year
       xnorm = rcol - real(int(rcol))
 *----------------------------------------------------------------------*
 
+      IF(ilanduse.EQ.3 .or. ilanduse.EQ.4) THEN
+CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
+         IF(ilanduse.EQ.3) THEN
+           compute_next_year = .false.
+         ELSE IF(ilanduse.EQ.4) THEN
+           compute_next_year = .true.
+         ENDIF
+         ! get the 4 neighboring grid cells for all nclasses for the years range 
+         SDGVM_LUC=states_convertSDGVM_func(years(1),years(n),
+     &INT(rcol),INT(rrow),4,compute_next_year) 
+      ELSE
+         SDGVM_LUC=0.0
+      ENDIF
+
       DO i=1,yrfa-yr0a+1
         IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
           !print*, j, years(j), i, years(j) - yr_offset
@@ -1124,56 +1173,99 @@ c     look for the first year
           !print*, st2(1:4) 
           j=j+1
 
+          IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+            WRITE(*,FMT='(A1)', ADVANCE='no') 'D' 
+
+            IF(compute_next_year) THEN
+               WRITE(*,FMT='(I5)', ADVANCE='no') years(j-1)+1
+            ELSE
+               WRITE(*,FMT='(I5)', ADVANCE='no') years(j-1) 
+            END IF
+          ENDIF
+
           DO k=1,nclasses
             classprop(classes(k)) = 0
-
             st3=in2st(classes(k))
             CALL STRIPB(st3)
-            OPEN(99,FILE=fname1(1:blank(fname1))//'/cont_lu-'//st3(1:bla
-     &nk(st3))//'-'//st2(1:4)//'.dat',STATUS='old',FORM='formatted',
-     &ACCESS='direct',RECL=nrecl,iostat=kode)
-            IF (kode.NE.0) THEN
-              WRITE(*,'('' PROGRAM TERMINATED'')')
-              WRITE(*,*) 'Land Use data-base.'
-              WRITE(*,*) 'File does not exist:'
-              WRITE(*,*) fname1(1:blank(fname1)),
-     &'/cont_lu-',st3(1:blank(st3)),'-',st2(1:4),'.dat'
-              STOP
-            ENDIF
-
+            IF(ilanduse.EQ.0) THEN !PCM
+C PCM: st2 is the year st3 is the class, ranging from 1-10
+              OPEN(99,FILE=fname1(1:blank(fname1))//'/cont_lu-'//
+     &st3(1:blank(st3))//'-'//st2(1:4)//'.dat',STATUS='old',
+     &         FORM='formatted',ACCESS='direct',RECL=nrecl,iostat=kode)
+              IF (kode.NE.0) THEN
+                WRITE(*,'('' PROGRAM TERMINATED'')')
+                WRITE(*,*) 'Land Use data-base.'
+                WRITE(*,*) 'File does not exist:'
+                WRITE(*,*) fname1(1:blank(fname1)),
+     &          '/cont_lu-',st3(1:blank(st3)),'-',st2(1:4),'.dat'
+                STOP
+              ENDIF
+            ENDIF !PCM 
 
             DO ii=1,4
-              DO jj=1,4
-                row = int(rrow)+jj-1
-                col = int(rcol)+ii-1
-                IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
-     &(col.LE.lonn)) THEN
-                  recn = (row-1)*lonn + col
-                  READ(99,'(i3)',REC=recn) x
-                  xx(ii,jj) = real(x)
-                  IF (x.LT.200) THEN
-                    indx(ii,jj) = 1
+                DO jj=1,4
+                  row = int(rrow)+jj-1
+                  col = int(rcol)+ii-1
+                  IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
+     &               (col.LE.lonn)) THEN
+                    recn = (row-1)*lonn + col
+                    IF(ilanduse.EQ.3 .OR. ilanduse.EQ.4) THEN !PCM
+                      xf = SDGVM_LUC(j-1, classes(k), ii, jj) !for j=1, years(j)=1700
+                      xx(ii,jj) = xf 
+                      x = INT(xf) !need this for indx and mindx masking, below
+                    ELSEIF(ilanduse.EQ.0) THEN !PCM
+                      READ(99,'(i3)',REC=recn) x
+                      xx(ii,jj) = real(x) !convert from integer
+                    ENDIF
+                    IF (x.LT.200) THEN
+                      indx(ii,jj) = 1
+                      mindx(ii,jj) = .true. 
+                    ELSE
+                      indx(ii,jj) = 0
+                      mindx(ii,jj) = .false. 
+                    ENDIF
                   ELSE
-                    indx(ii,jj) = 0
+                    indx(ii,jj) = -1
+                    mindx(ii,jj) = .false. 
                   ENDIF
-                ELSE
-                  indx(ii,jj) = -1
-                ENDIF
-              ENDDO
+                ENDDO
             ENDDO
+
+            num_land = COUNT( mindx .EQV. .true.)
+
+            IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+              if(num_land .GT. 0) THEN
+                WRITE(*,FMT='(F9.4)',ADVANCE='no') 
+     &                 SUM(xx,mindx)/100.0/num_land 
+C                WRITE(*,FMT='(F9.4)',ADVANCE='no') xx(1,1)/100.0 
+              ELSE
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00 
+              ENDIF
+            ENDIF
+
 
             CALL BI_LIN(xx,indx,xnorm,ynorm,ans)
 
             x = int(ans+0.5d0)
 
             classprop(classes(k)) = ans
-            CLOSE(99)
+            IF(ilanduse.EQ.0) THEN !PCM
+              CLOSE(99)
+            ENDIF !PCM 
+
 
           ENDDO ! end of loop over the classes
+          IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+            WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+          ENDIF
 
 c
 c Now calculate the ftprop.
 c
+C PCM classprop is the percentage of each class in that gridcell, after
+C interpolation in the BI_LIN step above 
+C PCM lutab(classes(k),ift) is the percentage of the SDGVM
+C land-cover-class that is of the labelled SDGVM ift
           DO ift=2,nft
             ftprop(ift)=0.0d0
             DO k=1,nclasses
@@ -1199,7 +1291,7 @@ c
           cluse(ift,i) = ftprop(ift)
         ENDDO
         !write(*,'(I4,12F8.2)') yr0a+i-1, cluse(1:12,i)  
-      ENDDO
+      ENDDO !year loop
 
 
       ! TRENDY SDGVM method 
@@ -1218,8 +1310,8 @@ c
           ELSE
             DO ift=1,nft
               cluse(ift,i) = cluse(ift,ij) + 
-     &( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
-     &(cluse(ift,ij1) - cluse(ift,ij)) )
+     &  ( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
+     &  (cluse(ift,ij1) - cluse(ift,ij)) )
       !       if(ift.eq.10) then
       !        print*, cluse(ift,ij), (cluse(ift,ij1) - cluse(ift,ij)),
       !&cluse(ift,i) 
@@ -1232,7 +1324,7 @@ c
 
 
       IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.
-     &(indx(3,3).EQ.1)) THEN
+     &  (indx(3,3).EQ.1)) THEN
         l_lu = .TRUE.
       ELSE
         l_lu = .FALSE.

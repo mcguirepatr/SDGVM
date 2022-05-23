@@ -11,6 +11,9 @@
 
       REAL*8 defaulttopsl
       PARAMETER(defaulttopsl = 5.0d0)
+      INTEGER, PARAMETER :: NX = 720, NY = 360
+      INTEGER, PARAMETER :: NE = 10
+      INTEGER, PARAMETER :: NYR = 200 !PCM Hardwire this for now 
 
       REAL*8 lat,lon,dep,ca(12,31),npp(maxnft),lai(maxnft),evp(maxnft)
       REAL*8 gpp(maxnft),sresp(maxnft),evt(maxnft),soilt,grassrc,resp
@@ -1696,12 +1699,14 @@ c CLOSE added by Ghislain 15/12/03
 * Use landuse defined in input file.
         CALL LANDUSE1(luse,fire,harvest,yr0a,yrfa,year0set,spinl)
       ENDIF
-      IF ((ilanduse.LT.0).OR.(ilanduse.GT.2)) THEN
+      IF ((ilanduse.LT.0).OR.(ilanduse.GT.4)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,*) 'No landuse defined'
         WRITE(*,*) '0:= Defined from a map.'
         WRITE(*,*) '1:= Defined in the input file.'
         WRITE(*,*) '2:= Natural vegetation.'
+        WRITE(*,*) '3:= Defined from the maps in states2b.nc file.'
+        WRITE(*,*) '4:= Defined from the maps in transitions2b.nc file.'
         STOP
       ENDIF
       CLOSE(98)
@@ -2083,7 +2088,7 @@ C PCM2        WRITE(*,*) 'bbbbbbbbb'
 c     temporaire !
       icontinuouslanduse=1
       !print*, luse(:)
-      IF (ilanduse.EQ.0) THEN
+      IF (ilanduse.EQ.0 .OR. ilanduse.EQ.3 .OR. ilanduse.EQ.4) THEN
         IF (icontinuouslanduse.EQ.0) THEN
           CALL EX_LU(stlu,lat,lon,luse,yr0,yrf,du)
 c     create the continuous land use (cluse)
@@ -2098,7 +2103,7 @@ c     create the continuous land use (cluse)
           ENDDO
         ELSE            
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl)
+     &yr0a,yrfa,year0set,spinl,ilanduse)
           !write(*,*) cluse(ft,:)
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN

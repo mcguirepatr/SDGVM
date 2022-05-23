@@ -139,9 +139,14 @@
       INTEGER :: num_land
 
        ! Loop indexes, and error handling.
-      INTEGER :: x, y, t, v, v2, i, lon, lat, year_index
+      INTEGER :: x, y, t, v, v2, i, lon, lat, year_index, shift_year
 
 
+      IF(compute_next_year) THEN
+         shift_year = -1
+      ELSE
+         shift_year = 0
+      ENDIF
       ! Open ESA CCILCP 2014 dataset 
       !setwd(wdg)
       DO i=1,NE 
@@ -184,8 +189,8 @@
       END DO
 
       !DO t=ST,NT,1 
-      SINDEX = SYR - SYR0 + 1
-      FINDEX = FYR - SYR0 + 1
+      SINDEX = SYR - SYR0 + 1 + shift_year
+      FINDEX = FYR - SYR0 + 1 + shift_year
       DO t=SINDEX,FINDEX 
         year_index = t - SINDEX + 1 
         data_out(:,:,:) = 0.0
@@ -327,7 +332,7 @@
 
         IF( MOD(t-SINDEX,DT) == 0 ) THEN 
            IF(compute_next_year) THEN
-               WRITE(*,FMT='(I5)', ADVANCE='no') t+849+1 !t=1 is the year 850
+               WRITE(*,FMT='(I5)', ADVANCE='no') t+849+2 !t=1 is the year 850
            ELSE
                WRITE(*,FMT='(I5)', ADVANCE='no') t+849 !t=1 is the year 850
            END IF
