@@ -21,6 +21,7 @@
       !                                        cdo gridboxmean,2,2 transitions.nc transitions2b.nc
       !                                        cdo gridboxmean,2,2 states.nc states2b.nc
       CHARACTER (LEN = *), PARAMETER :: fname = "states2b.nc" !half-resolution version of states.nc
+      !CHARACTER (LEN = *), PARAMETER :: fname = "states.nc"
       CHARACTER (LEN = *), PARAMETER :: fname_t = "transitions2b.nc" !half-resolution version of transitions.nc
       CHARACTER (LEN = *), PARAMETER :: wdh = &
        "/gws/nopw/j04/nexcs/pmcguire/TRENDYv10/db/LUH2_GCB_2021/"
@@ -30,9 +31,10 @@
       !CHARACTER (LEN = *), PARAMETER :: print_type='unagg'
       !CHARACTER (LEN = *), PARAMETER :: print_type='agg'
       CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
+      !CHARACTER (LEN = *), PARAMETER :: print_type='esa'
 
       !    DIMENSIONS(sizes): time(1172), lon(1440), lat(720)
-      ! INTEGER, PARAMETER :: NX = 1440, NY = 720, NT = 1172, NV = 14, NV2 = 6
+      !INTEGER, PARAMETER :: NX = 1440, NY = 720, NT = 1172, NV = 14, NV2 = 6
       INTEGER, PARAMETER :: NX = 720, NY = 360, NT = 1172, NV = 14, NV2 = 6
       REAL, PARAMETER    :: misval = 1e19
       INTEGER, PARAMETER :: NE = 10, NE2 = 15 
@@ -51,8 +53,10 @@
       LOGICAL :: esamask(NE2,NX, NY) = .false.
       ! setup ESA arrays
       REAL :: esaarray(NE2,NX,NY) = 0.0
+      REAL :: esasum(NX,NY) = 0.0
+      REAL :: hydesum(NX,NY) = 0.0
       CHARACTER (LEN = 200) :: fname_s2
-      LOGICAL :: compute_next_year = .true.
+      LOGICAL :: compute_next_year = .false.
       REAL, PARAMETER :: NA= -999.0
 
       ! ESA PFTs
@@ -126,6 +130,8 @@
       INTEGER :: ncid_t, varid_t(NVT)
 
       INTEGER :: num_land
+      INTEGER :: num_good
+      REAL, PARAMETER :: goodsum=95.0
 
       ! Loop indexes, and error handling.
       INTEGER :: x, y, t, v, v2, i, lon, lat
@@ -149,6 +155,10 @@
 
       num_land = COUNT( esamask(1,:,:) .EQV. .TRUE.)
       PRINT *, 'ESA num_land=',num_land,'num_tot=',NX*NY 
+      !esasum = SUM(esaarray(1:10,:,:),1) ! compute sum over all land cover types (first array index)
+      !num_good = COUNT( esasum .GT. goodsum) ! difference from 100 is due to urban type?
+      !PRINT '(A,F7.2,A,I8,A,I8)', 'ESA num_good (sum>=',goodsum,')=',num_good,' num_land=',num_land 
+
 
       ! Open the file. NF90_NOWRITE tells netCDF we want read-only access to
       ! the file.
@@ -189,6 +199,10 @@
         !  where (dummya > misval) mask = .false.      
 
         END DO
+
+        !hydesum = SUM(data_in(1:12,:,:),1) ! compute sum over all land cover types (first array index)
+        !num_good = COUNT( hydesum .GT. goodsum/100.0) 
+        !PRINT '(A,F7.2,A,I8,A,I8)', 'Hyde num_good (sum>=',goodsum/100.0,')=',num_good,' num_land=',num_land 
 
 
         IF(compute_next_year) THEN
@@ -257,6 +271,10 @@
         ! change to percent      
         data_out = data_out * 100.0      
 
+        !hydesum = SUM(data_out(1:6,:,:),1) ! compute sum over all land cover types (first array index)
+        !num_good = COUNT( hydesum .GT. goodsum) 
+        !PRINT '(A,F7.2,A,I8,A,I8)', 'Hyde aggreg. num_good (sum>=',goodsum,')=',num_good,' num_land=',num_land 
+
         esaarray(11:15,:,:) = data_out(1:5,:,:)
      
         ! process, returns an array of PFT, lon, lat  
@@ -272,6 +290,10 @@
         ! convert missing values to SDGVM missing value
         WHERE (data_out_SDGVM == NA) data_out_SDGVM = 255 
 
+        !hydesum = SUM(data_out_SDGVM(1:10,:,:),1) ! compute sum over all land cover types (first array index)
+        !num_good = COUNT( hydesum .GT. goodsum .and. mask_SDGVM) 
+        !PRINT '(A,F7.2,A,I8,A,I8)', 'SDGVM num_good (sum>=',goodsum,')=',num_good,' num_land=',num_land 
+
         IF( t == ST ) THEN
           num_land = COUNT( mask_SDGVM .EQV. .TRUE.)
           PRINT *, 'SDGVM num_land=',num_land,'num_tot=',NX*NY 
@@ -285,6 +307,10 @@
                WRITE(*,FMT='(A9)', ADVANCE='no') varname2(v)
             END DO
           ELSE IF(print_type=='sdgvm') THEN
+            DO v=1,NE
+               WRITE(*,FMT='(A9)', ADVANCE='no') varname_esa_pfts(v)
+            END DO
+          ELSE IF(print_type=='esa') THEN
             DO v=1,NE
                WRITE(*,FMT='(A9)', ADVANCE='no') varname_esa_pfts(v)
             END DO
@@ -314,7 +340,11 @@
              END DO
            ELSE IF(print_type=='sdgvm') THEN
              DO v=1,NE
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(v,:,:)/100.0,mask)/num_land 
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(v,:,:)/100.0,mask_SDGVM)/num_land 
+             END DO
+           ELSE IF(print_type=='esa') THEN
+             DO v=1,NE
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(esaarray(v,:,:)/100.0,esamask(v,:,:))/num_land 
              END DO
            END IF
            WRITE(*,*) ! Assumes default "ADVANCE='yes'".
