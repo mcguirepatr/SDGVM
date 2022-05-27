@@ -1143,6 +1143,7 @@ c     look for the first year
       ynorm = rrow - real(int(rrow))
       xnorm = rcol - real(int(rcol))
 *----------------------------------------------------------------------*
+      PRINT *,rrow,rcol,lat,lon
 
       IF(ilanduse.GE.3 .and. ilanduse.LE.6 ) THEN
 CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
@@ -1153,7 +1154,7 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
          ENDIF
          ! get the 4 neighboring grid cells for all nclasses for the years range 
          SDGVM_LUC=states_convertSDGVM_func(years(1),years(n),
-     &INT(rcol),INT(rrow),4,compute_next_year) 
+     &INT(rcol+1),INT(rrow+1),4,compute_next_year)  ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
       ELSE
          SDGVM_LUC=0.0
       ENDIF
@@ -1199,7 +1200,7 @@ C PCM: st2 is the year st3 is the class, ranging from 1-10
                 DO jj=1,4
                   row = int(rrow)+jj-1
                   col = int(rcol)+ii-1
-                  !PCM: currently, there is no wrapping at 0 deg longitude
+                  !PCM: currently, there is no wrapping at longitude of date-line
                   !for the 4x4 interpolation
                   IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
      &               (col.LE.lonn)) THEN

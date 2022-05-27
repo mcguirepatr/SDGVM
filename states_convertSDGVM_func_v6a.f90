@@ -167,6 +167,7 @@
       maxy=MIN(Y0+DXY-1,NY) 
       maxii=MIN(NX-X0+1,DXY) 
       maxjj=MIN(NY-Y0+1,DXY) 
+      PRINT *,X0,Y0,maxx,maxy,maxii,maxjj
 
       ! Open ESA CCILCP 2014 dataset 
       !setwd(wdg)
