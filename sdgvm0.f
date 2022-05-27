@@ -1699,7 +1699,7 @@ c CLOSE added by Ghislain 15/12/03
 * Use landuse defined in input file.
         CALL LANDUSE1(luse,fire,harvest,yr0a,yrfa,year0set,spinl)
       ENDIF
-      IF ((ilanduse.LT.0).OR.(ilanduse.GT.4)) THEN
+      IF ((ilanduse.LT.0).OR.(ilanduse.GT.6)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,*) 'No landuse defined'
         WRITE(*,*) '0:= Defined from a map.'
@@ -1707,6 +1707,10 @@ c CLOSE added by Ghislain 15/12/03
         WRITE(*,*) '2:= Natural vegetation.'
         WRITE(*,*) '3:= Defined from the maps in states2b.nc file.'
         WRITE(*,*) '4:= Defined from the maps in transitions2b.nc file.'
+        WRITE(*,*)
+     & '5:= Defined from the 1st-yr maps in states2b.nc file.'
+        WRITE(*,*)
+     & '6:= Defined from the 1st-yr maps in transitions2b.nc file.'
         STOP
       ENDIF
       CLOSE(98)
@@ -2088,7 +2092,7 @@ C PCM2        WRITE(*,*) 'bbbbbbbbb'
 c     temporaire !
       icontinuouslanduse=1
       !print*, luse(:)
-      IF (ilanduse.EQ.0 .OR. ilanduse.EQ.3 .OR. ilanduse.EQ.4) THEN
+      IF (ilanduse.EQ.0 .OR. (ilanduse.GE.3 .AND. ilanduse.LE.6)) THEN
         IF (icontinuouslanduse.EQ.0) THEN
           CALL EX_LU(stlu,lat,lon,luse,yr0,yrf,du)
 c     create the continuous land use (cluse)

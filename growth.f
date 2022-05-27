@@ -57,7 +57,7 @@
       ngcov = 0d0
       flulccc = 0d0
 
-      IF (ilanduse.lt.2) THEN
+      IF (ilanduse.ne.2 ) THEN
       sum_cov(:)     = 0.0d0
       ftloss_prop(:) = 0.0d0
       DO ft=3,nft

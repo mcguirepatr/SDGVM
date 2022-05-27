@@ -1014,12 +1014,13 @@ C PCM2      WRITE(*,*) '111111111'
       USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: NX = 720, NY = 360
-      INTEGER, PARAMETER :: NE = 10
-      INTEGER, PARAMETER :: NYR = 322 !PCM Hardwire for now
+      INTEGER, PARAMETER :: NS = 15
+      !INTEGER, PARAMETER :: NYR = 322 !PCM Hardwire for now
+      INTEGER, PARAMETER :: NYR = 1 !PCM Hardwire for now
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
-      REAL*8 SDGVM_LUC(NYR, NE, 4, 4),xf
+      REAL*8 SDGVM_LUC(NYR, NS, 4, 4),xf
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
       INTEGER ii,jj,stcmp,indx(4,4),years(1000),nrecl,yr0a,yrfa
       INTEGER classes(1000),nclasses,kode,spinl,yr_offset
@@ -1032,7 +1033,7 @@ C PCM2      WRITE(*,*) '111111111'
       LOGICAL compute_next_year,mindx(4,4)
 
 
-      IF(ilanduse.EQ.3) THEN !PCM Use states2b.nc file: half-res
+      IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM Use states2b.nc or transitions2b.nc file: half-res
        !PCM hardwire these numbers for now
         latf = 89.75
         lon0 = -179.75
@@ -1040,21 +1041,13 @@ C PCM2      WRITE(*,*) '111111111'
         lonr = 0.5
         latn = 360
         lonn = 720
-        n    = 322
+        IF(ilanduse.EQ.3 .OR. ilanduse.EQ.4 ) THEN 
+          n    = 322
+        ELSE IF(ilanduse.EQ.5 .OR. ilanduse.EQ.6 ) THEN 
+          n    = 1 
+        ENDIF
         years(1:n) = (/(i, i=1700,1700+n-1)/)
-        nclasses   = 10
-        classes(1:nclasses) = (/(i, i=1,nclasses)/)
-      ELSEIF(ilanduse.EQ.4) THEN !PCM Use transitions2b.nc file:half-res
-       !PCM hardwire these numbers for now
-        latf = 89.75
-        lon0 = -179.75
-        latr = 0.5
-        lonr = 0.5
-        latn = 360
-        lonn = 720
-        n    = 322
-        years(1:n) = (/(i, i=1700,1700+n-1)/) 
-        nclasses   = 10
+        nclasses   = NS 
         classes(1:nclasses) = (/(i, i=1,nclasses)/)
       ELSEIF(ilanduse.EQ.0) THEN !PCM original method of using SDGVM LUC
 *----------------------------------------------------------------------*
@@ -1151,11 +1144,11 @@ c     look for the first year
       xnorm = rcol - real(int(rcol))
 *----------------------------------------------------------------------*
 
-      IF(ilanduse.EQ.3 .or. ilanduse.EQ.4) THEN
+      IF(ilanduse.GE.3 .and. ilanduse.LE.6 ) THEN
 CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
-         IF(ilanduse.EQ.3) THEN
+         IF(ilanduse.EQ.3 .or. ilanduse.EQ.5 ) THEN
            compute_next_year = .false.
-         ELSE IF(ilanduse.EQ.4) THEN
+         ELSE IF(ilanduse.EQ.4 .or. ilanduse.EQ.6 ) THEN
            compute_next_year = .true.
          ENDIF
          ! get the 4 neighboring grid cells for all nclasses for the years range 
@@ -1206,10 +1199,12 @@ C PCM: st2 is the year st3 is the class, ranging from 1-10
                 DO jj=1,4
                   row = int(rrow)+jj-1
                   col = int(rcol)+ii-1
+                  !PCM: currently, there is no wrapping at 0 deg longitude
+                  !for the 4x4 interpolation
                   IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
      &               (col.LE.lonn)) THEN
                     recn = (row-1)*lonn + col
-                    IF(ilanduse.EQ.3 .OR. ilanduse.EQ.4) THEN !PCM
+                    IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
                       xf = SDGVM_LUC(j-1, classes(k), ii, jj) !for j=1, years(j)=1700
                       xx(ii,jj) = xf 
                       x = INT(xf) !need this for indx and mindx masking, below
