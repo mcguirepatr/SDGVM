@@ -165,8 +165,8 @@
       !will keep this for now, for this extension, too.
       maxx=MIN(X0+DXY-1,NX) 
       maxy=MIN(Y0+DXY-1,NY) 
-      maxii=MIN(NX-maxx+1,DXY) 
-      maxjj=MIN(NY-maxy+1,DXY) 
+      maxii=MIN(NX-X0+1,DXY) 
+      maxjj=MIN(NY-Y0+1,DXY) 
 
       ! Open ESA CCILCP 2014 dataset 
       !setwd(wdg)
