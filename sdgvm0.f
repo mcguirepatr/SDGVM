@@ -13,7 +13,6 @@
       PARAMETER(defaulttopsl = 5.0d0)
       INTEGER, PARAMETER :: NX = 720, NY = 360
       INTEGER, PARAMETER :: NE = 10
-      INTEGER, PARAMETER :: NYR = 200 !PCM Hardwire this for now 
 
       REAL*8 lat,lon,dep,ca(12,31),npp(maxnft),lai(maxnft),evp(maxnft)
       REAL*8 gpp(maxnft),sresp(maxnft),evt(maxnft),soilt,grassrc,resp
@@ -158,6 +157,7 @@
       INTEGER zbb(maxnft),zbbgs(maxnft),zdsbb(maxnft)
       INTEGER hi,xi,gs_func
       INTEGER PHASE !PCM
+      INTEGER SYR,NYR !PCM
 
 *----------------------------------------------------------------------*
 * Read input filename.                                                 *
@@ -2106,8 +2106,19 @@ c     create the continuous land use (cluse)
             ENDDO
           ENDDO
         ELSE            
+          IF(ilanduse.EQ.3 .OR. ilanduse.EQ.4) THEN
+            SYR = 1700
+            NYR = 322
+          ELSE IF(ilanduse.EQ.5 .OR. ilanduse.EQ.6) THEN !preindustrial, constant
+            SYR = 1700
+            NYR = 1 
+          ELSE IF(ilanduse.EQ.0) THEN !SYR and NYR not used and not defined here
+            SYR = -1 
+            NYR = -1 
+          ENDIF
+
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR)
           !write(*,*) cluse(ft,:)
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN

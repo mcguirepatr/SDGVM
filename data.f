@@ -1009,14 +1009,13 @@ C PCM2      WRITE(*,*) '111111111'
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR)
 *----------------------------------------------------------------------*
       USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: NX = 720, NY = 360
       INTEGER, PARAMETER :: NS = 15
-      !INTEGER, PARAMETER :: NYR = 322 !PCM Hardwire for now
-      INTEGER, PARAMETER :: NYR = 1 !PCM Hardwire for now
+      INTEGER :: NYR,SYR 
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
@@ -1041,12 +1040,8 @@ C PCM2      WRITE(*,*) '111111111'
         lonr = 0.5
         latn = 360
         lonn = 720
-        IF(ilanduse.EQ.3 .OR. ilanduse.EQ.4 ) THEN 
-          n    = 322
-        ELSE IF(ilanduse.EQ.5 .OR. ilanduse.EQ.6 ) THEN 
-          n    = 1 
-        ENDIF
-        years(1:n) = (/(i, i=1700,1700+n-1)/)
+        n    = NYR 
+        years(1:n) = (/(i, i=SYR,SYR+n-1)/)
         nclasses   = NS 
         classes(1:nclasses) = (/(i, i=1,nclasses)/)
       ELSEIF(ilanduse.EQ.0) THEN !PCM original method of using SDGVM LUC
