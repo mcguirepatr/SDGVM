@@ -1009,7 +1009,7 @@ C PCM2      WRITE(*,*) '111111111'
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,cluse2)
 *----------------------------------------------------------------------*
       USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
@@ -1019,12 +1019,15 @@ C PCM2      WRITE(*,*) '111111111'
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
+      REAL*8 cluse2(maxnft,maxnft,maxyrs)
       REAL*8 SDGVM_LUC(NYR, NS, 4, 4),xf
+      REAL*8 SDGVM_LUC2(NYR, NS, NS, 4, 4),xf2,xx2(4,4,NS),x2
+      REAL*8 classprop2(255,255)
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
       INTEGER ii,jj,stcmp,indx(4,4),years(1000),nrecl,yr0a,yrfa
       INTEGER classes(1000),nclasses,kode,spinl,yr_offset
       INTEGER ij,ij1,j1,num_land
-      INTEGER ilanduse
+      INTEGER ilanduse,k2
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
       CHARACTER st4*4000
       INTEGER n_fields4000
@@ -1132,8 +1135,8 @@ c     look for the first year
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
 *----------------------------------------------------------------------*
-      rrow = (latf - lat)/latr
-      rcol = (lon - lon0)/lonr
+      rrow = 1.0 + (latf - lat)/latr 
+      rcol = 1.0 + (lon - lon0)/lonr
 
       ynorm = rrow - real(int(rrow))
       xnorm = rcol - real(int(rcol))
@@ -1144,14 +1147,19 @@ c     look for the first year
 CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
          IF(ilanduse.EQ.3 .or. ilanduse.EQ.5 ) THEN
            compute_next_year = .false.
+         ! get the 4 neighboring grid cells for all nclasses for the years range 
+           SDGVM_LUC2=0.0
          ELSE IF(ilanduse.EQ.4 .or. ilanduse.EQ.6 ) THEN
            compute_next_year = .true.
+         ! get the 4 neighboring grid cells for all nclasses*nclasses for the years range 
+           SDGVM_LUC2=states_convertSDGVM_func(years(1),years(n),
+     &INT(rcol),INT(rrow),4,compute_next_year)  ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
          ENDIF
-         ! get the 4 neighboring grid cells for all nclasses for the years range 
-         SDGVM_LUC=states_convertSDGVM_func(years(1),years(n),
-     &INT(rcol+1),INT(rrow+1),4,compute_next_year)  ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
+!PCM temporary comment out SDGVM_LUC=states_convertSDGVM_func(years(1),years(n),
+!     &INT(rcol),INT(rrow),4,compute_next_year)  ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
       ELSE
          SDGVM_LUC=0.0
+         SDGVM_LUC2=0.0
       ENDIF
 
       DO i=1,yrfa-yr0a+1
@@ -1174,10 +1182,13 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
 
           DO k=1,nclasses
             classprop(classes(k)) = 0
+            DO k2=1,nclasses
+              classprop2(classes(k),classes(k2)) = 0
+            ENDDO
             st3=in2st(classes(k))
             CALL STRIPB(st3)
             IF(ilanduse.EQ.0) THEN !PCM
-C PCM: st2 is the year st3 is the class, ranging from 1-10
+C PCM: st2 is the year st3 is the class, ranging from 1 to NS (NS=10)
               OPEN(99,FILE=fname1(1:blank(fname1))//'/cont_lu-'//
      &st3(1:blank(st3))//'-'//st2(1:4)//'.dat',STATUS='old',
      &         FORM='formatted',ACCESS='direct',RECL=nrecl,iostat=kode)
@@ -1200,8 +1211,17 @@ C PCM: st2 is the year st3 is the class, ranging from 1-10
                   IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
      &               (col.LE.lonn)) THEN
                     recn = (row-1)*lonn + col
-                    IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
+                    IF(ilanduse.EQ.3 .OR. ilanduse.LE.5 ) THEN !PCM
                       xf = SDGVM_LUC(j-1, classes(k), ii, jj) !for j=1, years(j)=1700
+                      xx(ii,jj) = xf 
+                      x = INT(xf) !need this for indx and mindx masking, below
+                    ELSE IF(ilanduse.EQ.4 .OR. ilanduse.LE.6 ) THEN !PCM
+                      xf = SDGVM_LUC(j-1, classes(k), ii, jj) !for j=1, years(j)=1700
+                      DO k2=1,nclasses
+                        xf2 = SDGVM_LUC2(j-1, classes(k), classes(k2),
+     &                                        ii, jj) !for j=1, years(j)=1700
+                        xx2(ii,jj,k2) = xf2 
+                      ENDDO
                       xx(ii,jj) = xf 
                       x = INT(xf) !need this for indx and mindx masking, below
                     ELSEIF(ilanduse.EQ.0) THEN !PCM
@@ -1240,6 +1260,15 @@ C                WRITE(*,FMT='(F9.4)',ADVANCE='no') xx(1,1)/100.0
             x = int(ans+0.5d0)
 
             classprop(classes(k)) = ans
+
+            IF(ilanduse.EQ.4 .OR. ilanduse.LE.6 ) THEN !PCM
+              DO k2=1,nclasses
+                CALL BI_LIN(xx2(:,:,k2),indx,xnorm,ynorm,ans)
+                x2 = int(ans+0.5d0)
+                classprop2(classes(k),classes(k2)) = ans
+              ENDDO
+            ENDIF
+
             IF(ilanduse.EQ.0) THEN !PCM
               CLOSE(99)
             ENDIF !PCM 

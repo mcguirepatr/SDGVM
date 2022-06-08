@@ -79,6 +79,8 @@
       REAL*8 sla_ci_low,sla_ci_high
       REAL*8 sla_int(maxnft),sla_int_er(maxnft)
       REAL*8 sla_slope(maxnft),sla_slope_er(maxnft)
+      REAL*8 ftprop2(maxnft,maxnft)
+      REAL*8 cluse2(maxnft,maxnft,maxyrs)
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
@@ -92,6 +94,7 @@
       INTEGER ilanduse,siteno,iofn,iofnft,iofngft,recl1
       INTEGER icontinuouslanduse,ftphen(maxnft),ftdth(maxnft),kode
       INTEGER i,j,k,l,m,ft,s,w,w1,f
+      INTEGER ft2
       INTEGER blank,site,year,age,bioind,xyearf
       INTEGER mnth,no_days,fireres,xyear0,per,omav(douts),year_out
       INTEGER dolydo(maxnft),luse(maxyrs),fno,bb(maxnft),bbgs(maxnft)
@@ -2118,7 +2121,7 @@ c     create the continuous land use (cluse)
           ENDIF
 
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,cluse2)
           !write(*,*) cluse(ft,:)
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN
@@ -3360,7 +3363,7 @@ c        ENDIF
 *----------------------------------------------------------------------*
         IF (ilanduse.EQ.2) THEN
           CALL NATURAL_VEG(tmp,prc,ftprop,nat_map)
-        ELSE ! 0 and 1
+        ELSE ! 0 and 1 and 3 to 6
           ftprop(1) = 100.0d0
           DO ft=2,nft
             IF (check_ft_grow(tmp,ftbbm(ft),ftbb0(ft),ftbbmax(ft),
@@ -3392,6 +3395,25 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
             ELSE
               ftprop(ft) = 0.0d0
             ENDIF
+
+            IF (ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+            DO ft2=1,nft
+              ! logic below is identical to the co2 logic
+              if((spinl.gt.0).and.(iyear.gt.spinl)) then
+                ftprop2(ft,ft2) = cluse2(ft,ft2,iyear-iyear_adj)
+              else
+C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
+                if(co2const.gt.0.0) then !For TRENDY S1-S3
+C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
+                  ftprop2(ft,ft2) = cluse2(ft,ft2,1)
+                else
+                  ftprop2(ft,ft2) = cluse2(ft,ft2,iyear-iyear_adj)
+                endif  
+              endif  
+            ENDDO
+            ENDIF
+
+
           ENDDO
           IF (ftprop(1).LT.0.0d0) THEN
             DO ft=2,nft
@@ -3405,7 +3427,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
-     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen)
+     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,ftprop2)
 
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
