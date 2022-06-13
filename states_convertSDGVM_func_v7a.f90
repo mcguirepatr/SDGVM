@@ -16,18 +16,20 @@
 !versions:
 !    v5b: working version that replicates original R code
 !    v6a: enhancement to keep track of both primary & secondary tree FTs
-!    v7a: enhancement to keep track of gross trnasitions
+!    v7a: enhancement to keep track of gross transitions
 
       MODULE FUNCTIONS_CLU
       CONTAINS
-      FUNCTION states_convertSDGVM_func(SYR,FYR,X0,Y0,DXY,compute_next_year) RESULT( data_out_SDGVM )
+      SUBROUTINE states_convertSDGVM_func(SYR,FYR,X0,Y0,DXY,compute_next_year,data_out_SDGVM,data_out_AggHydeTransitions )
       USE netcdf
       IMPLICIT NONE
 
       INTEGER, PARAMETER :: NS = 17
+      INTEGER, PARAMETER :: NV2 = 8 
       INTEGER SYR,FYR,X0,Y0,DXY 
       LOGICAL :: compute_next_year
-      REAL*8, DIMENSION(FYR-SYR+1,NS,NS,DXY,DXY) ::  data_out_SDGVM
+      REAL*8, DIMENSION(FYR-SYR+1,NS,DXY,DXY) ::  data_out_SDGVM
+      REAL*8, DIMENSION(FYR-SYR+1,NV2,NV2,DXY,DXY) ::  data_out_AggHydeTransitions
 
       INTEGER, PARAMETER :: NX = 720, NY = 360
       ! half-resolution version computed with: module load jasppy ! on JASMIN
@@ -45,7 +47,7 @@
       !CHARACTER (LEN = *), PARAMETER :: print_type='agg'
       CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
 
-      INTEGER, PARAMETER :: NT = 1172, NV = 14, NV2 = 8
+      INTEGER, PARAMETER :: NT = 1172, NV = 14
       REAL*8, PARAMETER    :: misval = 1e19
       INTEGER, PARAMETER :: NE = 10, NE2 = 17
       INTEGER, PARAMETER :: NVT = 118 
@@ -60,6 +62,7 @@
       REAL*8 :: data_in_new(NV, DXY, DXY)
       REAL*8 :: data_in_t(NVT, DXY, DXY)
       REAL*8 :: data_out(NV2, DXY, DXY)
+      REAL*8 :: data_t_agg(NV2, NV2, DXY, DXY)
       LOGICAL :: mask(DXY, DXY)
       LOGICAL :: mask_SDGVM(DXY, DXY)
       LOGICAL :: esamask(NE2,DXY, DXY)
@@ -69,14 +72,23 @@
       CHARACTER (LEN = 200) :: fname_s2
       INTEGER, PARAMETER :: NA= -999
       INTEGER :: maxx,maxy,maxii,maxjj
+      ! This will be the netCDF ID for the file and data variable.
+      INTEGER :: ncid, varid(NV)
+      INTEGER :: ncid_t, varid_t(NVT)
+
+      INTEGER :: num_land
+
+      ! Loop indexes, and error handling.
+      INTEGER :: x, y, t, v, v2, v3, i, lon, lat, year_index, shift_year
+
 
 
       ! ESA PFTs
       CHARACTER(LEN=7),PARAMETER :: varname_esa_pfts(NE)=(/ '  BARE',' Ev_Bl',' Dc_Bl',' Ev_Nl', &
        ' Dc_Nl', ' Shrub','    C3','    C4','C3crop','C4crop' /)
 
-      CHARACTER(LEN=7),PARAMETER :: varname(NV)=(/'primf', 'primn', 'secdf', 'secdn', 'urban', &
-          'c3ann', 'c4ann', 'c3per', 'c4per', 'c3nfx', 'pastr', 'range', &
+      CHARACTER(LEN=7),PARAMETER :: varname(NV)=(/'primf', 'primn', 'secdf', 'secdn', &
+          'c3ann', 'c4ann', 'c3per', 'c4per', 'c3nfx', 'pastr', 'range', 'urban', &
           'secmb', 'secma'/)
      ! Anthony's original order in R code:
      ! CHARACTER(LEN=7),PARAMETER :: varname(NV)=(/'primf', 'secdf', 'secdn', 'primn', &
@@ -132,7 +144,9 @@
            'primn_bioh    ','secmf_bioh    ',&
            'secyf_bioh    ','secnf_bioh    ' /)
 
-      ! Orig:
+      INTEGER aggmap(NV-2) !don't include 'secmb', 'secma'
+
+      ! Orig: NV2=6
       ! aggregate Hyde landcover types 
       !CHARACTER(LEN=9),PARAMETER :: varname2(NV2)=(/'   forest', ' nforestr', '   c3crop', '   c4crop', &
       !    '   pastnr', '    urban' /)
@@ -143,25 +157,38 @@
       ! pasture and not rangelands
       ! urban
 
-      ! New:
+      ! aggmap(1)  =  1   ! primary forest       -> forest
+      ! aggmap(2)  =  2   ! primary non-forest   -> nforestr
+      ! aggmap(3)  =  1   ! secondary forest     -> forest
+      ! aggmap(4)  =  2   ! secondary non-forest -> nforestr
+      ! aggmap(5:7)  =  3 ! c3 crops
+      ! aggmap(8:9)  =  4 ! c4 crops
+      ! !aggmap(10:11) = 5  ! pasture and rangelands
+      ! aggmap(10) =  5   ! pasture and not rangelands
+      ! aggmap(11) =  2   ! rangelands - add to primary non-forest
+      ! aggmap(12) =  6   ! urban
+
+      ! New: NV2=8
       ! HYDE aggregated land cover: 
       CHARACTER(LEN=9),PARAMETER :: varname2(NV2)=(/'    primf', '    primn', '    secdf', '    secdn', &
           '   c3crop', '   c4crop', '   pastnr', '    urban' /)
 
-      ! This will be the netCDF ID for the file and data variable.
-      INTEGER :: ncid, varid(NV)
-      INTEGER :: ncid_t, varid_t(NVT)
+      aggmap(1)  =  1   ! primary forest
+      aggmap(2)  =  2   ! primary non-forest
+      aggmap(3)  =  3   ! secondary forest
+      aggmap(4)  =  4   ! secondary non-forest
+      aggmap(5:7)  =  5 ! c3 crops
+      aggmap(8:9)  =  6 ! c4 crops
+      !aggmap(10:11) = 7  ! pasture and rangelands
+      aggmap(10) =  7   ! pasture and not rangelands
+      aggmap(11) =  2   ! rangelands - add to primary non-forest
+      aggmap(12) =  8   ! urban
 
-      INTEGER :: num_land
-
-      ! Loop indexes, and error handling.
-      INTEGER :: x, y, t, v, v2, i, lon, lat, year_index, shift_year
-
-       IF(compute_next_year) THEN
+      IF(compute_next_year) THEN
           shift_year = -1
-       ELSE
+      ELSE
           shift_year = 0
-       ENDIF
+      ENDIF
 
       !PCM since currently, there is no wrapping of the land cover at LON=0, we
       !will keep this for now, for this extension, too.
@@ -220,6 +247,7 @@
       DO t=SINDEX,FINDEX 
         year_index = t - SINDEX + 1 
         data_out(:,:,:) = 0.0
+        data_t_agg(:,:,:,:) = 0.0
         IF(t > SINDEX) THEN 
           data_in_old(:,:,:)=data_in(:,:,:)
         END IF
@@ -255,23 +283,38 @@
            data_in_new(:,:,:)=data_in(:,:,:) 
           ! end if
 
-           DO v=1,NVT
-            data_in_t(v,:,:) = NA
+           DO v=1,NVT-6 ! skip for bioh
+            data_in_t(v,:,:) = NA        !data_in_t = transitions matrix element for transition with the name varname_t(v)
             CALL CHECK( NF90_GET_VAR(ncid_t, varid_t(v), data_in_t(v,1:maxii,1:maxjj), start=[X0,Y0,t], count=[maxii,maxjj,1]) )
-            from_t = varname_t(v)(1:5)
-            to_t   = varname_t(v)(10:14)
+            from_t = varname_t(v)(1:5)   !from_t = the state from which the transition is coming
+            to_t   = varname_t(v)(10:14) !to_t   = the state to   which the transition is going 
+            dummya = data_in_t(v,:,:)
             DO v2=1,NV
-              IF((v<NVT-5) .AND. (varname(v2) == from_t)) THEN! skip for bioh
+              IF(varname(v2) == from_t) THEN
                !PRINT *, varname_t(v), varname(v2), from_t, v, v2
-               data_in_new(v2,:,:)= data_in_new(v2,:,:) - data_in_t(v,:,:) 
+               data_in_new(v2,:,:)= data_in_new(v2,:,:) - dummya 
+               ! aggregate Hyde landcover types 
+               DO v3=1,NV
+                IF(varname(v3) == to_t) THEN
+                  data_t_agg(aggmap(v2),aggmap(v3),:,:) = data_t_agg(aggmap(v2),aggmap(v3),:,:) + dummya
+                END IF
+               END DO
               END IF
-              IF((v<NVT-5) .AND. (varname(v2) == to_t)) THEN ! skip for bioh
+              IF(varname(v2) == to_t) THEN
                !PRINT *, varname_t(v), varname(v2), to_t, v, v2
-               data_in_new(v2,:,:)= data_in_new(v2,:,:) + data_in_t(v,:,:) 
+               data_in_new(v2,:,:)= data_in_new(v2,:,:) + dummya 
+               ! aggregate Hyde landcover types 
+               DO v3=1,NV
+                IF(varname(v3) == from_t) THEN
+                  data_t_agg(aggmap(v3),aggmap(v2),:,:) = data_t_agg(aggmap(v3),aggmap(v2),:,:) + dummya
+                END IF
+               END DO
               END IF
             END DO
            END DO
-        END If
+        ! change to percent      
+           data_t_agg = data_t_agg * 100.0      
+        END IF
 
         !aggregate
         DO v=1,NV
@@ -284,37 +327,7 @@
           END IF
 
         ! aggregate Hyde landcover types 
-        ! primary forest
-          IF(v==1) THEN
-            data_out(1,:,:) = data_out(1,:,:) + dummya
-        ! primary non-forest
-          ELSE IF(v==2) THEN
-            data_out(2,:,:) = data_out(2,:,:) + dummya
-        ! secondary forest
-          ELSE IF(v==3) THEN
-            data_out(3,:,:) = data_out(3,:,:) + dummya
-        ! secondary non-forest
-          ELSE IF(v==4) THEN
-            data_out(4,:,:) = data_out(4,:,:) + dummya
-        ! c3 crops
-          ELSE IF(v<=7) THEN
-            data_out(5,:,:) = data_out(5,:,:) + dummya
-        ! c4 crops
-          ELSE IF(v<=9) THEN
-            data_out(6,:,:) = data_out(6,:,:) + dummya
-        ! ! pasture and rangelands
-        !   ELSE IF(v<=11) THEN
-        !    data_out(7,:,:) = data_out(7,:,:) + dummya
-        ! pasture and not rangelands
-          ELSE IF(v==10) THEN
-            data_out(7,:,:) = data_out(7,:,:) + dummya
-        ! rangelands - add to primary non-forest
-          ELSE IF(v==11) THEN
-            data_out(2,:,:) = data_out(2,:,:) + dummya
-        ! urban
-          ELSE IF(v==12) THEN
-            data_out(8,:,:) = dummya 
-          END IF
+          data_out(aggmap(v),:,:) = data_out(aggmap(v),:,:) + dummya
         END DO
 
         ! change to percent      
@@ -326,11 +339,13 @@
         !data_out_SDGVM   <- apply(esaarray,c(1,2),join_hyde)
         DO lon=1,DXY
          DO lat=1,DXY
-           data_out_SDGVM(year_index,:,v2,lon,lat) = JOIN_HYDE(esaarray(:,lon,lat))
+           data_out_SDGVM(year_index,:,lon,lat) = JOIN_HYDE(esaarray(:,lon,lat))
          END DO
         END DO
+
+        data_out_AggHydeTransitions(year_index,:,:,:,:) = data_t_agg 
       
-        WHERE(ABS(data_out_SDGVM(year_index,1,1,:,:)) <= 100.00)
+        WHERE(ABS(data_out_SDGVM(year_index,1,:,:)) <= 100.00)
           mask_SDGVM = .TRUE.
         ELSEWHERE
           mask_SDGVM = .FALSE.
@@ -384,8 +399,7 @@
              END DO
            ELSE IF(print_type=='sdgvm') THEN
              DO v=1,NS
-                ! for now, only write the v,v transition
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,v,:,:)/100.0,mask_SDGVM)/num_land 
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,:,:)/100.0,mask_SDGVM)/num_land 
 !                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,:,1,1)/100.0 
              END DO
            END IF
@@ -703,5 +717,5 @@
     ! end if 
     !end function f_lat_assignPFT
 
-    END FUNCTION states_convertSDGVM_func
+    END SUBROUTINE states_convertSDGVM_func
     END MODULE FUNCTIONS_CLU

@@ -1015,19 +1015,21 @@ C PCM2      WRITE(*,*) '111111111'
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: NX = 720, NY = 360
       INTEGER, PARAMETER :: NS = 15
+      INTEGER, PARAMETER :: maxn_at = 8 !max number of aggregrated (functional) types
       INTEGER :: NYR,SYR 
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
-      REAL*8 cluse2(maxnft,maxnft,maxyrs)
-      REAL*8 SDGVM_LUC(NYR, NS, 4, 4),xf
-      REAL*8 SDGVM_LUC2(NYR, NS, NS, 4, 4),xf2,xx2(4,4,NS),x2
-      REAL*8 classprop2(255,255)
+      REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
+      REAL*8 SDGVM_LUC(NYR, NS, 4, 4),xf,x2,xf2,xx2(4,4,maxn_at)
+      REAL*8 SDGVM_LUC2(NYR, maxn_at, maxn_at, 4, 4)
+      REAL*8 agclassprop2(255,255), atprop2(maxn_at,maxn_at)
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
       INTEGER ii,jj,stcmp,indx(4,4),years(1000),nrecl,yr0a,yrfa
       INTEGER classes(1000),nclasses,kode,spinl,yr_offset
       INTEGER ij,ij1,j1,num_land
-      INTEGER ilanduse,k2
+      INTEGER ilanduse,k2,k3,agclasses(1000),indx2(4,4,maxn_at)
+      INTEGER iat2,iat3
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
       CHARACTER st4*4000
       INTEGER n_fields4000
@@ -1047,7 +1049,8 @@ C PCM2      WRITE(*,*) '111111111'
         years(1:n) = (/(i, i=SYR,SYR+n-1)/)
         nclasses   = NS 
         classes(1:nclasses) = (/(i, i=1,nclasses)/)
-      ELSEIF(ilanduse.EQ.0) THEN !PCM original method of using SDGVM LUC
+        agclasses(1:maxn_at) = (/(i, i=1,maxn_at)/)
+      ELSEIF(ilanduse.EQ.0) THEN !PCM original method of using SDGVM land use 
 *----------------------------------------------------------------------*
 * Read in the readme file 'readme.dat'.                                *
 *----------------------------------------------------------------------*
@@ -1147,16 +1150,13 @@ c     look for the first year
 CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
          IF(ilanduse.EQ.3 .or. ilanduse.EQ.5 ) THEN
            compute_next_year = .false.
-         ! get the 4 neighboring grid cells for all nclasses for the years range 
-           SDGVM_LUC2=0.0
          ELSE IF(ilanduse.EQ.4 .or. ilanduse.EQ.6 ) THEN
            compute_next_year = .true.
-         ! get the 4 neighboring grid cells for all nclasses*nclasses for the years range 
-           SDGVM_LUC2=states_convertSDGVM_func(years(1),years(n),
-     &INT(rcol),INT(rrow),4,compute_next_year)  ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
          ENDIF
-!PCM temporary comment out SDGVM_LUC=states_convertSDGVM_func(years(1),years(n),
-!     &INT(rcol),INT(rrow),4,compute_next_year)  ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
+         ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
+         ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
+         CALL states_convertSDGVM_func(years(1),years(n),INT(rcol), 
+     &          INT(rrow),4,compute_next_year, SDGVM_LUC, SDGVM_LUC2)  ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
       ELSE
          SDGVM_LUC=0.0
          SDGVM_LUC2=0.0
@@ -1180,11 +1180,9 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
             END IF
           ENDIF
 
+
           DO k=1,nclasses
             classprop(classes(k)) = 0
-            DO k2=1,nclasses
-              classprop2(classes(k),classes(k2)) = 0
-            ENDDO
             st3=in2st(classes(k))
             CALL STRIPB(st3)
             IF(ilanduse.EQ.0) THEN !PCM
@@ -1211,17 +1209,8 @@ C PCM: st2 is the year st3 is the class, ranging from 1 to NS (NS=10)
                   IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
      &               (col.LE.lonn)) THEN
                     recn = (row-1)*lonn + col
-                    IF(ilanduse.EQ.3 .OR. ilanduse.LE.5 ) THEN !PCM
+                    IF(ilanduse.GE.3 .OR. ilanduse.LE.6 ) THEN !PCM
                       xf = SDGVM_LUC(j-1, classes(k), ii, jj) !for j=1, years(j)=1700
-                      xx(ii,jj) = xf 
-                      x = INT(xf) !need this for indx and mindx masking, below
-                    ELSE IF(ilanduse.EQ.4 .OR. ilanduse.LE.6 ) THEN !PCM
-                      xf = SDGVM_LUC(j-1, classes(k), ii, jj) !for j=1, years(j)=1700
-                      DO k2=1,nclasses
-                        xf2 = SDGVM_LUC2(j-1, classes(k), classes(k2),
-     &                                        ii, jj) !for j=1, years(j)=1700
-                        xx2(ii,jj,k2) = xf2 
-                      ENDDO
                       xx(ii,jj) = xf 
                       x = INT(xf) !need this for indx and mindx masking, below
                     ELSEIF(ilanduse.EQ.0) THEN !PCM
@@ -1261,20 +1250,53 @@ C                WRITE(*,FMT='(F9.4)',ADVANCE='no') xx(1,1)/100.0
 
             classprop(classes(k)) = ans
 
-            IF(ilanduse.EQ.4 .OR. ilanduse.LE.6 ) THEN !PCM
-              DO k2=1,nclasses
-                CALL BI_LIN(xx2(:,:,k2),indx,xnorm,ynorm,ans)
-                x2 = int(ans+0.5d0)
-                classprop2(classes(k),classes(k2)) = ans
-              ENDDO
-            ENDIF
-
             IF(ilanduse.EQ.0) THEN !PCM
               CLOSE(99)
             ENDIF !PCM 
 
 
           ENDDO ! end of loop over the classes
+
+          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
+           DO k3=1,maxn_at
+            DO k2=1,maxn_at
+              agclassprop2(agclasses(k3),agclasses(k2)) = 0
+            ENDDO
+
+            DO ii=1,4
+                DO jj=1,4
+                  row = int(rrow)+jj-1
+                  col = int(rcol)+ii-1
+                  !PCM: currently, there is no wrapping at longitude of date-line
+                  !for the 4x4 interpolation
+                  IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
+     &               (col.LE.lonn)) THEN
+                    DO k2=1,maxn_at
+                       xf2 = SDGVM_LUC2(j-1,
+     &                   agclasses(k3),agclasses(k2),ii, jj) !for j=1, years(j)=1700
+                       xx2(ii,jj,k2) = xf2 
+                    ENDDO
+                    IF (xf2.LT.200) THEN
+                      indx2(ii,jj,k2) = 1
+                    ELSE
+                      indx2(ii,jj,k2) = 0
+                    ENDIF
+                  ELSE
+                    indx2(ii,jj,k2) = -1
+                  ENDIF
+                ENDDO
+            ENDDO
+
+            DO k2=1,maxn_at
+               CALL BI_LIN(xx2(:,:,k2),indx2(:,:,k2),xnorm,ynorm,ans)
+               x2 = int(ans+0.5d0)
+               agclassprop2(agclasses(k3),agclasses(k2)) = ans
+            ENDDO
+
+           ENDDO ! end of k3 loop over the agclasses
+          END IF
+
+
           IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
             WRITE(*,*) ! Assumes default "ADVANCE='yes'".
           ENDIF
@@ -1283,9 +1305,12 @@ c
 c Now calculate the ftprop.
 c
 C PCM classprop is the percentage of each class in that gridcell, after
-C interpolation in the BI_LIN step above 
+C     interpolation in the BI_LIN step above 
 C PCM lutab(classes(k),ift) is the percentage of the SDGVM
-C land-cover-class that is of the labelled SDGVM ift
+C     land-cover-class that is of the labelled SDGVM ift
+C PCM agclassprop2(cl3,cl2) is the percentage of each aggregated Hyde class transitioning
+C     from agclass cl3 to agclass cl2 in that gridcell, after
+C interpolation in the BI_LIN step above 
           DO ift=2,nft
             ftprop(ift)=0.0d0
             DO k=1,nclasses
@@ -1294,6 +1319,23 @@ C land-cover-class that is of the labelled SDGVM ift
 *              print*,ift,k,x,lutab(classes(k),ift),classes(k)
             ENDDO
           ENDDO
+
+          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
+           DO iat3=1,maxn_at
+           DO iat2=1,maxn_at
+            atprop2(iat3,iat2)=0.0d0
+            DO k3=1,maxn_at
+             DO k2=1,maxn_at
+              atprop2(iat3,iat2)=atprop2(iat3,iat2)+
+     &lutab(agclasses(k3),iat3)*lutab(agclasses(k2),iat2)*
+     &agclassprop2(agclasses(k3),agclasses(k2))/100.0d0/100.0d0
+*              print*,iat3,k3,x,lutab(classes(k3),iat3),agclasses(k3)
+             ENDDO
+            ENDDO
+           ENDDO
+           ENDDO
+          ENDIF
+
 c
 c Calculate the bare soil.
 c
@@ -1311,6 +1353,14 @@ c
           cluse(ift,i) = ftprop(ift)
         ENDDO
         !write(*,'(I4,12F8.2)') yr0a+i-1, cluse(1:12,i)  
+
+        IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
+         DO iat3=1,maxn_at
+          DO iat2=1,maxn_at
+           cluse2(iat3,iat2,i) = atprop2(iat3,iat2)
+          ENDDO
+         ENDDO
+        ENDIF
       ENDDO !year loop
 
 
@@ -1337,8 +1387,17 @@ c
       !&cluse(ift,i) 
       !      endif 
             ENDDO
-          ENDIF
           !write(*,'(I4,12F8.2)') yr0a+i-1, cluse(1:12,i)  
+
+            DO iat3=1,maxn_at
+             DO iat2=1,maxn_at
+              cluse2(iat3,iat2,i) = cluse2(iat3,iat2,ij) + 
+     &  ( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
+     &  (cluse2(iat3,iat2,ij1) - cluse2(iat3,iat2,ij)) )
+             ENDDO
+            ENDDO
+
+          ENDIF
         ENDDO
       ENDIF
 

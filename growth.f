@@ -6,10 +6,11 @@
       SUBROUTINE COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
      &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
-     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen,atprop2)
+     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen,atprop2, 
+     &aggmap_SDGVM_to_aggHyde)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
-      INTEGER, PARAMETER :: n_at = 7 !number of aggregated (Hyde, functional) types
+      INTEGER, PARAMETER :: n_at = 8 !number of aggregated (Hyde, functional) types
       INTEGER, PARAMETER :: NS = 17 !number of SDGVM functional types
       REAL*8 cov(maxage,maxnft),bio(maxage,2,maxnft),bioleaf(maxnft)
       REAL*8 nppstore(maxnft),npp(maxnft),nps(maxnft),tmp(12),prc(12)
@@ -24,7 +25,7 @@
       REAL*8 atprop2(n_at,n_at),ftloss_prop2(maxnft,maxnft)
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
-      INTEGER ft2,at,at2,aggmap(NS)
+      INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
       LOGICAL burn,harvest
 
       IF (ilanduse.eq.2) THEN
@@ -78,27 +79,18 @@
 *      CHARACTER(LEN=9),PARAMETER :: varname2(NV2)=(/'    primf', '    primn', '    secdf', '    secdn', &
 *          '   c3crop', '   c4crop', '   pastnr', '    urban' /)
 
-      IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-        aggmap(1)  =  0 
-        aggmap(2)  =  1 
-        aggmap(3)  =  1 
-        aggmap(4)  =  1 
-        aggmap(5)  =  1 
-        aggmap(6)  =  1 
-        aggmap(7)  =  2 
-        aggmap(8)  =  2 
-        aggmap(9)  =  5 
-        aggmap(10) =  6 
-        aggmap(11) =  3 
-        aggmap(12) =  3 
-        aggmap(13) =  3 
-        aggmap(14) =  3 
-        aggmap(15) =  3 
-        aggmap(16) =  4 
-        aggmap(17) =  4 
-      ELSE
-        aggmap(:) = 0
-      ENDIF
+*      IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+*        aggmap_SDGVM_to_aggHyde(1)  =  0 
+*        aggmap_SDGVM_to_aggHyde(2:6)  =  1 
+*        aggmap_SDGVM_to_aggHyde(7:8)  =  2 
+*        aggmap_SDGVM_to_aggHyde(9)  =  5 
+*        aggmap_SDGVM_to_aggHyde(10) =  6 
+*        aggmap_SDGVM_to_aggHyde(11:15) =  3 
+*        aggmap_SDGVM_to_aggHyde(16) =  4 
+*        aggmap_SDGVM_to_aggHyde(17) =  4 
+*      ELSE
+*        aggmap_SDGVM_to_aggHyde(:) = 0
+*      ENDIF
 
       IF (ilanduse.ne.2 ) THEN
       sum_cov(:)     = 0.0d0
@@ -138,10 +130,10 @@
 
         IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
         if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
-          at = aggmap(ft)
+          at = aggmap_SDGVM_to_aggHyde(ft)
 
           DO ft2=1,nft
-            at2 = aggmap(ft2)
+            at2 = aggmap_SDGVM_to_aggHyde(ft2)
             if( atprop2(at,at2) .gt. 1d-1 ) then
               ftloss_prop2(ft,ft2) = 1d0 -
      &             (atprop2(at,at2)*1d-2)/sum_cov(ft)
@@ -262,9 +254,9 @@
 *----------------------------------------------------------------------*
 
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-            at = aggmap(ft)
+            at = aggmap_SDGVM_to_aggHyde(ft)
             DO ft2=1,nft
-             at2 = aggmap(ft2)
+             at2 = aggmap_SDGVM_to_aggHyde(ft2)
              cov(1,ft) = atprop2(at2,at)*ngcov2(ft)/100.0d0
             ENDDO
           ELSE

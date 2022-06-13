@@ -12,7 +12,7 @@
       REAL*8 defaulttopsl
       PARAMETER(defaulttopsl = 5.0d0)
       INTEGER, PARAMETER :: NX = 720, NY = 360
-      INTEGER, PARAMETER :: NE = 10
+      INTEGER, PARAMETER :: NE = 10, maxn_at = 8, NS = 17
 
       REAL*8 lat,lon,dep,ca(12,31),npp(maxnft),lai(maxnft),evp(maxnft)
       REAL*8 gpp(maxnft),sresp(maxnft),evt(maxnft),soilt,grassrc,resp
@@ -79,8 +79,8 @@
       REAL*8 sla_ci_low,sla_ci_high
       REAL*8 sla_int(maxnft),sla_int_er(maxnft)
       REAL*8 sla_slope(maxnft),sla_slope_er(maxnft)
-      REAL*8 ftprop2(maxnft,maxnft)
-      REAL*8 cluse2(maxnft,maxnft,maxyrs)
+      REAL*8 atprop2(maxn_at,maxn_at)
+      REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
@@ -94,7 +94,7 @@
       INTEGER ilanduse,siteno,iofn,iofnft,iofngft,recl1
       INTEGER icontinuouslanduse,ftphen(maxnft),ftdth(maxnft),kode
       INTEGER i,j,k,l,m,ft,s,w,w1,f
-      INTEGER ft2
+      INTEGER at2,at
       INTEGER blank,site,year,age,bioind,xyearf
       INTEGER mnth,no_days,fireres,xyear0,per,omav(douts),year_out
       INTEGER dolydo(maxnft),luse(maxyrs),fno,bb(maxnft),bbgs(maxnft)
@@ -161,6 +161,7 @@
       INTEGER hi,xi,gs_func
       INTEGER PHASE !PCM
       INTEGER SYR,NYR !PCM
+      INTEGER aggmap_SDGVM_to_aggHyde(NS) !PCM
 
 *----------------------------------------------------------------------*
 * Read input filename.                                                 *
@@ -1373,7 +1374,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
         DO k=1,nft
           lutab(j,k) = 0.0d0
         ENDDO
-      ENDDO
+      ENDDO 
 
       ii = 0
 96    CONTINUE
@@ -2119,6 +2120,18 @@ c     create the continuous land use (cluse)
             SYR = -1 
             NYR = -1 
           ENDIF
+          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+            aggmap_SDGVM_to_aggHyde(1)     =  0 
+            aggmap_SDGVM_to_aggHyde(2:6)   =  1 
+            aggmap_SDGVM_to_aggHyde(7:8)   =  2 
+            aggmap_SDGVM_to_aggHyde(9)     =  5 
+            aggmap_SDGVM_to_aggHyde(10)    =  6 
+            aggmap_SDGVM_to_aggHyde(11:15) =  3 
+            aggmap_SDGVM_to_aggHyde(15)    =  3 
+            aggmap_SDGVM_to_aggHyde(16:17) =  4 
+          ELSE
+            aggmap_SDGVM_to_aggHyde(:)     =  0
+          END IF
 
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,cluse2)
@@ -3397,17 +3410,18 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
             ENDIF
 
             IF (ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-            DO ft2=1,nft
+            at = aggmap_SDGVM_to_aggHyde(ft)
+            DO at2=1,maxn_at
               ! logic below is identical to the co2 logic
               if((spinl.gt.0).and.(iyear.gt.spinl)) then
-                ftprop2(ft,ft2) = cluse2(ft,ft2,iyear-iyear_adj)
+                atprop2(at,at2) = cluse2(at,at2,iyear-iyear_adj)
               else
 C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
                 if(co2const.gt.0.0) then !For TRENDY S1-S3
 C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
-                  ftprop2(ft,ft2) = cluse2(ft,ft2,1)
+                  atprop2(at,at2) = cluse2(at,at2,1)
                 else
-                  ftprop2(ft,ft2) = cluse2(ft,ft2,iyear-iyear_adj)
+                  atprop2(at,at2) = cluse2(at,at2,iyear-iyear_adj)
                 endif  
               endif  
             ENDDO
@@ -3427,7 +3441,8 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
-     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,ftprop2)
+     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,atprop2,
+     &aggmap_SDGVM_to_aggHyde)
 
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
