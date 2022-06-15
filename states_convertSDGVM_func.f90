@@ -17,10 +17,12 @@
 !    v5b: working version that replicates original R code
 !    v6a: enhancement to keep track of both primary & secondary tree FTs
 !    v7a: enhancement to keep track of gross transitions
+!    v7b: enhancement to get wdg,pname,pname_t,SYR, and FYR from input.dat file read in the sdgvm0.f 
 
       MODULE FUNCTIONS_CLU
       CONTAINS
-      SUBROUTINE states_convertSDGVM_func(SYR,FYR,X0,Y0,DXY,compute_next_year,data_out_SDGVM,data_out_AggHydeTransitions )
+      SUBROUTINE states_convertSDGVM_func(SYR,FYR,X0,Y0,DXY,compute_next_year, &
+           pname,pname_t,wdg,data_out_SDGVM,data_out_AggHydeTransitions )
       USE netcdf
       IMPLICIT NONE
 
@@ -35,12 +37,15 @@
       ! half-resolution version computed with: module load jasppy ! on JASMIN
       !                                        cdo gridboxmean,2,2 transitions.nc transitions2b.nc
       !                                        cdo gridboxmean,2,2 states.nc states2b.nc
-      CHARACTER (LEN = *), PARAMETER :: fname = "states2b.nc" !half-resolution version of states.nc
-      CHARACTER (LEN = *), PARAMETER :: fname_t = "transitions2b.nc" !half-resolution version of transitions.nc
-      CHARACTER (LEN = *), PARAMETER :: wdh = &
-       "/gws/nopw/j04/nexcs/pmcguire/TRENDYv10/db/LUH2_GCB_2021/"
-      CHARACTER (LEN = *), PARAMETER :: wdg = &
-       "/gws/nopw/j04/nexcs/pmcguire/sdgvmD/data/land_use/global/ESACCILCP2014/30min/"
+      !CHARACTER (LEN = *), PARAMETER :: fname = "states2b.nc" !half-resolution version of states.nc
+      !CHARACTER (LEN = *), PARAMETER :: fname_t = "transitions2b.nc" !half-resolution version of transitions.nc
+      !CHARACTER (LEN = *), PARAMETER :: wdh = &
+      ! "/gws/nopw/j04/nexcs/pmcguire/TRENDYv10/db/LUH2_GCB_2021/"
+      !CHARACTER (LEN = *), PARAMETER :: wdg = &
+      ! "/gws/nopw/j04/nexcs/pmcguire/sdgvmD/data/land_use/global/ESACCILCP2014/30min/"
+      CHARACTER (LEN = *) :: pname !path to half-resolution version of states.nc
+      CHARACTER (LEN = *) :: pname_t !path to half-resolution version of transitions.nc
+      CHARACTER (LEN = *) :: wdg
       CHARACTER (LEN = *), PARAMETER :: fname_s = "cont_lu"
       CHARACTER (LEN = *), PARAMETER :: esadate = "2009"
       !CHARACTER (LEN = *), PARAMETER :: print_type='unagg'
@@ -223,18 +228,18 @@
 
       num_land = COUNT( esamask(1,:,:) .EQV. .TRUE.)
       PRINT *, 'ESA num_land=',num_land,'num_tot=',maxii*maxjj 
-      PRINT *, wdh//fname 
+      PRINT *, pname 
 
       ! Open the file. NF90_NOWRITE tells netCDF we want read-only access to
       ! the file.
-      CALL CHECK( NF90_OPEN(wdh//fname, NF90_NOWRITE, ncid) )
+      CALL CHECK( NF90_OPEN(pname, NF90_NOWRITE, ncid) )
 
       DO v=1,NV
       ! Get the varid of the data variable, based on its name.
         CALL check( nf90_inq_varid(ncid, varname(v), varid(v)) )
       END DO
 
-      CALL CHECK( NF90_OPEN(wdh//fname_t, NF90_NOWRITE, ncid_t) )
+      CALL CHECK( NF90_OPEN(pname_t, NF90_NOWRITE, ncid_t) )
 
       DO v=1,NVT
       ! Get the varid of the data variable, based on its name.
@@ -411,7 +416,7 @@
       CALL CHECK( NF90_CLOSE(ncid) )
       CALL CHECK( NF90_CLOSE(ncid_t) )
 
-     !PRINT *,"*** SUCCESS reading file ", wdh//fname, "! "
+     !PRINT *,"*** SUCCESS reading file ", pname, "! "
      !CALL FLUSH()
 
     CONTAINS
