@@ -417,9 +417,30 @@ C        WRITE(*,*) 'bbbb'
 * in the input file; 2 = natural vegetation based on average monthly   *
 * temperatures.                                                        *
 *----------------------------------------------------------------------*
-      READ(98,*)
       READ(98,'(1000a)') st1
-      READ(st1,*) ilanduse
+
+      ii = n_fields(st1)
+      IF (ii.EQ.3) THEN
+        !read in ilanduse 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  ilanduse  = i
+        !read start year of extraction from LUC database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  SYR   = i
+        !read number of years of extraction from LUC database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  NYR   = i
+        IF (ilanduse.EQ.5. .OR. ilanduse.EQ.6) NYR = 1 !override number from input.dat if set that way accidently
+      ELSE IF (ii.EQ.1) THEN
+        READ(st1,*) ilanduse
+        SYR = -1 !SYR and NYR not used and not defined here
+        NYR = -1
+      ELSE
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'ilanduse: either 1 or 3 arguments required'
+        STOP
+      ENDIF
+
       fire(:)    = .FALSE.
       harvest(:) = .FALSE.
       IF (ilanduse.EQ.1) THEN
@@ -1723,6 +1744,7 @@ c CLOSE added by Ghislain 15/12/03
 
         sites = n_param_f - n_param_0 + 1
         n_param = n_param_0 - 1
+        READ(98,*)
 
       ELSE
         l_parameter = .false.
@@ -2121,16 +2143,16 @@ c     create the continuous land use (cluse)
             ENDDO
           ENDDO
         ELSE            
-          IF(ilanduse.EQ.3 .OR. ilanduse.EQ.4) THEN
-            SYR = 1700
-            NYR = 322
-          ELSE IF(ilanduse.EQ.5 .OR. ilanduse.EQ.6) THEN !preindustrial, constant
-            SYR = 1700
-            NYR = 1 
-          ELSE IF(ilanduse.EQ.0) THEN !SYR and NYR not used and not defined here
-            SYR = -1 
-            NYR = -1 
-          ENDIF
+C          IF(ilanduse.EQ.3 .OR. ilanduse.EQ.4) THEN
+C           SYR = 1700
+C            NYR = 322
+C         ELSE IF(ilanduse.EQ.5 .OR. ilanduse.EQ.6) THEN !preindustrial, constant
+C           SYR = 1700
+C           NYR = 1 
+C         ELSE IF(ilanduse.EQ.0) THEN !SYR and NYR not used and not defined here
+C           SYR = -1 
+C           NYR = -1 
+C         ENDIF
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
             aggmap_SDGVM_to_aggHyde(1)     =  0 
             aggmap_SDGVM_to_aggHyde(2:6)   =  1 
