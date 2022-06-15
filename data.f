@@ -1009,7 +1009,8 @@ C PCM2      WRITE(*,*) '111111111'
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,cluse2)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,
+     &pname,pname_t,wdg,cluse2)
 *----------------------------------------------------------------------*
       USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
@@ -1031,6 +1032,7 @@ C PCM2      WRITE(*,*) '111111111'
       INTEGER ilanduse,k2,k3,agclasses(1000),indx2(4,4,maxn_at)
       INTEGER iat2,iat3
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
+      CHARACTER pname*1000,pname_t*1000,wdg*1000
       CHARACTER st4*4000
       INTEGER n_fields4000
       LOGICAL l_lu,year0set
@@ -1155,8 +1157,10 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
          ENDIF
          ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
          ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
-         CALL states_convertSDGVM_func(years(1),years(n),INT(rcol), 
-     &          INT(rrow),4,compute_next_year, SDGVM_LUC, SDGVM_LUC2)  ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
+         CALL states_convertSDGVM_func(years(1),years(n),INT(rcol), ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
+     &          INT(rrow),4,compute_next_year, 
+     &          pname,pname_t,wdg,
+     &          SDGVM_LUC, SDGVM_LUC2)  
       ELSE
          SDGVM_LUC=0.0
          SDGVM_LUC2=0.0

@@ -135,6 +135,7 @@
       CHARACTER stinput*1000,stoutput*1000,stinit*1000,stco2*1000
       CHARACTER stmask*1000,country_name*1000,countries(100)*20
       CHARACTER sttxdp*1000,stlu*1000,ststats*1000,buff1*80
+      CHARACTER stpname*1000,stpname_t*1000,stwdg*1000
       CHARACTER param_file*1000,date*8,time*10,fttags(maxnft)*1000
 
       LOGICAL initise,initiseo,speedc,crand,xspeedc,withcloudcover
@@ -410,6 +411,44 @@ C        WRITE(*,*) 'bbbb'
 
       READ(98,'(A)') sttxdp  !soil data
       CALL STRIPB(sttxdp)
+
+*----------------------------------------------------------------------*
+* Read in type of landuse: 0 = defined by map; 1 = defined explicitly  *
+* in the input file; 2 = natural vegetation based on average monthly   *
+* temperatures.                                                        *
+*----------------------------------------------------------------------*
+      READ(98,*)
+      READ(98,'(1000a)') st1
+      READ(st1,*) ilanduse
+      fire(:)    = .FALSE.
+      harvest(:) = .FALSE.
+      IF (ilanduse.EQ.1) THEN
+* Use landuse defined in input file.
+        CALL LANDUSE1(luse,fire,harvest,yr0a,yrfa,year0set,spinl)
+      ENDIF
+      IF ((ilanduse.LT.0).OR.(ilanduse.GT.6)) THEN
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'No landuse defined'
+        WRITE(*,*) '0:= Defined from a map.'
+        WRITE(*,*) '1:= Defined in the input file.'
+        WRITE(*,*) '2:= Natural vegetation.'
+        WRITE(*,*) '3:= Defined from the maps in states2b.nc file.'
+        WRITE(*,*) '4:= Defined from the maps in transitions2b.nc file.'
+        WRITE(*,*)
+     & '5:= Defined from the 1st-yr maps in states2b.nc file.'
+        WRITE(*,*)
+     & '6:= Defined from the 1st-yr maps in transitions2b.nc file.'
+        STOP
+      ENDIF
+
+      READ(98,'(A)') stpname 
+      CALL STRIPB(stpname)
+
+      READ(98,'(A)') stpname_t 
+      CALL STRIPB(stpname_t)
+
+      READ(98,'(A)') stwdg 
+      CALL STRIPB(stwdg)
 
       READ(98,'(A)') stlu
       CALL STRIPB(stlu)
@@ -1684,41 +1723,13 @@ c CLOSE added by Ghislain 15/12/03
 
         sites = n_param_f - n_param_0 + 1
         n_param = n_param_0 - 1
-        READ(98,*)
-        READ(98,'(1000a)') st1
 
       ELSE
         l_parameter = .false.
       ENDIF
 
-*----------------------------------------------------------------------*
-* Read in type of landuse: 0 = defined by map; 1 = defined explicitly  *
-* in the input file; 2 = natural vegetation based on average monthly   *
-* temperatures.                                                        *
-*----------------------------------------------------------------------*
-      READ(st1,*) ilanduse
-      fire(:)    = .FALSE.
-      harvest(:) = .FALSE.
-      IF (ilanduse.EQ.1) THEN
-* Use landuse defined in input file.
-        CALL LANDUSE1(luse,fire,harvest,yr0a,yrfa,year0set,spinl)
-      ENDIF
-      IF ((ilanduse.LT.0).OR.(ilanduse.GT.6)) THEN
-        WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'No landuse defined'
-        WRITE(*,*) '0:= Defined from a map.'
-        WRITE(*,*) '1:= Defined in the input file.'
-        WRITE(*,*) '2:= Natural vegetation.'
-        WRITE(*,*) '3:= Defined from the maps in states2b.nc file.'
-        WRITE(*,*) '4:= Defined from the maps in transitions2b.nc file.'
-        WRITE(*,*)
-     & '5:= Defined from the 1st-yr maps in states2b.nc file.'
-        WRITE(*,*)
-     & '6:= Defined from the 1st-yr maps in transitions2b.nc file.'
-        STOP
-      ENDIF
-      CLOSE(98)
 
+      CLOSE(98)
 *----------------------------------------------------------------------*
 * End read of input file 
 *----------------------------------------------------------------------*
@@ -2134,7 +2145,8 @@ c     create the continuous land use (cluse)
           END IF
 
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,cluse2)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,
+     &stpname,stpname_t,stwdg,cluse2)
           !write(*,*) cluse(ft,:)
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN
