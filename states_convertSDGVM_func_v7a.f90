@@ -61,7 +61,7 @@
       REAL*8 :: data_in_old(NV, DXY, DXY)
       REAL*8 :: data_in_new(NV, DXY, DXY)
       REAL*8 :: data_in_t(NVT, DXY, DXY)
-      REAL*8 :: data_out(NV2, DXY, DXY)
+      REAL*8 :: data_out(NV-2, DXY, DXY)
       REAL*8 :: data_t_agg(NV2, NV2, DXY, DXY)
       LOGICAL :: mask(DXY, DXY)
       LOGICAL :: mask_SDGVM(DXY, DXY)
@@ -317,7 +317,7 @@
         END IF
 
         !aggregate
-        DO v=1,NV
+        DO v=1,NV-2
         ! all hyde default classes array 
         !dummya1[,,v] <- dummya
           IF(compute_next_year) THEN
@@ -412,6 +412,7 @@
       CALL CHECK( NF90_CLOSE(ncid_t) )
 
      !PRINT *,"*** SUCCESS reading file ", wdh//fname, "! "
+     !CALL FLUSH()
 
     CONTAINS
       SUBROUTINE CHECK(status)

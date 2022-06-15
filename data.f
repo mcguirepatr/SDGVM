@@ -1014,7 +1014,7 @@ C PCM2      WRITE(*,*) '111111111'
       USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: NX = 720, NY = 360
-      INTEGER, PARAMETER :: NS = 15
+      INTEGER, PARAMETER :: NS = 17
       INTEGER, PARAMETER :: maxn_at = 8 !max number of aggregrated (functional) types
       INTEGER :: NYR,SYR 
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)

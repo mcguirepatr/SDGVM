@@ -1,4 +1,6 @@
 FFLAGS= -fbounds-check -O3 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace 
+#For debugging:
+#FFLAGS= -fbounds-check -O2 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace -fcheck=all
 NETCDFFLAGS= `nf-config --fflags`
 NETCDFLIBS= `nf-config --flibs`
 FF = gfortran
