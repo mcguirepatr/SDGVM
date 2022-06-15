@@ -5,12 +5,12 @@ NETCDFFLAGS= `nf-config --fflags`
 NETCDFLIBS= `nf-config --flibs`
 FF = gfortran
 
-OBJ = states_convertSDGVM_func_v7a.o sdgvm0.o sdgvm1.o data.o growth.o parameter_adjustment.o hydrology.o phenology.o func.o doly.o soil.o nppcalc.o light.o sunshade.o weathergenerator.o metdos.o luna.o
+OBJ = states_convertSDGVM_func.o sdgvm0.o sdgvm1.o data.o growth.o parameter_adjustment.o hydrology.o phenology.o func.o doly.o soil.o nppcalc.o light.o sunshade.o weathergenerator.o metdos.o luna.o
 
 sdgvm0:	$(OBJ)
 	$(FF) $(FFLAGS)  -o sdgvm0 $(OBJ) $(NETCDFFLAGS) $(NETCDFLIBS)
 
-states_convertSDGVM_func_v7a.o : states_convertSDGVM_func_v7a.f90
+states_convertSDGVM_func.o : states_convertSDGVM_func.f90
 	$(FF)  $(FFLAGS)  -c $< $(NETCDFFLAGS) $(NETCDFLIBS)
 
 %.o: %.f
