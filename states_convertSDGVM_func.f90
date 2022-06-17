@@ -81,7 +81,7 @@
       INTEGER :: ncid, varid(NV)
       INTEGER :: ncid_t, varid_t(NVT)
 
-      INTEGER :: num_land
+      INTEGER :: num_land,blank
 
       ! Loop indexes, and error handling.
       INTEGER :: x, y, t, v, v2, v3, i, lon, lat, year_index, shift_year
@@ -208,7 +208,7 @@
       DO i=1,NE 
         esaarray(i,:,:) = 255.0
         esaarray_global(i,:,:) = 255
-        WRITE (fname_s2, "(A,I0,A)") wdg//fname_s//"-", i,"-"//esadate//".dat" 
+        WRITE (fname_s2, "(A,I0,A)") wdg(1:blank(wdg))//"/"//fname_s//"-", i,"-"//esadate//".dat" 
         !esav          <- scan(fname_s2)
         !! esamat <- if(i==1) esav else cbind(esamat,esav)
         !esaarray(,,i) <- as.matrix(esav,nrow=lon_ress)
@@ -228,18 +228,18 @@
 
       num_land = COUNT( esamask(1,:,:) .EQV. .TRUE.)
       PRINT *, 'ESA num_land=',num_land,'num_tot=',maxii*maxjj 
-      PRINT *, pname 
+      PRINT *, pname(1:blank(pname)) 
 
       ! Open the file. NF90_NOWRITE tells netCDF we want read-only access to
       ! the file.
-      CALL CHECK( NF90_OPEN(pname, NF90_NOWRITE, ncid) )
+      CALL CHECK( NF90_OPEN(pname(1:blank(pname)), NF90_NOWRITE, ncid) )
 
       DO v=1,NV
       ! Get the varid of the data variable, based on its name.
         CALL check( nf90_inq_varid(ncid, varname(v), varid(v)) )
       END DO
 
-      CALL CHECK( NF90_OPEN(pname_t, NF90_NOWRITE, ncid_t) )
+      CALL CHECK( NF90_OPEN(pname_t(1:blank(pname_t)), NF90_NOWRITE, ncid_t) )
 
       DO v=1,NVT
       ! Get the varid of the data variable, based on its name.
@@ -416,7 +416,7 @@
       CALL CHECK( NF90_CLOSE(ncid) )
       CALL CHECK( NF90_CLOSE(ncid_t) )
 
-     !PRINT *,"*** SUCCESS reading file ", pname, "! "
+     !PRINT *,"*** SUCCESS reading file ", pname(1:blank(pname)), "! "
      !CALL FLUSH()
 
     CONTAINS

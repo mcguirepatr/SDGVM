@@ -1279,14 +1279,14 @@ C                WRITE(*,FMT='(F9.4)',ADVANCE='no') xx(1,1)/100.0
                        xf2 = SDGVM_LUC2(j-1,
      &                   agclasses(k3),agclasses(k2),ii, jj) !for j=1, years(j)=1700
                        xx2(ii,jj,k2) = xf2 
+                       IF (xf2.LT.200) THEN
+                         indx2(ii,jj,k2) = 1
+                       ELSE
+                         indx2(ii,jj,k2) = 0
+                       ENDIF
                     ENDDO
-                    IF (xf2.LT.200) THEN
-                      indx2(ii,jj,k2) = 1
-                    ELSE
-                      indx2(ii,jj,k2) = 0
-                    ENDIF
                   ELSE
-                    indx2(ii,jj,k2) = -1
+                    indx2(ii,jj,:) = -1
                   ENDIF
                 ENDDO
             ENDDO

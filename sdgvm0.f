@@ -462,17 +462,18 @@ C        WRITE(*,*) 'bbbb'
         STOP
       ENDIF
 
-      READ(98,'(A)') stpname 
-      CALL STRIPB(stpname)
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stpname)
 
-      READ(98,'(A)') stpname_t 
-      CALL STRIPB(stpname_t)
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stpname_t)
 
-      READ(98,'(A)') stwdg 
-      CALL STRIPB(stwdg)
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stwdg)
+      !stwdg=stwdg(1:blank(stwdg))
 
-      READ(98,'(A)') stlu
-      CALL STRIPB(stlu)
+      READ(98,'(A)') st1
+      CALL STRIPBS(st1,stlu)
 
       READ(98,'(A)') stco2
       CALL STRIPB(stco2)
