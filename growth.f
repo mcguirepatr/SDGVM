@@ -96,7 +96,7 @@
       sum_cov(:)     = 0.0d0
       ftloss_prop(:) = 0.0d0
       ftloss_prop2(:,:) = 0.0d0
-      DO ft=3,nft
+      DO ft=2,nft
         DO age=1,ftmor(ft)
           sum_cov(ft) = sum_cov(ft) + cov(age,ft)
         ENDDO
@@ -132,7 +132,7 @@
         if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
           at = aggmap_SDGVM_to_aggHyde(ft)
 
-          DO ft2=1,nft
+          DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
             if( atprop2(at,at2) .gt. 1d-1 ) then
               ftloss_prop2(ft,ft2) = 1d0 -
@@ -255,7 +255,7 @@
 
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
             at = aggmap_SDGVM_to_aggHyde(ft)
-            DO ft2=1,nft
+            DO ft2=2,nft
              at2 = aggmap_SDGVM_to_aggHyde(ft2)
              cov(1,ft) = atprop2(at2,at)*ngcov2(ft)/100.0d0
             ENDDO
