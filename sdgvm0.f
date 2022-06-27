@@ -12,7 +12,7 @@
       REAL*8 defaulttopsl
       PARAMETER(defaulttopsl = 5.0d0)
       INTEGER, PARAMETER :: NX = 720, NY = 360
-      INTEGER, PARAMETER :: NE = 10, maxn_at = 8, NS = 17
+      INTEGER, PARAMETER :: NE = 10, maxn_at = 8, NS = 16
 
       REAL*8 lat,lon,dep,ca(12,31),npp(maxnft),lai(maxnft),evp(maxnft)
       REAL*8 gpp(maxnft),sresp(maxnft),evt(maxnft),soilt,grassrc,resp
@@ -163,6 +163,7 @@
       INTEGER PHASE !PCM
       INTEGER SYR,NYR !PCM
       INTEGER aggmap_SDGVM_to_aggHyde(NS) !PCM
+      REAL*8 lutab2(255,100) !PCM
 
 *----------------------------------------------------------------------*
 * Read input filename.                                                 *
@@ -2154,23 +2155,52 @@ C         ELSE IF(ilanduse.EQ.0) THEN !SYR and NYR not used and not defined here
 C           SYR = -1 
 C           NYR = -1 
 C         ENDIF
+          lutab2(:,:)                      =  0.0
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+            !aggmap_SDGVM_to_aggHyde(1)     =  0 
+            !aggmap_SDGVM_to_aggHyde(2:6)   =  1 
+            !aggmap_SDGVM_to_aggHyde(7:8)   =  2 
+            !aggmap_SDGVM_to_aggHyde(9)     =  5 
+            !aggmap_SDGVM_to_aggHyde(10)    =  6 
+            !aggmap_SDGVM_to_aggHyde(11:15) =  3 
+            !aggmap_SDGVM_to_aggHyde(16:17) =  4 
             aggmap_SDGVM_to_aggHyde(1)     =  0 
-            aggmap_SDGVM_to_aggHyde(2:6)   =  1 
-            aggmap_SDGVM_to_aggHyde(7:8)   =  2 
-            aggmap_SDGVM_to_aggHyde(9)     =  5 
-            aggmap_SDGVM_to_aggHyde(10)    =  6 
-            aggmap_SDGVM_to_aggHyde(11:15) =  3 
-            aggmap_SDGVM_to_aggHyde(15)    =  3 
-            aggmap_SDGVM_to_aggHyde(16:17) =  4 
+            aggmap_SDGVM_to_aggHyde(2)     =  8 
+            aggmap_SDGVM_to_aggHyde(3:4)   =  2 
+            aggmap_SDGVM_to_aggHyde(5)     =  5 
+            aggmap_SDGVM_to_aggHyde(6)     =  6 
+            aggmap_SDGVM_to_aggHyde(7:8)   =  4 
+            aggmap_SDGVM_to_aggHyde(9:12)  =  1 
+            aggmap_SDGVM_to_aggHyde(13:16) =  3 
+            DO at=1,maxn_at
+               lutab2(at,at)               = 100.0 !PCM: Kluge: assumes 1<->1 mapping of 'at' to classes for now 
+            ENDDO
           ELSE
             aggmap_SDGVM_to_aggHyde(:)     =  0
           END IF
 
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,lutab2,
      &stpname,stpname_t,stwdg,cluse2)
-          !write(*,*) cluse(ft,:)
+          write(*,FMT="(A)") 'SS1'
+          WRITE(*,*) ' BARE   CITY   C3p    C4p    C3crop ',
+     &'C4crop C3s    C4s    Ev_Bp  Ev_Np  Dc_Bp ',
+     &'Dc_Np  Ev_Bs  Ev_Ns  Dc_Bs  Dc_Ns'
+          write(*,FMT="(16F7.3)") cluse(1:nft,1)
+          write(*,FMT="(A)") 'SS2'
+          write(*,*)'     ','     primf', '     primn', '     secdf',
+     &              '     secdn', '    c3crop', '    c4crop',
+     &              '    pastnr', '     urban' 
+
+          write(*,FMT="(A,8E10.3)") ' primf',cluse2(1,:,1)
+          write(*,FMT="(A,8E10.3)") ' primn',cluse2(2,:,1)
+          write(*,FMT="(A,8E10.3)") ' secdf',cluse2(3,:,1)
+          write(*,FMT="(A,8E10.3)") ' secdn',cluse2(4,:,1)
+          write(*,FMT="(A,8E10.3)") 'c3crop',cluse2(5,:,1)
+          write(*,FMT="(A,8E10.3)") 'c4crop',cluse2(6,:,1)
+          write(*,FMT="(A,8E10.3)") 'pastnr',cluse2(7,:,1)
+          write(*,FMT="(A,8E10.3)") ' urban',cluse2(8,:,1)
+
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN
         l_lu = .TRUE.
@@ -3481,6 +3511,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
+        PRINT *,'SS3',nppstore(1:nft)
 
         DO i=1,8
           tc0(i) = 0.0d0
@@ -3861,6 +3892,7 @@ c      endif
      &rootnpp(ft) + nppstore(ft) - leafold - stemold - rootold - 
      &nppsold)*12.0d0
             daily_out(6,ft,mnth,day) = daygpp*12.0d0                  ! GPP
+            !PRINT *,"daily_gpp",ft,mnth,day,daily_out(6,ft,mnth,day)
             daily_out(7,ft,mnth,day) = srespm/                        ! heterotrophic respiration
      &real(no_days(year,mnth,thty_dys))
             if(srespm.lt.1e-6) daily_out(7,ft,mnth,day) = 0.000       ! heterotrophic respiration
@@ -4492,6 +4524,9 @@ c       kg_beta    = kg_beta/wi
                       ans(mnth,1) = ans(mnth,1) + 
      &daily_out(i,ft,mnth,day)*ftcov(ft)*oscale
                     ENDDO
+                    IF(i.eq.6) THEN
+                     PRINT *,"MOPIX GPP",mnth,i,ft,ftcov(ft),ans(mnth,1)
+                    ENDIF
                   ENDDO
                 ENDDO
                 iofn = iofn + 1

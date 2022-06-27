@@ -1009,7 +1009,7 @@ C PCM2      WRITE(*,*) '111111111'
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,lutab2,
      &pname,pname_t,wdg,cluse2)
 *----------------------------------------------------------------------*
       USE FUNCTIONS_CLU
@@ -1031,6 +1031,7 @@ C PCM2      WRITE(*,*) '111111111'
       INTEGER ij,ij1,j1,num_land
       INTEGER ilanduse,k2,k3,agclasses(1000),indx2(4,4,maxn_at)
       INTEGER iat2,iat3
+      REAL*8 lutab2(255,100) 
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
       CHARACTER pname*1000,pname_t*1000,wdg*1000
       CHARACTER st4*4000
@@ -1261,6 +1262,10 @@ C                WRITE(*,FMT='(F9.4)',ADVANCE='no') xx(1,1)/100.0
 
           ENDDO ! end of loop over the classes
 
+          IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+              WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+          ENDIF
+
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
            DO k3=1,maxn_at
             DO k2=1,maxn_at
@@ -1291,19 +1296,35 @@ C                WRITE(*,FMT='(F9.4)',ADVANCE='no') xx(1,1)/100.0
                 ENDDO
             ENDDO
 
+
+
+
             DO k2=1,maxn_at
+
+C               IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+C
+C                 if(num_land .GT. 0) THEN
+C                   WRITE(*,FMT='(F9.4)',ADVANCE='no') 
+C     &                 SUM(xx2(:,:,k2),mindx)/100.0/num_land 
+C                 ELSE
+C                   WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00 
+C                 ENDIF
+C               ENDIF
+
                CALL BI_LIN(xx2(:,:,k2),indx2(:,:,k2),xnorm,ynorm,ans)
                x2 = int(ans+0.5d0)
                agclassprop2(agclasses(k3),agclasses(k2)) = ans
+C               print *,'DD1',k3,k2,agclasses(k3),agclasses(k2),
+C     &agclassprop2(agclasses(k3),agclasses(k2))
             ENDDO
 
+C            IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+C              WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+C            ENDIF
            ENDDO ! end of k3 loop over the agclasses
           END IF
 
 
-          IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
-            WRITE(*,*) ! Assumes default "ADVANCE='yes'".
-          ENDIF
 
 c
 c Now calculate the ftprop.
@@ -1320,24 +1341,28 @@ C interpolation in the BI_LIN step above
             DO k=1,nclasses
               ftprop(ift)=ftprop(ift)+lutab(classes(k),ift)*
      &classprop(classes(k))/100.0d0
-*              print*,ift,k,x,lutab(classes(k),ift),classes(k)
+              !print*,'AA',ift,k,x,lutab(classes(k),ift),classes(k)
             ENDDO
           ENDDO
 
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
-           DO iat3=1,maxn_at
-           DO iat2=1,maxn_at
-            atprop2(iat3,iat2)=0.0d0
-            DO k3=1,maxn_at
-             DO k2=1,maxn_at
-              atprop2(iat3,iat2)=atprop2(iat3,iat2)+
-     &lutab(agclasses(k3),iat3)*lutab(agclasses(k2),iat2)*
-     &agclassprop2(agclasses(k3),agclasses(k2))/100.0d0/100.0d0
-*              print*,iat3,k3,x,lutab(classes(k3),iat3),agclasses(k3)
-             ENDDO
-            ENDDO
-           ENDDO
-           ENDDO
+           atprop2(:,:) = agclassprop2(1:maxn_at,1:maxn_at) !PCM: kluge: assumes lutab2(iat3,iat3) = 100.0
+!PCM: try simplified version above, first; comment out these lines
+!           DO iat3=1,maxn_at
+!           DO iat2=1,maxn_at
+!            atprop2(iat3,iat2)=0.0d0
+!            DO k3=1,maxn_at
+!             DO k2=1,maxn_at
+!              atprop2(iat3,iat2)=atprop2(iat3,iat2)+
+!     &lutab2(agclasses(k3),iat3)*
+!     &agclassprop2(agclasses(k3),agclasses(k2))/100.0d0
+!             print *,'DD2',iat3,iat2,k3,k2,lutab2(agclasses(k3),iat3),
+!     &agclasses(k3),
+!     &agclassprop2(agclasses(k3),agclasses(k2)),atprop2(iat3,iat2)
+!             ENDDO
+!            ENDDO
+!           ENDDO
+!           ENDDO
           ENDIF
 
 c

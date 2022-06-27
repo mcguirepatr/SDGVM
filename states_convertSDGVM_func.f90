@@ -49,8 +49,8 @@
       CHARACTER (LEN = *), PARAMETER :: fname_s = "cont_lu"
       CHARACTER (LEN = *), PARAMETER :: esadate = "2009"
       !CHARACTER (LEN = *), PARAMETER :: print_type='unagg'
-      !CHARACTER (LEN = *), PARAMETER :: print_type='agg'
-      CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
+      CHARACTER (LEN = *), PARAMETER :: print_type='agg'
+      !CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
 
       INTEGER, PARAMETER :: NT = 1172, NV = 14
       REAL*8, PARAMETER    :: misval = 1e19
@@ -186,7 +186,8 @@
       aggmap(8:9)  =  6 ! c4 crops
       !aggmap(10:11) = 7  ! pasture and rangelands
       aggmap(10) =  7   ! pasture and not rangelands
-      aggmap(11) =  2   ! rangelands - add to primary non-forest
+      !aggmap(11) =  2   ! rangelands - add to primary non-forest
+      aggmap(11) =  4   ! rangelands - add to secondary non-forest
       aggmap(12) =  8   ! urban
 
       IF(compute_next_year) THEN
@@ -296,30 +297,46 @@
             dummya = data_in_t(v,:,:)
             DO v2=1,NV
               IF(varname(v2) == from_t) THEN
-               !PRINT *, varname_t(v), varname(v2), from_t, v, v2
                data_in_new(v2,:,:)= data_in_new(v2,:,:) - dummya 
                ! aggregate Hyde landcover types 
                DO v3=1,NV
                 IF(varname(v3) == to_t) THEN
+                  PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),dummya(1,1)
                   data_t_agg(aggmap(v2),aggmap(v3),:,:) = data_t_agg(aggmap(v2),aggmap(v3),:,:) + dummya
                 END IF
                END DO
               END IF
               IF(varname(v2) == to_t) THEN
-               !PRINT *, varname_t(v), varname(v2), to_t, v, v2
                data_in_new(v2,:,:)= data_in_new(v2,:,:) + dummya 
-               ! aggregate Hyde landcover types 
-               DO v3=1,NV
-                IF(varname(v3) == from_t) THEN
-                  data_t_agg(aggmap(v3),aggmap(v2),:,:) = data_t_agg(aggmap(v3),aggmap(v2),:,:) + dummya
-                END IF
-               END DO
+               !don't aggregate twice
+               !! aggregate Hyde landcover types 
+               !DO v3=1,NV
+               ! IF(varname(v3) == from_t) THEN
+               !   PRINT *, varname_t(v), varname(v3), to_t, v3, v2, dummya(1,1)
+               !   data_t_agg(aggmap(v3),aggmap(v2),:,:) = data_t_agg(aggmap(v3),aggmap(v2),:,:) + dummya
+               ! END IF
+               !END DO
               END IF
             END DO
            END DO
         ! change to percent      
            data_t_agg = data_t_agg * 100.0      
         END IF
+        write(*,FMT="(A)") 'STSS1'
+        write(*,*)'     ','     primf', '     primn', '     secdf', &
+                   '     secdn', '    c3crop', '    c4crop', &
+                   '    pastnr', '     urban' 
+
+        write(*,FMT="(A,8E10.3)") ' primf',data_t_agg(1,:,1,1)
+        write(*,FMT="(A,8E10.3)") ' primn',data_t_agg(2,:,1,1)
+        write(*,FMT="(A,8E10.3)") ' secdf',data_t_agg(3,:,1,1)
+        write(*,FMT="(A,8E10.3)") ' secdn',data_t_agg(4,:,1,1)
+        write(*,FMT="(A,8E10.3)") 'c3crop',data_t_agg(5,:,1,1)
+        write(*,FMT="(A,8E10.3)") 'c4crop',data_t_agg(6,:,1,1)
+        write(*,FMT="(A,8E10.3)") 'pastnr',data_t_agg(7,:,1,1)
+        write(*,FMT="(A,8E10.3)") ' urban',data_t_agg(8,:,1,1)
+    
+
 
         !aggregate
         DO v=1,NV-2
