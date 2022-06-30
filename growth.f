@@ -12,6 +12,7 @@
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: n_at = 8 !number of aggregated (Hyde, functional) types
       INTEGER, PARAMETER :: NS = 16 !number of SDGVM functional types
+      LOGICAL, PARAMETER :: debug = .FALSE. !used to print out more debugging info
       REAL*8 cov(maxage,maxnft),bio(maxage,2,maxnft),bioleaf(maxnft)
       REAL*8 nppstore(maxnft),npp(maxnft),nps(maxnft),tmp(12),prc(12)
       REAL*8 slc(maxnft),rlc(maxnft),firec
@@ -21,7 +22,8 @@
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
       REAL*8 ftloss_prop(maxnft),sum_cov(maxnft),flulccc
       REAL*8 cneed, cneed_leaf, cneed_store
-      REAL*8 ngcov2(maxnft),flulccc2(maxnft)
+      REAL*8 ngcov2(maxnft),flulccc2(maxnft),ftpropnew
+      REAL*8 sum_cov_test(maxnft)
       REAL*8 atprop2(n_at,n_at),ftloss_prop2(maxnft,maxnft),THRESH
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
@@ -97,7 +99,7 @@
       ftloss_prop(:) = 0.0d0
       ftloss_prop2(:,:) = 0.0d0
       DO ft=2,nft
-        print*, ft,ftphen(ft)
+        !print*, ft,ftphen(ft)
         DO age=1,ftmor(ft)
           sum_cov(ft) = sum_cov(ft) + cov(age,ft)
         ENDDO
@@ -133,14 +135,18 @@
         if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
           at = aggmap_SDGVM_to_aggHyde(ft)
 
-!PCM            THRESH = 1d-1 !For transitions instead of states, this number seems large
-          THRESH = 1d-2 
+          THRESH = 1d-1 !For transitions instead of states, this number seems large
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
-            if( (atprop2(at,at2)*1d-2  - sum_cov(ft)) .lt. -5d-4 ) then
-              if( atprop2(at,at2) .gt. THRESH ) then
-                ftloss_prop2(ft,ft2) = 1d0 -
-     &               (atprop2(at,at2)*1d-2)/sum_cov(ft)
+            ftpropnew = ftprop(ft)*(1.0-atprop2(at,at2)*1d-2)
+            IF (debug .EQV. .TRUE.) THEN
+              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
+     &               at,at2,ft,ft2,ftpropnew*1d-2,sum_cov(ft)
+            ENDIF
+C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
+            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-7 ) then
+              if( ftpropnew .gt. THRESH ) then
+                ftloss_prop2(ft,ft2) = 1d0 -(ftpropnew*1d-2)/sum_cov(ft)
               else
                 ftloss_prop2(ft,ft2) = 1d0 
               endif
@@ -150,11 +156,13 @@
      &ft,ftloss_prop2,ilanduse)
 
               ngcov2(ft2) =ngcov2(ft2) +ftloss_prop2(ft,ft2)*sum_cov(ft)
-              PRINT '(A I2 I2 I2 I2 F9.6 F9.6 F9.6 F9.6)','GG1',
+              IF (debug .EQV. .TRUE.) THEN
+                PRINT '(A I2 I2 I3 I3 F9.6 F9.6 F9.6 F9.6)','GG1',
      &              at,at2,ft,ft2,
      &              atprop2(at,at2),ftloss_prop2(ft,ft2),
      &              sum_cov(ft), ngcov2(ft2)
-             end if 
+              ENDIF
+             endif 
           ENDDO
         endif
         ENDIF
@@ -268,10 +276,12 @@
             !sum age=1 vegetation from gross transitions
             DO ft2=2,nft
              at2 = aggmap_SDGVM_to_aggHyde(ft2)
-             cov(1,ft) = ftprop(ft)*(1.0+atprop2(at2,at))
+             cov(1,ft) = ftprop(ft)*(1.0+atprop2(at2,at)*1d-2)
      &                        *ngcov2(ft)/100.0d0
-             PRINT '(A I2 I2 F9.6 I2 F9.6 F9.6)','GG2',
-     &       at2,at,atprop2(at2,at),ft,ngcov2(ft),cov(1,ft)
+             IF(debug .EQV. .TRUE.) THEN
+               PRINT '(A I2 I2 F9.6 I3 F9.6 F9.6)','GG2',
+     &           at2,at,atprop2(at2,at),ft,ngcov2(ft),cov(1,ft)
+             ENDIF
             ENDDO
           ELSE
             cov(1,ft) = ftprop(ft)*ngcov/100.0d0
@@ -307,16 +317,26 @@
 
         ENDIF
       ENDDO
+      !loop added for testing purposes
+      DO ft=1,nft
+          sum_cov_test(ft) = 0.0
+        DO age=1,ftmor(ft)
+          sum_cov_test(ft) = sum_cov_test(ft) + cov(age,ft)
+        ENDDO
+      ENDDO
+
       WRITE(*,*) ' BARE       CITY       C3p        C4p        C3crop ',
      &'    C4crop      C3s        C4s        Ev_Bp      Ev_Np      ',
      &'Dc_Bp        Dc_Np      Ev_Bs      Ev_Ns      Dc_Bs    ',
      &'  Dc_Ns'
-      PRINT '(A)','GG3 COV '
+      PRINT '(A)','GG3 COV AGE=1 '
       PRINT '(16F11.6)',cov(1,1:nft)
-      PRINT '(A)','GG4 BIOL'
-      PRINT '(16F11.6)',bioleaf(1:nft)
-      PRINT '(A)','GG5 NPPS'
-      PRINT '(16F11.6)',nppstore(1:nft)
+      PRINT '(A)','GG4 COV '
+      PRINT '(16F11.6)',sum_cov_test(1:nft)
+      !PRINT '(A)','GG5 BIOL'
+      !PRINT '(16F11.6)',bioleaf(1:nft)
+      !PRINT '(A)','GG6 NPPS'
+      !PRINT '(16F11.6)',nppstore(1:nft)
 
 
       RETURN

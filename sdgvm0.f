@@ -3511,7 +3511,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
-        PRINT *,'SS3',nppstore(1:nft)
+        !PRINT *,'SS3',nppstore(1:nft)
 
         DO i=1,8
           tc0(i) = 0.0d0
@@ -4525,7 +4525,7 @@ c       kg_beta    = kg_beta/wi
      &daily_out(i,ft,mnth,day)*ftcov(ft)*oscale
                     ENDDO
                     IF(i.eq.6) THEN
-                     PRINT *,"MOPIX GPP",mnth,i,ft,ftcov(ft),ans(mnth,1)
+!                     PRINT *,"MOPIX GPP",mnth,i,ft,ftcov(ft),ans(mnth,1)
                     ENDIF
                   ENDDO
                 ENDDO

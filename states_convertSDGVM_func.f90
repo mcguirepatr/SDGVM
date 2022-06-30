@@ -21,7 +21,7 @@
 
       MODULE FUNCTIONS_CLU
       CONTAINS
-      SUBROUTINE states_convertSDGVM_func(SYR,FYR,X0,Y0,DXY,compute_next_year, &
+      SUBROUTINE states_convertSDGVM_func(SYR,FYR,X0,Y0,DXY,get_transitions,compute_next_year, &
            pname,pname_t,wdg,data_out_SDGVM,data_out_AggHydeTransitions )
       USE netcdf
       IMPLICIT NONE
@@ -29,7 +29,7 @@
       INTEGER, PARAMETER :: NS = 17
       INTEGER, PARAMETER :: NV2 = 8 
       INTEGER SYR,FYR,X0,Y0,DXY 
-      LOGICAL :: compute_next_year
+      LOGICAL :: compute_next_year,get_transitions
       REAL*8, DIMENSION(FYR-SYR+1,NS,DXY,DXY) ::  data_out_SDGVM
       REAL*8, DIMENSION(FYR-SYR+1,NV2,NV2,DXY,DXY) ::  data_out_AggHydeTransitions
 
@@ -48,8 +48,8 @@
       CHARACTER (LEN = *) :: wdg
       CHARACTER (LEN = *), PARAMETER :: fname_s = "cont_lu"
       CHARACTER (LEN = *), PARAMETER :: esadate = "2009"
-      !CHARACTER (LEN = *), PARAMETER :: print_type='unagg'
-      CHARACTER (LEN = *), PARAMETER :: print_type='agg'
+      CHARACTER (LEN = *), PARAMETER :: print_type='unagg'
+      !CHARACTER (LEN = *), PARAMETER :: print_type='agg'
       !CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
 
       INTEGER, PARAMETER :: NT = 1172, NV = 14
@@ -191,7 +191,7 @@
       aggmap(12) =  8   ! urban
 
       IF(compute_next_year) THEN
-          shift_year = -1
+          shift_year = -1 
       ELSE
           shift_year = 0
       ENDIF
@@ -281,12 +281,18 @@
         END DO
 
 
-        IF(compute_next_year) THEN
+        WHERE (isNAN(data_in(:,:,:)))
+               data_in = NA
+        ENDWHERE
+
+        IF(get_transitions) THEN
           ! the secondary vegetation doesn't match up unless we
           ! add the transitions to the states for each time step (rather than
           ! accumulating all the transitions in an open loop).
           ! if(t == SINDEX) then 
-           data_in_new(:,:,:)=data_in(:,:,:) 
+           IF(compute_next_year) THEN
+             data_in_new(:,:,:)=data_in(:,:,:) 
+           ENDIF
           ! end if
 
            DO v=1,NVT-6 ! skip for bioh
@@ -295,10 +301,16 @@
             from_t = varname_t(v)(1:5)   !from_t = the state from which the transition is coming
             to_t   = varname_t(v)(10:14) !to_t   = the state to   which the transition is going 
             dummya = data_in_t(v,:,:)
+            WHERE (isNAN(dummya(:,:)))
+               dummya = NA
+            ENDWHERE
+            
             DO v2=1,NV
               IF(varname(v2) == from_t) THEN
-               data_in_new(v2,:,:)= data_in_new(v2,:,:) - dummya 
-               ! aggregate Hyde landcover types 
+               IF(compute_next_year) THEN
+                 data_in_new(v2,:,:)= data_in_new(v2,:,:) - dummya 
+               ENDIF
+               ! aggregate transitions for  Hyde landcover types 
                DO v3=1,NV
                 IF(varname(v3) == to_t) THEN
                   PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),dummya(1,1)
@@ -307,8 +319,10 @@
                END DO
               END IF
               IF(varname(v2) == to_t) THEN
-               data_in_new(v2,:,:)= data_in_new(v2,:,:) + dummya 
-               !don't aggregate twice
+               IF(compute_next_year) THEN
+                 data_in_new(v2,:,:)= data_in_new(v2,:,:) + dummya 
+               ENDIF
+               !don't aggregate transitions twice
                !! aggregate Hyde landcover types 
                !DO v3=1,NV
                ! IF(varname(v3) == from_t) THEN
@@ -321,20 +335,21 @@
            END DO
         ! change to percent      
            data_t_agg = data_t_agg * 100.0      
-        END IF
-        write(*,FMT="(A)") 'STSS1'
-        write(*,*)'     ','     primf', '     primn', '     secdf', &
+
+           write(*,FMT="(A)") 'STSS1'
+           write(*,*)'     ','     primf', '     primn', '     secdf', &
                    '     secdn', '    c3crop', '    c4crop', &
                    '    pastnr', '     urban' 
 
-        write(*,FMT="(A,8E10.3)") ' primf',data_t_agg(1,:,1,1)
-        write(*,FMT="(A,8E10.3)") ' primn',data_t_agg(2,:,1,1)
-        write(*,FMT="(A,8E10.3)") ' secdf',data_t_agg(3,:,1,1)
-        write(*,FMT="(A,8E10.3)") ' secdn',data_t_agg(4,:,1,1)
-        write(*,FMT="(A,8E10.3)") 'c3crop',data_t_agg(5,:,1,1)
-        write(*,FMT="(A,8E10.3)") 'c4crop',data_t_agg(6,:,1,1)
-        write(*,FMT="(A,8E10.3)") 'pastnr',data_t_agg(7,:,1,1)
-        write(*,FMT="(A,8E10.3)") ' urban',data_t_agg(8,:,1,1)
+           write(*,FMT="(A,8E10.3)") ' primf',data_t_agg(1,:,1,1)
+           write(*,FMT="(A,8E10.3)") ' primn',data_t_agg(2,:,1,1)
+           write(*,FMT="(A,8E10.3)") ' secdf',data_t_agg(3,:,1,1)
+           write(*,FMT="(A,8E10.3)") ' secdn',data_t_agg(4,:,1,1)
+           write(*,FMT="(A,8E10.3)") 'c3crop',data_t_agg(5,:,1,1)
+           write(*,FMT="(A,8E10.3)") 'c4crop',data_t_agg(6,:,1,1)
+           write(*,FMT="(A,8E10.3)") 'pastnr',data_t_agg(7,:,1,1)
+           write(*,FMT="(A,8E10.3)") ' urban',data_t_agg(8,:,1,1)
+        END IF
     
 
 
@@ -365,7 +380,6 @@
          END DO
         END DO
 
-        data_out_AggHydeTransitions(year_index,:,:,:,:) = data_t_agg 
       
         WHERE(ABS(data_out_SDGVM(year_index,1,:,:)) <= 100.00)
           mask_SDGVM = .TRUE.
@@ -373,11 +387,19 @@
           mask_SDGVM = .FALSE.
         END WHERE
 
+
         ! convert missing values to SDGVM missing value
         WHERE (data_out_SDGVM == NA)
           data_out_SDGVM = 255.0 
         END WHERE 
 
+        IF(get_transitions) THEN
+          data_out_AggHydeTransitions(year_index,:,:,:,:) = data_t_agg 
+        ! convert missing values to SDGVM missing value
+          WHERE (data_out_AggHydeTransitions == NA)
+            data_out_AggHydeTransitions = 255.0 
+          END WHERE 
+        ENDIF
 
         IF( t == SINDEX ) THEN
           num_land = COUNT( mask_SDGVM .EQV. .TRUE.)
@@ -419,7 +441,7 @@
              DO v=1,NV2
                 WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out(v,:,:)/100.0,mask)/num_land 
              END DO
-           ELSE IF(print_type=='sdgvm') THEN
+           ELSE IF(print_type=='sdgvm') THEN 
              DO v=1,NS
                 WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,:,:)/100.0,mask_SDGVM)/num_land 
 !                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,:,1,1)/100.0 
@@ -696,10 +718,15 @@
         
         ! assign as yet unassigned forest cover as negative value to DcBp
         IF(nofcov>0) ov(3)  = -nofcov
-        ! assign as yet unassigned grass cover as negative value to C3 grass
+        ! assign as yet unassigned grass cover as negative value to C3p
         IF(nogcov>0) ov(7)  = -nogcov
         
         result_join_hyde = ov(1:NS)
+
+        WHERE (isNAN(result_join_hyde)) !extra check for NaNs
+               result_join_hyde = NA
+        ENDWHERE
+
        ELSE 
         result_join_hyde = (/ NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA /) 
        END IF 
