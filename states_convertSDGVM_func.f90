@@ -88,6 +88,10 @@
 
 
 
+      ! processing parameter
+      ! latitudinal offset for assigning correct forest or grass PFT when none exist in ESA
+      INTEGER :: lat_offset(360) 
+
       ! ESA PFTs
       CHARACTER(LEN=7),PARAMETER :: varname_esa_pfts(NE)=(/ '  BARE',' Ev_Bl',' Dc_Bl',' Ev_Nl', &
        ' Dc_Nl', ' Shrub','    C3','    C4','C3crop','C4crop' /)
@@ -189,6 +193,11 @@
       !aggmap(11) =  2   ! rangelands - add to primary non-forest
       aggmap(11) =  4   ! rangelands - add to secondary non-forest
       aggmap(12) =  8   ! urban
+
+      ! latitudinal offset for assigning correct forest or grass PFT when none exist in ESA
+      lat_offset(1:132)      = 0
+      lat_offset(133:133+96) = 1
+      lat_offset(133+97:360) = 0
 
       IF(compute_next_year) THEN
           shift_year = -1 
@@ -393,6 +402,10 @@
           data_out_SDGVM = 255.0 
         END WHERE 
 
+        ! deal with forest or grass cover where no forest or grass cover existed in ESA
+        CALL F_LAT_ASSIGNPFT(data_out_SDGVM(year_index,:,:,:),NS,NY,DXY,X0,Y0, &
+                             maxii,maxjj,lat_offset)
+  
         IF(get_transitions) THEN
           data_out_AggHydeTransitions(year_index,:,:,:,:) = data_t_agg 
         ! convert missing values to SDGVM missing value
@@ -732,40 +745,60 @@
        END IF 
     END FUNCTION JOIN_HYDE
 
+    SUBROUTINE F_LAT_ASSIGNPFT(m,NS,NY,DXY,X0,Y0,maxii,maxjj,loff)
     ! Assigns forest or grass pfts to ESA HYDE according to latitude when no forest or grass PFTs exist in ESA but do in HYDE 
-    !function f_lat_assignPFT(j,m,loff) result (outvec) 
-    ! ! this function assigns forest and grassland cover to an appropriate PFT in the combined HYDE ESA dataset
-    ! ! when there was no forest or grass cover in the ESA data.
-    ! ! in this case the forest cover is assigned as a negative value to deciduous braodleaved PFT m[3,] 
-    ! ! in this case the grass  cover is assigned as a negative value to C3 grass PFT m[7,]
-    ! ! if in temperate latitudes this negative value is simply switched to positive
-    ! ! if in tropical latitudes this negative value is switched to positive and assigned to evergreen broadleaved PFT or C4 grass 
-    ! 
-    ! ! m is a pft x lat matrix
-    ! ! loff is the change in subscript by lat - 0 for temperate (DcBL & C3), 1 for tropical (EvBl & C4)
-    ! 
-    ! implicit none
-    ! real, intent(in) :: v(15)
-    ! real, intent(out) :: outvec(10)
 
-    ! ! if there was no forest or grass cover in the ESA data 
-    ! if(any(m(:,j)<0))
-    !   ! switch DcBl and EvBl PFT to allow loff to work for both forest and grass
-    !   m(2:3,j) = m(3:2,j)
-    !   ! subscripts of negative cover
-    !   sub      = which(m[,j]<0)
-    !   ! take absolute value of negative covers and assign to appropriate PFT
-    !   m(sub+loff(j),j) = abs(m(sub,j))
-    !   ! if tropical PFT is appropriate zero negative cover in temperate PFT
-    !   if(loff(j) .NE. 0) m(sub,j) = 0.0
-    !   ! switch DcBl and EvBl PFT back to original placement in vector
-    !   m(2:3,j) = m(3:2,j)
-    !   ! return vector
-    !   outvec = m(:,j)
-    ! else
-    !   outvec = m(:,j)
-    ! end if 
-    !end function f_lat_assignPFT
+    ! this function assigns forest and grassland cover to an appropriate PFT in the combined HYDE ESA dataset
+    !     when there was no forest or grass cover in the ESA data.
+    !     in this case the forest cover is assigned as a negative value to primary deciduous broadleaved (DcBp) PFT m(3,j) 
+    !     in this case the grass  cover is assigned as a negative value to C3 primary grass (C3p) PFT m(7,j)
+    ! if in temperate latitudes this negative value is simply switched to positive
+    ! if in tropical latitudes this negative value is switched to positive and assigned to evergreen broadleaved PFT or C4 grass 
+      IMPLICIT NONE
+     
+      INTEGER :: NS !number of PFTs
+      INTEGER :: DXY !dimension of array 
+      INTEGER :: NY !dimension of latitude loff array 
+    ! m is a pft x DXY x DXY matrix
+      REAL*8, DIMENSION(NS,DXY,DXY) :: m
+    ! loff is the change in subscript by lat - 0 for temperate (DcBp & C3p), 1 for tropical (EvBp & C4p)
+      INTEGER, DIMENSION(NY) :: loff 
+      INTEGER :: j !latitude dummy index
+      INTEGER :: X0,Y0 !longitude, latitude indices
+      INTEGER :: maxii,maxjj !max longitude, latitude indices
+      INTEGER, DIMENSION(2) :: indx = [2,7] !permuted DcBp & unpermuted C3p
+      INTEGER :: k,kk
+      REAL*8 :: tmp3
+    
+      
+      DO i=1,maxii !longitude loop 
+       DO j=1,maxjj !latitude loop
+      ! if there was no forest or grass cover in the ESA data 
+        IF(any(m(:,i,j)<0)) THEN
+          ! switch DcBp and EvBp PFT to allow loff to work for both forest and grass
+          tmp3 = m(3,i,j)
+          m(3,i,j) =  m(2,i,j) 
+          m(2,i,j) = tmp3 
+
+          DO k = 1,2
+            kk = indx(k)
+            IF(m(kk,i,j)<0) THEN
+            ! take absolute value of negative covers and assign to appropriate PFT
+              m(kk+loff(Y0+j-1),i,j) = ABS(m(kk,i,j))
+            ! if tropical PFT is appropriate, zero negative cover in temperate PFT
+              IF(loff(Y0+j-1) .NE. 0) m(kk,i,j) = 0.0
+            END IF
+          END DO
+
+          ! switch DcBp and EvBp PFT back to original placement in vector
+          tmp3 = m(3,i,j)
+          m(3,i,j) =  m(2,i,j) 
+          m(2,i,j) = tmp3 
+        END IF 
+       END DO
+      END DO
+
+    END SUBROUTINE F_LAT_ASSIGNPFT
 
     END SUBROUTINE states_convertSDGVM_func
     END MODULE FUNCTIONS_CLU

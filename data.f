@@ -1170,6 +1170,11 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
          SDGVM_LUC2=0.0
       ENDIF
 
+      WRITE(*,*)
+     &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
+     &'Shrup    C3p      C4p      C3crop   C4crop   ',
+     &'Ev_Bs    Dc_Bs    Ev_Ns    Dc_Ns    Shrus    C3s    C4s'
+
       DO i=1,yrfa-yr0a+1
         IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
           !print*, j, years(j), i, years(j) - yr_offset
