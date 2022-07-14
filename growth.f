@@ -12,7 +12,7 @@
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: n_at = 8 !number of aggregated (Hyde, functional) types
       INTEGER, PARAMETER :: NS = 16 !number of SDGVM functional types
-      LOGICAL, PARAMETER :: debug = .FALSE. !used to print out more debugging info
+      LOGICAL, PARAMETER :: debug = .TRUE. !used to print out more debugging info
       REAL*8 cov(maxage,maxnft),bio(maxage,2,maxnft),bioleaf(maxnft)
       REAL*8 nppstore(maxnft),npp(maxnft),nps(maxnft),tmp(12),prc(12)
       REAL*8 slc(maxnft),rlc(maxnft),firec
@@ -99,7 +99,8 @@
       ftloss_prop(:) = 0.0d0
       ftloss_prop2(:,:) = 0.0d0
       DO ft=2,nft
-        !print*, ft,ftphen(ft)
+        !print*, 'G2',ft,ftphen(ft)
+        !PRINT*, 'G2a',ft,ftprop(ft) 
         DO age=1,ftmor(ft)
           sum_cov(ft) = sum_cov(ft) + cov(age,ft)
         ENDDO
@@ -127,6 +128,12 @@
      &ft,ftloss_prop2,ilanduse)
 
           ngcov = ngcov + ftloss_prop(ft) * sum_cov(ft)
+          IF (debug .EQV. .TRUE.) THEN
+                PRINT '(A I2 F9.6 F9.6 F9.6)','GG0',
+     &              ft,
+     &              ftloss_prop(ft),
+     &              sum_cov(ft), ngcov
+          ENDIF
         endif
         endif
         ENDIF
@@ -220,6 +227,7 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 *----------------------------------------------------------------------*
       norm = 0.0d0
       DO ft=1,nft           
+        !PRINT*, 'G7',ft,ftprop(ft) 
         IF (ftprop(ft).GT.0.0d0) THEN
           ftprop(ft) = ftprop(ft)/100.0d0
           DO j=1,ftmor(ft)
@@ -238,18 +246,21 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
       ELSE
          cov(1,1) = ngcov*ftprop(1)/100.0d0
       ENDIF
+      !PRINT*, 'G8' 
 
 *----------------------------------------------------------------------*
 * Set cover arrays for this years ft proportions, take carbon from     *
 * litter to provide nppstore and canopy.                               *
 *----------------------------------------------------------------------*
       DO ft=2,nft
+        !PRINT*, 'G9',ft,ftprop(ft) 
         IF (ftprop(ft).GT.0.0d0) THEN
 
 *----------------------------------------------------------------------*
 * If no veg exists then set nppstore to initial value and reinitialise.*
 *----------------------------------------------------------------------*
           year = 1
+          !PRINT*, 'G10' 
 10        CONTINUE
             IF (cov(year,ft).GT.0.0d0) THEN
               goto 20
@@ -278,13 +289,17 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
              at2 = aggmap_SDGVM_to_aggHyde(ft2)
              cov(1,ft) = ftprop(ft)*(1.0+atprop2(at2,at)*1d-2)
      &                        *ngcov2(ft)/100.0d0
-             IF(debug .EQV. .TRUE.) THEN
-               PRINT '(A I2 I2 F9.6 I3 F9.6 F9.6)','GG2',
-     &           at2,at,atprop2(at2,at),ft,ngcov2(ft),cov(1,ft)
-             ENDIF
+!             IF(debug .EQV. .TRUE.) THEN
+!               PRINT '(A I2 I2 F9.6 I3 F9.6 F9.6)','GG2b',
+!     &           at2,at,atprop2(at2,at),ft,ngcov2(ft),cov(1,ft)
+!             ENDIF
             ENDDO
           ELSE
             cov(1,ft) = ftprop(ft)*ngcov/100.0d0
+!            IF(debug .EQV. .TRUE.) THEN
+!               PRINT '(A F9.6 I3 F9.6 F9.6)','GG2a',
+!     &           ftprop(ft),ft,ngcov,cov(1,ft)
+!            ENDIF
           ENDIF
           ppm(1,ft) = ftppm0(ft)
           hgt(1,ft) = 0.004d0
@@ -319,7 +334,7 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
       ENDDO
       !loop added for testing purposes
       DO ft=1,nft
-          sum_cov_test(ft) = 0.0
+        sum_cov_test(ft) = 0.0
         DO age=1,ftmor(ft)
           sum_cov_test(ft) = sum_cov_test(ft) + cov(age,ft)
         ENDDO
