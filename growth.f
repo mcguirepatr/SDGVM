@@ -128,12 +128,12 @@
      &ft,ftloss_prop2,ilanduse)
 
           ngcov = ngcov + ftloss_prop(ft) * sum_cov(ft)
-          IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I2 F9.6 F9.6 F9.6)','GG0',
-     &              ft,
-     &              ftloss_prop(ft),
-     &              sum_cov(ft), ngcov
-          ENDIF
+!          IF (debug .EQV. .TRUE.) THEN
+!                PRINT '(A I2 F9.6 F9.6 F9.6)','GG0',
+!     &              ft,
+!     &              ftloss_prop(ft),
+!     &              sum_cov(ft), ngcov
+!          ENDIF
         endif
         endif
         ENDIF
@@ -146,10 +146,10 @@
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
             ftpropnew = ftprop(ft)*(1.0-atprop2(at,at2)*1d-2)
-            IF (debug .EQV. .TRUE.) THEN
-              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
-     &               at,at2,ft,ft2,ftpropnew*1d-2,sum_cov(ft)
-            ENDIF
+!            IF (debug .EQV. .TRUE.) THEN
+!              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
+!     &               at,at2,ft,ft2,ftpropnew*1d-2,sum_cov(ft)
+!            ENDIF
 C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
             if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-7 ) then
               if( ftpropnew .gt. THRESH ) then
@@ -163,12 +163,12 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
      &ft,ftloss_prop2,ilanduse)
 
               ngcov2(ft2) =ngcov2(ft2) +ftloss_prop2(ft,ft2)*sum_cov(ft)
-              IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I2 I2 I3 I3 F9.6 F9.6 F9.6 F9.6)','GG1',
-     &              at,at2,ft,ft2,
-     &              atprop2(at,at2),ftloss_prop2(ft,ft2),
-     &              sum_cov(ft), ngcov2(ft2)
-              ENDIF
+!              IF (debug .EQV. .TRUE.) THEN
+!                PRINT '(A I2 I2 I3 I3 F9.6 F9.6 F9.6 F9.6)','GG1',
+!     &              at,at2,ft,ft2,
+!     &              atprop2(at,at2),ftloss_prop2(ft,ft2),
+!     &              sum_cov(ft), ngcov2(ft2)
+!              ENDIF
              endif 
           ENDDO
         endif

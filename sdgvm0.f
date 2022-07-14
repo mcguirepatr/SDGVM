@@ -3444,10 +3444,8 @@ c        ENDIF
         ELSE ! 0 and 1 and 3 to 6
           ftprop(1) = 100.0d0
           DO ft=2,nft
-            IF (1.EQ.1) THEN !PCM debug
-!PCM disabled this if statement temporarily
-!PCM            IF (check_ft_grow(tmp,ftbbm(ft),ftbb0(ft),ftbbmax(ft), 
-!     &ftbblim(ft),chill(ft),dschill(ft)).EQ.1) THEN
+            IF (check_ft_grow(tmp,ftbbm(ft),ftbb0(ft),ftbbmax(ft), 
+     &ftbblim(ft),chill(ft),dschill(ft)).EQ.1) THEN
               !ftprop(ft) = cluse(ft,year-yr0+1)
               !if((co2const.gt.0.0).and.(spinl.gt.0).and.
       !&(iyear.le.spinl)) then
