@@ -1165,15 +1165,15 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
      &          INT(rrow),4,get_transitions,compute_next_year, 
      &          pname,pname_t,wdg,
      &          SDGVM_LUC, SDGVM_LUC2)  
+         WRITE(*,*)
+     &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
+     &'Shrup    C3p      C4p      C3crop   C4crop   ',
+     &'Ev_Bs    Dc_Bs    Ev_Ns    Dc_Ns    Shrus    C3s    C4s'
       ELSE
          SDGVM_LUC=0.0
          SDGVM_LUC2=0.0
       ENDIF
 
-      WRITE(*,*)
-     &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
-     &'Shrup    C3p      C4p      C3crop   C4crop   ',
-     &'Ev_Bs    Dc_Bs    Ev_Ns    Dc_Ns    Shrus    C3s    C4s'
 
       DO i=1,yrfa-yr0a+1
         IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
@@ -1222,7 +1222,7 @@ C PCM: st2 is the year st3 is the class, ranging from 1 to NS (NS=10)
                   IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
      &               (col.LE.lonn)) THEN
                     recn = (row-1)*lonn + col
-                    IF(ilanduse.GE.3 .OR. ilanduse.LE.6 ) THEN !PCM
+                    IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
                       xf = SDGVM_LUC(j-1, classes(k), ii, jj) !for j=1, years(j)=1700
                       xx(ii,jj) = xf 
                       x = INT(xf) !need this for indx and mindx masking, below

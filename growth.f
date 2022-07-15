@@ -217,9 +217,6 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 *       CALL c3c4(ftprop,c3old,c4old,npp,nps)
       ENDIF
 
-      IF (ilanduse.ge.3 .and. ilanduse.le.6) THEN
-
-      ENDIF
 *----------------------------------------------------------------------*
 * Set cover arrays to adjust to ftprop as best they can.               *
 * ftprop contains the total proportion of that cover, not the          *
@@ -340,10 +337,17 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
         ENDDO
       ENDDO
 
-      WRITE(*,*) ' BARE       CITY       C3p        C4p        C3crop ',
-     &'    C4crop      C3s        C4s        Ev_Bp      Ev_Np      ',
-     &'Dc_Bp        Dc_Np      Ev_Bs      Ev_Ns      Dc_Bs    ',
-     &'  Dc_Ns'
+      IF (ilanduse.ge.3 .and. ilanduse.le.6) THEN
+       WRITE(*,*) ' BARE       CITY       C3p        C4p        ',
+     &'C3crop     C4crop      C3s        C4s        Ev_Bp       ', 
+     &'Ev_Np      Dc_Bp        Dc_Np      Ev_Bs      Ev_Ns      ', 
+     &'Dc_Bs      Dc_Ns'
+      ELSE
+       WRITE(*,*) ' BARE       CITY       C3         C4         ',
+     &'C3crop     C4crop       Ev_Bl       ', 
+     &'Ev_Nl      Dc_Bl        Dc_Nl       ' 
+      ENDIF
+
       PRINT '(A)','GG3 COV AGE=1 '
       PRINT '(16F11.6)',cov(1,1:nft)
       PRINT '(A)','GG4 COV '

@@ -2183,24 +2183,31 @@ C         ENDIF
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,lutab2,
      &stpname,stpname_t,stwdg,cluse2)
           write(*,FMT="(A)") 'SS1'
-          WRITE(*,*) ' BARE   CITY   C3p    C4p    C3crop ',
+          IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
+             WRITE(*,*) ' BARE   CITY   C3p    C4p    C3crop ',
      &'C4crop C3s    C4s    Ev_Bp  Ev_Np  Dc_Bp ',
      &'Dc_Np  Ev_Bs  Ev_Ns  Dc_Bs  Dc_Ns'
-          write(*,FMT="(16F7.3)") cluse(1:nft,1)
-          write(*,FMT="(A)") 'SS2'
-          write(*,*)'     ','     primf', '     primn', '     secdf',
+
+             write(*,FMT="(16F7.3)") cluse(1:nft,1)
+             write(*,FMT="(A)") 'SS2'
+             write(*,*)'     ','     primf', '     primn', '     secdf',
      &              '     secdn', '    c3crop', '    c4crop',
      &              '    pastnr', '     urban' 
 
-          write(*,FMT="(A,8E10.3)") ' primf',cluse2(1,:,1)
-          write(*,FMT="(A,8E10.3)") ' primn',cluse2(2,:,1)
-          write(*,FMT="(A,8E10.3)") ' secdf',cluse2(3,:,1)
-          write(*,FMT="(A,8E10.3)") ' secdn',cluse2(4,:,1)
-          write(*,FMT="(A,8E10.3)") 'c3crop',cluse2(5,:,1)
-          write(*,FMT="(A,8E10.3)") 'c4crop',cluse2(6,:,1)
-          write(*,FMT="(A,8E10.3)") 'pastnr',cluse2(7,:,1)
-          write(*,FMT="(A,8E10.3)") ' urban',cluse2(8,:,1)
+             write(*,FMT="(A,8E10.3)") ' primf',cluse2(1,:,1)
+             write(*,FMT="(A,8E10.3)") ' primn',cluse2(2,:,1)
+             write(*,FMT="(A,8E10.3)") ' secdf',cluse2(3,:,1)
+             write(*,FMT="(A,8E10.3)") ' secdn',cluse2(4,:,1)
+             write(*,FMT="(A,8E10.3)") 'c3crop',cluse2(5,:,1)
+             write(*,FMT="(A,8E10.3)") 'c4crop',cluse2(6,:,1)
+             write(*,FMT="(A,8E10.3)") 'pastnr',cluse2(7,:,1)
+             write(*,FMT="(A,8E10.3)") ' urban',cluse2(8,:,1)
 
+          ELSE
+             WRITE(*,*) ' BARE   CITY   C3     C4     C3crop ',
+     &'C4crop Ev_Bl  Ev_Nl  Dc_Bl ',
+     &'Dc_Nl '
+          ENDIF
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN
         l_lu = .TRUE.
