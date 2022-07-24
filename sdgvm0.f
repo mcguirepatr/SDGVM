@@ -81,6 +81,7 @@
       REAL*8 sla_slope(maxnft),sla_slope_er(maxnft)
       REAL*8 atprop2(maxn_at,maxn_at)
       REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
+      REAL*8 sum_cov_test(maxnft)
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
@@ -2182,6 +2183,16 @@ C         ENDIF
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,lutab2,
      &stpname,stpname_t,stwdg,cluse2)
+
+      !loop added for testing purposes
+          DO ft=1,nft
+            sum_cov_test(ft) = 0.0
+            DO age=1,ftmor(ft)
+              sum_cov_test(ft) = sum_cov_test(ft)
+     &                           + cluse(ft,age)/100.0d0/real(ftmor(ft))
+            ENDDO
+          ENDDO
+
           write(*,FMT="(A)") 'SS1'
           IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
              WRITE(*,*) ' BARE   CITY   C3p    C4p    C3crop ',
@@ -2189,6 +2200,7 @@ C         ENDIF
      &'Dc_Np  Ev_Bs  Ev_Ns  Dc_Bs  Dc_Ns'
 
              write(*,FMT="(16F7.3)") cluse(1:nft,1)
+             !write(*,FMT="(16F7.3)") sum_cov_test(1:nft)
              write(*,FMT="(A)") 'SS2'
              write(*,*)'     ','     primf', '     primn', '     secdf',
      &              '     secdn', '    c3crop', '    c4crop',
@@ -2207,6 +2219,8 @@ C         ENDIF
              WRITE(*,*) ' BARE   CITY   C3     C4     C3crop ',
      &'C4crop Ev_Bl  Ev_Nl  Dc_Bl ',
      &'Dc_Nl '
+             write(*,FMT="(10F7.3)") cluse(1:nft,1)
+             !write(*,FMT="(10F7.3)") sum_cov_test(1:nft)
           ENDIF
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN

@@ -1172,6 +1172,9 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
       ELSE
          SDGVM_LUC=0.0
          SDGVM_LUC2=0.0
+         WRITE(*,*)
+     &'    t   BARE     Ev_Bl    Dc_Bl    Ev_Nl    Dc_Nl    ',
+     &'Shrub    C3       C4       C3crop   C4crop   '
       ENDIF
 
 
@@ -1246,15 +1249,15 @@ C PCM: st2 is the year st3 is the class, ranging from 1 to NS (NS=10)
 
             num_land = COUNT( mindx .EQV. .true.)
 
-            IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
-              if(num_land .GT. 0) THEN
-                WRITE(*,FMT='(F9.4)',ADVANCE='no') 
-     &                 SUM(xx,mindx)/100.0/num_land 
-C                WRITE(*,FMT='(F9.4)',ADVANCE='no') xx(1,1)/100.0 
-              ELSE
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00 
-              ENDIF
-            ENDIF
+C            IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+C              if(num_land .GT. 0) THEN
+C                WRITE(*,FMT='(F9.4)',ADVANCE='no') 
+C     &                 SUM(xx,mindx)/100.0/num_land 
+CC                WRITE(*,FMT='(F9.4)',ADVANCE='no') xx(1,1)/100.0 
+C              ELSE
+CC                WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00 
+C              ENDIF
+C            ENDIF
 
 
             CALL BI_LIN(xx,indx,xnorm,ynorm,ans)
@@ -1262,6 +1265,15 @@ C                WRITE(*,FMT='(F9.4)',ADVANCE='no') xx(1,1)/100.0
             x = int(ans+0.5d0)
 
             classprop(classes(k)) = ans
+
+            IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+              if(num_land .GT. 0) THEN
+                WRITE(*,FMT='(F9.4)',ADVANCE='no') 
+     &                 ans 
+              ELSE
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00 
+              ENDIF
+            ENDIF
 
             IF(ilanduse.EQ.0) THEN !PCM
               CLOSE(99)
@@ -1389,7 +1401,24 @@ c
         DO ift=1,nft
           cluse(ift,i) = ftprop(ift)
         ENDDO
-        !write(*,'(I4,12F8.2)') yr0a+i-1, cluse(1:12,i)  
+
+        IF(ilanduse.GE.3 .and. ilanduse.LE.6 ) THEN
+         IF( MOD(yr0a+i-2,20) == 0 ) THEN 
+          WRITE(*,*)
+     &'   t    BARE    CITY     C3p     C4p  C3crop  C4crop',
+     &'     C3s     C4s   Ev_Bp   Ev_Np   Dc_Bp   Dc_Np',
+     &'   Ev_Bs   Ev_Ns   Dc_Bs   Dc_Ns'
+         ENDIF
+         write(*,'(I4,16F8.2)') yr0a+i-1, cluse(1:16,i)  
+        ELSE
+         IF( MOD(yr0a+i-2,20) == 0 ) THEN 
+          WRITE(*,*)
+     &'   t    BARE    CITY      C3      C4  C3crop  C4crop',
+     &'   Ev_Bl   Ev_Nl   Dc_Bl   Dc_Nl'
+         ENDIF
+         write(*,'(I4,10F8.2)') yr0a+i-1, cluse(1:10,i)  
+        ENDIF
+
 
         IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
          DO iat3=1,maxn_at

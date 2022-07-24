@@ -116,8 +116,8 @@
           if( ftprop(ft) .gt. 1d-1 ) then
             ftloss_prop(ft) = 1d0 - (ftprop(ft)*1d-2)/sum_cov(ft)
           else
-            ftloss_prop = 1d0   !PCM why isn't this ftloss_prop(ft) = 1d0 ??
-            !ftloss_prop(ft) = 1d0   !PCM 
+            !ftloss_prop = 1d0   !PCM why isn't this ftloss_prop(ft) = 1d0 ??
+            ftloss_prop(ft) = 1d0   !PCM 
           endif
 
           !print*, 'ftprop is less than sum_cov:',
@@ -337,21 +337,21 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
         ENDDO
       ENDDO
 
-      IF (ilanduse.ge.3 .and. ilanduse.le.6) THEN
-       WRITE(*,*) ' BARE       CITY       C3p        C4p        ',
-     &'C3crop     C4crop      C3s        C4s        Ev_Bp       ', 
-     &'Ev_Np      Dc_Bp        Dc_Np      Ev_Bs      Ev_Ns      ', 
-     &'Dc_Bs      Dc_Ns'
-      ELSE
-       WRITE(*,*) ' BARE       CITY       C3         C4         ',
-     &'C3crop     C4crop       Ev_Bl       ', 
-     &'Ev_Nl      Dc_Bl        Dc_Nl       ' 
-      ENDIF
+C      IF (ilanduse.ge.3 .and. ilanduse.le.6) THEN
+C       WRITE(*,*) ' BARE       CITY       C3p        C4p        ',
+C     &'C3crop     C4crop      C3s        C4s        Ev_Bp       ', 
+C     &'Ev_Np      Dc_Bp        Dc_Np      Ev_Bs      Ev_Ns      ', 
+C     &'Dc_Bs      Dc_Ns'
+C      ELSE
+C       WRITE(*,*) ' BARE       CITY       C3         C4         ',
+C     &'C3crop     C4crop       Ev_Bl       ', 
+C     &'Ev_Nl      Dc_Bl        Dc_Nl       ' 
+C      ENDIF
 
-      PRINT '(A)','GG3 COV AGE=1 '
-      PRINT '(16F11.6)',cov(1,1:nft)
-      PRINT '(A)','GG4 COV '
-      PRINT '(16F11.6)',sum_cov_test(1:nft)
+      !PRINT '(A)','GG3 COV AGE=1 '
+      !PRINT '(16F11.6)',cov(1,1:nft)
+      !PRINT '(A)','GG4 COV '
+      !PRINT '(16F11.6)',sum_cov_test(1:nft)
       !PRINT '(A)','GG5 BIOL'
       !PRINT '(16F11.6)',bioleaf(1:nft)
       !PRINT '(A)','GG6 NPPS'
