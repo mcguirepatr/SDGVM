@@ -62,9 +62,9 @@
 * Reduce ft area due to change in the LULCC database                   *
 * and put this as bare ground ready for new growth 'ngrowth'.          *
 *----------------------------------------------------------------------*
+      flulccc = 0d0
       IF(ilanduse.NE.4 .AND. ilanduse.NE.6) THEN
          ngcov = 0d0
-         flulccc = 0d0
       ELSE
          DO ft2=1,nft
            ngcov2(ft2) = 0d0
