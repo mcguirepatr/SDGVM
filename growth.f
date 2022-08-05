@@ -22,7 +22,7 @@
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
       REAL*8 ftloss_prop(maxnft),sum_cov(maxnft),flulccc
       REAL*8 cneed, cneed_leaf, cneed_store
-      REAL*8 ngcov2(maxnft),flulccc2(maxnft),ftpropnew
+      REAL*8 ngcov2(maxnft),ftpropnew
       REAL*8 sum_cov_test(maxnft)
       REAL*8 atprop2(n_at,n_at),ftloss_prop2(maxnft,maxnft),THRESH
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
@@ -68,7 +68,6 @@
       ELSE
          DO ft2=1,nft
            ngcov2(ft2) = 0d0
-           flulccc2(ft2) = 0d0
          ENDDO
       ENDIF
 
@@ -1340,10 +1339,10 @@ C      ENDIF
           IF (harvest) THEN
             !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact
             if(age.EQ.2) print*, 'harvest'
-            !add harvested/removed wood biomass (including 50% nppstore) to firec losses
-            flulccc = flulccc + bio(age,1,ft)*cov(age,ft)
             !add harvested/removed leaf biomass to surface soil litter
             slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)
+            !add harvested/removed wood biomass (including 50% nppstore) to firec losses
+            flulccc = flulccc + bio(age,1,ft)*cov(age,ft)
             firec   = firec   + nppstore(ft) * 0.50d0 * cov(age,ft) 
             bio(age,1,ft) =  0.0d0
           ENDIF
