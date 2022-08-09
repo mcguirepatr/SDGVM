@@ -105,7 +105,7 @@
         ENDDO
         !print*, sum_cov(ft)
 
-        ! need to make this tree speciifc
+        ! need to make this tree specific
 
         IF(ilanduse.NE.4 .AND. ilanduse.NE.6) THEN
         if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
@@ -122,9 +122,10 @@
           !print*, 'ftprop is less than sum_cov:',
       !&ft, ftprop(ft)*1d-2, sum_cov(ft), ftloss_prop(ft) 
           !print*, (ftprop(ft)*1d-2) - sum_cov(ft)
+
           CALL LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &ftloss_prop,npp,nps,slc,rlc,fireres,flulccc,harvest,leafdp,
-     &ft,ftloss_prop2,ilanduse)
+     &ftloss_prop(ft),npp,nps,slc,rlc,fireres,flulccc,harvest,
+     &leafdp,ft)
 
           ngcov = ngcov + ftloss_prop(ft) * sum_cov(ft)
 !          IF (debug .EQV. .TRUE.) THEN
@@ -158,8 +159,8 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
               endif
 
               CALL LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,
-     &hgt,ftloss_prop,npp,nps,slc,rlc,fireres,flulccc,harvest,leafdp,
-     &ft,ftloss_prop2,ilanduse)
+     &hgt,ftloss_prop2(ft,ft2),npp,nps,slc,rlc,fireres,flulccc,harvest,
+     &leafdp,ft)
 
               ngcov2(ft2) =ngcov2(ft2) +ftloss_prop2(ft,ft2)*sum_cov(ft)
 !              IF (debug .EQV. .TRUE.) THEN
@@ -1371,18 +1372,16 @@ C      ENDIF
 * and land-cover change database                                       *
 *----------------------------------------------------------------------*
       SUBROUTINE LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &ftloss_prop,npp,nps,slc,rlc,fireres,flulccc,harvest,leafdp,
-     &ft,ftloss_prop2,ilanduse)
+     &loss,npp,nps,slc,rlc,fireres,flulccc,harvest,leafdp,
+     &ft)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
       REAL*8 hgt(maxage,maxnft),npp(maxnft),nppstore(maxnft)
-      REAL*8 ftloss_prop(maxnft)
+      REAL*8 loss
       REAL*8 nps(maxnft),ngcov,slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,flulccc,xfprob,leafdp(3600,maxnft)
-      REAL*8 ftloss_prop2(maxnft,maxnft)
       INTEGER nft,ftmor(maxnft),ft,age,fireres
-      INTEGER ilanduse,ft2 
       LOGICAL harvest
 
 
@@ -1390,38 +1389,21 @@ C      ENDIF
 * kill off pfts that have lost cover according to the landuse database * 
 *----------------------------------------------------------------------*
 
-        IF(ilanduse.NE.4 .AND. ilanduse.NE.6) THEN
-           DO age=1,ftmor(ft)
-
+        DO age=1,ftmor(ft)
              rlc(ft) = rlc(ft) + bio(age,2,ft) * 
-     &ftloss_prop(ft) * cov(age,ft)
+     &loss * cov(age,ft)
 
              flulccc = flulccc + 
      &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *
-     &ftloss_prop(ft) * cov(age,ft)
+     &loss * cov(age,ft)
 
              !update cover array
-             cov(age,ft) = cov(age,ft)*( 1.0d0 - ftloss_prop(ft) )
-          
-           ENDDO
-        ELSE
-           DO age=1,ftmor(ft)
-            DO ft2=1,nft
-             rlc(ft) = rlc(ft) + bio(age,2,ft) * 
-     &ftloss_prop2(ft,ft2) * cov(age,ft)
-
-             flulccc = flulccc + 
-     &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *
-     &ftloss_prop2(ft,ft2) * cov(age,ft)
-
-             !update cover array
-             cov(age,ft) = cov(age,ft)*( 1.0d0 - ftloss_prop2(ft,ft2) )
-            ENDDO
-           ENDDO
-        ENDIF
+             cov(age,ft) = cov(age,ft)*( 1.0d0 - loss )
+        ENDDO
 
       RETURN
       END
+
 *----------------------------------------------------------------------*
 *                            SUBROUTINE SHIFT                          *
 *                            ****************                          *
