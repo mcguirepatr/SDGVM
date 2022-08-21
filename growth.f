@@ -280,11 +280,12 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
             at = aggmap_SDGVM_to_aggHyde(ft)
-            !cov(1,ft) = 0.0 
+            cov(1,ft) = 0.0 
             !sum age=1 vegetation from gross transitions
             DO ft2=2,nft
              at2 = aggmap_SDGVM_to_aggHyde(ft2)
-             cov(1,ft) = ftprop(ft)*(1.0+atprop2(at2,at)*1d-2)
+             cov(1,ft) = cov(1,ft) + 
+     &         ftprop(ft2)*(1.0+atprop2(at2,at)*1d-2)
      &                        *ngcov2(ft)/100.0d0
 !             IF(debug .EQV. .TRUE.) THEN
 !               PRINT '(A I2 I2 F9.6 I3 F9.6 F9.6)','GG2b',
@@ -337,21 +338,21 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
         ENDDO
       ENDDO
 
-C      IF (ilanduse.ge.3 .and. ilanduse.le.6) THEN
-C       WRITE(*,*) ' BARE       CITY       C3p        C4p        ',
-C     &'C3crop     C4crop      C3s        C4s        Ev_Bp       ', 
-C     &'Ev_Np      Dc_Bp        Dc_Np      Ev_Bs      Ev_Ns      ', 
-C     &'Dc_Bs      Dc_Ns'
-C      ELSE
-C       WRITE(*,*) ' BARE       CITY       C3         C4         ',
-C     &'C3crop     C4crop       Ev_Bl       ', 
-C     &'Ev_Nl      Dc_Bl        Dc_Nl       ' 
-C      ENDIF
+      IF (ilanduse.ge.3 .and. ilanduse.le.6) THEN
+       WRITE(*,*) ' BARE       CITY       C3p        C4p        ',
+     &'C3crop     C4crop      C3s        C4s        Ev_Bp       ', 
+     &'Ev_Np      Dc_Bp        Dc_Np      Ev_Bs      Ev_Ns      ', 
+     &'Dc_Bs      Dc_Ns'
+      ELSE
+       WRITE(*,*) ' BARE       CITY       C3         C4         ',
+     &'C3crop     C4crop       Ev_Bl       ', 
+     &'Ev_Nl      Dc_Bl        Dc_Nl       ' 
+      ENDIF
 
-      !PRINT '(A)','GG3 COV AGE=1 '
-      !PRINT '(16F11.6)',cov(1,1:nft)
-      !PRINT '(A)','GG4 COV '
-      !PRINT '(16F11.6)',sum_cov_test(1:nft)
+      PRINT '(A)','GG3 COV AGE=1 '
+      PRINT '(16F11.6)',cov(1,1:nft)
+      PRINT '(A)','GG4 COV '
+      PRINT '(16F11.6)',sum_cov_test(1:nft)
       !PRINT '(A)','GG5 BIOL'
       !PRINT '(16F11.6)',bioleaf(1:nft)
       !PRINT '(A)','GG6 NPPS'
@@ -1389,6 +1390,7 @@ C      ENDIF
 * kill off pfts that have lost cover according to the landuse database * 
 *----------------------------------------------------------------------*
 
+!        PRINT '(A)','GG7 LULCCCHANGE'
         DO age=1,ftmor(ft)
              rlc(ft) = rlc(ft) + bio(age,2,ft) * 
      &loss * cov(age,ft)
@@ -1396,6 +1398,8 @@ C      ENDIF
              flulccc = flulccc + 
      &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *
      &loss * cov(age,ft)
+!             PRINT '(2I5,6F12.7)',age,ft,loss,flulccc,bio(age,1,ft),
+!     &bioleaf(ft),nppstore(ft),cov(age,ft)
 
              !update cover array
              cov(age,ft) = cov(age,ft)*( 1.0d0 - loss )
