@@ -163,12 +163,12 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
      &leafdp,ft)
 
               ngcov2(ft2) =ngcov2(ft2) +ftloss_prop2(ft,ft2)*sum_cov(ft)
-!              IF (debug .EQV. .TRUE.) THEN
-!                PRINT '(A I2 I2 I3 I3 F9.6 F9.6 F9.6 F9.6)','GG1',
-!     &              at,at2,ft,ft2,
-!     &              atprop2(at,at2),ftloss_prop2(ft,ft2),
-!     &              sum_cov(ft), ngcov2(ft2)
-!              ENDIF
+              IF (debug .EQV. .TRUE.) THEN
+                PRINT '(A I2 I2 I3 I3 F9.6 F9.6 F9.6 F9.6)','GG1',
+     &              at,at2,ft,ft2,
+     &              atprop2(at,at2),ftloss_prop2(ft,ft2),
+     &              sum_cov(ft), ngcov2(ft2)
+              ENDIF
              endif 
           ENDDO
         endif
@@ -280,17 +280,21 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
             at = aggmap_SDGVM_to_aggHyde(ft)
-            cov(1,ft) = 0.0 
+            !cov(1,ft) = 0.0 
+            cov(1,ft) = ngcov2(ft) 
             !sum age=1 vegetation from gross transitions
             DO ft2=2,nft
              at2 = aggmap_SDGVM_to_aggHyde(ft2)
-             cov(1,ft) = cov(1,ft) + 
-     &         ftprop(ft2)*(1.0+atprop2(at2,at)*1d-2)
-     &                        *ngcov2(ft)/100.0d0
-!             IF(debug .EQV. .TRUE.) THEN
-!               PRINT '(A I2 I2 F9.6 I3 F9.6 F9.6)','GG2b',
-!     &           at2,at,atprop2(at2,at),ft,ngcov2(ft),cov(1,ft)
-!             ENDIF
+             !ftpropnew = ftprop(ft2)*(1.0+atprop2(at2,at)*1d-2)
+             !cov(1,ft) = cov(1,ft) + ftpropnew*ngcov2(ft)/100.0d0
+             ftpropnew = ftprop(ft2)*atprop2(at2,at)*1d-2
+             cov(1,ft) = cov(1,ft) + ftpropnew/100.0
+             IF(debug .EQV. .TRUE.) THEN
+               PRINT '(A I2 I2 F9.6 I3 I3 F11.6 F11.6 F9.6 F9.6)',
+     &          'GG2b',
+     &           at2,at,atprop2(at2,at),ft2,ft,ftprop(ft2),ftpropnew,
+     &           ngcov2(ft),cov(1,ft)
+             ENDIF
             ENDDO
           ELSE
             cov(1,ft) = ftprop(ft)*ngcov/100.0d0
@@ -1244,6 +1248,7 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
       INTEGER nft,ftmor(maxnft),ft,age,fireres
       INTEGER ilanduse
       LOGICAL harvest
+      LOGICAL, PARAMETER :: debug = .TRUE. !used to print out more debugging info
 
       xfprob = fprob
 
@@ -1262,6 +1267,10 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
         slc(ft) = slc(ft)  + (bio(ftmor(ft),1,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(ftmor(ft),ft)
         rlc(ft) = rlc(ft)  + bio(ftmor(ft),2,ft)*cov(ftmor(ft),ft)
+        IF (debug .EQV. .TRUE.) THEN
+                PRINT '(A I3 F9.6 I6 F9.6)','GG1B',
+     &              ft, ngcov2(ft),ftmor(ft),cov(ftmor(ft),ft)
+        ENDIF
       ENDDO
       CALL SHIFT(ftmor,cov,ppm,bio,hgt,1,nft)
 
@@ -1322,6 +1331,11 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
               ngcov   = ngcov + cov(age,ft)*(fprob - fprob*tmor + tmor)
           ENDIF
           
+          IF (debug .EQV. .TRUE.) THEN
+                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
+     &         ft, ngcov2(ft), cov(age,ft),(fprob-fprob*tmor+tmor),
+     &         fprob,tmor
+          ENDIF
           slc(ft) = slc(ft) + 
      &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) * 
      &(tmor - 0.2d0*fprob*tmor + 0.2d0*fprob) * cov(age,ft)
