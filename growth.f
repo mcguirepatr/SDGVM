@@ -22,7 +22,7 @@
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
       REAL*8 ftloss_prop(maxnft),sum_cov(maxnft),flulccc
       REAL*8 cneed, cneed_leaf, cneed_store
-      REAL*8 ngcov2(maxnft),ftpropnew
+      REAL*8 ngcov2(maxnft),ftpropnew,ftprop2(maxnft)
       REAL*8 sum_cov_test(maxnft)
       REAL*8 atprop2(n_at,n_at),ftloss_prop2(maxnft,maxnft),THRESH
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
@@ -217,6 +217,29 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 *       CALL c3c4(ftprop,c3old,c4old,npp,nps)
       ENDIF
 
+      IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+        DO ft=1,nft           
+            ftprop2(ft) = ftprop(ft)/100.0d0 !scaled dummy variable 
+        ENDDO
+        DO ft=2,nft           
+            at = aggmap_SDGVM_to_aggHyde(ft)
+            ftprop(ft) = ftprop2(ft)
+            !sum vegetation from gross transitions
+            DO ft2=2,nft
+             at2 = aggmap_SDGVM_to_aggHyde(ft2)
+             ftprop(ft) = ftprop(ft)+ftprop2(ft2)*(atprop2(at2,at)*1d-2)
+!             IF(debug .EQV. .TRUE.) THEN
+!               PRINT '(A I2 I2 F9.6 I3 I3 F9.6)',
+!     &          'GG2b',
+!     &           at2,at,atprop2(at2,at),ft2,ft,ftprop2(ft)
+!             ENDIF
+            ENDDO
+        ENDDO
+        DO ft=2,nft           
+            ftprop(ft) = ftprop(ft)*100.0d0 
+        ENDDO
+      ENDIF
+
 *----------------------------------------------------------------------*
 * Set cover arrays to adjust to ftprop as best they can.               *
 * ftprop contains the total proportion of that cover, not the          *
@@ -239,7 +262,8 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
       ENDDO
 
       IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-         cov(1,1) = ngcov2(1)*ftprop(1)/100.0d0
+         !cov(1,1) = ngcov2(1)*ftprop(1)/100.0d0
+         cov(1,1) = ngcov2(1)
       ELSE
          cov(1,1) = ngcov*ftprop(1)/100.0d0
       ENDIF
@@ -279,29 +303,9 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 *----------------------------------------------------------------------*
 
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-            at = aggmap_SDGVM_to_aggHyde(ft)
-            !cov(1,ft) = 0.0 
             cov(1,ft) = ngcov2(ft) 
-            !sum age=1 vegetation from gross transitions
-            DO ft2=2,nft
-             at2 = aggmap_SDGVM_to_aggHyde(ft2)
-             !ftpropnew = ftprop(ft2)*(1.0+atprop2(at2,at)*1d-2)
-             !cov(1,ft) = cov(1,ft) + ftpropnew*ngcov2(ft)/100.0d0
-             ftpropnew = ftprop(ft2)*atprop2(at2,at)*1d-2
-             cov(1,ft) = cov(1,ft) + ftpropnew/100.0
-             IF(debug .EQV. .TRUE.) THEN
-               PRINT '(A I2 I2 F9.6 I3 I3 F11.6 F11.6 F9.6 F9.6)',
-     &          'GG2b',
-     &           at2,at,atprop2(at2,at),ft2,ft,ftprop(ft2),ftpropnew,
-     &           ngcov2(ft),cov(1,ft)
-             ENDIF
-            ENDDO
           ELSE
             cov(1,ft) = ftprop(ft)*ngcov/100.0d0
-!            IF(debug .EQV. .TRUE.) THEN
-!               PRINT '(A F9.6 I3 F9.6 F9.6)','GG2a',
-!     &           ftprop(ft),ft,ngcov,cov(1,ft)
-!            ENDIF
           ENDIF
           ppm(1,ft) = ftppm0(ft)
           hgt(1,ft) = 0.004d0
@@ -342,21 +346,21 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
         ENDDO
       ENDDO
 
-      IF (ilanduse.ge.3 .and. ilanduse.le.6) THEN
-       WRITE(*,*) ' BARE       CITY       C3p        C4p        ',
-     &'C3crop     C4crop      C3s        C4s        Ev_Bp       ', 
-     &'Ev_Np      Dc_Bp        Dc_Np      Ev_Bs      Ev_Ns      ', 
-     &'Dc_Bs      Dc_Ns'
-      ELSE
-       WRITE(*,*) ' BARE       CITY       C3         C4         ',
-     &'C3crop     C4crop       Ev_Bl       ', 
-     &'Ev_Nl      Dc_Bl        Dc_Nl       ' 
-      ENDIF
-
-      PRINT '(A)','GG3 COV AGE=1 '
-      PRINT '(16F11.6)',cov(1,1:nft)
-      PRINT '(A)','GG4 COV '
-      PRINT '(16F11.6)',sum_cov_test(1:nft)
+!      IF (ilanduse.ge.3 .and. ilanduse.le.6) THEN
+!       WRITE(*,*) ' BARE       CITY       C3p        C4p        ',
+!     &'C3crop     C4crop      C3s        C4s        Ev_Bp       ', 
+!     &'Ev_Np      Dc_Bp        Dc_Np      Ev_Bs      Ev_Ns      ', 
+!     &'Dc_Bs      Dc_Ns'
+!      ELSE
+!       WRITE(*,*) ' BARE       CITY       C3         C4         ',
+!     &'C3crop     C4crop       Ev_Bl       ', 
+!     &'Ev_Nl      Dc_Bl        Dc_Nl       ' 
+!      ENDIF
+!
+!      PRINT '(A)','GG3 COV AGE=1 '
+!      PRINT '(16F11.6)',cov(1,1:nft)
+!      PRINT '(A)','GG4 COV '
+!      PRINT '(16F11.6)',sum_cov_test(1:nft)
       !PRINT '(A)','GG5 BIOL'
       !PRINT '(16F11.6)',bioleaf(1:nft)
       !PRINT '(A)','GG6 NPPS'
@@ -1267,10 +1271,10 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
         slc(ft) = slc(ft)  + (bio(ftmor(ft),1,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(ftmor(ft),ft)
         rlc(ft) = rlc(ft)  + bio(ftmor(ft),2,ft)*cov(ftmor(ft),ft)
-        IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I3 F9.6 I6 F9.6)','GG1B',
-     &              ft, ngcov2(ft),ftmor(ft),cov(ftmor(ft),ft)
-        ENDIF
+!        IF (debug .EQV. .TRUE.) THEN
+!                PRINT '(A I3 F9.6 I6 F9.6)','GG1B',
+!     &              ft, ngcov2(ft),ftmor(ft),cov(ftmor(ft),ft)
+!        ENDIF
       ENDDO
       CALL SHIFT(ftmor,cov,ppm,bio,hgt,1,nft)
 
@@ -1331,11 +1335,11 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
               ngcov   = ngcov + cov(age,ft)*(fprob - fprob*tmor + tmor)
           ENDIF
           
-          IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
-     &         ft, ngcov2(ft), cov(age,ft),(fprob-fprob*tmor+tmor),
-     &         fprob,tmor
-          ENDIF
+!          IF (debug .EQV. .TRUE.) THEN
+!                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
+!     &         ft, ngcov2(ft), cov(age,ft),(fprob-fprob*tmor+tmor),
+!     &         fprob,tmor
+!          ENDIF
           slc(ft) = slc(ft) + 
      &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) * 
      &(tmor - 0.2d0*fprob*tmor + 0.2d0*fprob) * cov(age,ft)
