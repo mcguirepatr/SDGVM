@@ -71,10 +71,8 @@ source ./runtypes.bs
 if [ $? == 1 ]; then exit; fi
 TEMPINT="${SDGVM_SPIN[*]}"
 SDGVM_SPIN_STR=`echo ${TEMPINT// /,\ }`
-SDGVM_SPIN_STR_R=`echo \'${TEMPINT// /\',\'}\'`
 TEMPINT="${SDGVM_MAIN_SIMS[*]}"
 SDGVM_MAIN_SIMS_STR=`echo ${TEMPINT// /,\ }`
-SDGVM_MAIN_SIMS_STR_R=`echo \'${TEMPINT// /\',\'}\'`
 
 # print input vars 
 echo ""
@@ -84,14 +82,12 @@ echo "Copy directory (SDGVM_CPDIR):"
 echo "  ${SDGVM_CPRUN}"
 echo "Spin runs (SDGVM_SPIN):"
 echo "  ${SDGVM_SPIN[*]}"
-echo "Spin runs strings (SDGVM_SPIN_STR, SDGVM_SPIN_STR_R):"
+echo "Spin runs string (SDGVM_SPIN_STR):"
 echo "  ${SDGVM_SPIN_STR}"
-echo "  ${SDGVM_SPIN_STR_R}"
 echo "Main runs (SDGVM_MAIN_SIMS):"
 echo "  ${SDGVM_MAIN_SIMS[*]}"
-echo "Main runs string (SDGVM_MAIN_SIMS_STR, SDGVM_MAIN_SIMS_STR_R):"
+echo "Main runs string (SDGVM_MAIN_SIMS_STR):"
 echo "  ${SDGVM_MAIN_SIMS_STR}"
-echo "  ${SDGVM_MAIN_SIMS_STR_R}"
 echo "Number of spin up years (SDGVM_SPINNY):"
 echo "  ${SDGVM_SPINNY}"
 

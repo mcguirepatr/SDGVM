@@ -23,14 +23,17 @@ library(rworldxtra)
 ###user defined inputs
 
 #directory paths
-date    <- '201128'
-dir     <- '/home/alp/models/SDGVM/'
-rdir    <- 'run'
+#date    <- '200817'
+#dir     <- '/home/alp/models/SDGVM/'
+#rdir    <- 'run'
 edir    <- 'eval_data'
-#date    <- '190816a'
-#dir     <- '/group_workspaces/jasmin2/nexcs/pmcguire/sdgvmR/'
-#rdir    <- 'TRENDY2019_v2'
-#tdir    <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/sdgvm/tools/'
+
+date    <- '210908a'
+#dir     <- '/gws/nopw/j04/nexcs/pmcguire/sdgvmR/'
+dir     <- '/work/scratch-pw/pmcguire/'
+rdir    <- 'TRENDY2021_v1'
+odir    <- 'outputC/'
+tdir    <- '/gws/nopw/j04/nexcs/pmcguire/TRENDYv10/sdgvm/tools/'
 
 # project directory
 #project <- 'vcmax'
@@ -258,8 +261,8 @@ fnorm <- function(df,norm) {
 ###############################
 ### start program
 
-setwd(paste(dir,'src/sdgvm/tools/',sep='/'))
-#setwd(tdir)
+#setwd(paste(dir,'src/sdgvm/tools/',sep='/'))
+setwd(tdir)
 source('params_map_plot.R')
 source('functions_map_plot.R')
 
@@ -315,7 +318,8 @@ if(!is.null(mask)) {
   print('',quote=F)
   print(paste('read mask:',mask,mask_perc,'perc'),quote=F)
 
-  wdpath  <- paste(dir,rdir,project,sim[sia[1]],'output/',sep='/')
+  #wdpath  <- paste(dir,rdir,project,sim[sia[1]],'output/',sep='/')
+  wdpath  <- paste(dir,rdir,project,sim[sia[1]],odir,sep='/')
 
   if(grepl('crop',mask)) {
     mydata1     <- open('cov_C3crop',c('lat','lon','cov'),wdpath)
@@ -386,7 +390,8 @@ for( v in 1:length(vars) ) {
   for(m in sia) {    
     
     #open data 
-    wdpath <- paste(dir,rdir,project,sim[m],'output/',sep='/')
+    #wdpath <- paste(dir,rdir,project,sim[m],'output/',sep='/')
+    wdpath <- paste(dir,rdir,project,sim[m],odir,sep='/')
     print(wdpath)
     if(substr(vars[v],1,3)=='cov'&cov_fixed) {
       index  <- 3

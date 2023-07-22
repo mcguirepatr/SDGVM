@@ -22,7 +22,7 @@
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
       REAL*8 ftloss_prop(maxnft),sum_cov(maxnft),flulccc
       REAL*8 cneed, cneed_leaf, cneed_store
-      REAL*8 ngcov2(maxnft),ftpropnew,ftprop2(maxnft)
+      REAL*8 ftpropnew,ftprop2(maxnft)
       REAL*8 sum_cov_test(maxnft)
       REAL*8 atprop2(n_at,n_at),ftloss_prop2(maxnft,maxnft),THRESH
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
@@ -63,13 +63,7 @@
 * and put this as bare ground ready for new growth 'ngrowth'.          *
 *----------------------------------------------------------------------*
       flulccc = 0d0
-      IF(ilanduse.NE.4 .AND. ilanduse.NE.6) THEN
-         ngcov = 0d0
-      ELSE
-         DO ft2=1,nft
-           ngcov2(ft2) = 0d0
-         ENDDO
-      ENDIF
+      ngcov = 0d0
 
 *      CHARACTER(LEN=7),PARAMETER :: varname(NV)=(/'primf', 'primn', 'secdf', 'secdn', 'urban', &
 *          'c3ann', 'c4ann', 'c3per', 'c4per', 'c3nfx', 'pastr', 'range', &
@@ -107,9 +101,26 @@
 
         ! need to make this tree specific
 
-        IF(ilanduse.NE.4 .AND. ilanduse.NE.6) THEN
         if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
-        if( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) then
+         IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+          at = aggmap_SDGVM_to_aggHyde(ft)
+          DO ft2=2,nft
+            at2 = aggmap_SDGVM_to_aggHyde(ft2)
+            ftprop(ft) = ftprop(ft)*(1.0 - atprop2(at,at2)*1d-2)
+!            IF (debug .EQV. .TRUE.) THEN
+!              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
+!     &               at,at2,ft,ft2,ftprop(ft)*1d-2,sum_cov(ft)
+!            ENDIF
+            IF (debug .EQV. .TRUE.) THEN
+                PRINT '(A I2 I2 I3 I3 F9.6 F9.6 F9.6 F9.6)','GG1',
+     &              at,at2,ft,ft2,
+     &              atprop2(at,at2),ftprop(ft),
+     &              sum_cov(ft), ngcov
+              ENDIF
+          ENDDO
+         ENDIF
+
+         IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
         !if( ftprop(ft)*1d-2 .lt. sum_cov(ft) ) then
           
           if( ftprop(ft) .gt. 1d-1 ) then
@@ -134,45 +145,8 @@
 !     &              ftloss_prop(ft),
 !     &              sum_cov(ft), ngcov
 !          ENDIF
+         ENDIF
         endif
-        endif
-        ENDIF
-
-        IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-        if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
-          at = aggmap_SDGVM_to_aggHyde(ft)
-
-          THRESH = 1d-1 !For transitions instead of states, this number seems large
-          DO ft2=2,nft
-            at2 = aggmap_SDGVM_to_aggHyde(ft2)
-            ftpropnew = ftprop(ft)*(1.0-atprop2(at,at2)*1d-2)
-!            IF (debug .EQV. .TRUE.) THEN
-!              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
-!     &               at,at2,ft,ft2,ftpropnew*1d-2,sum_cov(ft)
-!            ENDIF
-C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
-            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-7 ) then
-              if( ftpropnew .gt. THRESH ) then
-                ftloss_prop2(ft,ft2) = 1d0 -(ftpropnew*1d-2)/sum_cov(ft)
-              else
-                ftloss_prop2(ft,ft2) = 1d0 
-              endif
-
-              CALL LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,
-     &hgt,ftloss_prop2(ft,ft2),npp,nps,slc,rlc,fireres,flulccc,harvest,
-     &leafdp,ft)
-
-              ngcov2(ft2) =ngcov2(ft2) +ftloss_prop2(ft,ft2)*sum_cov(ft)
-              IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I2 I2 I3 I3 F9.6 F9.6 F9.6 F9.6)','GG1',
-     &              at,at2,ft,ft2,
-     &              atprop2(at,at2),ftloss_prop2(ft,ft2),
-     &              sum_cov(ft), ngcov2(ft2)
-              ENDIF
-             endif 
-          ENDDO
-        endif
-        ENDIF
 
       ENDDO
       ENDIF
@@ -188,8 +162,7 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 * Also shift cover and biomass arrays one to the right.                *
 *----------------------------------------------------------------------*
       CALL NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
-     &npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc,
-     &ngcov2,ilanduse)
+     &npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc)
 
 *----------------------------------------------------------------------*
 
@@ -217,26 +190,22 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 *       CALL c3c4(ftprop,c3old,c4old,npp,nps)
       ENDIF
 
+*----------------------------------------------------------------------*
+* Compute added land cover from gross transitions                      *
+*----------------------------------------------------------------------*
       IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-        DO ft=1,nft           
-            ftprop2(ft) = ftprop(ft)/100.0d0 !scaled dummy variable 
-        ENDDO
         DO ft=2,nft           
             at = aggmap_SDGVM_to_aggHyde(ft)
-            ftprop(ft) = ftprop2(ft)
             !sum vegetation from gross transitions
             DO ft2=2,nft
              at2 = aggmap_SDGVM_to_aggHyde(ft2)
-             ftprop(ft) = ftprop(ft)+ftprop2(ft2)*(atprop2(at2,at)*1d-2)
+             ftprop(ft) = ftprop(ft)+ftprop(ft2)*(atprop2(at2,at)*1d-2)
 !             IF(debug .EQV. .TRUE.) THEN
 !               PRINT '(A I2 I2 F9.6 I3 I3 F9.6)',
 !     &          'GG2b',
-!     &           at2,at,atprop2(at2,at),ft2,ft,ftprop2(ft)
+!     &           at2,at,atprop2(at2,at),ft2,ft,ftprop(ft)
 !             ENDIF
             ENDDO
-        ENDDO
-        DO ft=2,nft           
-            ftprop(ft) = ftprop(ft)*100.0d0 
         ENDDO
       ENDIF
 
@@ -261,12 +230,7 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
         ftprop(ft) = 100.0d0*ftprop(ft)/norm
       ENDDO
 
-      IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-         !cov(1,1) = ngcov2(1)*ftprop(1)/100.0d0
-         cov(1,1) = ngcov2(1)
-      ELSE
-         cov(1,1) = ngcov*ftprop(1)/100.0d0
-      ENDIF
+      cov(1,1) = ngcov*ftprop(1)/100.0d0
       !PRINT*, 'G8' 
 
 *----------------------------------------------------------------------*
@@ -302,11 +266,7 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 20        CONTINUE
 *----------------------------------------------------------------------*
 
-          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-            cov(1,ft) = ngcov2(ft) 
-          ELSE
-            cov(1,ft) = ftprop(ft)*ngcov/100.0d0
-          ENDIF
+          cov(1,ft) = ftprop(ft)*ngcov/100.0d0
           ppm(1,ft) = ftppm0(ft)
           hgt(1,ft) = 0.004d0
 
@@ -904,11 +864,11 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
       nbp = ngcov*ftprop(1)/100.0d0
 
       IF (nbp.LT.bpaold*(1.0d0-x)) THEN
-	ngcov = 1.0d0 - bpaold*(1.0d0 - x) - cgcov
-	cov(1,1) = bpaold*(1.0d0 - x)
+        ngcov = 1.0d0 - bpaold*(1.0d0 - x) - cgcov
+        cov(1,1) = bpaold*(1.0d0 - x)
       ELSE
-	cov(1,1) = ngcov*ftprop(1)/100.0d0
-	ngcov = ngcov*(1.0d0 - ftprop(1)/100.0d0)
+        cov(1,1) = ngcov*ftprop(1)/100.0d0
+        ngcov = ngcov*(1.0d0 - ftprop(1)/100.0d0)
       ENDIF
 
 
@@ -1240,17 +1200,14 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 * Compute newgrowth and alter cover array accordingly.                 *
 *----------------------------------------------------------------------*
       SUBROUTINE NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &fprob,npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc,
-     &ngcov2,ilanduse)
+     &fprob,npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
       REAL*8 hgt(maxage,maxnft),fprob,npp(maxnft),nppstore(maxnft)
       REAL*8 nps(maxnft),ngcov,slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
-      REAL*8 ngcov2(maxnft)
       INTEGER nft,ftmor(maxnft),ft,age,fireres
-      INTEGER ilanduse
       LOGICAL harvest
       LOGICAL, PARAMETER :: debug = .TRUE. !used to print out more debugging info
 
@@ -1263,17 +1220,13 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 *----------------------------------------------------------------------*
       !ngcov = 0.0d0
       DO ft=1,nft
-        IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-          ngcov2(ft) = ngcov2(ft) + cov(ftmor(ft),ft)
-        ELSE
-          ngcov = ngcov + cov(ftmor(ft),ft)
-        ENDIF
+        ngcov = ngcov + cov(ftmor(ft),ft)
         slc(ft) = slc(ft)  + (bio(ftmor(ft),1,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(ftmor(ft),ft)
         rlc(ft) = rlc(ft)  + bio(ftmor(ft),2,ft)*cov(ftmor(ft),ft)
 !        IF (debug .EQV. .TRUE.) THEN
 !                PRINT '(A I3 F9.6 I6 F9.6)','GG1B',
-!     &              ft, ngcov2(ft),ftmor(ft),cov(ftmor(ft),ft)
+!     &              ft, ngcov,ftmor(ft),cov(ftmor(ft),ft)
 !        ENDIF
       ENDDO
       CALL SHIFT(ftmor,cov,ppm,bio,hgt,1,nft)
@@ -1318,6 +1271,7 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
 *     &nppstore(ft)
         ENDIF
 *----------------------------------------------------------------------*
+        tmor = 0.00 !PCM
 
         DO age=2,ftmor(ft)
           IF (age.LT.fireres) THEN
@@ -1328,16 +1282,11 @@ C            if( ( (ftpropnew*1d-2)  - sum_cov(ft) ) .lt. -5d-4 ) then
           IF (fireres.LT.0) fprob = real(-fireres)/1000.0d0
           
           !calculate litter from cover loss  
-          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-              ngcov2(ft)   = ngcov2(ft) + cov(age,ft)*(fprob
-     &                        - fprob*tmor + tmor)
-          ELSE
-              ngcov   = ngcov + cov(age,ft)*(fprob - fprob*tmor + tmor)
-          ENDIF
+          ngcov   = ngcov + cov(age,ft)*(fprob - fprob*tmor + tmor)
           
 !          IF (debug .EQV. .TRUE.) THEN
 !                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
-!     &         ft, ngcov2(ft), cov(age,ft),(fprob-fprob*tmor+tmor),
+!     &         ft, ngcov, cov(age,ft),(fprob-fprob*tmor+tmor),
 !     &         fprob,tmor
 !          ENDIF
           slc(ft) = slc(ft) + 

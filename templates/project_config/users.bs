@@ -31,22 +31,22 @@ if [ $SDGVM_USER == 'ORNL_APW' ]; then
 elif [ $SDGVM_USER == 'UR_PCM' ]; then
 
   # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
-  SDGVM_HOME="/group_workspaces/jasmin2/nexcs/pmcguire"
+  SDGVM_HOME="/gws/nopw/j04/nexcs/pmcguire"
 
   # relative to SDGVM_HOME
   SDGVM_PROJECTS_DIR="/sdgvmR/"
   SDGVM_DATA="/sdgvmD/data/"
-  SDGVM_MOD="/TRENDYv8/sdgvm/"
+  SDGVM_MOD="/TRENDYv10/sdgvm/"
 
   # cluster scheduling variables
-  SDGVM_BATCHPROC="bsub"
-  SDGVM_BATCHPROCCOM="bsub < submit.bsub"
+  SDGVM_BATCHPROC="sbatch"
+  SDGVM_BATCHPROCCOM="sbatch submit.sbatch"
   SDGVM_USER_EMAIL="mcguirepatr@gmail.com"
   SDGVM_USER_NAME="Patrick C. McGuire"    
   SDGVM_USER_INSTITUTION="University of Reading"    
   SDGVM_USER_ACCOUNT=""
   SDGVM_USER_QUEUE="par-multi"
-  SDGVM_USER_PARTITION=""
+  SDGVM_USER_PARTITION="par-multi"
 
 else
   echo ""

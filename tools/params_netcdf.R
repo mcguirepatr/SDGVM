@@ -21,6 +21,15 @@ tas <- list(
   scale = 273.15
 )
 
+tas_annual <- list(
+  name  = 'tas_annual',
+  file  = 'tmp',
+  pft   = F,
+  lname = 'Near-Surface Air Temperature',
+  units = 'K',
+  scale = 273.15
+)
+
 pr<- list(
   name  = 'pr',
   file  = 'prc',
@@ -28,6 +37,15 @@ pr<- list(
   lname = 'Precipitation',
   units = 'kg m-2 s-1',
   scale = 1/(30*24*3600)
+)
+
+pr_annual<- list(
+  name  = 'pr_annual',
+  file  = 'prc',
+  pft   = F,
+  lname = 'Precipitation',
+  units = 'kg m-2 s-1',
+  scale = 1/(360*24*3600)
 )
 
 rsds<- list(
@@ -113,6 +131,16 @@ fFire <- list(
   annmonth = T 
 )
 
+fFire_annual <- list(
+  name  = 'fFire_annual',
+  file  = 'fcn',
+  pft   = F,
+  lname = 'CO2 Emission from Fire',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600),
+  notes = 'SDGVM calculates this variable once per year, TRENDY output requires monthly data. Monthly data are calculated simply as the annual total divided by 12.'
+)
+
 burntArea <- list(
   name  = 'burntArea',
   file  = 'fab',
@@ -131,6 +159,17 @@ fLuc <- list(
   scale = 1/(1000*30*24*3600),
   notes = 'In this instance of SDGVM all above-ground biomass is assumed to be lost immediately to the atmosphere, and this is what this variable records. Below-ground biomass is assumed to go into the soil as litter and this variable does not track subsequent decomposition of that litter. SDGVM calculates this variable once per year, TRENDY output requires monthly data. Monthly data are calculated simply as the annual total divided by 12.',
   annmonth = T
+)
+
+
+fLuc_annual <- list(
+  name  = 'fLuc_annual',
+  file  = 'lulccc',
+  pft   = F,
+  lname = 'CO2 Flux to Atmosphere from Land Use Change',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600),
+  notes = 'In this instance of SDGVM all above-ground biomass is assumed to be lost immediately to the atmosphere, and this is what this variable records. Below-ground biomass is assumed to go into the soil as litter and this variable does not track subsequent decomposition of that litter. SDGVM calculates this variable once per year, TRENDY output requires monthly data. Monthly data are calculated simply as the annual total divided by 12.'
 )
 
 
@@ -220,6 +259,15 @@ gpp <- list(
   scale = 1/(1000*30*24*3600)
 )
 
+gpp_annual <- list(
+  name = 'gpp_annual',
+  file = 'gpp',
+  pft   = F,
+  lname = 'Gross Primary Production',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600)
+)
+
 gpppft <- list(
   name = 'gpppft',
   file = 'gpp',
@@ -238,6 +286,24 @@ ra <- list(
   scale = 1/(1000*30*24*3600)
 )
 
+ra_annual <- list(
+  name  = 'ra_annual',
+  file  = 'presp',
+  pft   = F,
+  lname = 'Autotrophic (Plant) respiration',
+  units = 'kg m-2 s-1, per unit land area occupied by the PFT',
+  scale = 1/(1000*360*24*3600)
+)
+
+lch_annual <- list(
+  name  = 'lch_annual',
+  file  = 'lch',
+  pft   = F,
+  lname = 'Leached soil carbon',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600)
+)
+
 npp <- list(
   name  = 'npp',
   file  = 'npp',
@@ -245,6 +311,15 @@ npp <- list(
   lname = 'Net Primary Production',
   units = 'kg m-2 s-1',
   scale = 1/(1000*30*24*3600)
+)
+
+npp_annual <- list(
+  name  = 'npp_annual',
+  file  = 'npp',
+  pft   = F,
+  lname = 'Net Primary Production',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600)
 )
 
 npppft <- list(
@@ -265,23 +340,41 @@ rh <- list(
   scale = 1/(1000*30*24*3600)
 )
 
-nbp <- list(
-  name  = 'nbp',
+rh_annual <- list(
+  name  = 'rh_annual',
+  file  = 'sresp',
+  pft   = F,
+  lname = 'Heterotrophic Respiration',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600)
+)
+
+nep <- list(
+  name  = 'nep',
   file  = 'nep',
   pft   = F,
-  lname = 'Net Biome Production',
+  lname = 'Net Ecosystem Production',
   units = 'kg m-2 s-1',
-  scale = 1/(1000*30*24*3600),
-  notes = 'These data include fire, lulcc, and leached C losses (which are annual fluxes distributed across the 12 months equally).'
+  scale = 1/(1000*30*24*3600)
+)
+
+nep_annual <- list(
+  name  = 'nep_annual',
+  file  = 'nep',
+  pft   = F,
+  lname = 'Net Ecosystem Production',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600)
 )
 
 nbp_annual <- list(
-  name  = 'nbpAnnual',
+  name  = 'nbp_annual',
   file  = 'nbp',
   pft   = F,
   lname = 'Net Biome Production',
   units = 'kg m-2 s-1',
-  scale = 1/(1000*360*24*3600)
+  scale = 1/(1000*360*24*3600),
+  notes = 'These data include fire, lulcc, and leached C losses (which are annual fluxes distributed across the 12 months equally).'
 )
 
 nbppft <- list(
@@ -291,7 +384,7 @@ nbppft <- list(
   lname = 'Vegtype level NBP',
   units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600),
-  notes = 'These data are per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
+  notes = 'These data area per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
 )
 
 lai <- list(

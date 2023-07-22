@@ -37,7 +37,6 @@ stich_sdgvm_mp_apply <- function(wd,grids=4,mc=T,
   files  <- files[-which(files=='site_info.dat')]
   files  <- files[-which(files=='simulation.dat')] #PCM
   files  <- files[-which(files=='diag.dat')]
-  files  <- files[-which(grepl('init',files))]
 
 # set the following switch if there is a subset of files that need rerunning
   #file_subset <- T
@@ -53,10 +52,12 @@ stich_sdgvm_mp_apply <- function(wd,grids=4,mc=T,
 #  if(file_subset) files <- 'mgresp.dat'
   print('FILES 2')
   print(files)
-  #isubs  <- grep('init',files)
-  #files  <- files[-isubs]
+  isubs  <- grep('init',files)
+  files  <- files[-isubs]
   print('FILES 3')
   print(files)
+  #if(file_subset) files <- c('monthly_qdf.dat','monthly_snw.dat','monthly_trn.dat')
+  #if(file_subset) files <- c('monthly_snw.dat')
  
   afiles <- files 
   if((!file_subset) || monthly){
@@ -173,6 +174,7 @@ process_sdgvm_matrix <- function(dv,atr,ad,nyears,...){
   if(atr==12) dmat <- dmat[1:13,]
   yrs         <- dmat[1,1:nyears]
   dmat        <- dmat[2:(atr+1),]  
+  print(paste("C4c0: nyears,nsites,atr,ad ",nyears,nsites,atr,ad,sep=',')) 
   #print(paste("C4c:",dmat,sep=''))  
   dmatlist    <- lapply(1:nsites,slice,mat=dmat,l=nyears)
   dmatstack   <- do.call(rbind,dmatlist)
@@ -189,7 +191,7 @@ read_grid <- function(g,ifile,wd){
   print(paste('read_grid:',wd,'grid',g,'/',sep=''))
   print(paste('read_grid:','grid',g, 'ifile= ',ifile))
   setwd(paste(wd,'grid',g,'/',sep=''))
-  read.table(ifile,na.strings=c('*******','********','*********','**********','***********','************'))
+  read.table(ifile,na.strings=c('*******','********','*********','**********','***********','************','Infinity'))
 }
 
 scan_grid <- function(g,ifile,wd){
@@ -197,7 +199,7 @@ scan_grid <- function(g,ifile,wd){
   print(paste('scan_grid:',wd,'grid',g,'/',sep=''))
   print(paste('scan_grid:','grid',g, 'ifile= ',ifile))
   setwd(paste(wd,'grid',g,'/',sep=''))
-  scan(ifile,na.strings=c('*******','********','*********','**********','***********','************'))
+  scan(ifile,na.strings=c('*******','********','*********','**********','***********','************','Infinity'))
 }
 
 write_sdgvm <- function(df,file,w=10){

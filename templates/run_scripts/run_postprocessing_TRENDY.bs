@@ -1,11 +1,11 @@
 #!/bin/bash
 
 SRCDIR=#HOME##MOD#/tools
-ARGS="nsites<-#TSITES# grids<-#NP# cores<-#NP# fd<-'${SRCDIR}' dir<-'#DIR#' wd<-'#PDIR#' sim<-'#SIM#' email<-'#EMAIL#'" 
-PARG="person<-'#NAME#'" 
-IARG="institution<-'#INSTITUTION#'" 
+ARGS="nsites<-#TSITES# grids<-#NP# cores<-#NP# fd<-'${SRCDIR}' dir<-'#DIR#' wd<-'#PDIR#' sim<-'#SIM#' person<-'#NAME#' email<-'#EMAIL#' institution<-'#INSTITUTION#'" 
 TIMEARGS="ny<-#NY# sty<-#STY#"
 TIMEARGSMON="ny<-#OUTNY# sty<-#OUTSTY#"
+#TIMEARGS="ny<-320 sty<-1700 outsyear<-1700 outeyear<-2019"
+#TIMEARGSMON="ny<-120 sty<-1900 outsyear<-1900 outeyear<-2019"
 
 
 cd $SRCDIR
@@ -15,11 +15,11 @@ Rscript postprocess_mp.R ${ALLARGS}
 
 # generate netcdf output
 ALLARGS="${ARGS} ${TIMEARGS} stich<-F netcdf<-T monthly<-F daily<-F"
-Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
-ALLARGS="${ARGS} ${TIMEARGSMON} stich<-F netcdf<-T monthly<-F daily<-F ncdf_avars<-c('cVegpft','landCoverFrac') "
-Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
+Rscript postprocess_mp.R ${ALLARGS}
+ALLARGS="${ARGS} ${TIMEARGSMON} stich<-F netcdf<-T monthly<-F daily<-F ncdf_avars<-c('cVegpft') "
+Rscript postprocess_mp.R ${ALLARGS}
 ALLARGS="${ARGS} ${TIMEARGS} outsyear<-#OUTSTY# stich<-F netcdf<-T monthly<-F daily<-F ncdf_avars<-c('fFire','fLuc')"
-Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
+Rscript postprocess_mp.R ${ALLARGS}
 
 # stich sub-annual gridded output together - monthly
 ALLARGS="${ARGS} ${TIMEARGSMON} netcdf<-F annual<-F daily<-F"
@@ -27,7 +27,7 @@ Rscript postprocess_mp.R ${ALLARGS}
 
 # generate sub-annual netcdf output - monthly
 ALLARGS="${ARGS} ${TIMEARGSMON} stich<-F netcdf<-T annual<-F daily<-F"
-Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
+Rscript postprocess_mp.R ${ALLARGS}
 
 
 

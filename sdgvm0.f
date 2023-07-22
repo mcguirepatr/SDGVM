@@ -1975,6 +1975,8 @@ c CLOSE added by Ghislain 15/12/03
           lon = lat_lon(site,2)
         ENDIF
 
+        WRITE(*,*)site,site0+site-1,lat,lon
+
         IF (abs(xseed1).EQ.0) THEN
           IF (site.EQ.1) THEN
             seed1 = int(SETARANDOM()*10000.0d0+.5)
@@ -3449,13 +3451,25 @@ c        ENDIF
         ans1 = 0.0d0
         DO ft=1,nft
           DO i=1,ftmor(ft)
+            ! adding stem_carbon=bio(i,1,ft) & root_carbon(i,2,ft) & leaf_carbon & nppstore
             ans1 = ans1 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(i,ft)
           ENDDO
-          ans1 = ans1 + slc(ft) + rlc(ft)
+          ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
+        WRITE(*,'(''Icheck0'',3f13.6)') ccheck
+        WRITE(*,'(''Ians1'',3f12.6)') ans1 
+        WRITE(*,'(''Itc0(1)'',3f12.6)') ic0(1) 
+        WRITE(*,'(''Itc0(2)'',3f12.6)') ic0(2) 
+        WRITE(*,'(''Itc0(3)'',3f12.6)') ic0(3) 
+        WRITE(*,'(''Itc0(4)'',3f12.6)') ic0(4) 
+        WRITE(*,'(''Itc0(5)'',3f12.6)') ic0(5) 
+        WRITE(*,'(''Itc0(6)'',3f12.6)') ic0(6) 
+        WRITE(*,'(''Itc0(7)'',3f12.6)') ic0(7) 
+        WRITE(*,'(''Itc0(8)'',3f12.6)') ic0(8) 
         ccheck = ans1 + ic0(1) + 
      &ic0(2) + ic0(3) + ic0(4) + ic0(5) + ic0(6) + ic0(7) + ic0(8)
+        WRITE(*,'(''Icheck1'',3f13.6)') ccheck
 
 *----------------------------------------------------------------------*
 * Set land use through ftprop.                                         *
@@ -4685,17 +4699,35 @@ c       kg_beta    = kg_beta/wi
         ans1 = 0.0d0
         DO ft=1,nft
           DO i=1,ftmor(ft)
+            ! adding stem_carbon=bio(i,1,ft) & root_carbon(i,2,ft) & leaf_carbon & nppstore
             ans1 = ans1 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(i,ft)
           ENDDO
-          ans1 = ans1 + slc(ft) + rlc(ft)
+          ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
+        WRITE(*,'(''check0'',3f13.6)') ccheck
+        WRITE(*,'(''avnpp'',3f12.6)') avnpp 
+        WRITE(*,'(''ans1'',3f12.6)') ans1 
+        WRITE(*,'(''tc0(1)'',3f12.6)') tc0(1) 
+        WRITE(*,'(''tc0(2)'',3f12.6)') tc0(2) 
+        WRITE(*,'(''tc0(3)'',3f12.6)') tc0(3) 
+        WRITE(*,'(''tc0(4)'',3f12.6)') tc0(4) 
+        WRITE(*,'(''tc0(5)'',3f12.6)') tc0(5) 
+        WRITE(*,'(''tc0(6)'',3f12.6)') tc0(6) 
+        WRITE(*,'(''tc0(7)'',3f12.6)') tc0(7) 
+        WRITE(*,'(''tc0(8)'',3f12.6)') tc0(8) 
+        WRITE(*,'(''avlch'',3f12.6)') avlch 
+        WRITE(*,'(''avsresp'',3f12.6)') avsresp 
+        WRITE(*,'(''firec'',3f12.6)') firec 
+        WRITE(*,'(''avyield'',3f12.6)') avyield 
+        WRITE(*,'(''flulccc'',3f12.6)') flulccc 
 !        ccheck = ccheck - (ans1 + tc0(1) + 
 !     &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) - 
 !     &(avnpp-avlch-avsresp-firec)) - avyield
         ccheck = ccheck + avnpp - (ans1 + tc0(1) + 
      &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) + 
      &avlch + avsresp + firec +  avyield + flulccc)
+        WRITE(*,'(''check'',3f13.6)') ccheck
 
 *----------------------------------------------------------------------*
 * Check carbon and water balance, write to 'DIAG' if any problems.     *
