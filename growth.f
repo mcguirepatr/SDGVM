@@ -29,6 +29,7 @@
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
       LOGICAL burn,harvest
+      LOGICAL compute_closs
 
       IF (ilanduse.eq.2) THEN
 *----------------------------------------------------------------------*
@@ -99,10 +100,20 @@
         ENDDO
         !print*, sum_cov(ft)
 
-        ! need to make this tree specific
-
-        if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
-         IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+        IF ( ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
+          ! do for both ftphen(ft) == 1 and 2
+          compute_closs = .TRUE. !compute cover loss
+        ELSE IF ( ilanduse.NE.4 .AND. ilanduse.NE.6 ) THEN
+         IF ( ftprop(ft).EQ.2 ) THEN
+          ! need to make this tree specific 
+          compute_closs = .TRUE.
+         ELSE
+          compute_closs = .FALSE.
+         ENDIF
+        ENDIF
+           
+        if( compute_closs .EQV. .TRUE. .AND. sum_cov(ft) .gt. 0d0) then
+         IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
           at = aggmap_SDGVM_to_aggHyde(ft)
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
@@ -1271,7 +1282,6 @@
 *     &nppstore(ft)
         ENDIF
 *----------------------------------------------------------------------*
-        tmor = 0.00 !PCM
 
         DO age=2,ftmor(ft)
           IF (age.LT.fireres) THEN
