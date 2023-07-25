@@ -20,11 +20,11 @@
       REAL*8 ftstmx(maxnft),stemdp(1000,maxnft),rootdp(1000,maxnft)
       REAL*8 fprob,ftprop(maxnft),ngcov,gold,c3old,c4old,fri,norm
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
-      REAL*8 ftloss_prop(maxnft),sum_cov(maxnft),flulccc
+      REAL*8 loss,sum_cov(maxnft),flulccc
       REAL*8 cneed, cneed_leaf, cneed_store
       REAL*8 ftpropnew,ftprop2(maxnft)
       REAL*8 sum_cov_test(maxnft)
-      REAL*8 atprop2(n_at,n_at),ftloss_prop2(maxnft,maxnft),THRESH
+      REAL*8 atprop2(n_at,n_at),THRESH
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
@@ -90,8 +90,7 @@
 
       IF (ilanduse.ne.2 ) THEN
       sum_cov(:)     = 0.0d0
-      ftloss_prop(:) = 0.0d0
-      ftloss_prop2(:,:) = 0.0d0
+      loss           = 0.0d0
       DO ft=2,nft
         !print*, 'G2',ft,ftphen(ft)
         !PRINT*, 'G2a',ft,ftprop(ft) 
@@ -117,7 +116,10 @@
           at = aggmap_SDGVM_to_aggHyde(ft)
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
+            ! losses from ft to ft2:
             ftprop(ft) = ftprop(ft)*(1.0 - atprop2(at,at2)*1d-2)
+            ! gains from ft2 to ft:
+            ftprop(ft) = ftprop(ft)+ftprop(ft2)*(atprop2(at2,at)*1d-2)
 !            IF (debug .EQV. .TRUE.) THEN
 !              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
 !     &               at,at2,ft,ft2,ftprop(ft)*1d-2,sum_cov(ft)
@@ -127,40 +129,40 @@
      &              at,at2,ft,ft2,
      &              atprop2(at,at2),ftprop(ft),
      &              sum_cov(ft), ngcov
-              ENDIF
+            ENDIF
           ENDDO
          ENDIF
 
-         IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
-        !if( ftprop(ft)*1d-2 .lt. sum_cov(ft) ) then
-          
-          if( ftprop(ft) .gt. 1d-1 ) then
-            ftloss_prop(ft) = 1d0 - (ftprop(ft)*1d-2)/sum_cov(ft)
-          else
+         IF( ftprop(ft) .GT. 1d-1 ) THEN
+            loss = 1d0 - (ftprop(ft)*1d-2)/sum_cov(ft)
+         ELSE
             !ftloss_prop = 1d0   !PCM why isn't this ftloss_prop(ft) = 1d0 ??
-            ftloss_prop(ft) = 1d0   !PCM 
-          endif
+            loss = 1d0   !PCM 
+         ENDIF
 
           !print*, 'ftprop is less than sum_cov:',
-      !&ft, ftprop(ft)*1d-2, sum_cov(ft), ftloss_prop(ft) 
+      !&ft, ftprop(ft)*1d-2, sum_cov(ft), loss
           !print*, (ftprop(ft)*1d-2) - sum_cov(ft)
 
+         IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+        !if( ftprop(ft)*1d-2 .lt. sum_cov(ft) ) then
           CALL LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &ftloss_prop(ft),npp,nps,slc,rlc,fireres,flulccc,harvest,
+     &loss,npp,nps,slc,rlc,fireres,flulccc,harvest,
      &leafdp,ft)
 
-          ngcov = ngcov + ftloss_prop(ft) * sum_cov(ft)
+          ngcov = ngcov + loss * sum_cov(ft)
+         ENDIF
 !          IF (debug .EQV. .TRUE.) THEN
 !                PRINT '(A I2 F9.6 F9.6 F9.6)','GG0',
 !     &              ft,
-!     &              ftloss_prop(ft),
+!     &              loss,
 !     &              sum_cov(ft), ngcov
 !          ENDIF
-         ENDIF
         endif
 
       ENDDO
       ENDIF
+
 *----------------------------------------------------------------------*
 * Compute the likelyhood of fire in the current year 'fprob'.          *
 * 'find' is the fire index                                             *
@@ -199,25 +201,6 @@
 * Compute c4 c3 grass split.                                           *
 *----------------------------------------------------------------------*
 *       CALL c3c4(ftprop,c3old,c4old,npp,nps)
-      ENDIF
-
-*----------------------------------------------------------------------*
-* Compute added land cover from gross transitions                      *
-*----------------------------------------------------------------------*
-      IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-        DO ft=2,nft           
-            at = aggmap_SDGVM_to_aggHyde(ft)
-            !sum vegetation from gross transitions
-            DO ft2=2,nft
-             at2 = aggmap_SDGVM_to_aggHyde(ft2)
-             ftprop(ft) = ftprop(ft)+ftprop(ft2)*(atprop2(at2,at)*1d-2)
-!             IF(debug .EQV. .TRUE.) THEN
-!               PRINT '(A I2 I2 F9.6 I3 I3 F9.6)',
-!     &          'GG2b',
-!     &           at2,at,atprop2(at2,at),ft2,ft,ftprop(ft)
-!             ENDIF
-            ENDDO
-        ENDDO
       ENDIF
 
 *----------------------------------------------------------------------*
