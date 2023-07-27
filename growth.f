@@ -18,7 +18,7 @@
       REAL*8 slc(maxnft),rlc(maxnft),firec
       REAL*8 ppm(maxage,maxnft),hgt(maxage,maxnft),ftppm0(maxnft),told
       REAL*8 ftstmx(maxnft),stemdp(1000,maxnft),rootdp(1000,maxnft)
-      REAL*8 fprob,ftprop(maxnft),ngcov(maxnft)
+      REAL*8 fprob,ftprop(maxnft),tot_ngcov,ngcov(maxnft)
       REAL*8 gold,c3old,c4old,fri,norm
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
       REAL*8 loss,sum_cov(maxnft),flulccc
@@ -30,7 +30,7 @@
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
       LOGICAL burn,harvest
-      LOGICAL compute_closs
+      LOGICAL compute_closs,lose_cover
 
       PRINT '(A)','GG4a ftprop '
       PRINT '(16F11.6)',ftprop(1:nft)
@@ -73,7 +73,8 @@
 * and put this as bare ground ready for new growth 'ngrowth'.          *
 *----------------------------------------------------------------------*
       flulccc = 0d0
-      ngcov(:) = 0d0
+      tot_ngcov = 0.0d0
+      ngcov(:) = 0.0d0
 
 *      CHARACTER(LEN=7),PARAMETER :: varname(NV)=(/'primf', 'primn', 'secdf', 'secdn', 'urban', &
 *          'c3ann', 'c4ann', 'c3per', 'c4per', 'c3nfx', 'pastr', 'range', &
@@ -153,12 +154,25 @@
       !&ft, ftprop(ft)*1d-2, sum_cov(ft), loss
           !print*, (ftprop(ft)*1d-2) - sum_cov(ft)
 
-         !IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
-         IF( ftprop(ft)*1d-2 .LT. sum_cov(ft) ) THEN 
+         lose_cover = .False. 
+         IF( ilanduse .NE. 4 .AND. ilanduse .NE. 6 ) THEN
+           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+             lose_cover = .True. !settings for net transitions
+           ENDIF
+         ELSE IF( ilanduse .EQ. 4 .OR. ilanduse .EQ. 6 ) THEN
+           IF( ftprop(ft)*1d-2 .LT. sum_cov(ft) ) THEN 
+             lose_cover = .True. !settings for gross transitions
+           ENDIF
+         ENDIF
+
+         IF( lose_cover ) THEN 
+         ! NET transitions: IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+         ! GROSS transitions IF( ftprop(ft)*1d-2 .LT. sum_cov(ft) ) THEN 
           CALL LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &loss,npp,nps,slc,rlc,fireres,flulccc,harvest,
      &leafdp,ft)
 
+          tot_ngcov = tot_ngcov + loss * sum_cov(ft)
           ngcov(ft) = ngcov(ft) + loss * sum_cov(ft)
          ENDIF
 !          IF (debug .EQV. .TRUE.) THEN
@@ -176,6 +190,8 @@
       PRINT '(16F11.6)',ftprop(1:nft)
       PRINT '(A)','GS4b sum_cov '
       PRINT '(16F11.6)',sum_cov(1:nft)
+      PRINT '(A)','GN4b tot_ngcov '
+      PRINT '(1F11.6)',tot_ngcov
       PRINT '(A)','GN4b ngcov '
       PRINT '(16F11.6)',ngcov(1:nft)
 *----------------------------------------------------------------------*
@@ -190,7 +206,8 @@
 * Also shift cover and biomass arrays one to the right.                *
 *----------------------------------------------------------------------*
       CALL NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
-     &npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc)
+     &npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,leafdp,
+     &flulccc)
 
 *----------------------------------------------------------------------*
 
@@ -204,7 +221,7 @@
 *----------------------------------------------------------------------*
 * Restrict the rate of trees taking over grassland.                    *
 *----------------------------------------------------------------------*
-       CALL GRASSREC(nft,ftprop,gold,ngcov,grassrc,nat_map)
+       CALL GRASSREC(nft,ftprop,gold,tot_ngcov,ngcov,grassrc,nat_map)
 
 *----------------------------------------------------------------------*
 * Restrict the rate of bare ground reclimation 0.2, means 20% can be   *
@@ -225,6 +242,8 @@
 * ftprop3 contains the proportion of the new growth ngcov to assign to *
 * each ft.                                                             *
 *----------------------------------------------------------------------*
+      PRINT '(A)','GN4c tot_ngcov '
+      PRINT '(1F11.6)',tot_ngcov
       PRINT '(A)','GN4c ngcov '
       PRINT '(16F11.6)',ngcov(1:nft)
       PRINT '(A)','GC4c cov '
@@ -262,8 +281,11 @@
       PRINT '(A)','GS4d sum_cov '
       PRINT '(16F11.6)',sum_cov(1:nft)
 
-      !PCM cov(1,1) = ngcov(1)*ftprop3(1)/100.0d0
-      cov(1,1) = ngcov(1)
+      IF(ilanduse .NE. 4 .AND. ilanduse .NE. 6) THEN
+         cov(1,1) = tot_ngcov*ftprop3(1)/100.0d0
+      ELSE
+         cov(1,1) = ngcov(1)
+      ENDIF
       !PRINT*, 'G8' 
 
 *----------------------------------------------------------------------*
@@ -299,8 +321,11 @@
 20        CONTINUE
 *----------------------------------------------------------------------*
 
-          !PCM cov(1,ft) = ftprop3(ft)*ngcov(ft)/100.0d0
-          cov(1,ft) = ngcov(ft)
+          IF(ilanduse .NE. 4 .AND. ilanduse .NE. 6) THEN
+            cov(1,ft) = ftprop3(ft)*tot_ngcov/100.0d0
+          ELSE
+            cov(1,ft) = ngcov(ft)
+          ENDIF
           ppm(1,ft) = ftppm0(ft)
           hgt(1,ft) = 0.004d0
 
@@ -855,30 +880,42 @@
 *                             SUBROUTINE GRASSREC                      *
 *                             *******************                      *
 *----------------------------------------------------------------------*
-      SUBROUTINE GRASSREC(nft,ftprop,gold,ngcov,x,nat_map)
+      SUBROUTINE GRASSREC(nft,ftprop,gold,tot_ngcov,ngcov,x,nat_map)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
-      REAL*8 ftprop(maxnft),gold,ngcov(maxnft)
+      REAL*8 ftprop(maxnft),gold,ngcov(maxnft),tot_ngcov
       REAL*8 x,ntcov,ftt,ftpropo(maxnft)
       INTEGER nft,ft,nat_map(8)
 
       ntcov = 0.0d0
       ftt = 0.0d0
       DO ft=5,8
-        ntcov = ntcov + ftprop(nat_map(ft))*ngcov(ft)/100.0d0
+        IF(ilanduse .NE. 4 .AND. ilanduse .NE. 6) THEN
+          ntcov = ntcov + ftprop(nat_map(ft))*tot_ngcov/100.0d0
+        ELSE
+          ntcov = ntcov + ftprop(nat_map(ft))*ngcov(ft)/100.0d0
+        ENDIF
         ftt = ftt + ftprop(nat_map(ft))
       ENDDO
 
       IF (ntcov.GT.gold*x) THEN
         DO ft=4,nft
           ftpropo(ft) = ftprop(ft)
-          ftprop(ft) = 100.0d0*gold*x*ftprop(ft)/(ftt*ngcov(ft))
+          IF(ilanduse .NE. 4 .AND. ilanduse .NE. 6) THEN
+            ftprop(ft) = 100.0d0*gold*x*ftprop(ft)/(ftt*tot_ngcov)
+          ELSE
+            ftprop(ft) = 100.0d0*gold*x*ftprop(ft)/(ftt*ngcov(ft))
+          ENDIF
           ftprop(2) = ftprop(2) + ftpropo(ft) - ftprop(ft)
         ENDDO
 
         ntcov = 0.0d0
         DO ft=4,nft
-          ntcov = ntcov + ftprop(ft)*ngcov(ft)/100.0d0
+          IF(ilanduse .NE. 4 .AND. ilanduse .NE. 6) THEN
+            ntcov = ntcov + ftprop(ft)*tot_ngcov/100.0d0
+          ELSE
+            ntcov = ntcov + ftprop(ft)*ngcov(ft)/100.0d0
+          ENDIF
         ENDDO
         IF (abs(ntcov-gold*x).GT.0.000001d0) WRITE(11,
      &'(''Treerec subroutine error'')')
@@ -1240,12 +1277,13 @@
 * Compute newgrowth and alter cover array accordingly.                 *
 *----------------------------------------------------------------------*
       SUBROUTINE NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &fprob,npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc)
+     &fprob,npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,
+     &leafdp,flulccc)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
       REAL*8 hgt(maxage,maxnft),fprob,npp(maxnft),nppstore(maxnft)
-      REAL*8 nps(maxnft),ngcov(maxnft)
+      REAL*8 nps(maxnft),ngcov(maxnft),tot_ngcov
       REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
       INTEGER nft,ftmor(maxnft),ft,age,fireres
@@ -1259,15 +1297,20 @@
 * Take away veg that has died of old age ie > than ftmor(ft), and      *
 * shift cover array on one year.                                       *
 *----------------------------------------------------------------------*
-      !ngcov = 0.0d0
+      !tot_ngcov = 0.0d0
       DO ft=1,nft
-        ngcov(ft) = ngcov(ft) + cov(ftmor(ft),ft)
+        IF(ilanduse .NE. 4 .AND. ilanduse .NE. 6) THEN
+          tot_ngcov = tot_ngcov + cov(ftmor(ft),ft)
+        ELSE
+          ngcov(ft) = ngcov(ft) + cov(ftmor(ft),ft)
+        ENDIF
+      
         slc(ft) = slc(ft)  + (bio(ftmor(ft),1,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(ftmor(ft),ft)
         rlc(ft) = rlc(ft)  + bio(ftmor(ft),2,ft)*cov(ftmor(ft),ft)
         IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I3 F9.6 I6 F9.6)','GG1B',
-     &              ft, ngcov(ft),ftmor(ft),cov(ftmor(ft),ft)
+                PRINT '(A I3 F9.6 F9.6 I6 F9.6)','GG1B',
+     &              ft, tot_ngcov,ngcov(ft),ftmor(ft),cov(ftmor(ft),ft)
         ENDIF
       ENDDO
       CALL SHIFT(ftmor,cov,ppm,bio,hgt,1,nft)
@@ -1322,11 +1365,16 @@
           IF (fireres.LT.0) fprob = real(-fireres)/1000.0d0
           
           !calculate litter from cover loss  
-          ngcov(ft) = ngcov(ft) + cov(age,ft)*(fprob-fprob*tmor + tmor)
+          IF(ilanduse .NE. 4 .AND. ilanduse .NE. 6) THEN
+            tot_ngcov = tot_ngcov + cov(age,ft)*(fprob-fprob*tmor+tmor)
+          ELSE
+            ngcov(ft) = ngcov(ft) + cov(age,ft)*(fprob-fprob*tmor+tmor)
+          ENDIF
           
           IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
-     &         ft, ngcov(ft), cov(age,ft),(fprob-fprob*tmor+tmor),
+                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
+     &         ft,tot_ngcov,ngcov(ft),
+     &         cov(age,ft),(fprob-fprob*tmor+tmor),
      &         fprob,tmor
           ENDIF
           slc(ft) = slc(ft) + 
@@ -1387,7 +1435,7 @@
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
       REAL*8 hgt(maxage,maxnft),npp(maxnft),nppstore(maxnft)
       REAL*8 loss
-      REAL*8 nps(maxnft),ngcov(maxnft)
+      REAL*8 nps(maxnft)
       REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,flulccc,xfprob,leafdp(3600,maxnft)
       INTEGER nft,ftmor(maxnft),ft,age,fireres
