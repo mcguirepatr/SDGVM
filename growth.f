@@ -18,7 +18,8 @@
       REAL*8 slc(maxnft),rlc(maxnft),firec
       REAL*8 ppm(maxage,maxnft),hgt(maxage,maxnft),ftppm0(maxnft),told
       REAL*8 ftstmx(maxnft),stemdp(1000,maxnft),rootdp(1000,maxnft)
-      REAL*8 fprob,ftprop(maxnft),ngcov,gold,c3old,c4old,fri,norm
+      REAL*8 fprob,ftprop(maxnft),ngcov(maxnft)
+      REAL*8 gold,c3old,c4old,fri,norm
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
       REAL*8 loss,sum_cov(maxnft),flulccc
       REAL*8 cneed, cneed_leaf, cneed_store
@@ -72,7 +73,7 @@
 * and put this as bare ground ready for new growth 'ngrowth'.          *
 *----------------------------------------------------------------------*
       flulccc = 0d0
-      ngcov = 0d0
+      ngcov(:) = 0d0
 
 *      CHARACTER(LEN=7),PARAMETER :: varname(NV)=(/'primf', 'primn', 'secdf', 'secdn', 'urban', &
 *          'c3ann', 'c4ann', 'c3per', 'c4per', 'c3nfx', 'pastr', 'range', &
@@ -125,9 +126,9 @@
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
             ! losses from ft to ft2:
-            ftprop(ft) = ftprop(ft)*(1.0 - atprop2(at,at2)*1d-2) !atprop2 in %/year
+            ftprop(ft) = ftprop(ft)*(1.0 - atprop2(at,at2)*1.0d-2) !atprop2 in %/year
             ! gains from ft2 to ft:
-            ftprop(ft) = ftprop(ft)+ftprop(ft2)*(atprop2(at2,at)*1d-2)
+            ftprop(ft) = ftprop(ft)+ftprop(ft2)*(atprop2(at2,at)*1.0d-2)
 !            IF (debug .EQV. .TRUE.) THEN
 !              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
 !     &               at,at2,ft,ft2,ftprop(ft)*1d-2,sum_cov(ft)
@@ -158,13 +159,13 @@
      &loss,npp,nps,slc,rlc,fireres,flulccc,harvest,
      &leafdp,ft)
 
-          ngcov = ngcov + loss * sum_cov(ft)
+          ngcov(ft) = ngcov(ft) + loss * sum_cov(ft)
          ENDIF
 !          IF (debug .EQV. .TRUE.) THEN
 !                PRINT '(A I2 F9.6 F9.6 F9.6)','GG0',
 !     &              ft,
 !     &              loss,
-!     &              sum_cov(ft), ngcov
+!     &              sum_cov(ft), ngcov(ft)
 !          ENDIF
         endif
 
@@ -176,7 +177,7 @@
       PRINT '(A)','GS4b sum_cov '
       PRINT '(16F11.6)',sum_cov(1:nft)
       PRINT '(A)','GN4b ngcov '
-      PRINT '(1F11.6)',ngcov
+      PRINT '(16F11.6)',ngcov(1:nft)
 *----------------------------------------------------------------------*
 * Compute the likelyhood of fire in the current year 'fprob'.          *
 * 'find' is the fire index                                             *
@@ -225,7 +226,7 @@
 * each ft.                                                             *
 *----------------------------------------------------------------------*
       PRINT '(A)','GN4c ngcov '
-      PRINT '(1F11.6)',ngcov
+      PRINT '(16F11.6)',ngcov(1:nft)
       PRINT '(A)','GC4c cov '
       DO j=1,6 !show first six years of cover
         PRINT '(16F11.6)',cov(j,1:nft)
@@ -261,7 +262,8 @@
       PRINT '(A)','GS4d sum_cov '
       PRINT '(16F11.6)',sum_cov(1:nft)
 
-      cov(1,1) = ngcov*ftprop3(1)/100.0d0
+      !PCM cov(1,1) = ngcov(1)*ftprop3(1)/100.0d0
+      cov(1,1) = ngcov(1)
       !PRINT*, 'G8' 
 
 *----------------------------------------------------------------------*
@@ -297,7 +299,8 @@
 20        CONTINUE
 *----------------------------------------------------------------------*
 
-          cov(1,ft) = ftprop3(ft)*ngcov/100.0d0
+          !PCM cov(1,ft) = ftprop3(ft)*ngcov(ft)/100.0d0
+          cov(1,ft) = ngcov(ft)
           ppm(1,ft) = ftppm0(ft)
           hgt(1,ft) = 0.004d0
 
@@ -855,26 +858,27 @@
       SUBROUTINE GRASSREC(nft,ftprop,gold,ngcov,x,nat_map)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
-      REAL*8 ftprop(maxnft),gold,ngcov,x,ntcov,ftt,ftpropo(maxnft)
+      REAL*8 ftprop(maxnft),gold,ngcov(maxnft)
+      REAL*8 x,ntcov,ftt,ftpropo(maxnft)
       INTEGER nft,ft,nat_map(8)
 
       ntcov = 0.0d0
       ftt = 0.0d0
       DO ft=5,8
-        ntcov = ntcov + ftprop(nat_map(ft))*ngcov/100.0d0
+        ntcov = ntcov + ftprop(nat_map(ft))*ngcov(ft)/100.0d0
         ftt = ftt + ftprop(nat_map(ft))
       ENDDO
 
       IF (ntcov.GT.gold*x) THEN
         DO ft=4,nft
           ftpropo(ft) = ftprop(ft)
-          ftprop(ft) = 100.0d0*gold*x*ftprop(ft)/(ftt*ngcov)
+          ftprop(ft) = 100.0d0*gold*x*ftprop(ft)/(ftt*ngcov(ft))
           ftprop(2) = ftprop(2) + ftpropo(ft) - ftprop(ft)
         ENDDO
 
         ntcov = 0.0d0
         DO ft=4,nft
-          ntcov = ntcov + ftprop(ft)*ngcov/100.0d0
+          ntcov = ntcov + ftprop(ft)*ngcov(ft)/100.0d0
         ENDDO
         IF (abs(ntcov-gold*x).GT.0.000001d0) WRITE(11,
      &'(''Treerec subroutine error'')')
@@ -1241,7 +1245,8 @@
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
       REAL*8 hgt(maxage,maxnft),fprob,npp(maxnft),nppstore(maxnft)
-      REAL*8 nps(maxnft),ngcov,slc(maxnft),rlc(maxnft),bioleaf(maxnft)
+      REAL*8 nps(maxnft),ngcov(maxnft)
+      REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
       INTEGER nft,ftmor(maxnft),ft,age,fireres
       LOGICAL harvest
@@ -1256,13 +1261,13 @@
 *----------------------------------------------------------------------*
       !ngcov = 0.0d0
       DO ft=1,nft
-        ngcov = ngcov + cov(ftmor(ft),ft)
+        ngcov(ft) = ngcov(ft) + cov(ftmor(ft),ft)
         slc(ft) = slc(ft)  + (bio(ftmor(ft),1,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(ftmor(ft),ft)
         rlc(ft) = rlc(ft)  + bio(ftmor(ft),2,ft)*cov(ftmor(ft),ft)
         IF (debug .EQV. .TRUE.) THEN
                 PRINT '(A I3 F9.6 I6 F9.6)','GG1B',
-     &              ft, ngcov,ftmor(ft),cov(ftmor(ft),ft)
+     &              ft, ngcov(ft),ftmor(ft),cov(ftmor(ft),ft)
         ENDIF
       ENDDO
       CALL SHIFT(ftmor,cov,ppm,bio,hgt,1,nft)
@@ -1317,11 +1322,11 @@
           IF (fireres.LT.0) fprob = real(-fireres)/1000.0d0
           
           !calculate litter from cover loss  
-          ngcov   = ngcov + cov(age,ft)*(fprob - fprob*tmor + tmor)
+          ngcov(ft) = ngcov(ft) + cov(age,ft)*(fprob-fprob*tmor + tmor)
           
           IF (debug .EQV. .TRUE.) THEN
                 PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
-     &         ft, ngcov, cov(age,ft),(fprob-fprob*tmor+tmor),
+     &         ft, ngcov(ft), cov(age,ft),(fprob-fprob*tmor+tmor),
      &         fprob,tmor
           ENDIF
           slc(ft) = slc(ft) + 
@@ -1382,7 +1387,8 @@
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
       REAL*8 hgt(maxage,maxnft),npp(maxnft),nppstore(maxnft)
       REAL*8 loss
-      REAL*8 nps(maxnft),ngcov,slc(maxnft),rlc(maxnft),bioleaf(maxnft)
+      REAL*8 nps(maxnft),ngcov(maxnft)
+      REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,flulccc,xfprob,leafdp(3600,maxnft)
       INTEGER nft,ftmor(maxnft),ft,age,fireres
       LOGICAL harvest

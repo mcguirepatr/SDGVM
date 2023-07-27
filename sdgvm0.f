@@ -3481,7 +3481,8 @@ c        ENDIF
      &ic0(2) + ic0(3) + ic0(4) + ic0(5) + ic0(6) + ic0(7) + ic0(8)
         WRITE(*,'(''Icheck1'',3f13.6)') ccheck
 
-        PRINT '(A)','SS3a ftprop '
+        PRINT '(A)','SS3a ftprop (from states;from netTransitions) 
+     &(previous time step)'
         PRINT '(16F11.6)',ftprop(1:nft)
 *----------------------------------------------------------------------*
 * Set land use through ftprop.                                         *
@@ -3555,7 +3556,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           ftprop1 = ftprop !net transitions or 1st year of gross transitions 
         ENDIF
 
-        PRINT '(A)','SS3c ftprop '
+        PRINT '(A)','SS3c ftprop1 (before COVER( ) routine) '
         PRINT '(16F11.6)',ftprop1(1:nft)
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
@@ -3564,7 +3565,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
      &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,atprop2,
      &aggmap_SDGVM_to_aggHyde)
 
-        PRINT '(A)','SS3d ftprop '
+        PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '
         PRINT '(16F11.6)',ftprop1(1:nft)
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
