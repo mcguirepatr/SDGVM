@@ -207,7 +207,7 @@
 *----------------------------------------------------------------------*
       CALL NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
      &npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,leafdp,
-     &flulccc)
+     &flulccc,ilanduse)
 
 *----------------------------------------------------------------------*
 
@@ -221,7 +221,8 @@
 *----------------------------------------------------------------------*
 * Restrict the rate of trees taking over grassland.                    *
 *----------------------------------------------------------------------*
-       CALL GRASSREC(nft,ftprop,gold,tot_ngcov,ngcov,grassrc,nat_map)
+       CALL GRASSREC(nft,ftprop,gold,tot_ngcov,ngcov,grassrc,nat_map,
+     &ilanduse)
 
 *----------------------------------------------------------------------*
 * Restrict the rate of bare ground reclimation 0.2, means 20% can be   *
@@ -880,12 +881,13 @@
 *                             SUBROUTINE GRASSREC                      *
 *                             *******************                      *
 *----------------------------------------------------------------------*
-      SUBROUTINE GRASSREC(nft,ftprop,gold,tot_ngcov,ngcov,x,nat_map)
+      SUBROUTINE GRASSREC(nft,ftprop,gold,tot_ngcov,ngcov,x,nat_map,
+     &ilanduse)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 ftprop(maxnft),gold,ngcov(maxnft),tot_ngcov
       REAL*8 x,ntcov,ftt,ftpropo(maxnft)
-      INTEGER nft,ft,nat_map(8)
+      INTEGER nft,ft,nat_map(8),ilanduse
 
       ntcov = 0.0d0
       ftt = 0.0d0
@@ -1278,7 +1280,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &fprob,npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,
-     &leafdp,flulccc)
+     &leafdp,flulccc,ilanduse)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
@@ -1286,7 +1288,7 @@
       REAL*8 nps(maxnft),ngcov(maxnft),tot_ngcov
       REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
-      INTEGER nft,ftmor(maxnft),ft,age,fireres
+      INTEGER nft,ftmor(maxnft),ft,age,fireres,ilanduse
       LOGICAL harvest
       LOGICAL, PARAMETER :: debug = .TRUE. !used to print out more debugging info
 
