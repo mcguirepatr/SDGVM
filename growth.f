@@ -1301,11 +1301,8 @@
 *----------------------------------------------------------------------*
       !tot_ngcov = 0.0d0
       DO ft=1,nft
-        IF(ilanduse .NE. 4 .AND. ilanduse .NE. 6) THEN
-          tot_ngcov = tot_ngcov + cov(ftmor(ft),ft)
-        ELSE
-          ngcov(ft) = ngcov(ft) + cov(ftmor(ft),ft)
-        ENDIF
+        tot_ngcov = tot_ngcov + cov(ftmor(ft),ft)
+        ngcov(ft) = ngcov(ft) + cov(ftmor(ft),ft)
       
         slc(ft) = slc(ft)  + (bio(ftmor(ft),1,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(ftmor(ft),ft)
@@ -1367,11 +1364,8 @@
           IF (fireres.LT.0) fprob = real(-fireres)/1000.0d0
           
           !calculate litter from cover loss  
-          IF(ilanduse .NE. 4 .AND. ilanduse .NE. 6) THEN
-            tot_ngcov = tot_ngcov + cov(age,ft)*(fprob-fprob*tmor+tmor)
-          ELSE
-            ngcov(ft) = ngcov(ft) + cov(age,ft)*(fprob-fprob*tmor+tmor)
-          ENDIF
+          tot_ngcov = tot_ngcov + cov(age,ft)*(fprob-fprob*tmor+tmor)
+          ngcov(ft) = ngcov(ft) + cov(age,ft)*(fprob-fprob*tmor+tmor)
           
           IF (debug .EQV. .TRUE.) THEN
                 PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
