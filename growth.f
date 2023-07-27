@@ -207,7 +207,7 @@
 *----------------------------------------------------------------------*
       CALL NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
      &npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,leafdp,
-     &flulccc,ilanduse)
+     &flulccc)
 
 *----------------------------------------------------------------------*
 
@@ -1280,7 +1280,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &fprob,npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,
-     &leafdp,flulccc,ilanduse)
+     &leafdp,flulccc)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
@@ -1288,7 +1288,7 @@
       REAL*8 nps(maxnft),ngcov(maxnft),tot_ngcov
       REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
-      INTEGER nft,ftmor(maxnft),ft,age,fireres,ilanduse
+      INTEGER nft,ftmor(maxnft),ft,age,fireres
       LOGICAL harvest
       LOGICAL, PARAMETER :: debug = .TRUE. !used to print out more debugging info
 
