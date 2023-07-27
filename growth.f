@@ -107,29 +107,30 @@
         DO age=1,ftmor(ft)
           sum_cov(ft) = sum_cov(ft) + cov(age,ft)
         ENDDO
-        !print*, sum_cov(ft)
+        print*, sum_cov(ft)
 
         IF ( ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
           ! do for both ftphen(ft) == 1 and 2
           compute_closs = .TRUE. !compute cover loss
-        ELSE IF ( ilanduse.NE.4 .AND. ilanduse.NE.6 ) THEN
-         IF ( ftprop(ft).EQ.2 ) THEN
+        ELSE
+          IF ( ftphen(ft).EQ.2 ) THEN
           ! need to make this tree specific 
-          compute_closs = .TRUE.
-         ELSE
-          compute_closs = .FALSE.
-         ENDIF
+            compute_closs = .TRUE.
+          ELSE
+            compute_closs = .FALSE.
+          ENDIF
         ENDIF
            
-        if( compute_closs .EQV. .TRUE. .AND. sum_cov(ft) .gt. 0d0) then
+        if((compute_closs.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then
          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
           at = aggmap_SDGVM_to_aggHyde(ft)
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
-            ! losses from ft to ft2:
-            ftprop(ft) = ftprop(ft)*(1.0 - atprop2(at,at2)*1.0d-2) !atprop2 in %/year
+            ! losses from ft to ft2: !atprop2 in %/year
+            ftprop(ft) = ftprop(ft)*(1.0 - atprop2(at,at2)*1.0d-2)
             ! gains from ft2 to ft:
-            ftprop(ft) = ftprop(ft)+ftprop(ft2)*(atprop2(at2,at)*1.0d-2)
+            ftprop(ft) = ftprop(ft)+ftprop(ft2)*
+     &(atprop2(at2,at)*1.0d-2)
 !            IF (debug .EQV. .TRUE.) THEN
 !              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
 !     &               at,at2,ft,ft2,ftprop(ft)*1d-2,sum_cov(ft)
@@ -150,13 +151,14 @@
             loss = 1d0   !PCM 
          ENDIF
 
-          !print*, 'ftprop is less than sum_cov:',
-      !&ft, ftprop(ft)*1d-2, sum_cov(ft), loss
-          !print*, (ftprop(ft)*1d-2) - sum_cov(ft)
+!         print*, 'ftprop is less than sum_cov:',
+!     &ft, ftprop(ft)*1d-2, sum_cov(ft), loss
+!         print*, (ftprop(ft)*1d-2) - sum_cov(ft)
 
          lose_cover = .False. 
          IF( ilanduse .NE. 4 .AND. ilanduse .NE. 6 ) THEN
-           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+!           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. 0.0  ) THEN
              lose_cover = .True. !settings for net transitions
            ENDIF
          ELSE IF( ilanduse .EQ. 4 .OR. ilanduse .EQ. 6 ) THEN
