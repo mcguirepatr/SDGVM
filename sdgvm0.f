@@ -165,9 +165,10 @@
       INTEGER SYR,NYR !PCM
       INTEGER aggmap_SDGVM_to_aggHyde(NS) !PCM
       REAL*8 lutab2(255,100) !PCM
+      LOGICAL closed_loop_ft !PCM
+      REAL*8 ftprop1(maxnft)
 
-*----------------------------------------------------------------------*
-* Read input filename.                                                 *
+
 *----------------------------------------------------------------------*
 
       IF (IARGC().GT.0) THEN
@@ -1960,9 +1961,18 @@ c CLOSE added by Ghislain 15/12/03
       site_dat = 0
 
 *----------------------------------------------------------------------*
-*  Site loop                              
+*  site loop                              
 *----------------------------------------------------------------------*
       DO site=1,sites
+*----------------------------------------------------------------------*
+* closed_loop_ft:                                                      *
+*    standard setting is .FALSE.                                       *
+*    But, this is set to .TRUE. after the first initialization of      * 
+*    ftprop with cluse, so that the gross transitions will update the  *
+*    ftprop(ft) values each year instead of using the values from the  *
+*    cluse table from the net land use transitions                     *
+*----------------------------------------------------------------------*
+        closed_loop_ft = .FALSE.
 
         speedc = xspeedc
         swcnew = 0.0d0
@@ -3471,6 +3481,8 @@ c        ENDIF
      &ic0(2) + ic0(3) + ic0(4) + ic0(5) + ic0(6) + ic0(7) + ic0(8)
         WRITE(*,'(''Icheck1'',3f13.6)') ccheck
 
+        PRINT '(A)','SS3a ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
 *----------------------------------------------------------------------*
 * Set land use through ftprop.                                         *
 *----------------------------------------------------------------------*
@@ -3483,7 +3495,7 @@ c        ENDIF
      &ftbblim(ft),chill(ft),dschill(ft)).EQ.1) THEN
               !ftprop(ft) = cluse(ft,year-yr0+1)
               !if((co2const.gt.0.0).and.(spinl.gt.0).and.
-      !&(iyear.le.spinl)) then
+            !&(iyear.le.spinl)) then
               !  ftprop(ft) = cluse(ft,1)
               !else
               !  ftprop(ft) = cluse(ft,iyear-iyear_adj)
@@ -3498,13 +3510,12 @@ C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
 C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
                   ftprop(ft) = cluse(ft,1)
                 else
-              !print*, ft, iyear, iyear_adj, cluse(ft,iyear-iyear_adj)
+            !print*, ft, iyear, iyear_adj, cluse(ft,iyear-iyear_adj)
                   ftprop(ft) = cluse(ft,iyear-iyear_adj)
                 endif  
               endif  
 
               ftprop(1)  = ftprop(1) - ftprop(ft)
-
             ELSE
               ftprop(ft) = 0.0d0
             ENDIF
@@ -3537,16 +3548,31 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           ENDIF
         ENDIF
 
+        PRINT '(A)','SS3b ftprop (from states; from net transitions) '
+        PRINT '(16F11.6)',ftprop(1:nft)
+
+        IF (closed_loop_ft .EQV. .FALSE.) THEN
+          ftprop1 = ftprop !net transitions or 1st year of gross transitions 
+        ENDIF
+
+        PRINT '(A)','SS3c ftprop '
+        PRINT '(16F11.6)',ftprop1(1:nft)
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
-     &fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
+     &fprob,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
      &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,atprop2,
      &aggmap_SDGVM_to_aggHyde)
 
+        PRINT '(A)','SS3d ftprop '
+        PRINT '(16F11.6)',ftprop1(1:nft)
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
         !PRINT *,'SS3',nppstore(1:nft)
+
+        IF (ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN !turn on after 1st year
+           closed_loop_ft = .TRUE.
+        ENDIF
 
         DO i=1,8
           tc0(i) = 0.0d0

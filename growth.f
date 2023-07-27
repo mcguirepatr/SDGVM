@@ -22,7 +22,7 @@
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
       REAL*8 loss,sum_cov(maxnft),flulccc
       REAL*8 cneed, cneed_leaf, cneed_store
-      REAL*8 ftpropnew,ftprop2(maxnft)
+      REAL*8 ftpropnew,ftprop3(maxnft)
       REAL*8 sum_cov_test(maxnft)
       REAL*8 atprop2(n_at,n_at),THRESH
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
@@ -30,6 +30,14 @@
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
       LOGICAL burn,harvest
       LOGICAL compute_closs
+
+      PRINT '(A)','GG4a ftprop '
+      PRINT '(16F11.6)',ftprop(1:nft)
+      PRINT '(A)','GC4a cov '
+      DO j=1,6 !show first six years of cover
+        PRINT '(16F11.6)',cov(j,1:nft)
+      ENDDO
+
 
       IF (ilanduse.eq.2) THEN
 *----------------------------------------------------------------------*
@@ -117,7 +125,7 @@
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
             ! losses from ft to ft2:
-            ftprop(ft) = ftprop(ft)*(1.0 - atprop2(at,at2)*1d-2)
+            ftprop(ft) = ftprop(ft)*(1.0 - atprop2(at,at2)*1d-2) !atprop2 in %/year
             ! gains from ft2 to ft:
             ftprop(ft) = ftprop(ft)+ftprop(ft2)*(atprop2(at2,at)*1d-2)
 !            IF (debug .EQV. .TRUE.) THEN
@@ -125,10 +133,10 @@
 !     &               at,at2,ft,ft2,ftprop(ft)*1d-2,sum_cov(ft)
 !            ENDIF
             IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I2 I2 I3 I3 F9.6 F9.6 F9.6 F9.6)','GG1',
+                PRINT '(A I2 I2 I3 I3 F9.6 F9.6 F9.6 )','GG1',
      &              at,at2,ft,ft2,
      &              atprop2(at,at2),ftprop(ft),
-     &              sum_cov(ft), ngcov
+     &              sum_cov(ft)
             ENDIF
           ENDDO
          ENDIF
@@ -144,8 +152,8 @@
       !&ft, ftprop(ft)*1d-2, sum_cov(ft), loss
           !print*, (ftprop(ft)*1d-2) - sum_cov(ft)
 
-         IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
-        !if( ftprop(ft)*1d-2 .lt. sum_cov(ft) ) then
+         !IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+         IF( ftprop(ft)*1d-2 .LT. sum_cov(ft) ) THEN 
           CALL LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &loss,npp,nps,slc,rlc,fireres,flulccc,harvest,
      &leafdp,ft)
@@ -163,6 +171,12 @@
       ENDDO
       ENDIF
 
+      PRINT '(A)','GG4b ftprop '
+      PRINT '(16F11.6)',ftprop(1:nft)
+      PRINT '(A)','GS4b sum_cov '
+      PRINT '(16F11.6)',sum_cov(1:nft)
+      PRINT '(A)','GN4b ngcov '
+      PRINT '(1F11.6)',ngcov
 *----------------------------------------------------------------------*
 * Compute the likelyhood of fire in the current year 'fprob'.          *
 * 'find' is the fire index                                             *
@@ -206,25 +220,48 @@
 *----------------------------------------------------------------------*
 * Set cover arrays to adjust to ftprop as best they can.               *
 * ftprop contains the total proportion of that cover, not the          *
-* proportion of bare land to assign. Calculate the new ftprop.         *
+* proportion of bare land to assign. Calculate ftprop3.                *
+* ftprop3 contains the proportion of the new growth ngcov to assign to *
+* each ft.                                                             *
 *----------------------------------------------------------------------*
+      PRINT '(A)','GN4c ngcov '
+      PRINT '(1F11.6)',ngcov
+      PRINT '(A)','GC4c cov '
+      DO j=1,6 !show first six years of cover
+        PRINT '(16F11.6)',cov(j,1:nft)
+      ENDDO
+
+      PRINT '(A)','GG4c ftprop '
+      PRINT '(16F11.6)',ftprop(1:nft)
       norm = 0.0d0
       DO ft=1,nft           
         !PRINT*, 'G7',ft,ftprop(ft) 
         IF (ftprop(ft).GT.0.0d0) THEN
-          ftprop(ft) = ftprop(ft)/100.0d0
-          DO j=1,ftmor(ft)
-            ftprop(ft)=ftprop(ft) - cov(j,ft)
+          sum_cov(ft) = 0.0d0
+*Start at age=2, since cov array has already been shifted in time by one year. *PCM
+*Ignoring age=1 means that we aren't including crop ft's in this normalization, as before.
+          DO age=2,ftmor(ft)
+            sum_cov(ft) = sum_cov(ft) + cov(age,ft)
           ENDDO
-          IF (ftprop(ft).LT.0.0d0) ftprop(ft)=0.0d0 !can't remove cov
-          norm = norm + ftprop(ft)
+*the variable ftprop3(ft) will contain the proportion of new growth land to assign 
+* for each ft 
+          ftprop3(ft)=ftprop(ft)/100.0d0 - sum_cov(ft)
+          IF (ftprop3(ft).LT.0.0d0) ftprop3(ft)=0.0d0 !can't remove cov
+          norm = norm + ftprop3(ft)
+        ELSE
+          ftprop3(ft)=0.0d0
         ENDIF
       ENDDO
       DO ft=1,nft
-        ftprop(ft) = 100.0d0*ftprop(ft)/norm
+        ftprop3(ft) = 100.0d0*ftprop3(ft)/norm
       ENDDO
 
-      cov(1,1) = ngcov*ftprop(1)/100.0d0
+      PRINT '(A)','GG4d ftprop '
+      PRINT '(16F11.6)',ftprop(1:nft)
+      PRINT '(A)','GS4d sum_cov '
+      PRINT '(16F11.6)',sum_cov(1:nft)
+
+      cov(1,1) = ngcov*ftprop3(1)/100.0d0
       !PRINT*, 'G8' 
 
 *----------------------------------------------------------------------*
@@ -232,8 +269,8 @@
 * litter to provide nppstore and canopy.                               *
 *----------------------------------------------------------------------*
       DO ft=2,nft
-        !PRINT*, 'G9',ft,ftprop(ft) 
-        IF (ftprop(ft).GT.0.0d0) THEN
+        !PRINT*, 'G9',ft,ftprop3(ft) 
+        IF (ftprop3(ft).GT.0.0d0) THEN
 
 *----------------------------------------------------------------------*
 * If no veg exists then set nppstore to initial value and reinitialise.*
@@ -260,7 +297,7 @@
 20        CONTINUE
 *----------------------------------------------------------------------*
 
-          cov(1,ft) = ftprop(ft)*ngcov/100.0d0
+          cov(1,ft) = ftprop3(ft)*ngcov/100.0d0
           ppm(1,ft) = ftppm0(ft)
           hgt(1,ft) = 0.004d0
 
@@ -315,6 +352,11 @@
 !      PRINT '(16F11.6)',cov(1,1:nft)
 !      PRINT '(A)','GG4 COV '
 !      PRINT '(16F11.6)',sum_cov_test(1:nft)
+!return ftprop for using in gross transitions for next year 
+      PRINT '(A)','GG4e ftprop '
+      PRINT '(16F11.6)',ftprop(1:nft)
+      PRINT '(A)','GH4e ftprop3 '
+      PRINT '(16F11.6)',ftprop3(1:nft)
       !PRINT '(A)','GG5 BIOL'
       !PRINT '(16F11.6)',bioleaf(1:nft)
       !PRINT '(A)','GG6 NPPS'
@@ -1218,10 +1260,10 @@
         slc(ft) = slc(ft)  + (bio(ftmor(ft),1,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(ftmor(ft),ft)
         rlc(ft) = rlc(ft)  + bio(ftmor(ft),2,ft)*cov(ftmor(ft),ft)
-!        IF (debug .EQV. .TRUE.) THEN
-!                PRINT '(A I3 F9.6 I6 F9.6)','GG1B',
-!     &              ft, ngcov,ftmor(ft),cov(ftmor(ft),ft)
-!        ENDIF
+        IF (debug .EQV. .TRUE.) THEN
+                PRINT '(A I3 F9.6 I6 F9.6)','GG1B',
+     &              ft, ngcov,ftmor(ft),cov(ftmor(ft),ft)
+        ENDIF
       ENDDO
       CALL SHIFT(ftmor,cov,ppm,bio,hgt,1,nft)
 
@@ -1266,7 +1308,7 @@
         ENDIF
 *----------------------------------------------------------------------*
 
-        DO age=2,ftmor(ft)
+        DO age=2,ftmor(ft) 
           IF (age.LT.fireres) THEN
             fprob = xfprob
           ELSE
@@ -1277,11 +1319,11 @@
           !calculate litter from cover loss  
           ngcov   = ngcov + cov(age,ft)*(fprob - fprob*tmor + tmor)
           
-!          IF (debug .EQV. .TRUE.) THEN
-!                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
-!     &         ft, ngcov, cov(age,ft),(fprob-fprob*tmor+tmor),
-!     &         fprob,tmor
-!          ENDIF
+          IF (debug .EQV. .TRUE.) THEN
+                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
+     &         ft, ngcov, cov(age,ft),(fprob-fprob*tmor+tmor),
+     &         fprob,tmor
+          ENDIF
           slc(ft) = slc(ft) + 
      &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) * 
      &(tmor - 0.2d0*fprob*tmor + 0.2d0*fprob) * cov(age,ft)
