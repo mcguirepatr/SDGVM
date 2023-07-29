@@ -48,8 +48,8 @@
       CHARACTER (LEN = *) :: wdg
       CHARACTER (LEN = *), PARAMETER :: fname_s = "cont_lu"
       CHARACTER (LEN = *), PARAMETER :: esadate = "2009"
-      CHARACTER (LEN = *), PARAMETER :: print_type='unagg'
-      !CHARACTER (LEN = *), PARAMETER :: print_type='agg'
+      !CHARACTER (LEN = *), PARAMETER :: print_type='unagg'
+      CHARACTER (LEN = *), PARAMETER :: print_type='agg'
       !CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
 
       INTEGER, PARAMETER :: NT = 1172, NV = 14
@@ -71,6 +71,7 @@
       LOGICAL :: mask(DXY, DXY)
       LOGICAL :: mask_SDGVM(DXY, DXY)
       LOGICAL :: esamask(NE2,DXY, DXY)
+      LOGICAL debug
       ! setup ESA arrays
       INTEGER :: esaarray_global(NE2,NX,NY)
       REAL*8 :: esaarray(NE2,DXY,DXY)
@@ -186,8 +187,11 @@
       aggmap(2)  =  2   ! primary non-forest
       aggmap(3)  =  3   ! secondary forest
       aggmap(4)  =  4   ! secondary non-forest
-      aggmap(5:7)  =  5 ! c3 crops
-      aggmap(8:9)  =  6 ! c4 crops
+      aggmap(5)  =  5 ! c3 crops
+      aggmap(6)  =  6 ! c4 crops
+      aggmap(7)  =  5 ! c3 crops 
+      aggmap(8)  =  6 ! c4 crops
+      aggmap(9)  =  5 ! c3 crops 
       !aggmap(10:11) = 7  ! pasture and rangelands
       aggmap(10) =  7   ! pasture and not rangelands
       !aggmap(11) =  2   ! rangelands - add to primary non-forest
@@ -322,7 +326,8 @@
                ! aggregate transitions for  Hyde landcover types 
                DO v3=1,NV
                 IF(varname(v3) == to_t) THEN
-                  PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),dummya(1,1)
+                  !print 2,2 coords of 4x4 region
+                  !PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),100.0*dummya(2,2)
                   data_t_agg(aggmap(v2),aggmap(v3),:,:) = data_t_agg(aggmap(v2),aggmap(v3),:,:) + dummya
                 END IF
                END DO
@@ -345,19 +350,24 @@
         ! change to percent      
            data_t_agg = data_t_agg * 100.0      
 
-           write(*,FMT="(A)") 'STSS1'
-           write(*,*)'     ','     primf', '     primn', '     secdf', &
-                   '     secdn', '    c3crop', '    c4crop', &
-                   '    pastnr', '     urban' 
+           debug = .False.
 
-           write(*,FMT="(A,8E10.3)") ' primf',data_t_agg(1,:,1,1)
-           write(*,FMT="(A,8E10.3)") ' primn',data_t_agg(2,:,1,1)
-           write(*,FMT="(A,8E10.3)") ' secdf',data_t_agg(3,:,1,1)
-           write(*,FMT="(A,8E10.3)") ' secdn',data_t_agg(4,:,1,1)
-           write(*,FMT="(A,8E10.3)") 'c3crop',data_t_agg(5,:,1,1)
-           write(*,FMT="(A,8E10.3)") 'c4crop',data_t_agg(6,:,1,1)
-           write(*,FMT="(A,8E10.3)") 'pastnr',data_t_agg(7,:,1,1)
-           write(*,FMT="(A,8E10.3)") ' urban',data_t_agg(8,:,1,1)
+           if(debug) then
+
+             write(*,FMT="(A)") 'STSS1'
+             write(*,*)'     ','     primf', '     primn', '     secdf', &
+                       '     secdn', '    c3crop', '    c4crop', &
+                       '    pastnr', '     urban' 
+!          use the 2,2 coordinates of the 4x4 region
+             write(*,FMT="(A,8E10.3)") ' primf',data_t_agg(1,:,2,2)
+             write(*,FMT="(A,8E10.3)") ' primn',data_t_agg(2,:,2,2)
+             write(*,FMT="(A,8E10.3)") ' secdf',data_t_agg(3,:,2,2)
+             write(*,FMT="(A,8E10.3)") ' secdn',data_t_agg(4,:,2,2)
+             write(*,FMT="(A,8E10.3)") 'c3crop',data_t_agg(5,:,2,2)
+             write(*,FMT="(A,8E10.3)") 'c4crop',data_t_agg(6,:,2,2)
+             write(*,FMT="(A,8E10.3)") 'pastnr',data_t_agg(7,:,2,2)
+             write(*,FMT="(A,8E10.3)") ' urban',data_t_agg(8,:,2,2)
+           endif
         END IF
     
 
@@ -443,21 +453,24 @@
            IF(print_type=='unagg') THEN
              IF(compute_next_year) THEN
                DO v=1,NV
-                  WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_in_new(v,:,:),mask)/num_land
+!                  WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_in_new(v,:,:),mask)/num_land
+                  WRITE(*,FMT='(F9.4)', ADVANCE='no') data_in_new(v,2,2)
                END DO
              ELSE
                DO v=1,NV
-                  WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_in(v,:,:),mask)/num_land
+!                  WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_in(v,:,:),mask)/num_land
+                  WRITE(*,FMT='(F9.4)', ADVANCE='no') data_in(v,2,2)
                END DO
              END IF
            ELSE IF(print_type=='agg') THEN
              DO v=1,NV2
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out(v,:,:)/100.0,mask)/num_land 
+!                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out(v,:,:)/100.0,mask)/num_land 
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out(v,2,2)/100.0
              END DO
            ELSE IF(print_type=='sdgvm') THEN 
              DO v=1,NS
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,:,:)/100.0,mask_SDGVM)/num_land 
-!                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,:,1,1)/100.0 
+!                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,:,:)/100.0,mask_SDGVM)/num_land 
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,2,2)/100.0 
              END DO
            END IF
            WRITE(*,*) ! Assumes default "ADVANCE='yes'".
@@ -659,11 +672,11 @@
         ! change grassland cover
         ! ESA grasslands (potential pasture)
         past_esa    = v(7) + v(8)
-        ! Hyde grassland cover (primary + secondary)
-        past_hyde = v(12) + v(14)
+        ! Hyde grassland cover (primary + secondary + pastnr)
+        past_hyde = v(12) + v(14) + v(17)
         IF(past_hyde .GT. 0) THEN
           primn_frac_hyde = v(12)/past_hyde
-          secdn_frac_hyde = v(14)/past_hyde
+          secdn_frac_hyde = (v(14)+v(17))/past_hyde
         ELSE
           primn_frac_hyde = 0.0
           secdn_frac_hyde = 0.0 
@@ -686,7 +699,7 @@
               ! change C3/C4 grass cover proportionally
               DO n=nid_min,nid_max
                 ov(n)  = ov(n) + primn_frac_hyde * diff * (v(n) / past_esa)
-                nsec = n + DN !secondary non-forest FT's
+                nsec = n + DN !secondary non-forest
                 ov(nsec)  = ov(nsec) +  secdn_frac_hyde * diff * (v(n) / past_esa)
               ENDDO
               
@@ -713,7 +726,7 @@
               ! change C3/C4 grass cover proportionally
               DO n=nid_min,nid_max
                 ov(n)  = ov(n) + primn_frac_hyde * diff * (v(n) / past_esa)
-                nsec = n + DN !secondary non-forest FT's
+                nsec = n + DN !secondary non-forest
                 ov(nsec)  = ov(nsec) +  secdn_frac_hyde * diff * (v(n) / past_esa)
               ENDDO
               
