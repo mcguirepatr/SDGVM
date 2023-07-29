@@ -1140,9 +1140,10 @@ c     look for the first year
       !print*, 'start year:', years(j)
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
+* PCM: offset this by 2 gridcells, since we have a box of 4 x 4        *
 *----------------------------------------------------------------------*
-      rrow = 1.0 + (latf - lat)/latr 
-      rcol = 1.0 + (lon - lon0)/lonr
+      rrow = 1.0 + (latf - lat)/latr - 1.0 
+      rcol = 1.0 + (lon - lon0)/lonr - 1.0
 
       ynorm = rrow - real(int(rrow))
       xnorm = rcol - real(int(rcol))
@@ -1403,13 +1404,13 @@ c
         ENDDO
 
         IF(ilanduse.GE.3 .and. ilanduse.LE.6 ) THEN
-         IF( MOD(yr0a+i-2,20) == 0 ) THEN 
-          WRITE(*,*)
-     &'   t    BARE    CITY     C3p     C4p  C3crop  C4crop',
-     &'     C3s     C4s   Ev_Bp   Ev_Np   Dc_Bp   Dc_Np',
-     &'   Ev_Bs   Ev_Ns   Dc_Bs   Dc_Ns'
-         ENDIF
-         write(*,'(I4,16F8.2)') yr0a+i-1, cluse(1:16,i)  
+!         IF( MOD(yr0a+i-2,20) == 0 ) THEN 
+!          WRITE(*,*)
+!     &'   t    BARE    CITY     C3p     C4p  C3crop  C4crop',
+!     &'     C3s     C4s   Ev_Bp   Ev_Np   Dc_Bp   Dc_Np',
+!     &'   Ev_Bs   Ev_Ns   Dc_Bs   Dc_Ns'
+!         ENDIF
+!         write(*,'(I4,16F8.2)') yr0a+i-1, cluse(1:16,i)  
         ELSE
          IF( MOD(yr0a+i-2,20) == 0 ) THEN 
           WRITE(*,*)
@@ -1638,6 +1639,9 @@ c
 *----------------------------------------------------------------------*
       REAL*8 xx(4,4),xnorm,ynorm,ans,av
       INTEGER indx(4,4),iav,ii,jj
+      LOGICAL use_bilinear
+
+      use_bilinear = .False. !use nearest-neighbor sampling instead
 
 *----------------------------------------------------------------------*
 * Fill in averages if necessary.                                       *
@@ -1686,6 +1690,7 @@ c
         ENDDO
       ENDDO
 
+      IF( use_bilinear .EQV. .True. ) THEN 
 *----------------------------------------------------------------------*
 * Bilinear interpolation.                                              *
 *----------------------------------------------------------------------*
@@ -1694,11 +1699,14 @@ c
      &        xx(2,3)*(1.0d0-xnorm)*ynorm + 
      &        xx(3,3)*xnorm*ynorm
 
+      ELSE
 *----------------------------------------------------------------------*
 * Nearest pixel.                                                       *
 *----------------------------------------------------------------------*
-*        ans = xx(int(xnorm+2.5d0),int(ynorm+2.5d0))
+        !ans = xx(int(xnorm+2.5d0),int(ynorm+2.5d0))
+        ans = xx(2,2)
 *----------------------------------------------------------------------*
+      ENDIF
 
 
       RETURN
