@@ -2228,10 +2228,10 @@ C         ENDIF
              write(*,FMT="(A,8E10.3)") ' urban',cluse2(8,:,1)
 
           ELSE
-             WRITE(*,*) ' BARE   CITY   C3     C4     C3crop ',
-     &'C4crop Ev_Bl  Ev_Nl  Dc_Bl ',
-     &'Dc_Nl '
-             write(*,FMT="(10F7.3)") cluse(1:nft,1)
+!             WRITE(*,*) ' BARE   CITY   C3     C4     C3crop ',
+!     &'C4crop Ev_Bl  Ev_Nl  Dc_Bl ',
+!     &'Dc_Nl '
+             !write(*,FMT="(10F7.3)") cluse(1:nft,1)
              !write(*,FMT="(10F7.3)") sum_cov_test(1:nft)
           ENDIF
         ENDIF
