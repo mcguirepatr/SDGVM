@@ -126,7 +126,7 @@
           at = aggmap_SDGVM_to_aggHyde(ft)
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
-            ! losses from ft to ft2: !atprop2 in %/year
+            ! losses from ft to ft2: !atprop2 in frac/year
             ftprop(ft) = ftprop(ft)*(1.0 - atprop2(at,at2)*1.0d-2)
             ! gains from ft2 to ft:
             ftprop(ft) = ftprop(ft)+ftprop(ft2)*
