@@ -101,7 +101,7 @@
       IF (ilanduse.ne.2 ) THEN
       sum_cov(:)     = 0.0d0
       loss           = 0.0d0
-      DO ft=2,nft
+      DO ft=3,nft
         !print*, 'G2',ft,ftphen(ft)
         !PRINT*, 'G2a',ft,ftprop(ft) 
         DO age=1,ftmor(ft)
@@ -124,19 +124,26 @@
         if((compute_closs.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then
          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
           at = aggmap_SDGVM_to_aggHyde(ft)
-          DO ft2=2,nft
+          DO ft2=3,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
-            ! losses from ft to ft2: !atprop2 in frac/year
-            ftprop(ft) = ftprop(ft)*(1.0 - atprop2(at,at2)*1.0d-2)
-            ! gains from ft2 to ft:
-            ftprop(ft) = ftprop(ft)+ftprop(ft2)*
-     &(atprop2(at2,at)*1.0d-2)
+            ! losses from ft to ft2: !atprop2 additive in %/year
+            ftprop(ft) = ftprop(ft) - atprop2(at,at2) !reordered axes from f90?  
+            ! losses from ft2 to ft
+            !ftprop(ft2) = ftprop(ft2) - atprop2(at2,at)
+            ! gains to ft from ft2:
+            ftprop(ft) = ftprop(ft) + atprop2(at2,at)
+            ! gains to ft2 from ft:
+            !ftprop(ft2) = ftprop(ft2) + atprop2(at,at2)
 !            IF (debug .EQV. .TRUE.) THEN
 !              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
 !     &               at,at2,ft,ft2,ftprop(ft)*1d-2,sum_cov(ft)
 !            ENDIF
-            IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I2 I2 I3 I3 F9.6 F9.6 F9.6 )','GG1',
+            IF (debug .EQV. .TRUE. .AND. (at.eq.6)) THEN
+                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 )','GHG1',
+     &              at2,at,ft2,ft,
+     &              atprop2(at2,at),ftprop(ft),
+     &              sum_cov(ft)
+                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 )','GHL1',
      &              at,at2,ft,ft2,
      &              atprop2(at,at2),ftprop(ft),
      &              sum_cov(ft)
