@@ -49,8 +49,9 @@
       CHARACTER (LEN = *), PARAMETER :: fname_s = "cont_lu"
       CHARACTER (LEN = *), PARAMETER :: esadate = "2009"
       !CHARACTER (LEN = *), PARAMETER :: print_type='unagg'
-      CHARACTER (LEN = *), PARAMETER :: print_type='agg'
-      !CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
+      !CHARACTER (LEN = *), PARAMETER :: print_type='agg'
+      !CHARACTER (LEN = *), PARAMETER :: print_type='esa'
+      CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
 
       INTEGER, PARAMETER :: NT = 1172, NV = 14
       REAL*8, PARAMETER    :: misval = 1e19
@@ -107,6 +108,11 @@
       CHARACTER(LEN=7),PARAMETER :: varname_sdgvm(NS)=(/'  BARE',' Ev_Bp',' Dc_Bp',' Ev_Np',' Dc_Np', &
           ' Shrup','   C3p','   C4p','C3crop','C4crop',' Ev_Bs',' Dc_Bs',' Ev_Ns',' Dc_Ns',' Shrus',  &
           '   C3s','   C4s'/)
+      !CHARACTER(LEN=7),PARAMETER :: varname_sdgvm(NS)=(/'  BARE',   &
+      !    '  CITY','   C3p','   C4p','C3crop', &
+      !    'C4crop','   C3s','   C4s',' Ev_Bp',' Ev_Np', &
+      !    ' Dc_Bp',' Dc_Np',' Ev_Bs',' Ev_Ns',' Dc_Bs', &
+      !    ' Dc_Ns'/)
 
 
       CHARACTER(LEN=5) :: from_t, to_t
@@ -318,17 +324,22 @@
                dummya = NA
             ENDWHERE
             
-            DO v2=1,NV
+            DO v2=1,NV-2
               IF(varname(v2) == from_t) THEN
                IF(compute_next_year) THEN
                  data_in_new(v2,:,:)= data_in_new(v2,:,:) - dummya 
                ENDIF
                ! aggregate transitions for  Hyde landcover types 
-               DO v3=1,NV
-                IF(varname(v3) == to_t) THEN
+               DO v3=1,NV-2
+                !don't allow aggregated classes to have non-zero transition
+                !probabilities to themselves (i.e. c3per_to_c3ann)
+                IF(varname(v3) == to_t .AND. aggmap(v2).NE.aggmap(v3)) THEN
                   !print 2,2 coords of 4x4 region
-                  !PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),100.0*dummya(2,2)
                   data_t_agg(aggmap(v2),aggmap(v3),:,:) = data_t_agg(aggmap(v2),aggmap(v3),:,:) + dummya
+                  if(t == SINDEX) then
+                    PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),100.0*dummya(2,2),  &
+                            data_t_agg(aggmap(v2),aggmap(v3),2,2)
+                  end if
                 END IF
                END DO
               END IF
@@ -440,6 +451,10 @@
             DO v=1,NS
                WRITE(*,FMT='(A9)', ADVANCE='no') varname_sdgvm(v)
             END DO
+          ELSE IF(print_type=='esa') THEN
+            DO v=1,NE
+               WRITE(*,FMT='(A9)', ADVANCE='no') varname_esa_pfts(v)
+            END DO
           END IF
           WRITE(*,*) ! Assumes default "ADVANCE='yes'".
         END IF
@@ -471,6 +486,11 @@
              DO v=1,NS
 !                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,:,:)/100.0,mask_SDGVM)/num_land 
                 WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,2,2)/100.0 
+             END DO
+           ELSE IF(print_type=='esa') THEN 
+             DO v=1,NE
+!                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,:,:)/100.0,mask_SDGVM)/num_land 
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') esaarray(v,2,2)/100.0 
              END DO
            END IF
            WRITE(*,*) ! Assumes default "ADVANCE='yes'".
