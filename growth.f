@@ -26,9 +26,11 @@
       REAL*8 ftpropnew,ftprop3(maxnft)
       REAL*8 sum_cov_test(maxnft)
       REAL*8 atprop2(n_at,n_at),THRESH
+      REAL*8 ft2frac(maxnft),at2prop
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
+      INTEGER ft3,at3
       LOGICAL burn,harvest
       LOGICAL compute_closs,lose_cover
 
@@ -124,28 +126,41 @@
         if((compute_closs.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then
          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
           at = aggmap_SDGVM_to_aggHyde(ft)
+
+!compute fractions of cover (ft2frac(ft2)) of each ft2 in each aggregated class at2 
+          DO ft2=3,nft
+            at2 = aggmap_SDGVM_to_aggHyde(ft2)
+            at2prop = 0.0d0
+            ft2frac(ft2) = 0.0d0 
+            DO ft3=3,nft
+              at3 = aggmap_SDGVM_to_aggHyde(ft3)
+              if(at2.eq.at3) then
+                 at2prop = at2prop + ftprop(ft3)  
+              endif
+            ENDDO
+            if(at2prop.GT.0.0d0) then
+              ft2frac(ft2) = ftprop(ft2)/at2prop
+            endif
+          ENDDO
+
           DO ft2=3,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
             ! losses from ft to ft2: !atprop2 additive in %/year
-            ftprop(ft) = ftprop(ft) - atprop2(at,at2) !reordered axes from f90?  
-            ! losses from ft2 to ft
-            !ftprop(ft2) = ftprop(ft2) - atprop2(at2,at)
+            ftprop(ft) = ftprop(ft) - atprop2(at,at2)
             ! gains to ft from ft2:
-            ftprop(ft) = ftprop(ft) + atprop2(at2,at)
-            ! gains to ft2 from ft:
-            !ftprop(ft2) = ftprop(ft2) + atprop2(at,at2)
+            ftprop(ft) = ftprop(ft) + ft2frac(ft2)*atprop2(at2,at)
 !            IF (debug .EQV. .TRUE.) THEN
 !              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
 !     &               at,at2,ft,ft2,ftprop(ft)*1d-2,sum_cov(ft)
 !            ENDIF
-            IF (debug .EQV. .TRUE. .AND. (at.eq.6)) THEN
-                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 )','GHG1',
+            IF (debug .EQV. .TRUE. .AND. (at.eq.4)) THEN
+                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 )','GHG1',
      &              at2,at,ft2,ft,
-     &              atprop2(at2,at),ftprop(ft),
+     &              ft2frac(ft2),atprop2(at2,at),ftprop(ft),
      &              sum_cov(ft)
-                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 )','GHL1',
+                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 )','GHL1',
      &              at,at2,ft,ft2,
-     &              atprop2(at,at2),ftprop(ft),
+     &              1.0,atprop2(at,at2),ftprop(ft),
      &              sum_cov(ft)
             ENDIF
           ENDDO
