@@ -2170,6 +2170,7 @@ C           NYR = -1
 C         ENDIF
           lutab2(:,:)                      =  0.0
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+C The following order is order of land types in the input.dat file
             !aggmap_SDGVM_to_aggHyde(1)     =  0 
             !aggmap_SDGVM_to_aggHyde(2:6)   =  1 
             !aggmap_SDGVM_to_aggHyde(7:8)   =  2 
@@ -2177,6 +2178,7 @@ C         ENDIF
             !aggmap_SDGVM_to_aggHyde(10)    =  6 
             !aggmap_SDGVM_to_aggHyde(11:15) =  3 
             !aggmap_SDGVM_to_aggHyde(16:17) =  4 
+C The following ordering is the order of ft's in the input.dat file
             aggmap_SDGVM_to_aggHyde(1)     =  0 
             aggmap_SDGVM_to_aggHyde(2)     =  8 
             aggmap_SDGVM_to_aggHyde(3:4)   =  2 
