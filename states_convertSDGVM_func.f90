@@ -22,16 +22,17 @@
       MODULE FUNCTIONS_CLU
       CONTAINS
       SUBROUTINE states_convertSDGVM_func(SYR,FYR,X0,Y0,DXY,get_transitions,compute_next_year, &
-           pname,pname_t,wdg,data_out_SDGVM,data_out_AggHydeTransitions )
+           pname,pname_t,wdg,data_out_SDGVM,data_out_AggHydeTransitions,data_out_AggHarvest )
       USE netcdf
       IMPLICIT NONE
 
       INTEGER, PARAMETER :: NS = 17
-      INTEGER, PARAMETER :: NV2 = 8 
+      INTEGER, PARAMETER :: NV2 = 7 
       INTEGER SYR,FYR,X0,Y0,DXY 
       LOGICAL :: compute_next_year,get_transitions
       REAL*8, DIMENSION(FYR-SYR+1,NS,DXY,DXY) ::  data_out_SDGVM
       REAL*8, DIMENSION(FYR-SYR+1,NV2,NV2,DXY,DXY) ::  data_out_AggHydeTransitions
+      REAL*8, DIMENSION(FYR-SYR+1,NV2,DXY,DXY) ::  data_out_AggHarvest
 
       INTEGER, PARAMETER :: NX = 720, NY = 360
       ! half-resolution version computed with: module load jasppy ! on JASMIN
@@ -49,13 +50,13 @@
       CHARACTER (LEN = *), PARAMETER :: fname_s = "cont_lu"
       CHARACTER (LEN = *), PARAMETER :: esadate = "2009"
       !CHARACTER (LEN = *), PARAMETER :: print_type='unagg'
-      !CHARACTER (LEN = *), PARAMETER :: print_type='agg'
+      CHARACTER (LEN = *), PARAMETER :: print_type='agg'
       !CHARACTER (LEN = *), PARAMETER :: print_type='esa'
-      CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
+      !CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
 
       INTEGER, PARAMETER :: NT = 1172, NV = 14
       REAL*8, PARAMETER    :: misval = 1e19
-      INTEGER, PARAMETER :: NE = 10, NE2 = 17
+      INTEGER, PARAMETER :: NE = 10, NE2 = 16
       INTEGER, PARAMETER :: NVT = 118 
       INTEGER, PARAMETER :: DT = 20 !number of years to skip between prints
       !INTEGER, PARAMETER :: SINDEX = 21 !starting year for prints
@@ -69,6 +70,7 @@
       REAL*8 :: data_in_t(NVT, DXY, DXY)
       REAL*8 :: data_out(NV-2, DXY, DXY)
       REAL*8 :: data_t_agg(NV2, NV2, DXY, DXY)
+      REAL*8 :: data_out_harvest(NV2, DXY, DXY)
       LOGICAL :: mask(DXY, DXY)
       LOGICAL :: mask_SDGVM(DXY, DXY)
       LOGICAL :: esamask(NE2,DXY, DXY)
@@ -186,8 +188,30 @@
 
       ! New: NV2=8
       ! HYDE aggregated land cover: 
-      CHARACTER(LEN=9),PARAMETER :: varname2(NV2)=(/'    primf', '    primn', '    secdf', '    secdn', &
-          '   c3crop', '   c4crop', '   pastnr', '    urban' /)
+      !CHARACTER(LEN=9),PARAMETER :: varname2(NV2)=(/'    primf', &
+      !    '    primn', '    secdf', '    secdn', &
+      !    '   c3crop', '   c4crop', '   pastnr', '    urban' /)
+
+      ! aggmap(1)  =  1   ! primary forest
+      ! aggmap(2)  =  2   ! primary non-forest
+      ! aggmap(3)  =  3   ! secondary forest
+      ! aggmap(4)  =  4   ! secondary non-forest
+      ! aggmap(5)  =  5 ! c3 crops
+      ! aggmap(6)  =  6 ! c4 crops
+      ! aggmap(7)  =  5 ! c3 crops 
+      ! aggmap(8)  =  6 ! c4 crops
+      ! aggmap(9)  =  5 ! c3 crops 
+      ! !aggmap(10:11) = 7  ! pasture and rangelands
+      ! aggmap(10) =  7   ! pasture and not rangelands
+      ! !aggmap(11) =  2   ! rangelands - add to primary non-forest
+      ! aggmap(11) =  4   ! rangelands - add to secondary non-forest
+      ! aggmap(12) =  8   ! urban
+
+      ! New2: NV2=7
+      ! HYDE aggregated land cover, with pastnr put in secdn: 
+      CHARACTER(LEN=9),PARAMETER :: varname2(NV2)=(/'    primf', &
+          '    primn', '    secdf', '    secdn', &
+          '   c3crop', '   c4crop', '    urban' /)
 
       aggmap(1)  =  1   ! primary forest
       aggmap(2)  =  2   ! primary non-forest
@@ -198,11 +222,13 @@
       aggmap(7)  =  5 ! c3 crops 
       aggmap(8)  =  6 ! c4 crops
       aggmap(9)  =  5 ! c3 crops 
-      !aggmap(10:11) = 7  ! pasture and rangelands
-      aggmap(10) =  7   ! pasture and not rangelands
-      !aggmap(11) =  2   ! rangelands - add to primary non-forest
-      aggmap(11) =  4   ! rangelands - add to secondary non-forest
-      aggmap(12) =  8   ! urban
+      !!aggmap(10:11) = 7  ! pasture and rangelands
+      !aggmap(10) =  7   ! pasture and not rangelands
+      !!aggmap(11) =  2   ! rangelands - add to primary non-forest
+      !aggmap(11) =  4   ! rangelands - add to secondary non-forest
+      aggmap(10:11) = 4  ! pasture and rangelands - add to secondary non-forest
+      !aggmap(12) =  8   ! urban
+      aggmap(12) =  7   ! urban
 
       ! latitudinal offset for assigning correct forest or grass PFT when none exist in ESA
       lat_offset(1:132)      = 0
@@ -273,6 +299,7 @@
         year_index = t - SINDEX + 1 
         data_out(:,:,:) = 0.0
         data_t_agg(:,:,:,:) = 0.0
+        data_out_harvest(:,:,:) = 0.0
         IF(t > SINDEX) THEN 
           data_in_old(:,:,:)=data_in(:,:,:)
         END IF
@@ -314,11 +341,27 @@
            ENDIF
           ! end if
 
-           DO v=1,NVT-6 ! skip for bioh
+           DO v=1,NVT-4 ! skip bioh 
             data_in_t(v,:,:) = NA        !data_in_t = transitions matrix element for transition with the name varname_t(v)
             CALL CHECK( NF90_GET_VAR(ncid_t, varid_t(v), data_in_t(v,1:maxii,1:maxjj), start=[X0,Y0,t], count=[maxii,maxjj,1]) )
-            from_t = varname_t(v)(1:5)   !from_t = the state from which the transition is coming
-            to_t   = varname_t(v)(10:14) !to_t   = the state to   which the transition is going 
+            IF(v.LE.NVT-10) THEN
+               from_t = varname_t(v)(1:5)   !from_t = the state from which the transition is coming
+               to_t   = varname_t(v)(10:14) !to_t   = the state to   which the transition is going 
+            ELSE
+               to_t = 'harv'
+               IF(varname_t(v).EQ.'primf_harv') THEN 
+                  from_t = 'primf'
+               ELSE IF(varname_t(v).EQ.'primn_harv') THEN 
+                  from_t = 'primn'
+               ELSE IF(varname_t(v).EQ.'secmf_harv') THEN  !wood-area harvest from mature forest
+                  from_t = 'secdf'
+               ELSE IF(varname_t(v).EQ.'secyf_harv') THEN  !wood-area harvest from young forest 
+                  from_t = 'secdf'
+               ELSE IF(varname_t(v).EQ.'secnf_harv') THEN  !wood-area harvest from non-forest 
+                  from_t = 'secnf'
+               ENDIF
+            ENDIF
+
             dummya = data_in_t(v,:,:)
             WHERE (isNAN(dummya(:,:)))
                dummya = NA
@@ -329,19 +372,30 @@
                IF(compute_next_year) THEN
                  data_in_new(v2,:,:)= data_in_new(v2,:,:) - dummya 
                ENDIF
+
+               ! aggregate harvests for Hyde landcover types;
+               ! this combines mature forest with young forest
+               IF(to_t == 'harv') THEN
+                 data_out_harvest(aggmap(v2),:,:) = data_out_harvest(aggmap(v2),:,:) + dummya
+                 if(t == SINDEX) then
+                    PRINT *, varname_t(v), from_t,to_t, v2, aggmap(v2),100.0*dummya(2,2),  &
+                            data_out_harvest(aggmap(v2),2,2)
+                 end if
+               ELSE
                ! aggregate transitions for  Hyde landcover types 
-               DO v3=1,NV-2
-                !don't allow aggregated classes to have non-zero transition
-                !probabilities to themselves (i.e. c3per_to_c3ann)
-                IF(varname(v3) == to_t .AND. aggmap(v2).NE.aggmap(v3)) THEN
-                  !print 2,2 coords of 4x4 region
-                  data_t_agg(aggmap(v2),aggmap(v3),:,:) = data_t_agg(aggmap(v2),aggmap(v3),:,:) + dummya
-                  if(t == SINDEX) then
-                    PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),100.0*dummya(2,2),  &
-                            data_t_agg(aggmap(v2),aggmap(v3),2,2)
-                  end if
-                END IF
-               END DO
+                 DO v3=1,NV-2
+                  !don't allow aggregated classes to have non-zero transition
+                  !probabilities to themselves (i.e. c3per_to_c3ann)
+                  IF(varname(v3) == to_t .AND. aggmap(v2).NE.aggmap(v3)) THEN
+                    !print 2,2 coords of 4x4 region
+                    data_t_agg(aggmap(v2),aggmap(v3),:,:) = data_t_agg(aggmap(v2),aggmap(v3),:,:) + dummya
+                    if(t == SINDEX) then
+                      PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),100.0*dummya(2,2),  &
+                              data_t_agg(aggmap(v2),aggmap(v3),2,2)
+                    end if
+                  END IF
+                 END DO
+               END IF
               END IF
               IF(varname(v2) == to_t) THEN
                IF(compute_next_year) THEN
@@ -360,6 +414,7 @@
            END DO
         ! change to percent      
            data_t_agg = data_t_agg * 100.0      
+           data_out_harvest = data_out_harvest * 100.0      
 
            debug = .False.
 
@@ -368,16 +423,22 @@
              write(*,FMT="(A)") 'STSS1'
              write(*,*)'     ','     primf', '     primn', '     secdf', &
                        '     secdn', '    c3crop', '    c4crop', &
-                       '    pastnr', '     urban' 
+                       '     urban', '     harv' 
 !          use the 2,2 coordinates of the 4x4 region
-             write(*,FMT="(A,8E10.3)") ' primf',data_t_agg(1,:,2,2)
-             write(*,FMT="(A,8E10.3)") ' primn',data_t_agg(2,:,2,2)
-             write(*,FMT="(A,8E10.3)") ' secdf',data_t_agg(3,:,2,2)
-             write(*,FMT="(A,8E10.3)") ' secdn',data_t_agg(4,:,2,2)
-             write(*,FMT="(A,8E10.3)") 'c3crop',data_t_agg(5,:,2,2)
-             write(*,FMT="(A,8E10.3)") 'c4crop',data_t_agg(6,:,2,2)
-             write(*,FMT="(A,8E10.3)") 'pastnr',data_t_agg(7,:,2,2)
-             write(*,FMT="(A,8E10.3)") ' urban',data_t_agg(8,:,2,2)
+             write(*,FMT="(A,8E10.3)") ' primf',data_t_agg(1,:,2,2), &
+               data_out_harvest(1,2,2)
+             write(*,FMT="(A,8E10.3)") ' primn',data_t_agg(2,:,2,2), &
+               data_out_harvest(2,2,2)
+             write(*,FMT="(A,8E10.3)") ' secdf',data_t_agg(3,:,2,2), &
+               data_out_harvest(3,2,2)
+             write(*,FMT="(A,8E10.3)") ' secdn',data_t_agg(4,:,2,2), &
+               data_out_harvest(4,2,2)
+             write(*,FMT="(A,8E10.3)") 'c3crop',data_t_agg(5,:,2,2), &
+               data_out_harvest(5,2,2)
+             write(*,FMT="(A,8E10.3)") 'c4crop',data_t_agg(6,:,2,2), &
+               data_out_harvest(6,2,2)
+             write(*,FMT="(A,8E10.3)") ' urban',data_t_agg(7,:,2,2), &
+               data_out_harvest(7,2,2)
            endif
         END IF
     
@@ -400,15 +461,16 @@
         ! change to percent      
         data_out = data_out * 100.0      
 
-        esaarray(11:NE2,:,:) = data_out(1:7,:,:)
+        esaarray(11:NE2,:,:) = data_out(1:6,:,:)
     
         ! process, returns an array of PFT, lon, lat  
         !data_out_SDGVM   <- apply(esaarray,c(1,2),join_hyde)
-        DO lon=1,DXY
-         DO lat=1,DXY
-           data_out_SDGVM(year_index,:,lon,lat) = JOIN_HYDE(esaarray(:,lon,lat))
-         END DO
-        END DO
+        !DO lon=1,DXY
+        ! DO lat=1,DXY
+        !   data_out_SDGVM(year_index,:,lon,lat) = JOIN_HYDE(esaarray(:,lon,lat))
+        ! END DO
+        !END DO
+        data_out_SDGVM(year_index,:,2,2) = JOIN_HYDE(esaarray(:,2,2))
 
       
         WHERE(ABS(data_out_SDGVM(year_index,1,:,:)) <= 100.00)
@@ -423,15 +485,27 @@
           data_out_SDGVM = 255.0 
         END WHERE 
 
+        IF( t == SINDEX ) THEN
+        WRITE(*,*)'JH1' ! Assumes default "ADVANCE='yes'".
+        DO v=1,NS
+          WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,2,2)/100.0 
+        END DO
+        WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+        ENDIF
+
         ! deal with forest or grass cover where no forest or grass cover existed in ESA
         CALL F_LAT_ASSIGNPFT(data_out_SDGVM(year_index,:,:,:),NS,NY,DXY,X0,Y0, &
                              maxii,maxjj,lat_offset)
   
         IF(get_transitions) THEN
           data_out_AggHydeTransitions(year_index,:,:,:,:) = data_t_agg 
+          data_out_AggHarvest(year_index,:,:,:) = data_out_harvest
         ! convert missing values to SDGVM missing value
           WHERE (data_out_AggHydeTransitions == NA)
             data_out_AggHydeTransitions = 255.0 
+          END WHERE 
+          WHERE (data_out_AggHarvest == NA)
+            data_out_AggHarvest = 255.0 
           END WHERE 
         ENDIF
 
@@ -573,8 +647,24 @@
       ! C3 and C4 grassland area is then adjusted to account for changes in pasture and natural grassland cover
       ! rangelands in hyde and shrubs in esa are not explicitly included in the calculation of change 
       ! though a proportion of them could be accounted for implicitly if rangelands habour some forest vegetation
+
+      !NEW2:
+      ! takes a 17 element vector, 1:10 - ESA PFTs, 11:16 HYDE aggregated land cover 
+      ! and combines into a 17 element vector of SDGVM PFT transitions
+
+      ! ESA   PFTs: 1 BARE, 2 Ev_Bl, 3 Dc_Bl, 4 Ev_Nl, 5 Dc_Nl, 6 Shrub, 7 C3, 8 C4, 9 C3crop, 10 C4crop,
+      ! HYDE aggregated land cover: 11 primf, 12 primn, 13 secdf, 14 secdn, 15 C3 crop, 16 C4 crop
+
+      ! SDGVM PFTs: 1 BARE, 2 Ev_Bp, 3 Dc_Bp, 4 Ev_Np, 5 Dc_Np, 6 Shrup, 7 C3p, 8 C4p, 9 C3crop, 10 C4crop,
+      !                    11 Ev_Bs,12 Dc_Bs,13 Ev_Ns,14 Dc_Ns,15 Shrus, 16 C3s, 17 C4s
+      
+      ! first forest area and potential forest area from HYDE is used to adjust forest area in ESA
+      ! then C3 and C4 croplands in HYDE are used to adjust ESA
+      ! C3 and C4 grassland area is then adjusted to account for changes in natural grassland cover
+      ! pasture and rangelands in hyde and shrubs in esa are not explicitly included in the calculation of change 
+      ! though a proportion of them could be accounted for implicitly if rangelands habour some forest vegetation
       IMPLICIT NONE
-      INTEGER, PARAMETER :: NE=10, NH=7, NS=17, DF=9, DN=9
+      INTEGER, PARAMETER :: NE=10, NH=6, NS=17, DF=9, DN=9
       REAL*8, INTENT(IN) :: v(NE+NH)
       REAL*8, DIMENSION(NS) :: result_join_hyde
       REAL*8 :: ov(NS), nofcov, nogcov, for_esa, diff, esahyde_cov, hyde_cov, past_esa
@@ -594,6 +684,7 @@
       REAL*8, PARAMETER :: NA= -999.0
       REAL for_hyde, primf_frac_hyde, secdf_frac_hyde 
       REAL past_hyde, primn_frac_hyde, secdn_frac_hyde 
+      LOGICAL :: do_pasture
       ! PRINT(v)
       
       ! subscripts for ESA forest PFTs
@@ -622,6 +713,7 @@
         ! create output vector 
         ! print(v)
         ov(1:NE) = v(1:NE)
+        ov(NE+1:(NE+NH)) = 0.0d0
         
         ! stores for increase in ESA but when either no forest or grass cover in ESA 
         nofcov  = 0.0
@@ -639,10 +731,13 @@
           primf_frac_hyde = 0.0
           secdf_frac_hyde = 0.0 
         ENDIF
+        !write(*,*) 'JI0a',v
+        !write(*,*) 'JI0b',ov
+        !write(*,*) 'JI1',for_esa,for_hyde,primf_frac_hyde,secdf_frac_hyde
         !PCM initialize primary and secondary fractions of output field 
         IF(NS.GT.NE) THEN
-          ovp(fid_min:fid_max) = ov(fid_min:fid_max) * primf_frac_hyde
-          ovs((fid_min+DF):(fid_max+DF)) = ov(fid_min:fid_max) * secdf_frac_hyde
+          ovp(fid_min:fid_max) = ov(fid_min:fid_max)
+          ovs((fid_min+DF):(fid_max+DF)) = ov(fid_min:fid_max)
           ov(fid_min:fid_max) = ovp(fid_min:fid_max)
           ov((fid_min+DF):(fid_max+DF)) = ovs((fid_min+DF):(fid_max+DF))
         ENDIF
@@ -650,12 +745,13 @@
         ! If forest cover is greater in hyde
         IF(for_hyde > for_esa) THEN 
           diff   = for_hyde  - for_esa
+          !write(*,*) 'JI2',for_esa,for_hyde,diff
           IF(for_esa>0) THEN 
             ! increase forest cover proportionally
             DO f=fid_min,fid_max
-               ov(f)  = ov(f) + primf_frac_hyde * diff * (v(f) / for_esa)
+               ov(f)  = primf_frac_hyde * (ov(f) + diff * (v(f) / for_esa))
                fsec = f + DF !secondary tree FT's
-               ov(fsec)  = ov(fsec) +  secdf_frac_hyde * diff * (v(f) / for_esa)
+               ov(fsec)  = secdf_frac_hyde * (ov(fsec) + diff * (v(f) / for_esa))
             END DO
           ELSE 
             ! no forest cover in ESA - forest cover stored for post-processing
@@ -665,13 +761,15 @@
         ELSE IF(for_esa>for_hyde) THEN 
           ! forest cover greater in ESA
           diff   = for_esa - for_hyde 
+          !write(*,*) 'JI3',for_esa,for_hyde,diff
           ! decrease forest cover proportionally
           DO f=fid_min,fid_max
-             ov(f)  = ov(f) - primf_frac_hyde * diff * (v(f) / for_esa)
+             ov(f)  = primf_frac_hyde * (ov(f) - diff * (v(f) / for_esa))
              fsec = f + DF !secondary tree FT's
-             ov(fsec)  = ov(fsec) - secdf_frac_hyde * diff * (v(f) / for_esa)
+             ov(fsec)  = secdf_frac_hyde * (ov(fsec) - diff * (v(f) / for_esa))
           END DO
         END IF 
+        !write(*,*) 'JI4b',ov
         
         
         ! increase or decrease crop cover 
@@ -681,10 +779,10 @@
         ! C4 crops
         IF(v(10) .NE. v(16)) ov(10) = v(16)
         
-        
         ! increase or decrease grass (pasture) cover 
         ! total cover so far in hyde ESA combined dataset - accounts for forest cover as yet unassigned to a PFT
-        esahyde_cov = SUM(ov) + nofcov
+        ! PCM: skip BARE soil (ov(1)) for now in esahyde_cov calc
+        esahyde_cov = SUM(ov(2:(NE+NH))) + nofcov
         
         ! total cover in hyde
         hyde_cov    = SUM(v(11:(NE+NH)))
@@ -692,35 +790,43 @@
         ! change grassland cover
         ! ESA grasslands (potential pasture)
         past_esa    = v(7) + v(8)
-        ! Hyde grassland cover (primary + secondary + pastnr)
-        past_hyde = v(12) + v(14) + v(17)
+        ! Hyde grassland cover (primary + secondary)
+        past_hyde = v(12) + v(14) 
         IF(past_hyde .GT. 0) THEN
           primn_frac_hyde = v(12)/past_hyde
-          secdn_frac_hyde = (v(14)+v(17))/past_hyde
+          secdn_frac_hyde = v(14)/past_hyde
         ELSE
           primn_frac_hyde = 0.0
           secdn_frac_hyde = 0.0 
         ENDIF
+
+
+        !write(*,*) 'JJ0a',v
+        !write(*,*) 'JJ0b',ov
+        !write(*,*) 'JJ1',past_hyde,primn_frac_hyde,secdn_frac_hyde
         !PCM initialize primary and secondary fractions of output field 
         IF(NS.GT.NE) THEN
-          ovp(nid_min:nid_max) = ov(nid_min:nid_max) * primn_frac_hyde
-          ovs((nid_min+DN):(nid_max+DN)) = ov(nid_min:nid_max) * secdn_frac_hyde
+          ovp(nid_min:nid_max) = ov(nid_min:nid_max)
+          ovs((nid_min+DN):(nid_max+DN)) = ov(nid_min:nid_max)
           ov(nid_min:nid_max) = ovp(nid_min:nid_max)
           ov((nid_min+DN):(nid_max+DN)) = ovs((nid_min+DN):(nid_max+DN))
         ENDIF
 
         
+        !write(*,*) 'JJ2',esahyde_cov,hyde_cov
         ! if new cover is different from hyde cover
         IF(esahyde_cov .NE. hyde_cov) THEN 
           diff   = hyde_cov - esahyde_cov
+          !write(*,*) 'JJ3',diff,past_esa
           IF(diff<0.0) THEN 
             IF(ABS(diff)<past_esa) THEN 
+              !write(*,*) 'JJ4'
               
               ! change C3/C4 grass cover proportionally
               DO n=nid_min,nid_max
-                ov(n)  = ov(n) + primn_frac_hyde * diff * (v(n) / past_esa)
+                ov(n)  = primn_frac_hyde * (ov(n) + diff * (v(n) / past_esa))
                 nsec = n + DN !secondary non-forest
-                ov(nsec)  = ov(nsec) +  secdn_frac_hyde * diff * (v(n) / past_esa)
+                ov(nsec)  = secdn_frac_hyde * (ov(nsec) +  diff * (v(n) / past_esa))
               ENDDO
               
             ELSE
@@ -733,6 +839,7 @@
               
               ! assume remaining reduction from bare ground
               diff = abs(diff) - past_esa
+              !write(*,*) 'JJ5',diff,past_esa
               IF(ov(1)>=diff) THEN
                  ov(1) = ov(1) - diff
               ELSE
@@ -743,21 +850,24 @@
           ELSE IF(diff>0.0) THEN 
             IF(past_esa>0.0) THEN 
               
+              !write(*,*) 'JJ6',diff,past_esa,v(nid_min),ov(nid_min)
               ! change C3/C4 grass cover proportionally
               DO n=nid_min,nid_max
-                ov(n)  = ov(n) + primn_frac_hyde * diff * (v(n) / past_esa)
+                ov(n)  = primn_frac_hyde * (ov(n) + diff * (v(n) / past_esa))
                 nsec = n + DN !secondary non-forest
-                ov(nsec)  = ov(nsec) +  secdn_frac_hyde * diff * (v(n) / past_esa)
+                ov(nsec)  = secdn_frac_hyde * (ov(nsec) +  diff * (v(n) / past_esa))
               ENDDO
+              !write(*,*) 'JJ7',diff,past_esa,v(nid_min),ov(nid_min)
               
             ELSE 
               
+              !write(*,*) 'JJ8',diff
               ! no grass cover in ESA - grass cover stored for post-processing
               ! write(paste('no ESA grass','BARE:',ov[1],'C3 CROP:',ov[9],'C4 CROP:',ov[10]),'1nopast_error.txt',append=T)
               nogcov = diff
             END IF 
           END IF 
-       END IF 
+        END IF 
         
         ! test for cover sum >100%
         !IF( SUM(ov(1:NS))-100.0 > 1e-3 ) PRINT *,'Error,cov:',SUM(ov(1:NS)),hyde_cov,'. Bare:',v(1) !'1cov_error.txt'
@@ -766,6 +876,7 @@
         IF(nofcov>0) ov(3)  = -nofcov
         ! assign as yet unassigned grass cover as negative value to C3p
         IF(nogcov>0) ov(7)  = -nogcov
+
         
         result_join_hyde = ov(1:NS)
 
