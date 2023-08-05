@@ -6,11 +6,11 @@
       SUBROUTINE COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
      &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
-     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen,atprop2, 
-     &aggmap_SDGVM_to_aggHyde)
+     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen,atprop2,
+     &atharvest,aggmap_SDGVM_to_aggHyde)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
-      INTEGER, PARAMETER :: n_at = 8 !number of aggregated (Hyde, functional) types
+      INTEGER, PARAMETER :: n_at = 7 !number of aggregated (Hyde, functional) types
       INTEGER, PARAMETER :: NS = 16 !number of SDGVM functional types
       LOGICAL, PARAMETER :: debug = .TRUE. !used to print out more debugging info
       REAL*8 cov(maxage,maxnft),bio(maxage,2,maxnft),bioleaf(maxnft)
@@ -26,6 +26,7 @@
       REAL*8 ftpropnew,ftprop3(maxnft)
       REAL*8 sum_cov_test(maxnft)
       REAL*8 atprop2(n_at,n_at),THRESH
+      REAL*8 atharvest(n_at)
       REAL*8 ft2frac(maxnft),at2prop
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
@@ -103,7 +104,7 @@
       IF (ilanduse.ne.2 ) THEN
       sum_cov(:)     = 0.0d0
       loss           = 0.0d0
-      DO ft=3,nft
+      DO ft=2,nft
         !print*, 'G2',ft,ftphen(ft)
         !PRINT*, 'G2a',ft,ftprop(ft) 
         DO age=1,ftmor(ft)
@@ -128,11 +129,11 @@
           at = aggmap_SDGVM_to_aggHyde(ft)
 
 !compute fractions of cover (ft2frac(ft2)) of each ft2 in each aggregated class at2 
-          DO ft2=3,nft
+          DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
             at2prop = 0.0d0
             ft2frac(ft2) = 0.0d0 
-            DO ft3=3,nft
+            DO ft3=2,nft
               at3 = aggmap_SDGVM_to_aggHyde(ft3)
               if(at2.eq.at3) then
                  at2prop = at2prop + ftprop(ft3)  
@@ -143,25 +144,29 @@
             endif
           ENDDO
 
-          DO ft2=3,nft
+          ftprop(ft) = ftprop(ft) - ft2frac(ft)*atharvest(at)
+          DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
             ! losses from ft to ft2: !atprop2 additive in %/year
-            ftprop(ft) = ftprop(ft) - atprop2(at,at2)
+            ftprop(ft) = ftprop(ft) - ft2frac(ft2)*atprop2(at,at2)
             ! gains to ft from ft2:
+            ! split the gains from each at2 from each ft2 by a fraction ft2frac(ft2)
             ftprop(ft) = ftprop(ft) + ft2frac(ft2)*atprop2(at2,at)
 !            IF (debug .EQV. .TRUE.) THEN
 !              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
 !     &               at,at2,ft,ft2,ftprop(ft)*1d-2,sum_cov(ft)
 !            ENDIF
-            IF (debug .EQV. .TRUE. .AND. (at.eq.4)) THEN
-                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 )','GHG1',
+            IF (debug .EQV. .TRUE. .AND. (at.eq.2)) THEN
+                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 )',
+     &              'GHG1',
      &              at2,at,ft2,ft,
      &              ft2frac(ft2),atprop2(at2,at),ftprop(ft),
-     &              sum_cov(ft)
-                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 )','GHL1',
+     &              sum_cov(ft),atharvest(at)
+                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 )',
+     &              'GHL1',
      &              at,at2,ft,ft2,
-     &              1.0,atprop2(at,at2),ftprop(ft),
-     &              sum_cov(ft)
+     &              ft2frac(ft2),atprop2(at,at2),ftprop(ft),
+     &              sum_cov(ft),atharvest(at)
             ENDIF
           ENDDO
          ENDIF
