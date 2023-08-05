@@ -1010,21 +1010,24 @@ C PCM2      WRITE(*,*) '111111111'
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,lutab2,
-     &pname,pname_t,wdg,cluse2)
+     &pname,pname_t,wdg,cluse2,cluseh)
 *----------------------------------------------------------------------*
       USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: NX = 720, NY = 360
       INTEGER, PARAMETER :: NS = 17
-      INTEGER, PARAMETER :: maxn_at = 8 !max number of aggregrated (functional) types
+      INTEGER, PARAMETER :: maxn_at = 7 !max number of aggregrated (functional) types
       INTEGER :: NYR,SYR 
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
       REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
+      REAL*8 cluseh(maxn_at,maxyrs)
       REAL*8 SDGVM_LUC(NYR, NS, 4, 4),xf,x2,xf2,xx2(4,4,maxn_at)
       REAL*8 SDGVM_LUC2(NYR, maxn_at, maxn_at, 4, 4)
+      REAL*8 SDGVM_LUC2_HARVEST(NYR, maxn_at, 4, 4)
       REAL*8 agclassprop2(255,255), atprop2(maxn_at,maxn_at)
+      REAL*8 agclassprop(255),atharvest(maxn_at)
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
       INTEGER ii,jj,stcmp,indx(4,4),years(1000),nrecl,yr0a,yrfa
       INTEGER classes(1000),nclasses,kode,spinl,yr_offset
@@ -1165,7 +1168,7 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
          CALL states_convertSDGVM_func(years(1),years(n),INT(rcol), ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
      &          INT(rrow),4,get_transitions,compute_next_year, 
      &          pname,pname_t,wdg,
-     &          SDGVM_LUC, SDGVM_LUC2)  
+     &          SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST)  
          WRITE(*,*)
      &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
      &'Shrup    C3p      C4p      C3crop   C4crop   ',
@@ -1173,10 +1176,12 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
       ELSE
          SDGVM_LUC=0.0
          SDGVM_LUC2=0.0
+         SDGVM_LUC2_HARVEST=0.0
          WRITE(*,*)
      &'    t   BARE     Ev_Bl    Dc_Bl    Ev_Nl    Dc_Nl    ',
      &'Shrub    C3       C4       C3crop   C4crop   '
       ENDIF
+      write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,2,2)
 
 
       DO i=1,yrfa-yr0a+1
@@ -1345,6 +1350,39 @@ C            ENDIF
            ENDDO ! end of k3 loop over the agclasses
           END IF
 
+          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
+            DO k3=1,maxn_at
+              agclassprop(agclasses(k3)) = 0
+
+              DO ii=1,4
+                DO jj=1,4
+                  row = int(rrow)+jj-1
+                  col = int(rcol)+ii-1
+                  !PCM: currently, there is no wrapping at longitude of date-line
+                  !for the 4x4 interpolation
+                  IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
+     &               (col.LE.lonn)) THEN
+                     xf = SDGVM_LUC2_HARVEST(j-1,
+     &                 agclasses(k3),ii, jj) !for j=1, years(j)=1700
+                     xx(ii,jj) = xf
+                     IF (xf.LT.200) THEN
+                       indx(ii,jj) = 1
+                     ELSE
+                       indx(ii,jj) = 0
+                     ENDIF
+                  ELSE
+                    indx(ii,jj) = -1
+                  ENDIF
+                ENDDO
+              ENDDO
+
+
+              CALL BI_LIN(xx(:,:),indx(:,:),xnorm,ynorm,ans)
+              x = int(ans+0.5d0)
+              agclassprop(agclasses(k3)) = ans
+
+           ENDDO ! end of k3 loop over the agclasses
+          END IF
 
 
 c
@@ -1368,6 +1406,7 @@ C interpolation in the BI_LIN step above
 
           IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
            atprop2(:,:) = agclassprop2(1:maxn_at,1:maxn_at) !PCM: kluge: assumes lutab2(iat3,iat3) = 100.0
+           atharvest(:) = agclassprop(1:maxn_at) !PCM: kluge: assumes lutab2(iat3,iat3) = 100.0
 !PCM: try simplified version above, first; comment out these lines
 !           DO iat3=1,maxn_at
 !           DO iat2=1,maxn_at
@@ -1423,6 +1462,7 @@ c
 
         IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
          DO iat3=1,maxn_at
+          cluseh(iat3,i)       = atharvest(iat3)
           DO iat2=1,maxn_at
            cluse2(iat3,iat2,i) = atprop2(iat3,iat2)
           ENDDO
@@ -1462,6 +1502,12 @@ c
      &  ( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
      &  (cluse2(iat3,iat2,ij1) - cluse2(iat3,iat2,ij)) )
              ENDDO
+            ENDDO
+
+            DO iat3=1,maxn_at
+              cluseh(iat3,i) = cluseh(iat3,ij) + 
+     &  ( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
+     &  (cluseh(iat3,ij1) - cluseh(iat3,ij)) )
             ENDDO
 
           ENDIF
