@@ -12,7 +12,7 @@
       REAL*8 defaulttopsl
       PARAMETER(defaulttopsl = 5.0d0)
       INTEGER, PARAMETER :: NX = 720, NY = 360
-      INTEGER, PARAMETER :: NE = 10, maxn_at = 8, NS = 16
+      INTEGER, PARAMETER :: NE = 10, maxn_at = 7, NS = 16
 
       REAL*8 lat,lon,dep,ca(12,31),npp(maxnft),lai(maxnft),evp(maxnft)
       REAL*8 gpp(maxnft),sresp(maxnft),evt(maxnft),soilt,grassrc,resp
@@ -80,7 +80,9 @@
       REAL*8 sla_int(maxnft),sla_int_er(maxnft)
       REAL*8 sla_slope(maxnft),sla_slope_er(maxnft)
       REAL*8 atprop2(maxn_at,maxn_at)
+      REAL*8 atharvest(maxn_at)
       REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
+      REAL*8 cluseh(maxn_at,maxyrs)
       REAL*8 sum_cov_test(maxnft)
 
 
@@ -2180,7 +2182,7 @@ C The following order is order of land types in the input.dat file
             !aggmap_SDGVM_to_aggHyde(16:17) =  4 
 C The following ordering is the order of ft's in the input.dat file
             aggmap_SDGVM_to_aggHyde(1)     =  0 
-            aggmap_SDGVM_to_aggHyde(2)     =  8 
+            aggmap_SDGVM_to_aggHyde(2)     =  7 
             aggmap_SDGVM_to_aggHyde(3:4)   =  2 
             aggmap_SDGVM_to_aggHyde(5)     =  5 
             aggmap_SDGVM_to_aggHyde(6)     =  6 
@@ -2196,7 +2198,7 @@ C The following ordering is the order of ft's in the input.dat file
 
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,lutab2,
-     &stpname,stpname_t,stwdg,cluse2)
+     &stpname,stpname_t,stwdg,cluse2,cluseh)
 
       !loop added for testing purposes
           DO ft=1,nft
@@ -2218,16 +2220,22 @@ C The following ordering is the order of ft's in the input.dat file
              write(*,FMT="(A)") 'SS2'
              write(*,*)'     ','     primf', '     primn', '     secdf',
      &              '     secdn', '    c3crop', '    c4crop',
-     &              '    pastnr', '     urban' 
+     &              '     urban', '      harv' 
 
-             write(*,FMT="(A,8E10.3)") ' primf',cluse2(1,:,1)
-             write(*,FMT="(A,8E10.3)") ' primn',cluse2(2,:,1)
-             write(*,FMT="(A,8E10.3)") ' secdf',cluse2(3,:,1)
-             write(*,FMT="(A,8E10.3)") ' secdn',cluse2(4,:,1)
-             write(*,FMT="(A,8E10.3)") 'c3crop',cluse2(5,:,1)
-             write(*,FMT="(A,8E10.3)") 'c4crop',cluse2(6,:,1)
-             write(*,FMT="(A,8E10.3)") 'pastnr',cluse2(7,:,1)
-             write(*,FMT="(A,8E10.3)") ' urban',cluse2(8,:,1)
+             write(*,FMT="(A,8E10.3)") ' primf',cluse2(1,:,1),
+     &           cluseh(1,1)
+             write(*,FMT="(A,8E10.3)") ' primn',cluse2(2,:,1),
+     &           cluseh(2,1)
+             write(*,FMT="(A,8E10.3)") ' secdf',cluse2(3,:,1),
+     &           cluseh(3,1)
+             write(*,FMT="(A,8E10.3)") ' secdn',cluse2(4,:,1),
+     &           cluseh(4,1)
+             write(*,FMT="(A,8E10.3)") 'c3crop',cluse2(5,:,1),
+     &           cluseh(5,1)
+             write(*,FMT="(A,8E10.3)") 'c4crop',cluse2(6,:,1),
+     &           cluseh(6,1)
+             write(*,FMT="(A,8E10.3)") ' urban',cluse2(7,:,1),
+     &           cluseh(7,1)
 
           ELSE
 !             WRITE(*,*) ' BARE   CITY   C3     C4     C3crop ',
@@ -3541,6 +3549,22 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
             ENDDO
             ENDIF
 
+            IF (ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+            at = aggmap_SDGVM_to_aggHyde(ft)
+              ! logic below is identical to the co2 logic
+              if((spinl.gt.0).and.(iyear.gt.spinl)) then
+                atharvest(at) = cluseh(at,iyear-iyear_adj)
+              else
+C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
+                if(co2const.gt.0.0) then !For TRENDY S1-S3
+C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
+                  atharvest(at) = cluseh(at,1)
+                else
+                  atharvest(at) = cluseh(at,iyear-iyear_adj)
+                endif  
+              endif  
+            ENDIF
+
 
           ENDDO
           IF (ftprop(1).LT.0.0d0) THEN
@@ -3565,7 +3589,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
      &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,atprop2,
-     &aggmap_SDGVM_to_aggHyde)
+     &atharvest,aggmap_SDGVM_to_aggHyde)
 
         PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '
         PRINT '(16F11.6)',ftprop1(1:nft)
