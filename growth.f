@@ -149,15 +149,17 @@
           ! losses to ft from wood harvest in ft 
           !   from at.EQ.2 (primn) or at.EQ.1 (primf)
           ! don't do for at.EQ.4 (secdn) 
-            ftprop(ft)  = ftprop(ft)  - ft2frac(ft) *atharvest(at)
+            ftprop(ft) = ftprop(ft) - ft2frac(ft)*atharvest(at)
           endif
 
-          ! losses to ft from conversion to urban cover (at.EQ.7)
-          ftprop(ft)  = ftprop(ft)  - ft2frac(ft) *atprop2(at,7)
+          ! losses to ft from conversion to urban cover (at2.EQ.7)
+          ftprop(ft) = ftprop(ft) - ft2frac(ft)*atprop2(at,7)
 
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
 
+            ! gains to ft from conversion from urban cover (at.EQ.7)
+            ftprop(ft) = ftprop(ft) + ft2frac(ft2)*atprop2(7,at2)
            
             if(at2.EQ.4 .AND. at.EQ.2) then
             ! gains to ft2 from wood harvest in ft 
