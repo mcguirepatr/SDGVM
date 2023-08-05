@@ -126,6 +126,7 @@
            
         if((compute_closs.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then
          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
+
           at = aggmap_SDGVM_to_aggHyde(ft)
 
 !compute fractions of cover (ft2frac(ft2)) of each ft2 in each aggregated class at2 
@@ -150,6 +151,9 @@
           ! don't do for at.EQ.4 (secdn) 
             ftprop(ft)  = ftprop(ft)  - ft2frac(ft) *atharvest(at)
           endif
+
+          ! losses to ft from conversion to urban cover (at.EQ.7)
+          ftprop(ft)  = ftprop(ft)  - ft2frac(ft) *atprop2(at,7)
 
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
@@ -176,7 +180,7 @@
             ! split the gains from each at2 from each ft2 by a fraction ft2frac(ft2)
             ftprop(ft) = ftprop(ft) + ft2frac(ft2)*atprop2(at2,at)
 
-            IF (debug .EQV. .TRUE. .AND. (at.eq.2)) THEN
+            IF (debug .EQV. .TRUE. .AND. (at.eq.7)) THEN
                 PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 )',
      &              'GHG1',
      &              at2,at,ft2,ft,
