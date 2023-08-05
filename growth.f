@@ -144,18 +144,38 @@
             endif
           ENDDO
 
-          ftprop(ft) = ftprop(ft) - ft2frac(ft)*atharvest(at)
+          if(at.EQ.2 .OR. at.EQ.1) then
+          ! losses to ft from wood harvest in ft 
+          !   from at.EQ.2 (primn) or at.EQ.1 (primf)
+          ! don't do for at.EQ.4 (secdn) 
+            ftprop(ft)  = ftprop(ft)  - ft2frac(ft) *atharvest(at)
+          endif
+
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
+
+           
+            if(at2.EQ.4 .AND. at.EQ.2) then
+            ! gains to ft2 from wood harvest in ft 
+            !   for at2.EQ.4 (secdn) from at.EQ.2 (primn)
+              ftprop(ft2) = ftprop(ft2) + ft2frac(ft2)*ft2frac(ft)
+     &*atharvest(at)
+            endif
+
+            if(at2.EQ.4 .AND. at.EQ.1) then
+            ! gains to ft2 from wood harvest in ft 
+            !   for at2.EQ.4 (secdn) from at.EQ.1 (primf)
+              ftprop(ft2) = ftprop(ft2) + ft2frac(ft2)*ft2frac(ft)
+     &*atharvest(at)
+            endif
+
             ! losses from ft to ft2: !atprop2 additive in %/year
             ftprop(ft) = ftprop(ft) - ft2frac(ft2)*atprop2(at,at2)
+
             ! gains to ft from ft2:
             ! split the gains from each at2 from each ft2 by a fraction ft2frac(ft2)
             ftprop(ft) = ftprop(ft) + ft2frac(ft2)*atprop2(at2,at)
-!            IF (debug .EQV. .TRUE.) THEN
-!              PRINT '(A I2 I2 I3 I3 F9.6 F9.6)','GG0',
-!     &               at,at2,ft,ft2,ftprop(ft)*1d-2,sum_cov(ft)
-!            ENDIF
+
             IF (debug .EQV. .TRUE. .AND. (at.eq.2)) THEN
                 PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 )',
      &              'GHG1',
