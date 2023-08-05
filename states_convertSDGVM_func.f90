@@ -341,24 +341,25 @@
            ENDIF
           ! end if
 
-           DO v=1,NVT-4 ! skip bioh 
+           DO v=1,NVT-5 ! skip bioh 
             data_in_t(v,:,:) = NA        !data_in_t = transitions matrix element for transition with the name varname_t(v)
             CALL CHECK( NF90_GET_VAR(ncid_t, varid_t(v), data_in_t(v,1:maxii,1:maxjj), start=[X0,Y0,t], count=[maxii,maxjj,1]) )
+            !write(*,*)v,NVT-5,NVT-10,NVT,varname_t(v)
             IF(v.LE.NVT-10) THEN
                from_t = varname_t(v)(1:5)   !from_t = the state from which the transition is coming
                to_t   = varname_t(v)(10:14) !to_t   = the state to   which the transition is going 
             ELSE
                to_t = 'harv'
-               IF(varname_t(v).EQ.'primf_harv') THEN 
+               IF(     varname_t(v)(1:10).EQ.'primf_harv') THEN 
                   from_t = 'primf'
-               ELSE IF(varname_t(v).EQ.'primn_harv') THEN 
+               ELSE IF(varname_t(v)(1:10).EQ.'primn_harv') THEN 
                   from_t = 'primn'
-               ELSE IF(varname_t(v).EQ.'secmf_harv') THEN  !wood-area harvest from mature forest
-                  from_t = 'secdf'
-               ELSE IF(varname_t(v).EQ.'secyf_harv') THEN  !wood-area harvest from young forest 
-                  from_t = 'secdf'
-               ELSE IF(varname_t(v).EQ.'secnf_harv') THEN  !wood-area harvest from non-forest 
-                  from_t = 'secnf'
+               ELSE IF(varname_t(v)(1:10).EQ.'secmf_harv') THEN  !wood-area harvest from mature forest
+                  from_t = 'secdf' !aggregate young and mature
+               ELSE IF(varname_t(v)(1:10).EQ.'secyf_harv') THEN  !wood-area harvest from young forest 
+                  from_t = 'secdf' !aggregate young and mature
+               ELSE IF(varname_t(v)(1:10).EQ.'secnf_harv') THEN  !wood-area harvest from non-forest 
+                  from_t = 'secdn' !note the different spelling from 'secnf_harv'
                ENDIF
             ENDIF
 
