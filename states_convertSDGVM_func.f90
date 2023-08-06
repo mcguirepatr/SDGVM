@@ -355,9 +355,9 @@
                ELSE IF(varname_t(v)(1:10).EQ.'primn_harv') THEN 
                   from_t = 'primn'
                ELSE IF(varname_t(v)(1:10).EQ.'secmf_harv') THEN  !wood-area harvest from mature forest
-                  from_t = 'secdf' !aggregate young and mature
-               ELSE IF(varname_t(v)(1:10).EQ.'secyf_harv') THEN  !wood-area harvest from young forest 
-                  from_t = 'secdf' !aggregate young and mature
+                  from_t = 'secdf' !don't aggregate young and mature; only count mature
+!               ELSE IF(varname_t(v)(1:10).EQ.'secyf_harv') THEN  !wood-area harvest from young forest 
+!                  from_t = 'secdf' !don't aggregate young and mature
                ELSE IF(varname_t(v)(1:10).EQ.'secnf_harv') THEN  !wood-area harvest from non-forest 
                   from_t = 'secdn' !note the different spelling from 'secnf_harv'
                ENDIF
@@ -375,13 +375,16 @@
                ENDIF
 
                ! aggregate harvests for Hyde landcover types;
-               ! this combines mature forest with young forest
+               ! this does not combine mature forest with young forest;
+               ! only wood harvest from mature forest is counted
                IF(to_t == 'harv') THEN
-                 data_out_harvest(aggmap(v2),:,:) = data_out_harvest(aggmap(v2),:,:) + dummya
-                 if(t == SINDEX) then
+                 IF(varname_t(v)(1:10).NE.'secyf_harv') THEN
+                   data_out_harvest(aggmap(v2),:,:) = data_out_harvest(aggmap(v2),:,:) + dummya
+                   if(t == SINDEX) then
                     PRINT *, varname_t(v), from_t,to_t, v2, aggmap(v2),100.0*dummya(2,2),  &
                             data_out_harvest(aggmap(v2),2,2)
-                 end if
+                   end if
+                 ENDIF
                ELSE
                ! aggregate transitions for  Hyde landcover types 
                  DO v3=1,NV-2
