@@ -1965,7 +1965,10 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 *  site loop                              
 *----------------------------------------------------------------------*
-      DO site=1,sites
+!PCM for running a single site in the main run from a gridded spinup;
+!PCM (other changes below)
+      DO site=11,11
+!      DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
 *    standard setting is .FALSE.                                       *
@@ -2565,8 +2568,13 @@ c     &site_dat,lat,lon,ca
 
         ELSE
       
-          IF ((abs(lat-zlat).GT.0.001).OR.
-     &(abs(lon-zlon).GT.0.001)) THEN
+!PCM Comment this out for running a single site in the main run from a gridded spinup
+!         IF ((abs(lat-zlat).GT.0.001).OR.
+!     &(abs(lon-zlon).GT.0.001)) THEN
+
+!PCM for running a single site in the main run from a gridded spinup
+         DO WHILE ((abs(lat-zlat).GT.0.001).OR.
+     &(abs(lon-zlon).GT.0.001))
 
           READ(70,*) zlat,zlon
           IF ((abs(lat-zlat).GT.0.001).OR.
@@ -2574,7 +2582,8 @@ c     &site_dat,lat,lon,ca
             WRITE(*,'("Error lat and lon dont match.")')
             WRITE(*,*) lat,lon
             WRITE(*,*) zlat,zlon
-            STOP
+!PCM comment the STOP out for running a single site in the main run from a gridded spinup
+!            STOP
           ENDIF
           READ(70,*) (zs1(ft),ft=1,nft)
           READ(70,*) (zs2(ft),ft=1,nft)
@@ -2645,7 +2654,10 @@ c     &site_dat,lat,lon,ca
             READ(79,*) (pnlc(i,ft),i=1,12)
             READ(79,*) (enzs(i,ft),i=1,12)
           ENDDO
-          ENDIF
+!PCM comment the ENDIF out for running a single site in the main run from a gridded spinup
+!          ENDIF
+!PCM uncomment the ENDDO for running a single site in the main run from a gridded spinup
+          ENDDO !PCM
 
           !print*, vcmax(1,:)
 
