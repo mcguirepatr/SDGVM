@@ -110,7 +110,7 @@
         DO age=1,ftmor(ft)
           sum_cov(ft) = sum_cov(ft) + cov(age,ft)
         ENDDO
-        print*, sum_cov(ft)
+        print*, 'ft SUM_COV(ft):',ft, sum_cov(ft)
 
         IF ( ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
           ! do for both ftphen(ft) == 1 and 2
@@ -124,7 +124,11 @@
           ENDIF
         ENDIF
            
-        if((compute_closs.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then
+        if((sum_cov(ft).le.0d0)) then !PCM
+          sum_cov(ft) = ftprop(ft)
+        endif
+!PCM        if((compute_closs.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then
+        if((compute_closs.EQV..TRUE.)) then
          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
 
           at = aggmap_SDGVM_to_aggHyde(ft)
@@ -145,54 +149,59 @@
             endif
           ENDDO
 
-          if(at.EQ.2 .OR. at.EQ.1) then
+          if(at.EQ.1 .OR. at.EQ.2) then
           ! losses to ft from wood harvest in ft 
-          !   from at.EQ.2 (primn) or at.EQ.1 (primf)
-          ! don't do for at.EQ.4 (secdn) 
             ftprop(ft) = ftprop(ft) - ft2frac(ft)*atharvest(at)
           endif
 
           ! losses to ft from conversion to urban cover (at2.EQ.7)
           ftprop(ft) = ftprop(ft) - ft2frac(ft)*atprop2(at,7)
 
+          ! gains to ft from conversion from urban cover (at2.EQ.7)
+          ftprop(ft) = ftprop(ft) + ft2frac(ft)*atprop2(7,at)
+
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
-
-            ! gains to ft from conversion from urban cover (at.EQ.7)
-            ftprop(ft) = ftprop(ft) + ft2frac(ft2)*atprop2(7,at2)
            
-            if(at2.EQ.4 .AND. at.EQ.2) then
+            if(at2.EQ.4 .AND. at.EQ.2 ) then
             ! gains to ft2 from wood harvest in ft 
             !   for at2.EQ.4 (secdn) from at.EQ.2 (primn)
               ftprop(ft2) = ftprop(ft2) + ft2frac(ft2)*ft2frac(ft)
-     &*atharvest(at)
+     &              *atharvest(at)
             endif
 
-            if(at2.EQ.4 .AND. at.EQ.1) then
+            if(at2.EQ.3 .AND. at.EQ.1 ) then
             ! gains to ft2 from wood harvest in ft 
-            !   for at2.EQ.4 (secdn) from at.EQ.1 (primf)
+            !   for at2.EQ.3 (secdf) from at.EQ.1 (primf)
               ftprop(ft2) = ftprop(ft2) + ft2frac(ft2)*ft2frac(ft)
-     &*atharvest(at)
+     &              *atharvest(at)
             endif
 
             ! losses from ft to ft2: !atprop2 additive in %/year
-            ftprop(ft) = ftprop(ft) - ft2frac(ft2)*atprop2(at,at2)
+            ! split the losses to each at2 from each ft2 by a fraction ft2frac(ft2)
+            ! split the losses from each ft by a fraction ft2frac(ft)
+            ftprop(ft) = ftprop(ft) -
+     &              ft2frac(ft)*ft2frac(ft2)*atprop2(at,at2)
 
             ! gains to ft from ft2:
             ! split the gains from each at2 from each ft2 by a fraction ft2frac(ft2)
-            ftprop(ft) = ftprop(ft) + ft2frac(ft2)*atprop2(at2,at)
+            ! split the gains to each ft by a fraction ft2frac(ft)
+            ftprop(ft) = ftprop(ft) +
+     &              ft2frac(ft)*ft2frac(ft2)*atprop2(at2,at)
 
-            IF (debug .EQV. .TRUE. .AND. (at.eq.7)) THEN
-                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 )',
+            IF (debug .EQV. .TRUE. .AND. (at.eq.1)) THEN
+                PRINT
+     &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
      &              'GHG1',
      &              at2,at,ft2,ft,
-     &              ft2frac(ft2),atprop2(at2,at),ftprop(ft),
-     &              sum_cov(ft),atharvest(at)
-                PRINT '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 )',
+     &              ft2frac(ft),ft2frac(ft2),atprop2(at2,at),
+     &              ftprop(ft),sum_cov(ft),atharvest(at)
+                PRINT
+     &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
      &              'GHL1',
      &              at,at2,ft,ft2,
-     &              ft2frac(ft2),atprop2(at,at2),ftprop(ft),
-     &              sum_cov(ft),atharvest(at)
+     &              ft2frac(ft),ft2frac(ft2),atprop2(at,at2),
+     &              ftprop(ft),sum_cov(ft),atharvest(at)
             ENDIF
           ENDDO
          ENDIF
