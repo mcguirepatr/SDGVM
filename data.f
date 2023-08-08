@@ -1157,7 +1157,7 @@ c     look for the first year
 CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
          IF(ilanduse.EQ.3 .or. ilanduse.EQ.5 ) THEN
            compute_next_year = .false.
-           get_transitions = .false.
+           get_transitions = .true. !PCM for now
          ELSE IF(ilanduse.EQ.4 .or. ilanduse.EQ.6 ) THEN
            !compute_next_year = .true. !for testing: add transitions to states
            compute_next_year = .false.
@@ -1292,7 +1292,7 @@ C            ENDIF
               WRITE(*,*) ! Assumes default "ADVANCE='yes'".
           ENDIF
 
-          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
+          IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
            DO k3=1,maxn_at
             DO k2=1,maxn_at
               agclassprop2(agclasses(k3),agclasses(k2)) = 0
@@ -1350,7 +1350,7 @@ C            ENDIF
            ENDDO ! end of k3 loop over the agclasses
           END IF
 
-          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
+          IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
             DO k3=1,maxn_at
               agclassprop(agclasses(k3)) = 0
 
@@ -1404,7 +1404,7 @@ C interpolation in the BI_LIN step above
             ENDDO
           ENDDO
 
-          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
+          IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
            atprop2(:,:) = agclassprop2(1:maxn_at,1:maxn_at) !PCM: kluge: assumes lutab2(iat3,iat3) = 100.0
            atharvest(:) = agclassprop(1:maxn_at) !PCM: kluge: assumes lutab2(iat3,iat3) = 100.0
 !PCM: try simplified version above, first; comment out these lines
@@ -1460,7 +1460,7 @@ c
         ENDIF
 
 
-        IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6 ) THEN !PCM
+        IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
          DO iat3=1,maxn_at
           cluseh(iat3,i)       = atharvest(iat3)
           DO iat2=1,maxn_at
