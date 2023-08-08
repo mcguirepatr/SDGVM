@@ -1967,8 +1967,8 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 !PCM for running a single site in the main run from a gridded spinup;
 !PCM (other changes below)
-      DO site=11,11
-!      DO site=1,sites
+!      DO site=1,1
+      DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
 *    standard setting is .FALSE.                                       *
@@ -2174,7 +2174,7 @@ C           SYR = -1
 C           NYR = -1 
 C         ENDIF
           lutab2(:,:)                      =  0.0
-          IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+          IF(ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
 C The following order is order of land types in the input.dat file
             !aggmap_SDGVM_to_aggHyde(1)     =  0 
             !aggmap_SDGVM_to_aggHyde(2:6)   =  1 
@@ -2569,12 +2569,12 @@ c     &site_dat,lat,lon,ca
         ELSE
       
 !PCM Comment this out for running a single site in the main run from a gridded spinup
-!         IF ((abs(lat-zlat).GT.0.001).OR.
-!     &(abs(lon-zlon).GT.0.001)) THEN
+         IF ((abs(lat-zlat).GT.0.001).OR.
+     &(abs(lon-zlon).GT.0.001)) THEN
 
 !PCM for running a single site in the main run from a gridded spinup
-         DO WHILE ((abs(lat-zlat).GT.0.001).OR.
-     &(abs(lon-zlon).GT.0.001))
+!         DO WHILE ((abs(lat-zlat).GT.0.001).OR.
+!     &(abs(lon-zlon).GT.0.001))
 
           READ(70,*) zlat,zlon
           IF ((abs(lat-zlat).GT.0.001).OR.
@@ -2583,7 +2583,7 @@ c     &site_dat,lat,lon,ca
             WRITE(*,*) lat,lon
             WRITE(*,*) zlat,zlon
 !PCM comment the STOP out for running a single site in the main run from a gridded spinup
-!            STOP
+            STOP
           ENDIF
           READ(70,*) (zs1(ft),ft=1,nft)
           READ(70,*) (zs2(ft),ft=1,nft)
@@ -2655,9 +2655,9 @@ c     &site_dat,lat,lon,ca
             READ(79,*) (enzs(i,ft),i=1,12)
           ENDDO
 !PCM comment the ENDIF out for running a single site in the main run from a gridded spinup
-!          ENDIF
+          ENDIF
 !PCM uncomment the ENDDO for running a single site in the main run from a gridded spinup
-          ENDDO !PCM
+!          ENDDO !PCM
 
           !print*, vcmax(1,:)
 
@@ -2824,6 +2824,33 @@ c     &site_dat,lat,lon,ca
 
         year    = yearv(iyear)
         metyear = met_yearv(iyear)
+        PRINT*, 'YEAR=',iyear,year,metyear
+        write(*,FMT="(A)") 'UU1'
+        WRITE(*,*) ' BARE   CITY   C3p    C4p    C3crop ',
+     &'C4crop C3s    C4s    Ev_Bp  Ev_Np  Dc_Bp ',
+     &'Dc_Np  Ev_Bs  Ev_Ns  Dc_Bs  Dc_Ns'
+
+        write(*,FMT="(16F7.3)") cluse(1:nft,iyear)
+        !write(*,FMT="(16F7.3)") sum_cov_test(1:nft)
+        write(*,FMT="(A)") 'UU2'
+        write(*,*)'     ','     primf', '     primn', '     secdf',
+     &                    '     secdn', '    c3crop', '    c4crop',
+     &                    '     urban', '      harv' 
+
+        write(*,FMT="(A,8E10.3)") ' primf',cluse2(1,:,iyear),
+     &           cluseh(1,iyear)
+        write(*,FMT="(A,8E10.3)") ' primn',cluse2(2,:,iyear),
+     &           cluseh(2,iyear)
+        write(*,FMT="(A,8E10.3)") ' secdf',cluse2(3,:,iyear),
+     &           cluseh(3,iyear)
+        write(*,FMT="(A,8E10.3)") ' secdn',cluse2(4,:,iyear),
+     &           cluseh(4,iyear)
+        write(*,FMT="(A,8E10.3)") 'c3crop',cluse2(5,:,iyear),
+     &           cluseh(5,iyear)
+        write(*,FMT="(A,8E10.3)") 'c4crop',cluse2(6,:,iyear),
+     &           cluseh(6,iyear)
+        write(*,FMT="(A,8E10.3)") ' urban',cluse2(7,:,iyear),
+     &           cluseh(7,iyear)
 
 
         !APW - not sure what this does
@@ -3543,7 +3570,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
               ftprop(ft) = 0.0d0
             ENDIF
 
-            IF (ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+            IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
             at = aggmap_SDGVM_to_aggHyde(ft)
             DO at2=1,maxn_at
               ! logic below is identical to the co2 logic
@@ -3561,7 +3588,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
             ENDDO
             ENDIF
 
-            IF (ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
+            IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
             at = aggmap_SDGVM_to_aggHyde(ft)
               ! logic below is identical to the co2 logic
               if((spinl.gt.0).and.(iyear.gt.spinl)) then
@@ -3609,7 +3636,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
      &rln)
         !PRINT *,'SS3',nppstore(1:nft)
 
-        IF (ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN !turn on after 1st year
+        IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN !turn on after 1st year
            closed_loop_ft = .TRUE.
         ENDIF
 
