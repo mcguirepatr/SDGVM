@@ -2217,6 +2217,7 @@ C The following ordering is the order of ft's in the input.dat file
 
           write(*,FMT="(A)") 'SS1'
           IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
+            IF(debug .EQV. .TRUE.) THEN
              WRITE(*,*) 'BARE       CITY      C3p        C4p        ',
      &    'C3crop     ','C4crop     C3s       C4s        Ev_Bp      ',
      &    'Ev_Np      ','Dc_Bp      Dc_Np     Ev_Bs      Ev_Ns      ',
@@ -2244,7 +2245,7 @@ C The following ordering is the order of ft's in the input.dat file
      &           cluseh(6,1)
              write(*,FMT="(A,8E14.7)") ' urban',cluse2(7,:,1),
      &           cluseh(7,1)
-
+           ENDIF
           ELSE
 !             WRITE(*,*) ' BARE   CITY   C3     C4     C3crop ',
 !     &'C4crop Ev_Bl  Ev_Nl  Dc_Bl ',
@@ -4821,29 +4822,33 @@ c       kg_beta    = kg_beta/wi
           ENDDO
           ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
-        WRITE(*,'(''check0'',3f13.6)') ccheck
-        WRITE(*,'(''avnpp'',3f12.6)') avnpp 
-        WRITE(*,'(''ans1'',3f12.6)') ans1 
-        WRITE(*,'(''tc0(1)'',3f12.6)') tc0(1) 
-        WRITE(*,'(''tc0(2)'',3f12.6)') tc0(2) 
-        WRITE(*,'(''tc0(3)'',3f12.6)') tc0(3) 
-        WRITE(*,'(''tc0(4)'',3f12.6)') tc0(4) 
-        WRITE(*,'(''tc0(5)'',3f12.6)') tc0(5) 
-        WRITE(*,'(''tc0(6)'',3f12.6)') tc0(6) 
-        WRITE(*,'(''tc0(7)'',3f12.6)') tc0(7) 
-        WRITE(*,'(''tc0(8)'',3f12.6)') tc0(8) 
-        WRITE(*,'(''avlch'',3f12.6)') avlch 
-        WRITE(*,'(''avsresp'',3f12.6)') avsresp 
-        WRITE(*,'(''firec'',3f12.6)') firec 
-        WRITE(*,'(''avyield'',3f12.6)') avyield 
-        WRITE(*,'(''flulccc'',3f12.6)') flulccc 
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,'(''check0'',3f13.6)') ccheck
+          WRITE(*,'(''avnpp'',3f12.6)') avnpp 
+          WRITE(*,'(''ans1'',3f12.6)') ans1 
+          WRITE(*,'(''tc0(1)'',3f12.6)') tc0(1) 
+          WRITE(*,'(''tc0(2)'',3f12.6)') tc0(2) 
+          WRITE(*,'(''tc0(3)'',3f12.6)') tc0(3) 
+          WRITE(*,'(''tc0(4)'',3f12.6)') tc0(4) 
+          WRITE(*,'(''tc0(5)'',3f12.6)') tc0(5) 
+          WRITE(*,'(''tc0(6)'',3f12.6)') tc0(6) 
+          WRITE(*,'(''tc0(7)'',3f12.6)') tc0(7) 
+          WRITE(*,'(''tc0(8)'',3f12.6)') tc0(8) 
+          WRITE(*,'(''avlch'',3f12.6)') avlch 
+          WRITE(*,'(''avsresp'',3f12.6)') avsresp 
+          WRITE(*,'(''firec'',3f12.6)') firec 
+          WRITE(*,'(''avyield'',3f12.6)') avyield 
+          WRITE(*,'(''flulccc'',3f12.6)') flulccc 
+        ENDIF
 !        ccheck = ccheck - (ans1 + tc0(1) + 
 !     &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) - 
 !     &(avnpp-avlch-avsresp-firec)) - avyield
         ccheck = ccheck + avnpp - (ans1 + tc0(1) + 
      &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) + 
      &avlch + avsresp + firec +  avyield + flulccc)
-        WRITE(*,'(''check'',3f13.6)') ccheck
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,'(''check'',3f13.6)') ccheck
+        ENDIF
 
 *----------------------------------------------------------------------*
 * Check carbon and water balance, write to 'DIAG' if any problems.     *

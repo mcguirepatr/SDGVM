@@ -197,7 +197,7 @@
             ftprop(ft) = ftprop(ft) +
      &              ft2frac(ft)*ft2frac(ft2)*atprop2(at2,at)
 
-            IF (debug .EQV. .TRUE. .AND. (at.eq.1)) THEN
+            IF ((debug .EQV. .TRUE.) .AND. (at.eq.1)) THEN
                 PRINT
      &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
      &              'GHG1',

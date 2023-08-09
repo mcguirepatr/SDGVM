@@ -1010,7 +1010,7 @@ C PCM2      WRITE(*,*) '111111111'
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,lutab2,
-     &pname,pname_t,wdg,cluse2,cluseh)
+     &pname,pname_t,wdg,cluse2,cluseh,debug)
 *----------------------------------------------------------------------*
       USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
@@ -1041,6 +1041,7 @@ C PCM2      WRITE(*,*) '111111111'
       INTEGER n_fields4000
       LOGICAL l_lu,year0set
       LOGICAL compute_next_year,get_transitions,mindx(4,4)
+      LOGICAL :: debug !used to print out more debugging info
 
 
       IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM Use states2b.nc or transitions2b.nc file: half-res
@@ -1168,20 +1169,26 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
          CALL states_convertSDGVM_func(years(1),years(n),INT(rcol), ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
      &          INT(rrow),4,get_transitions,compute_next_year, 
      &          pname,pname_t,wdg,
-     &          SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST)  
-         WRITE(*,*)
+     &          SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST,debug)  
+         IF(debug .EQV. .TRUE.) THEN
+           WRITE(*,*)
      &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
      &'Shrup    C3p      C4p      C3crop   C4crop   ',
      &'Ev_Bs    Dc_Bs    Ev_Ns    Dc_Ns    Shrus    C3s    C4s'
+         ENDIF
       ELSE
          SDGVM_LUC=0.0
          SDGVM_LUC2=0.0
          SDGVM_LUC2_HARVEST=0.0
-         WRITE(*,*)
+         IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,*)
      &'    t   BARE     Ev_Bl    Dc_Bl    Ev_Nl    Dc_Nl    ',
      &'Shrub    C3       C4       C3crop   C4crop   '
+         ENDIF
       ENDIF
-      write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,2,2)
+      IF(debug .EQV. .TRUE.) THEN
+        write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,2,2)
+      ENDIF
 
 
       DO i=1,yrfa-yr0a+1
@@ -1192,7 +1199,8 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
           !print*, st2(1:4) 
           j=j+1
 
-          IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+          IF((MOD(years(j-1)-years(1),20)==0).AND.
+     & (debug.EQV..TRUE.))THEN 
             WRITE(*,FMT='(A1)', ADVANCE='no') 'D' 
 
             IF(compute_next_year) THEN
@@ -1272,7 +1280,8 @@ C            ENDIF
 
             classprop(classes(k)) = ans
 
-            IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+            IF((MOD(years(j-1)-years(1),20)==0)
+     &           .AND.(debug.EQV..TRUE.))THEN 
               if(num_land .GT. 0) THEN
                 WRITE(*,FMT='(F9.4)',ADVANCE='no') 
      &                 ans 
@@ -1288,7 +1297,8 @@ C            ENDIF
 
           ENDDO ! end of loop over the classes
 
-          IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+          IF((MOD(years(j-1)-years(1),20)==0)
+     &                   .AND.(debug.EQV..TRUE.))THEN 
               WRITE(*,*) ! Assumes default "ADVANCE='yes'".
           ENDIF
 
@@ -1451,12 +1461,14 @@ c
 !         ENDIF
 !         write(*,'(I4,16F8.2)') yr0a+i-1, cluse(1:16,i)  
         ELSE
-         IF( MOD(yr0a+i-2,20) == 0 ) THEN 
-          WRITE(*,*)
+         IF(debug .EQV. .True.) THEN
+          IF( MOD(yr0a+i-2,20) == 0 ) THEN 
+           WRITE(*,*)
      &'   t    BARE    CITY      C3      C4  C3crop  C4crop',
      &'   Ev_Bl   Ev_Nl   Dc_Bl   Dc_Nl'
+          ENDIF
+          write(*,'(I4,10F8.2)') yr0a+i-1, cluse(1:10,i)  
          ENDIF
-         write(*,'(I4,10F8.2)') yr0a+i-1, cluse(1:10,i)  
         ENDIF
 
 
@@ -1736,7 +1748,7 @@ c
         ENDDO
       ENDDO
 
-      IF( use_bilinear .EQV. .True. ) THEN 
+      IF( use_bilinear .EQV. .TRUE. ) THEN 
 *----------------------------------------------------------------------*
 * Bilinear interpolation.                                              *
 *----------------------------------------------------------------------*
