@@ -423,7 +423,7 @@ c	enddo
         IF (kode.NE.0) THEN
 !PCM          WRITE(*,*) 'No cloud file found using default value'
 !PCM          WRITE(*,*) cld_default
-          WRITE(*,'(''"'',A,''"'')') fname7(1:blank(fname7))
+!PCM          WRITE(*,'(''"'',A,''"'')') fname7(1:blank(fname7))
         ENDIF
 
 

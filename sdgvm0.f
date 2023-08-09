@@ -1993,7 +1993,9 @@ c CLOSE added by Ghislain 15/12/03
           lon = lat_lon(site,2)
         ENDIF
 
-        WRITE(*,*)site,site0+site-1,lat,lon
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,*)site,site0+site-1,lat,lon
+        ENDIF
 
         IF (abs(xseed1).EQ.0) THEN
           IF (site.EQ.1) THEN
@@ -2215,9 +2217,9 @@ C The following ordering is the order of ft's in the input.dat file
             ENDDO
           ENDDO
 
-          write(*,FMT="(A)") 'SS1'
-          IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
-            IF(debug .EQV. .TRUE.) THEN
+          IF(debug .EQV. .TRUE.) THEN
+           write(*,FMT="(A)") 'SS1'
+           IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
              WRITE(*,*) 'BARE       CITY      C3p        C4p        ',
      &    'C3crop     ','C4crop     C3s       C4s        Ev_Bp      ',
      &    'Ev_Np      ','Dc_Bp      Dc_Np     Ev_Bs      Ev_Ns      ',
@@ -2245,13 +2247,13 @@ C The following ordering is the order of ft's in the input.dat file
      &           cluseh(6,1)
              write(*,FMT="(A,8E14.7)") ' urban',cluse2(7,:,1),
      &           cluseh(7,1)
+           ELSE
+             WRITE(*,*) ' BARE   CITY   C3     C4     C3crop ',
+     &'C4crop Ev_Bl  Ev_Nl  Dc_Bl ',
+     &'Dc_Nl '
+             write(*,FMT="(10F7.3)") cluse(1:nft,1)
+             write(*,FMT="(10F7.3)") sum_cov_test(1:nft)
            ENDIF
-          ELSE
-!             WRITE(*,*) ' BARE   CITY   C3     C4     C3crop ',
-!     &'C4crop Ev_Bl  Ev_Nl  Dc_Bl ',
-!     &'Dc_Nl '
-             !write(*,FMT="(10F7.3)") cluse(1:nft,1)
-             !write(*,FMT="(10F7.3)") sum_cov_test(1:nft)
           ENDIF
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN

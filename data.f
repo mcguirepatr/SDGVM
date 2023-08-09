@@ -1152,7 +1152,9 @@ c     look for the first year
       ynorm = rrow - real(int(rrow))
       xnorm = rcol - real(int(rcol))
 *----------------------------------------------------------------------*
-      PRINT *,rrow,rcol,lat,lon
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT *,rrow,rcol,lat,lon
+      ENDIF
 
       IF(ilanduse.GE.3 .and. ilanduse.LE.6 ) THEN
 CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
@@ -1487,8 +1489,10 @@ c
       !- assumes linear interpolation of land-use between years
       !specified in input dataset
       IF ((n-j1+1).ne.1) THEN
-        print*, 'Linear interpolation of dynamic Land-Cover fractions'
-        print*, n,j1,n-j1+1
+        IF(debug .EQV. .True.) THEN
+          print*, 'Linear interpolation of dynamic Land-Cover fractions'
+          print*, n,j1,n-j1+1
+        ENDIF
         DO i=1,years(n)-yr0a-yr_offset
           IF ( (i.EQ.1).OR.((i+yr0a-1).EQ.(years(j1)-yr_offset)) ) THEN
             !print*, j, years(j1), years(j1+1)
