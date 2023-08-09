@@ -28,6 +28,7 @@
       REAL*8 atprop2(n_at,n_at),THRESH
       REAL*8 atharvest(n_at)
       REAL*8 ft2frac(maxnft),at2prop,woodh,totft,loss_nowoodh
+      REAL*8 ftprop_init(maxnft)
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
@@ -104,6 +105,7 @@
       IF (ilanduse.ne.2 ) THEN
       sum_cov(:)     = 0.0d0
       loss           = 0.0d0
+      ftprop_init    = ftprop
       DO ft=2,nft
         !print*, 'G2',ft,ftphen(ft)
         !PRINT*, 'G2a',ft,ftprop(ft) 
@@ -141,11 +143,11 @@
             DO ft3=2,nft
               at3 = aggmap_SDGVM_to_aggHyde(ft3)
               if(at2.eq.at3) then
-                 at2prop = at2prop + ftprop(ft3)  
+                 at2prop = at2prop + ftprop_init(ft3)  
               endif
             ENDDO
             if(at2prop.GT.0.0d0) then
-              ft2frac(ft2) = ftprop(ft2)/at2prop
+              ft2frac(ft2) = ftprop_init(ft2)/at2prop
             endif
           ENDDO
 
@@ -213,6 +215,7 @@
 !            loss_nowoodh = 1d0 - (totft-woodh)*1d-2/sum_cov(ft)
 
          !IF( ftprop(ft) .GT. 1d-1 ) THEN !this discretization leads to carbon imbalances
+         !IF( ftprop(ft) .GT. 1d-2 ) THEN !this prevents cov<0
          IF( ftprop(ft) .GT. 0.0d0 ) THEN
             loss = 1d0 - ftprop(ft)*1d-2/sum_cov(ft)
          ! loss > 0 if there is a loss in cover; loss < 0 if there is a gain in cover
