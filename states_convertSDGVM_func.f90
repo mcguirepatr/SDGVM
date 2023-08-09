@@ -22,7 +22,7 @@
       MODULE FUNCTIONS_CLU
       CONTAINS
       SUBROUTINE states_convertSDGVM_func(SYR,FYR,X0,Y0,DXY,get_transitions,compute_next_year, &
-           pname,pname_t,wdg,data_out_SDGVM,data_out_AggHydeTransitions,data_out_AggHarvest )
+           pname,pname_t,wdg,data_out_SDGVM,data_out_AggHydeTransitions,data_out_AggHarvest,debug )
       USE netcdf
       IMPLICIT NONE
 
@@ -74,7 +74,7 @@
       LOGICAL :: mask(DXY, DXY)
       LOGICAL :: mask_SDGVM(DXY, DXY)
       LOGICAL :: esamask(NE2,DXY, DXY)
-      LOGICAL debug
+      LOGICAL :: debug !used to print out more debugging info
       ! setup ESA arrays
       INTEGER :: esaarray_global(NE2,NX,NY)
       REAL*8 :: esaarray(NE2,DXY,DXY)
@@ -247,7 +247,9 @@
       maxy=MIN(Y0+DXY-1,NY) 
       maxii=MIN(NX-X0+1,DXY) 
       maxjj=MIN(NY-Y0+1,DXY) 
-      PRINT *,X0,Y0,maxx,maxy,maxii,maxjj
+      IF(debug) THEN
+        PRINT *,X0,Y0,maxx,maxy,maxii,maxjj
+      ENDIF
 
       ! Open ESA CCILCP 2014 dataset 
       !setwd(wdg)
@@ -273,8 +275,11 @@
       END WHERE
 
       num_land = COUNT( esamask(1,:,:) .EQV. .TRUE.)
-      PRINT *, 'ESA num_land=',num_land,'num_tot=',maxii*maxjj 
-      PRINT *, pname(1:blank(pname)) 
+      IF(debug) THEN
+        PRINT *, 'ESA num_land=',num_land,'num_tot=',maxii*maxjj 
+        PRINT *, pname(1:blank(pname)) 
+      ENDIF
+
 
       ! Open the file. NF90_NOWRITE tells netCDF we want read-only access to
       ! the file.
@@ -314,7 +319,9 @@
             ELSEWHERE
               mask = .FALSE.
             END WHERE
-            PRINT *, 'num_land=',num_land,'num_tot=',maxii*maxjj 
+            IF(debug) THEN
+              PRINT *, 'num_land=',num_land,'num_tot=',maxii*maxjj 
+            ENDIF
           END IF
 
         ! for now, use regridded states.nc file from CDO, so we skip the next two steps
@@ -381,8 +388,10 @@
                  IF(varname_t(v)(1:10).NE.'secyf_harv') THEN
                    data_out_harvest(aggmap(v2),:,:) = data_out_harvest(aggmap(v2),:,:) + dummya
                    if(t == SINDEX) then
-                    PRINT *, varname_t(v), from_t,to_t, v2, aggmap(v2),100.0*dummya(2,2),  &
+                    IF(debug) THEN
+                      PRINT *, varname_t(v), from_t,to_t, v2, aggmap(v2),100.0*dummya(2,2),  &
                             data_out_harvest(aggmap(v2),2,2)
+                    ENDIF
                    end if
                  ENDIF
                ELSE
@@ -394,8 +403,10 @@
                     !print 2,2 coords of 4x4 region
                     data_t_agg(aggmap(v2),aggmap(v3),:,:) = data_t_agg(aggmap(v2),aggmap(v3),:,:) + dummya
                     if(t == SINDEX) then
+                     IF(debug) THEN
                       PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),100.0*dummya(2,2),  &
                               data_t_agg(aggmap(v2),aggmap(v3),2,2)
+                     ENDIF
                     end if
                   END IF
                  END DO
@@ -420,7 +431,6 @@
            data_t_agg = data_t_agg * 100.0      
            data_out_harvest = data_out_harvest * 100.0      
 
-           debug = .False.
 
            if(debug) then
 
@@ -489,12 +499,12 @@
           data_out_SDGVM = 255.0 
         END WHERE 
 
-        IF( t == SINDEX ) THEN
-        WRITE(*,*)'JH1' ! Assumes default "ADVANCE='yes'".
-        DO v=1,NS
-          WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,2,2)/100.0 
-        END DO
-        WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+        IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN
+          WRITE(*,*)'JH1' ! Assumes default "ADVANCE='yes'".
+          DO v=1,NS
+            WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,2,2)/100.0 
+          END DO
+          WRITE(*,*) ! Assumes default "ADVANCE='yes'".
         ENDIF
 
         ! deal with forest or grass cover where no forest or grass cover existed in ESA
@@ -515,29 +525,31 @@
 
         IF( t == SINDEX ) THEN
           num_land = COUNT( mask_SDGVM .EQV. .TRUE.)
-          PRINT *, 'SDGVM num_land=',num_land,'num_tot=',maxii*maxjj
-          WRITE(*,FMT='(A5,A2)',ADVANCE='no')'   t','  '
-          IF(print_type=='unagg') THEN
-            DO v=1,NV
-              WRITE(*,FMT='(A9)', ADVANCE='no') varname(v)
-            END DO
-          ELSE IF(print_type=='agg') THEN
-            DO v=1,NV2
-               WRITE(*,FMT='(A9)', ADVANCE='no') varname2(v)
-            END DO
-          ELSE IF(print_type=='sdgvm') THEN
-            DO v=1,NS
-               WRITE(*,FMT='(A9)', ADVANCE='no') varname_sdgvm(v)
-            END DO
-          ELSE IF(print_type=='esa') THEN
-            DO v=1,NE
-               WRITE(*,FMT='(A9)', ADVANCE='no') varname_esa_pfts(v)
-            END DO
+          IF(debug) THEN
+            PRINT *, 'SDGVM num_land=',num_land,'num_tot=',maxii*maxjj
+            WRITE(*,FMT='(A5,A2)',ADVANCE='no')'   t','  '
+            IF(print_type=='unagg') THEN
+              DO v=1,NV
+                WRITE(*,FMT='(A9)', ADVANCE='no') varname(v)
+              END DO
+            ELSE IF(print_type=='agg') THEN
+              DO v=1,NV2
+                 WRITE(*,FMT='(A9)', ADVANCE='no') varname2(v)
+              END DO
+            ELSE IF(print_type=='sdgvm') THEN
+              DO v=1,NS
+                 WRITE(*,FMT='(A9)', ADVANCE='no') varname_sdgvm(v)
+              END DO
+            ELSE IF(print_type=='esa') THEN
+              DO v=1,NE
+                 WRITE(*,FMT='(A9)', ADVANCE='no') varname_esa_pfts(v)
+              END DO
+            END IF
+            WRITE(*,*) ! Assumes default "ADVANCE='yes'".
           END IF
-          WRITE(*,*) ! Assumes default "ADVANCE='yes'".
         END IF
 
-        IF( MOD(t-SINDEX,DT) == 0 ) THEN 
+        IF( (MOD(t-SINDEX,DT) == 0) .AND. (debug .EQV. .TRUE.) ) THEN 
            IF(compute_next_year) THEN
                WRITE(*,FMT='(I5)', ADVANCE='no') t+849+2 !t=1 is the year 850
            ELSE
@@ -573,6 +585,7 @@
            END IF
            WRITE(*,*) ! Assumes default "ADVANCE='yes'".
         END IF
+
       END DO
 
       ! Close the file, freeing all resources.

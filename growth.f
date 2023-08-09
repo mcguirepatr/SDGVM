@@ -7,12 +7,12 @@
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
      &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
      &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen,atprop2,
-     &atharvest,aggmap_SDGVM_to_aggHyde)
+     &atharvest,aggmap_SDGVM_to_aggHyde,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: n_at = 7 !number of aggregated (Hyde, functional) types
       INTEGER, PARAMETER :: NS = 16 !number of SDGVM functional types
-      LOGICAL, PARAMETER :: debug = .TRUE. !used to print out more debugging info
+      LOGICAL :: debug !used to print out more debugging info
       REAL*8 cov(maxage,maxnft),bio(maxage,2,maxnft),bioleaf(maxnft)
       REAL*8 nppstore(maxnft),npp(maxnft),nps(maxnft),tmp(12),prc(12)
       REAL*8 slc(maxnft),rlc(maxnft),firec
@@ -36,12 +36,14 @@
       LOGICAL burn,harvest
       LOGICAL compute_covchange,change_cover
 
-      PRINT '(A)','GG4a ftprop '
-      PRINT '(16F11.6)',ftprop(1:nft)
-      PRINT '(A)','GC4a cov '
-      DO j=1,6 !show first six years of cover
-        PRINT '(16F11.6)',cov(j,1:nft)
-      ENDDO
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GG4a ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(A)','GC4a cov '
+        DO j=1,6 !show first six years of cover
+          PRINT '(16F11.6)',cov(j,1:nft)
+        ENDDO
+      ENDIF
 
 
       IF (ilanduse.eq.2) THEN
@@ -112,7 +114,10 @@
         DO age=1,ftmor(ft)
           sum_cov(ft) = sum_cov(ft) + cov(age,ft)
         ENDDO
-        print*, 'ft SUM_COV(ft):',ft, sum_cov(ft)
+        IF(debug .EQV. .TRUE.) THEN
+          print*, 'ft SUM_COV(ft):',ft, sum_cov(ft)
+        ENDIF
+       
 
         IF ( ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
           ! do for both ftphen(ft) == 1 and 2
@@ -247,7 +252,7 @@
          ! GROSS transitions IF( ftprop(ft)*1d-2 .LT. sum_cov(ft) ) THEN 
           CALL LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &loss,npp,nps,slc,rlc,fireres,flulccc,harvest,
-     &leafdp,ft)
+     &leafdp,ft,debug)
 
           !ngcov(ft) = MAX(-loss_nowoodh,0.d0) * sum_cov(ft) !new growth only for -loss>0
           ngcov(ft) = MAX(-loss,0.d0) * sum_cov(ft) !new growth only for -loss>0
@@ -266,14 +271,16 @@
       ENDDO
       ENDIF
 
-      PRINT '(A)','GG4b ftprop '
-      PRINT '(16F11.6)',ftprop(1:nft)
-      PRINT '(A)','GS4b sum_cov '
-      PRINT '(16F11.6)',sum_cov(1:nft)
-      PRINT '(A)','GN4b tot_ngcov '
-      PRINT '(1F11.6)',tot_ngcov
-      PRINT '(A)','GN4b ngcov '
-      PRINT '(16F11.6)',ngcov(1:nft)
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GG4b ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(A)','GS4b sum_cov '
+        PRINT '(16F11.6)',sum_cov(1:nft)
+        PRINT '(A)','GN4b tot_ngcov '
+        PRINT '(1F11.6)',tot_ngcov
+        PRINT '(A)','GN4b ngcov '
+        PRINT '(16F11.6)',ngcov(1:nft)
+      ENDIF
 *----------------------------------------------------------------------*
 * Compute the likelyhood of fire in the current year 'fprob'.          *
 * 'find' is the fire index                                             *
@@ -287,7 +294,7 @@
 *----------------------------------------------------------------------*
       CALL NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
      &npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,leafdp,
-     &flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS)
+     &flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,debug)
 
 *----------------------------------------------------------------------*
 
@@ -323,17 +330,19 @@
 * ftprop3 contains the proportion of the new growth ngcov to assign to *
 * each ft.                                                             *
 *----------------------------------------------------------------------*
-      PRINT '(A)','GN4c tot_ngcov '
-      PRINT '(1F11.6)',tot_ngcov
-      PRINT '(A)','GN4c ngcov '
-      PRINT '(16F11.6)',ngcov(1:nft)
-      PRINT '(A)','GC4c cov '
-      DO j=1,6 !show first six years of cover
-        PRINT '(16F11.6)',cov(j,1:nft)
-      ENDDO
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GN4c tot_ngcov '
+        PRINT '(1F11.6)',tot_ngcov
+        PRINT '(A)','GN4c ngcov '
+        PRINT '(16F11.6)',ngcov(1:nft)
+        PRINT '(A)','GC4c cov '
+        DO j=1,6 !show first six years of cover
+          PRINT '(16F11.6)',cov(j,1:nft)
+        ENDDO
 
-      PRINT '(A)','GG4c ftprop '
-      PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(A)','GG4c ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+      ENDIF
       norm = 0.0d0
       DO ft=1,nft           
         !PRINT*, 'G7',ft,ftprop(ft) 
@@ -357,10 +366,12 @@
         ftprop3(ft) = 100.0d0*ftprop3(ft)/norm
       ENDDO
 
-      PRINT '(A)','GG4d ftprop '
-      PRINT '(16F11.6)',ftprop(1:nft)
-      PRINT '(A)','GS4d sum_cov '
-      PRINT '(16F11.6)',sum_cov(1:nft)
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GG4d ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(A)','GS4d sum_cov '
+        PRINT '(16F11.6)',sum_cov(1:nft)
+      ENDIF
 
       IF(ilanduse .LT. 3) THEN
          cov(1,1) = tot_ngcov*ftprop3(1)/100.0d0
@@ -459,19 +470,21 @@
 !     &'Ev_Nl      Dc_Bl        Dc_Nl       ' 
 !      ENDIF
 !
-      PRINT '(A)','GG3 COV AGE=1 '
-      PRINT '(16F11.6)',cov(1,1:nft)
-      PRINT '(A)','GG4 COV '
-      PRINT '(16F11.6)',sum_cov_test(1:nft)
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GG3 COV AGE=1 '
+        PRINT '(16F11.6)',cov(1,1:nft)
+        PRINT '(A)','GG4 COV '
+        PRINT '(16F11.6)',sum_cov_test(1:nft)
 !return ftprop for using in gross transitions for next year 
-      PRINT '(A)','GG4e ftprop '
-      PRINT '(16F11.6)',ftprop(1:nft)
-      PRINT '(A)','GH4e ftprop3 '
-      PRINT '(16F11.6)',ftprop3(1:nft)
-      !PRINT '(A)','GG5 BIOL'
-      !PRINT '(16F11.6)',bioleaf(1:nft)
-      !PRINT '(A)','GG6 NPPS'
-      !PRINT '(16F11.6)',nppstore(1:nft)
+        PRINT '(A)','GG4e ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(A)','GH4e ftprop3 '
+        PRINT '(16F11.6)',ftprop3(1:nft)
+        !PRINT '(A)','GG5 BIOL'
+        !PRINT '(16F11.6)',bioleaf(1:nft)
+        !PRINT '(A)','GG6 NPPS'
+        !PRINT '(16F11.6)',nppstore(1:nft)
+      ENDIF
 
 
       RETURN
@@ -1362,7 +1375,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &fprob,npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,
-     &leafdp,flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS)
+     &leafdp,flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
@@ -1374,7 +1387,7 @@
       INTEGER at,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER nft,ftmor(maxnft),ft,age,fireres,n_at,NS
       LOGICAL harvest
-      LOGICAL, PARAMETER :: debug = .TRUE. !used to print out more debugging info
+      LOGICAL debug !used to print out more debugging info
 
       xfprob = fprob
 
@@ -1537,7 +1550,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &loss,npp,nps,slc,rlc,fireres,flulccc,harvest,leafdp,
-     &ft)
+     &ft,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
@@ -1548,13 +1561,16 @@
       REAL*8 tmor,tmor0,npp0,flulccc,xfprob,leafdp(3600,maxnft)
       INTEGER nft,ftmor(maxnft),ft,age,fireres
       LOGICAL harvest
+      LOGICAL debug !used to print out more debugging info
 
 
 *----------------------------------------------------------------------*
 * kill off pfts that have lost cover according to the landuse database * 
 *----------------------------------------------------------------------*
 
-        PRINT '(A)','GG7 LULCC_LOSS'
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT '(A)','GG7 LULCC_LOSS'
+        ENDIF
         IF(loss.GT.0.0d0) THEN
          DO age=1,ftmor(ft)
            rlc(ft) = rlc(ft) + bio(age,2,ft) * 
@@ -1566,8 +1582,10 @@
 
            !update cover array
            cov(age,ft) = cov(age,ft)*( 1.0d0 - loss )
-           PRINT '(2I5,6F12.7)',age,ft,loss,flulccc,bio(age,1,ft),
+           IF(debug .EQV. .TRUE.) THEN
+             PRINT '(2I5,6F12.7)',age,ft,loss,flulccc,bio(age,1,ft),
      &bioleaf(ft),nppstore(ft),cov(age,ft)
+           ENDIF
          ENDDO
         ENDIF
 

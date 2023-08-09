@@ -147,6 +147,7 @@
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
       LOGICAL year0set
+      LOGICAL debug
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -172,6 +173,8 @@
 
 
 *----------------------------------------------------------------------*
+
+      debug = .FALSE.
 
       IF (IARGC().GT.0) THEN
         CALL GETARG(1,buff1)
@@ -2201,7 +2204,7 @@ C The following ordering is the order of ft's in the input.dat file
 
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,lutab2,
-     &stpname,stpname_t,stwdg,cluse2,cluseh)
+     &stpname,stpname_t,stwdg,cluse2,cluseh,debug)
 
       !loop added for testing purposes
           DO ft=1,nft
@@ -2826,34 +2829,37 @@ c     &site_dat,lat,lon,ca
 
         year    = yearv(iyear)
         metyear = met_yearv(iyear)
-        PRINT*, 'YEAR=',iyear,year,metyear
-        write(*,FMT="(A)") 'UU1'
-        WRITE(*,*) ' BARE   CITY   C3p    C4p    C3crop ',
-     &'C4crop C3s    C4s    Ev_Bp  Ev_Np  Dc_Bp ',
-     &'Dc_Np  Ev_Bs  Ev_Ns  Dc_Bs  Dc_Ns'
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT*, 'YEAR=',iyear,year,metyear
+          write(*,FMT="(A)") 'UU1'
+          WRITE(*,*) 'BARE       CITY      C3p        C4p        ',
+     &    'C3crop     ','C4crop     C3s       C4s        Ev_Bp      ',
+     &    'Ev_Np      ','Dc_Bp      Dc_Np     Ev_Bs      Ev_Ns      ',
+     &    'Dc_Bs      ','Dc_Ns      '
 
-        write(*,FMT="(16F11.7)") cluse(1:nft,iyear)
-        !write(*,FMT="(16F7.3)") sum_cov_test(1:nft)
-        write(*,FMT="(A)") 'UU2'
-        write(*,*)'     ','     primf', '     primn', '     secdf',
-     &                    '     secdn', '    c3crop', '    c4crop',
-     &                    '     urban', '      harv' 
+          write(*,FMT="(16F11.7)") cluse(1:nft,iyear)
+          !write(*,FMT="(16F7.3)") sum_cov_test(1:nft)
+          write(*,FMT="(A)") 'UU2'
+          write(*,FMT="(8A14)")
+     &      '     ','     primf', '     primn', '     secdf',
+     &              '     secdn', '    c3crop', '    c4crop',
+     &              '     urban', '      harv' 
 
-        write(*,FMT="(A,8E14.7)") ' primf',cluse2(1,:,iyear),
+          write(*,FMT="(A,8E14.7)") ' primf',cluse2(1,:,iyear),
      &           cluseh(1,iyear)
-        write(*,FMT="(A,8E14.7)") ' primn',cluse2(2,:,iyear),
+          write(*,FMT="(A,8E14.7)") ' primn',cluse2(2,:,iyear),
      &           cluseh(2,iyear)
-        write(*,FMT="(A,8E14.7)") ' secdf',cluse2(3,:,iyear),
+          write(*,FMT="(A,8E14.7)") ' secdf',cluse2(3,:,iyear),
      &           cluseh(3,iyear)
-        write(*,FMT="(A,8E14.7)") ' secdn',cluse2(4,:,iyear),
+          write(*,FMT="(A,8E14.7)") ' secdn',cluse2(4,:,iyear),
      &           cluseh(4,iyear)
-        write(*,FMT="(A,8E14.7)") 'c3crop',cluse2(5,:,iyear),
+          write(*,FMT="(A,8E14.7)") 'c3crop',cluse2(5,:,iyear),
      &           cluseh(5,iyear)
-        write(*,FMT="(A,8E14.7)") 'c4crop',cluse2(6,:,iyear),
+          write(*,FMT="(A,8E14.7)") 'c4crop',cluse2(6,:,iyear),
      &           cluseh(6,iyear)
-        write(*,FMT="(A,8E14.7)") ' urban',cluse2(7,:,iyear),
+          write(*,FMT="(A,8E14.7)") ' urban',cluse2(7,:,iyear),
      &           cluseh(7,iyear)
-
+        ENDIF
 
         !APW - not sure what this does
         DO ft=1,nft
@@ -3518,23 +3524,29 @@ c        ENDIF
           ENDDO
           ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
-        WRITE(*,'(''Icheck0'',3f13.6)') ccheck
-        WRITE(*,'(''Ians1'',3f12.6)') ans1 
-        WRITE(*,'(''Itc0(1)'',3f12.6)') ic0(1) 
-        WRITE(*,'(''Itc0(2)'',3f12.6)') ic0(2) 
-        WRITE(*,'(''Itc0(3)'',3f12.6)') ic0(3) 
-        WRITE(*,'(''Itc0(4)'',3f12.6)') ic0(4) 
-        WRITE(*,'(''Itc0(5)'',3f12.6)') ic0(5) 
-        WRITE(*,'(''Itc0(6)'',3f12.6)') ic0(6) 
-        WRITE(*,'(''Itc0(7)'',3f12.6)') ic0(7) 
-        WRITE(*,'(''Itc0(8)'',3f12.6)') ic0(8) 
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,'(''Icheck0'',3f13.6)') ccheck
+          WRITE(*,'(''Ians1'',3f12.6)') ans1 
+          WRITE(*,'(''Itc0(1)'',3f12.6)') ic0(1) 
+          WRITE(*,'(''Itc0(2)'',3f12.6)') ic0(2) 
+          WRITE(*,'(''Itc0(3)'',3f12.6)') ic0(3) 
+          WRITE(*,'(''Itc0(4)'',3f12.6)') ic0(4) 
+          WRITE(*,'(''Itc0(5)'',3f12.6)') ic0(5) 
+          WRITE(*,'(''Itc0(6)'',3f12.6)') ic0(6) 
+          WRITE(*,'(''Itc0(7)'',3f12.6)') ic0(7) 
+          WRITE(*,'(''Itc0(8)'',3f12.6)') ic0(8) 
+        ENDIF
+
         ccheck = ans1 + ic0(1) + 
      &ic0(2) + ic0(3) + ic0(4) + ic0(5) + ic0(6) + ic0(7) + ic0(8)
-        WRITE(*,'(''Icheck1'',3f13.6)') ccheck
 
-        PRINT '(A)','SS3a ftprop (from states;from netTransitions) 
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,'(''Icheck1'',3f13.6)') ccheck
+
+          PRINT '(A)','SS3a ftprop (from states;from netTransitions) 
      &(previous time step)'
-        PRINT '(16F11.7)',ftprop(1:nft)
+          PRINT '(16F11.7)',ftprop(1:nft)
+        ENDIF
 *----------------------------------------------------------------------*
 * Set land use through ftprop.                                         *
 *----------------------------------------------------------------------*
@@ -3616,27 +3628,37 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           ENDIF
         ENDIF
 
-        PRINT '(A)','SS3b ftprop (from states; from net transitions) '
-        PRINT '(16F11.7)',ftprop(1:nft)
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT '(A)','SS3b ftprop (from states; from net transitions) '
+          PRINT '(16F11.7)',ftprop(1:nft)
+        ENDIF
 
         IF (closed_loop_ft .EQV. .FALSE.) THEN
           ftprop1 = ftprop !net transitions or 1st year of gross transitions 
         ENDIF
 
-        PRINT '(A)','SS3c ftprop1 (before COVER( ) routine) '
-        PRINT '(16F11.7)',ftprop1(1:nft)
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT '(A)','SS3c ftprop1 (before COVER( ) routine) '
+          PRINT '(16F11.7)',ftprop1(1:nft)
+        ENDIF
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
      &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,atprop2,
-     &atharvest,aggmap_SDGVM_to_aggHyde)
+     &atharvest,aggmap_SDGVM_to_aggHyde,debug)
 
-        PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '
-        PRINT '(16F11.7)',ftprop1(1:nft)
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '
+          PRINT '(16F11.7)',ftprop1(1:nft)
+        ENDIF
+
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
-        !PRINT *,'SS3',nppstore(1:nft)
+
+        IF(debug .EQV. .TRUE.) THEN
+          !PRINT *,'SS3',nppstore(1:nft)
+        ENDIF
 
         IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN !turn on after 1st year
            closed_loop_ft = .TRUE.
