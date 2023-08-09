@@ -421,8 +421,8 @@ c	enddo
          OPEN(fno+7,file=fname7,access='direct',recl=recl1,
      &form='formatted',status='old',iostat=kode)
         IF (kode.NE.0) THEN
-          WRITE(*,*) 'No cloud file found using default value'
-          WRITE(*,*) cld_default
+!PCM          WRITE(*,*) 'No cloud file found using default value'
+!PCM          WRITE(*,*) cld_default
           WRITE(*,'(''"'',A,''"'')') fname7(1:blank(fname7))
         ENDIF
 
