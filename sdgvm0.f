@@ -1965,9 +1965,9 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 *  site loop                              
 *----------------------------------------------------------------------*
-!PCM for running a single site in the main run from a gridded spinup;
-!PCM (other changes below)
-!      DO site=1,1
+!PCM4 for running a single site in the main run from a gridded spinup;
+!PCM4 (other changes below)
+!      DO site=10,10
       DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
@@ -2214,30 +2214,32 @@ C The following ordering is the order of ft's in the input.dat file
 
           write(*,FMT="(A)") 'SS1'
           IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
-             WRITE(*,*) ' BARE   CITY   C3p    C4p    C3crop ',
-     &'C4crop C3s    C4s    Ev_Bp  Ev_Np  Dc_Bp ',
-     &'Dc_Np  Ev_Bs  Ev_Ns  Dc_Bs  Dc_Ns'
+             WRITE(*,*) 'BARE       CITY      C3p        C4p        ',
+     &    'C3crop     ','C4crop     C3s       C4s        Ev_Bp      ',
+     &    'Ev_Np      ','Dc_Bp      Dc_Np     Ev_Bs      Ev_Ns      ',
+     &    'Dc_Bs      ','Dc_Ns      '
 
-             write(*,FMT="(16F7.3)") cluse(1:nft,1)
+             write(*,FMT="(16F11.7)") cluse(1:nft,1)
              !write(*,FMT="(16F7.3)") sum_cov_test(1:nft)
              write(*,FMT="(A)") 'SS2'
-             write(*,*)'     ','     primf', '     primn', '     secdf',
+             write(*,FMT="(8A14)")
+     &      '     ','     primf', '     primn', '     secdf',
      &              '     secdn', '    c3crop', '    c4crop',
      &              '     urban', '      harv' 
 
-             write(*,FMT="(A,8E10.3)") ' primf',cluse2(1,:,1),
+             write(*,FMT="(A,8E14.7)") ' primf',cluse2(1,:,1),
      &           cluseh(1,1)
-             write(*,FMT="(A,8E10.3)") ' primn',cluse2(2,:,1),
+             write(*,FMT="(A,8E14.7)") ' primn',cluse2(2,:,1),
      &           cluseh(2,1)
-             write(*,FMT="(A,8E10.3)") ' secdf',cluse2(3,:,1),
+             write(*,FMT="(A,8E14.7)") ' secdf',cluse2(3,:,1),
      &           cluseh(3,1)
-             write(*,FMT="(A,8E10.3)") ' secdn',cluse2(4,:,1),
+             write(*,FMT="(A,8E14.7)") ' secdn',cluse2(4,:,1),
      &           cluseh(4,1)
-             write(*,FMT="(A,8E10.3)") 'c3crop',cluse2(5,:,1),
+             write(*,FMT="(A,8E14.7)") 'c3crop',cluse2(5,:,1),
      &           cluseh(5,1)
-             write(*,FMT="(A,8E10.3)") 'c4crop',cluse2(6,:,1),
+             write(*,FMT="(A,8E14.7)") 'c4crop',cluse2(6,:,1),
      &           cluseh(6,1)
-             write(*,FMT="(A,8E10.3)") ' urban',cluse2(7,:,1),
+             write(*,FMT="(A,8E14.7)") ' urban',cluse2(7,:,1),
      &           cluseh(7,1)
 
           ELSE
@@ -2568,11 +2570,11 @@ c     &site_dat,lat,lon,ca
 
         ELSE
       
-!PCM Comment this out for running a single site in the main run from a gridded spinup
+!PCM4 Comment this out for running a single site in the main run from a gridded spinup
          IF ((abs(lat-zlat).GT.0.001).OR.
      &(abs(lon-zlon).GT.0.001)) THEN
 
-!PCM for running a single site in the main run from a gridded spinup
+!PCM4 for running a single site in the main run from a gridded spinup
 !         DO WHILE ((abs(lat-zlat).GT.0.001).OR.
 !     &(abs(lon-zlon).GT.0.001))
 
@@ -2582,7 +2584,7 @@ c     &site_dat,lat,lon,ca
             WRITE(*,'("Error lat and lon dont match.")')
             WRITE(*,*) lat,lon
             WRITE(*,*) zlat,zlon
-!PCM comment the STOP out for running a single site in the main run from a gridded spinup
+!PCM4 comment the STOP out for running a single site in the main run from a gridded spinup
             STOP
           ENDIF
           READ(70,*) (zs1(ft),ft=1,nft)
@@ -2654,10 +2656,10 @@ c     &site_dat,lat,lon,ca
             READ(79,*) (pnlc(i,ft),i=1,12)
             READ(79,*) (enzs(i,ft),i=1,12)
           ENDDO
-!PCM comment the ENDIF out for running a single site in the main run from a gridded spinup
+!PCM4 comment the ENDIF out for running a single site in the main run from a gridded spinup
           ENDIF
-!PCM uncomment the ENDDO for running a single site in the main run from a gridded spinup
-!          ENDDO !PCM
+!PCM4 uncomment the ENDDO for running a single site in the main run from a gridded spinup
+!          ENDDO !PCM4
 
           !print*, vcmax(1,:)
 
@@ -2830,26 +2832,26 @@ c     &site_dat,lat,lon,ca
      &'C4crop C3s    C4s    Ev_Bp  Ev_Np  Dc_Bp ',
      &'Dc_Np  Ev_Bs  Ev_Ns  Dc_Bs  Dc_Ns'
 
-        write(*,FMT="(16F7.3)") cluse(1:nft,iyear)
+        write(*,FMT="(16F11.7)") cluse(1:nft,iyear)
         !write(*,FMT="(16F7.3)") sum_cov_test(1:nft)
         write(*,FMT="(A)") 'UU2'
         write(*,*)'     ','     primf', '     primn', '     secdf',
      &                    '     secdn', '    c3crop', '    c4crop',
      &                    '     urban', '      harv' 
 
-        write(*,FMT="(A,8E10.3)") ' primf',cluse2(1,:,iyear),
+        write(*,FMT="(A,8E14.7)") ' primf',cluse2(1,:,iyear),
      &           cluseh(1,iyear)
-        write(*,FMT="(A,8E10.3)") ' primn',cluse2(2,:,iyear),
+        write(*,FMT="(A,8E14.7)") ' primn',cluse2(2,:,iyear),
      &           cluseh(2,iyear)
-        write(*,FMT="(A,8E10.3)") ' secdf',cluse2(3,:,iyear),
+        write(*,FMT="(A,8E14.7)") ' secdf',cluse2(3,:,iyear),
      &           cluseh(3,iyear)
-        write(*,FMT="(A,8E10.3)") ' secdn',cluse2(4,:,iyear),
+        write(*,FMT="(A,8E14.7)") ' secdn',cluse2(4,:,iyear),
      &           cluseh(4,iyear)
-        write(*,FMT="(A,8E10.3)") 'c3crop',cluse2(5,:,iyear),
+        write(*,FMT="(A,8E14.7)") 'c3crop',cluse2(5,:,iyear),
      &           cluseh(5,iyear)
-        write(*,FMT="(A,8E10.3)") 'c4crop',cluse2(6,:,iyear),
+        write(*,FMT="(A,8E14.7)") 'c4crop',cluse2(6,:,iyear),
      &           cluseh(6,iyear)
-        write(*,FMT="(A,8E10.3)") ' urban',cluse2(7,:,iyear),
+        write(*,FMT="(A,8E14.7)") ' urban',cluse2(7,:,iyear),
      &           cluseh(7,iyear)
 
 
@@ -3532,7 +3534,7 @@ c        ENDIF
 
         PRINT '(A)','SS3a ftprop (from states;from netTransitions) 
      &(previous time step)'
-        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(16F11.7)',ftprop(1:nft)
 *----------------------------------------------------------------------*
 * Set land use through ftprop.                                         *
 *----------------------------------------------------------------------*
@@ -3615,14 +3617,14 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
         ENDIF
 
         PRINT '(A)','SS3b ftprop (from states; from net transitions) '
-        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(16F11.7)',ftprop(1:nft)
 
         IF (closed_loop_ft .EQV. .FALSE.) THEN
           ftprop1 = ftprop !net transitions or 1st year of gross transitions 
         ENDIF
 
         PRINT '(A)','SS3c ftprop1 (before COVER( ) routine) '
-        PRINT '(16F11.6)',ftprop1(1:nft)
+        PRINT '(16F11.7)',ftprop1(1:nft)
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
@@ -3631,7 +3633,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
      &atharvest,aggmap_SDGVM_to_aggHyde)
 
         PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '
-        PRINT '(16F11.6)',ftprop1(1:nft)
+        PRINT '(16F11.7)',ftprop1(1:nft)
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
         !PRINT *,'SS3',nppstore(1:nft)
