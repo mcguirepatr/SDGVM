@@ -80,6 +80,7 @@
       REAL*8 :: esaarray(NE2,DXY,DXY)
       CHARACTER (LEN = 200) :: fname_s2
       INTEGER, PARAMETER :: NA= -999
+      INTEGER :: minx,miny,minii,minjj
       INTEGER :: maxx,maxy,maxii,maxjj
       ! This will be the netCDF ID for the file and data variable.
       INTEGER :: ncid, varid(NV)
@@ -243,12 +244,17 @@
 
       !PCM since currently, there is no wrapping of the land cover at LON=0, we
       !will keep this for now, for this extension, too.
+      minx=MAX(X0,1) 
+      miny=MAX(Y0,1) 
       maxx=MIN(X0+DXY-1,NX) 
       maxy=MIN(Y0+DXY-1,NY) 
+      minii=MAX(DXY/2-X0,1) 
+      minjj=MAX(DXY/2-Y0,1) 
       maxii=MIN(NX-X0+1,DXY) 
       maxjj=MIN(NY-Y0+1,DXY) 
       IF(debug) THEN
-        PRINT *,X0,Y0,maxx,maxy,maxii,maxjj
+        PRINT *,'X0,Y0,minx,maxx,miny,maxy,minii,maxii,minjj,maxjj'
+        PRINT *,X0,Y0,minx,maxx,miny,maxy,minii,maxii,minjj,maxjj
       ENDIF
 
       ! Open ESA CCILCP 2014 dataset 
@@ -262,7 +268,7 @@
         !esaarray(,,i) <- as.matrix(esav,nrow=lon_ress)
         OPEN(15,FILE=fname_s2,STATUS='old')
         READ(15,*) esaarray_global(i,:,:)
-        esaarray(i,1:maxii,1:maxjj) = REAL(esaarray_global(i,X0:maxx,Y0:maxy),8)
+        esaarray(i,minii:maxii,minjj:maxjj) = REAL(esaarray_global(i,minx:maxx,miny:maxy),8)
         CLOSE(15)
       END DO 
 
@@ -311,7 +317,8 @@
       ! Read the data.
         DO v=1,NV
           data_in(v,:,:) = NA
-          CALL CHECK( NF90_GET_VAR(ncid, varid(v), data_in(v,1:maxii,1:maxjj), start=[X0,Y0,t], count=[maxii,maxjj,1]) )
+          CALL CHECK( NF90_GET_VAR(ncid, varid(v), data_in(v,minii:maxii,minjj:maxjj), &
+                  start=[minx,miny,t], count=[maxii-minii+1,maxjj-minjj+1,1]) )
       !  print *,'Finished reading data'
           IF( t == SINDEX .AND. v == 1) THEN
             WHERE(data_in(1,:,:) <= 1.00)
@@ -350,7 +357,8 @@
 
            DO v=1,NVT-5 ! skip bioh 
             data_in_t(v,:,:) = NA        !data_in_t = transitions matrix element for transition with the name varname_t(v)
-            CALL CHECK( NF90_GET_VAR(ncid_t, varid_t(v), data_in_t(v,1:maxii,1:maxjj), start=[X0,Y0,t], count=[maxii,maxjj,1]) )
+            CALL CHECK( NF90_GET_VAR(ncid_t, varid_t(v), data_in_t(v,minii:maxii,minjj:maxjj), &
+                      start=[minx,miny,t], count=[maxii-minii+1,maxjj-minjj+1,1]) )
             !write(*,*)v,NVT-5,NVT-10,NVT,varname_t(v)
             IF(v.LE.NVT-10) THEN
                from_t = varname_t(v)(1:5)   !from_t = the state from which the transition is coming
@@ -389,8 +397,8 @@
                    data_out_harvest(aggmap(v2),:,:) = data_out_harvest(aggmap(v2),:,:) + dummya
                    if(t == SINDEX) then
                     IF(debug) THEN
-                      PRINT *, varname_t(v), from_t,to_t, v2, aggmap(v2),100.0*dummya(2,2),  &
-                            data_out_harvest(aggmap(v2),2,2)
+                      PRINT *, varname_t(v), from_t,to_t, v2, aggmap(v2),100.0*dummya(3,3),  &
+                            data_out_harvest(aggmap(v2),3,3)
                     ENDIF
                    end if
                  ENDIF
@@ -400,12 +408,12 @@
                   !don't allow aggregated classes to have non-zero transition
                   !probabilities to themselves (i.e. c3per_to_c3ann)
                   IF(varname(v3) == to_t .AND. aggmap(v2).NE.aggmap(v3)) THEN
-                    !print 2,2 coords of 4x4 region
+                    !print 3,3 coords of 4x4 region
                     data_t_agg(aggmap(v2),aggmap(v3),:,:) = data_t_agg(aggmap(v2),aggmap(v3),:,:) + dummya
                     if(t == SINDEX) then
                      IF(debug) THEN
-                      PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),100.0*dummya(2,2),  &
-                              data_t_agg(aggmap(v2),aggmap(v3),2,2)
+                      PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),100.0*dummya(3,3),  &
+                              data_t_agg(aggmap(v2),aggmap(v3),3,3)
                      ENDIF
                     end if
                   END IF
@@ -438,21 +446,21 @@
              write(*,*)'     ','     primf', '     primn', '     secdf', &
                        '     secdn', '    c3crop', '    c4crop', &
                        '     urban', '     harv' 
-!          use the 2,2 coordinates of the 4x4 region
-             write(*,FMT="(A,8E10.3)") ' primf',data_t_agg(1,:,2,2), &
-               data_out_harvest(1,2,2)
-             write(*,FMT="(A,8E10.3)") ' primn',data_t_agg(2,:,2,2), &
-               data_out_harvest(2,2,2)
-             write(*,FMT="(A,8E10.3)") ' secdf',data_t_agg(3,:,2,2), &
-               data_out_harvest(3,2,2)
-             write(*,FMT="(A,8E10.3)") ' secdn',data_t_agg(4,:,2,2), &
-               data_out_harvest(4,2,2)
-             write(*,FMT="(A,8E10.3)") 'c3crop',data_t_agg(5,:,2,2), &
-               data_out_harvest(5,2,2)
-             write(*,FMT="(A,8E10.3)") 'c4crop',data_t_agg(6,:,2,2), &
-               data_out_harvest(6,2,2)
-             write(*,FMT="(A,8E10.3)") ' urban',data_t_agg(7,:,2,2), &
-               data_out_harvest(7,2,2)
+!          use the 3,3 coordinates of the 4x4 region
+             write(*,FMT="(A,8E10.3)") ' primf',data_t_agg(1,:,3,3), &
+               data_out_harvest(1,3,3)
+             write(*,FMT="(A,8E10.3)") ' primn',data_t_agg(2,:,3,3), &
+               data_out_harvest(2,3,3)
+             write(*,FMT="(A,8E10.3)") ' secdf',data_t_agg(3,:,3,3), &
+               data_out_harvest(3,3,3)
+             write(*,FMT="(A,8E10.3)") ' secdn',data_t_agg(4,:,3,3), &
+               data_out_harvest(4,3,3)
+             write(*,FMT="(A,8E10.3)") 'c3crop',data_t_agg(5,:,3,3), &
+               data_out_harvest(5,3,3)
+             write(*,FMT="(A,8E10.3)") 'c4crop',data_t_agg(6,:,3,3), &
+               data_out_harvest(6,3,3)
+             write(*,FMT="(A,8E10.3)") ' urban',data_t_agg(7,:,3,3), &
+               data_out_harvest(7,3,3)
            endif
         END IF
     
@@ -484,7 +492,7 @@
         !   data_out_SDGVM(year_index,:,lon,lat) = JOIN_HYDE(esaarray(:,lon,lat))
         ! END DO
         !END DO
-        data_out_SDGVM(year_index,:,2,2) = JOIN_HYDE(esaarray(:,2,2))
+        data_out_SDGVM(year_index,:,3,3) = JOIN_HYDE(esaarray(:,3,3))
 
       
         WHERE(ABS(data_out_SDGVM(year_index,1,:,:)) <= 100.00)
@@ -502,14 +510,14 @@
         IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN
           WRITE(*,*)'JH1' ! Assumes default "ADVANCE='yes'".
           DO v=1,NS
-            WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,2,2)/100.0 
+            WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,3,3)/100.0 
           END DO
           WRITE(*,*) ! Assumes default "ADVANCE='yes'".
         ENDIF
 
         ! deal with forest or grass cover where no forest or grass cover existed in ESA
-        CALL F_LAT_ASSIGNPFT(data_out_SDGVM(year_index,:,:,:),NS,NY,DXY,X0,Y0, &
-                             maxii,maxjj,lat_offset)
+        CALL F_LAT_ASSIGNPFT(data_out_SDGVM(year_index,:,:,:),NS,NY,DXY, &
+                             minii,minjj,maxii,maxjj,lat_offset)
   
         IF(get_transitions) THEN
           data_out_AggHydeTransitions(year_index,:,:,:,:) = data_t_agg 
@@ -559,28 +567,28 @@
              IF(compute_next_year) THEN
                DO v=1,NV
 !                  WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_in_new(v,:,:),mask)/num_land
-                  WRITE(*,FMT='(F9.4)', ADVANCE='no') data_in_new(v,2,2)
+                  WRITE(*,FMT='(F9.4)', ADVANCE='no') data_in_new(v,3,3)
                END DO
              ELSE
                DO v=1,NV
 !                  WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_in(v,:,:),mask)/num_land
-                  WRITE(*,FMT='(F9.4)', ADVANCE='no') data_in(v,2,2)
+                  WRITE(*,FMT='(F9.4)', ADVANCE='no') data_in(v,3,3)
                END DO
              END IF
            ELSE IF(print_type=='agg') THEN
              DO v=1,NV2
 !                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out(v,:,:)/100.0,mask)/num_land 
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out(v,2,2)/100.0
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out(v,3,3)/100.0
              END DO
            ELSE IF(print_type=='sdgvm') THEN 
              DO v=1,NS
 !                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,:,:)/100.0,mask_SDGVM)/num_land 
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,2,2)/100.0 
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,3,3)/100.0 
              END DO
            ELSE IF(print_type=='esa') THEN 
              DO v=1,NE
 !                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,:,:)/100.0,mask_SDGVM)/num_land 
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') esaarray(v,2,2)/100.0 
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') esaarray(v,3,3)/100.0 
              END DO
            END IF
            WRITE(*,*) ! Assumes default "ADVANCE='yes'".
@@ -906,7 +914,7 @@
        END IF 
     END FUNCTION JOIN_HYDE
 
-    SUBROUTINE F_LAT_ASSIGNPFT(m,NS,NY,DXY,X0,Y0,maxii,maxjj,loff)
+    SUBROUTINE F_LAT_ASSIGNPFT(m,NS,NY,DXY,minii,minjj,maxii,maxjj,loff)
     ! Assigns forest or grass pfts to ESA HYDE according to latitude when no forest or grass PFTs exist in ESA but do in HYDE 
 
     ! this function assigns forest and grassland cover to an appropriate PFT in the combined HYDE ESA dataset
@@ -925,15 +933,14 @@
     ! loff is the change in subscript by lat - 0 for temperate (DcBp & C3p), 1 for tropical (EvBp & C4p)
       INTEGER, DIMENSION(NY) :: loff 
       INTEGER :: j !latitude dummy index
-      INTEGER :: X0,Y0 !longitude, latitude indices
-      INTEGER :: maxii,maxjj !max longitude, latitude indices
+      INTEGER :: minii,minjj,maxii,maxjj ! longitude, latitude indices
       INTEGER, DIMENSION(2) :: indx = [2,7] !permuted DcBp & unpermuted C3p
       INTEGER :: k,kk
       REAL*8 :: tmp3
     
       
-      DO i=1,maxii !longitude loop 
-       DO j=1,maxjj !latitude loop
+      DO i=minii,maxii !longitude loop 
+       DO j=minjj,maxjj !latitude loop
       ! if there was no forest or grass cover in the ESA data 
         IF(any(m(:,i,j)<0)) THEN
           ! switch DcBp and EvBp PFT to allow loff to work for both forest and grass
