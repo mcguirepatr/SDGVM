@@ -552,9 +552,11 @@ C PCM2      WRITE(*,*) '111111111'
 
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
+* PCM: offset this by 2 gridcells, since we have a box of 4 x 4        *
 *----------------------------------------------------------------------*
-      rrow = (latf - lat)/latr
-      rcol = (lon - lon0)/lonr
+      rrow = 1.0 + (latf - lat)/latr - 2.0
+      rcol = 1.0 + (lon - lon0)/lonr - 2.0
+
 
       ynorm = rrow - real(int(rrow))
       xnorm = rcol - real(int(rcol))
@@ -787,9 +789,11 @@ C PCM2      WRITE(*,*) '111111111'
 
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
+* PCM: offset this by 2 gridcells, since we have a box of 4 x 4        *
 *----------------------------------------------------------------------*
-      rrow = (latf - lat)/latr
-      rcol = (lon - lon0)/lonr
+      rrow = 1.0 + (latf - lat)/latr - 2.0
+      rcol = 1.0 + (lon - lon0)/lonr - 2.0
+
 
       ynorm = rrow - real(int(rrow))
       xnorm = rcol - real(int(rcol))
@@ -1146,8 +1150,8 @@ c     look for the first year
 * Find the real row col corresponding to lat and lon.                  *
 * PCM: offset this by 2 gridcells, since we have a box of 4 x 4        *
 *----------------------------------------------------------------------*
-      rrow = 1.0 + (latf - lat)/latr - 1.0 
-      rcol = 1.0 + (lon - lon0)/lonr - 1.0
+      rrow = 1.0 + (latf - lat)/latr - 2.0
+      rcol = 1.0 + (lon - lon0)/lonr - 2.0
 
       ynorm = rrow - real(int(rrow))
       xnorm = rcol - real(int(rcol))
@@ -1168,7 +1172,7 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
          ENDIF
          ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
          ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
-         CALL states_convertSDGVM_func(years(1),years(n),INT(rcol), ! with the definition of rcol, it starts at 0 for lon==lon0, but FORTRAN arrays start at 1
+         CALL states_convertSDGVM_func(years(1),years(n),INT(rcol), ! with the definition of rcol, rcol+2 starts at 1 for lon==lon0
      &          INT(rrow),4,get_transitions,compute_next_year, 
      &          pname,pname_t,wdg,
      &          SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST,debug)  
@@ -1189,7 +1193,7 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
          ENDIF
       ENDIF
       IF(debug .EQV. .TRUE.) THEN
-        write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,2,2)
+        write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,3,3)
       ENDIF
 
 
@@ -1766,7 +1770,7 @@ c
 * Nearest pixel.                                                       *
 *----------------------------------------------------------------------*
         !ans = xx(int(xnorm+2.5d0),int(ynorm+2.5d0))
-        ans = xx(2,2)
+        ans = xx(3,3)
 *----------------------------------------------------------------------*
       ENDIF
 
