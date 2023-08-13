@@ -177,6 +177,7 @@
       debug = .FALSE.
       !debug = .TRUE.
 
+      WRITE(*,'('' PROGRAM STARTED'')')
       IF (IARGC().GT.0) THEN
         CALL GETARG(1,buff1)
         narg = 1
