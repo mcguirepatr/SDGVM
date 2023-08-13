@@ -552,10 +552,9 @@ C PCM2      WRITE(*,*) '111111111'
 
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
-* PCM: offset this by 2 gridcells, since we have a box of 4 x 4        *
 *----------------------------------------------------------------------*
-      rrow = 1.0 + (latf - lat)/latr - 2.0
-      rcol = 1.0 + (lon - lon0)/lonr - 2.0
+      rrow = 1.0 + (latf - lat)/latr
+      rcol = 1.0 + (lon - lon0)/lonr
 
 
       ynorm = rrow - real(int(rrow))
@@ -1280,7 +1279,7 @@ C              ENDIF
 C            ENDIF
 
 
-            CALL BI_LIN(xx,indx,xnorm,ynorm,ans)
+            CALL NEARN(xx,indx,xnorm,ynorm,ans)
 
             x = int(ans+0.5d0)
 
@@ -1353,7 +1352,7 @@ C                   WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00
 C                 ENDIF
 C               ENDIF
 
-               CALL BI_LIN(xx2(:,:,k2),indx2(:,:,k2),xnorm,ynorm,ans)
+               CALL NEARN(xx2(:,:,k2),indx2(:,:,k2),xnorm,ynorm,ans)
                x2 = int(ans+0.5d0)
                agclassprop2(agclasses(k3),agclasses(k2)) = ans
 C               print *,'DD1',k3,k2,agclasses(k3),agclasses(k2),
@@ -1393,7 +1392,7 @@ C            ENDIF
               ENDDO
 
 
-              CALL BI_LIN(xx(:,:),indx(:,:),xnorm,ynorm,ans)
+              CALL NEARN(xx(:,:),indx(:,:),xnorm,ynorm,ans)
               x = int(ans+0.5d0)
               agclassprop(agclasses(k3)) = ans
 
@@ -1707,7 +1706,8 @@ c
       INTEGER indx(4,4),iav,ii,jj
       LOGICAL use_bilinear
 
-      use_bilinear = .False. !use nearest-neighbor sampling instead
+!      use_bilinear = .False. !use nearest-neighbor sampling instead
+      use_bilinear = .TRUE. !use nearest-neighbor sampling instead
 
 *----------------------------------------------------------------------*
 * Fill in averages if necessary.                                       *
@@ -1756,6 +1756,94 @@ c
         ENDDO
       ENDDO
 
+      IF( use_bilinear .EQV. .TRUE. ) THEN 
+*----------------------------------------------------------------------*
+* Bilinear interpolation.                                              *
+*----------------------------------------------------------------------*
+        ans = xx(2,2)*(1.0d0-xnorm)*(1.0d0-ynorm) + 
+     &        xx(3,2)*xnorm*(1.0d0-ynorm) + 
+     &        xx(2,3)*(1.0d0-xnorm)*ynorm + 
+     &        xx(3,3)*xnorm*ynorm
+
+      ELSE
+*----------------------------------------------------------------------*
+* Nearest pixel.                                                       *
+*----------------------------------------------------------------------*
+        !ans = xx(int(xnorm+2.5d0),int(ynorm+2.5d0))
+        ans = xx(3,3)
+*----------------------------------------------------------------------*
+      ENDIF
+
+
+      RETURN
+      END
+
+
+*----------------------------------------------------------------------*
+*                                                                      *
+*                          SUBROUTINE NEARN                            *
+*                          *****************                           *
+*                                                                      *
+* Performs nearest neighbor sampling between four points,              *
+* the normalised distances from the point (1,1) are given by 'xnorm'   *
+* and 'ynorm'.                                                         *
+*                                                                      *
+*----------------------------------------------------------------------*
+      SUBROUTINE NEARN(xx,indx,xnorm,ynorm,ans)
+*----------------------------------------------------------------------*
+      REAL*8 xx(4,4),xnorm,ynorm,ans,av
+      INTEGER indx(4,4),iav,ii,jj
+      LOGICAL use_bilinear
+
+      use_bilinear = .False. !use nearest-neighbor sampling instead
+
+*----------------------------------------------------------------------*
+* Fill in averages if necessary.                                       *
+*----------------------------------------------------------------------*
+!      DO ii=2,3
+!        DO jj=2,3
+!          IF (indx(ii,jj).NE.1) THEN
+!            av = 0.0d0
+!            iav = 0
+!            IF (indx(ii+1,jj).EQ.1) THEN
+!              av = av + xx(ii+1,jj)
+!              iav = iav + 1
+!            ENDIF 
+!            IF (indx(ii-1,jj).EQ.1) THEN
+!              av = av + xx(ii-1,jj)
+!              iav = iav + 1
+!            ENDIF 
+!            IF (indx(ii,jj+1).EQ.1) THEN
+!              av = av + xx(ii,jj+1)
+!              iav = iav + 1
+!            ENDIF 
+!            IF (indx(ii,jj-1).EQ.1) THEN
+!              av = av + xx(ii,jj-1)
+!              iav = iav + 1
+!            ENDIF
+!            IF (indx(ii+1,jj+1).EQ.1) THEN
+!              av = av + xx(ii+1,jj+1)
+!              iav = iav + 1
+!            ENDIF
+!            IF (indx(ii-1,jj-1).EQ.1) THEN
+!              av = av + xx(ii-1,jj-1)
+!              iav = iav + 1
+!            ENDIF
+!            IF (indx(ii+1,jj-1).EQ.1) THEN
+!              av = av + xx(ii+1,jj-1)
+!              iav = iav + 1
+!            ENDIF
+!            IF (indx(ii-1,jj+1).EQ.1) THEN
+!              av = av + xx(ii-1,jj+1)
+!              iav = iav + 1
+!            ENDIF
+!            IF (iav.GT.0) THEN
+!              xx(ii,jj) = av/real(iav)
+!            ENDIF
+!          ENDIF
+!        ENDDO
+!      ENDDO
+!
       IF( use_bilinear .EQV. .TRUE. ) THEN 
 *----------------------------------------------------------------------*
 * Bilinear interpolation.                                              *
