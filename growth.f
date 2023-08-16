@@ -134,8 +134,9 @@
 !        if((sum_cov(ft).le.0d0)) then !PCM
 !          sum_cov(ft) = ftprop(ft)
 !        endif
-        if((compute_covchange.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then!PCM Site=11 has troubles here
-!        if((compute_covchange.EQV..TRUE.)) then
+!        if((compute_covchange.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then!PCM Site=11 has troubles here
+!       we need to handle the sum_cov(ft).eq.0d0 case as well
+        if((compute_covchange.EQV..TRUE.)) then
          IF(ilanduse.GE.3 .AND. ilanduse.LE.6) THEN 
 
           at = aggmap_SDGVM_to_aggHyde(ft)
@@ -197,7 +198,7 @@
             ftprop(ft) = ftprop(ft) +
      &              ft2frac(ft)*ft2frac(ft2)*atprop2(at2,at)
 
-            IF ((debug .EQV. .TRUE.) .AND. (at.eq.1)) THEN
+            IF ((debug .EQV. .TRUE.) .AND. (at.eq.2)) THEN
                 PRINT
      &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
      &              'GHG1',
@@ -221,21 +222,28 @@
 
          !IF( ftprop(ft) .GT. 1d-1 ) THEN !this discretization leads to carbon imbalances
          !IF( ftprop(ft) .GT. 1d-2 ) THEN !this prevents cov<0
-         IF( ftprop(ft) .GT. 0.0d0 ) THEN
+         IF(sum_cov(ft).GT.0.0d0) THEN
+          IF(ftprop(ft) .GT. 0.0d0) THEN
             loss = 1d0 - ftprop(ft)*1d-2/sum_cov(ft)
          ! loss > 0 if there is a loss in cover; loss < 0 if there is a gain in cover
             loss_nowoodh = 1d0 - (ftprop(ft)+woodh)*1d-2/sum_cov(ft)
-         ELSE
+          ELSE
             !ftloss_prop = 1d0   !PCM why isn't this ftloss_prop(ft) = 1d0 ??
             loss = 1d0   !PCM 
             loss_nowoodh = 1d0
+          ENDIF
+         ELSE
+            loss = 0d0   
+            loss_nowoodh = 0d0
          ENDIF
+
 
 !         print*, 'ftprop is less than sum_cov:',
 !     &ft, ftprop(ft)*1d-2, sum_cov(ft), loss 
 !         print*, (ftprop(ft)*1d-2) - sum_cov(ft)
 
          change_cover = .False. 
+         IF(sum_cov(ft).GT.0.0d0) THEN
          IF( ilanduse .LT. 3 ) THEN
 !           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
            IF( ( ftprop(ft)*1d-2 - sum_cov(ft)) .ne. 0.0  ) THEN
@@ -245,6 +253,7 @@
            IF( ftprop(ft)*1d-2 .NE. sum_cov(ft) ) THEN 
              change_cover = .True. !settings for gross transitions
            ENDIF
+         ENDIF
          ENDIF
 
          IF( change_cover ) THEN 
@@ -285,7 +294,19 @@
 * Compute the likelyhood of fire in the current year 'fprob'.          *
 * 'find' is the fire index                                             *
 *----------------------------------------------------------------------*
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GF4b prc '
+        PRINT '(12F11.6)',prc
+        PRINT '(A)','GF4b tmp '
+        PRINT '(12F11.6)',tmp
+      ENDIF
       CALL FIRE(prc,tmp,fri,fprob,burn)
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GF4b fri fprob'
+        PRINT '(F11.6 F11.6)',fri,fprob
+        PRINT '(A)','GF4b burn '
+        PRINT *,burn
+      ENDIF
 
 *----------------------------------------------------------------------*
 * Take off area burnt by fire together with plants past there sell by  *
@@ -377,7 +398,7 @@
          cov(1,1) = tot_ngcov*ftprop3(1)/100.0d0
       ELSE
          !cov(1,1) = ngcov(1)
-         ftprop(1) = 100.0d0 - SUM(ftprop(2:nft)) 
+         ftprop(1) = MAX(100.0d0 - SUM(ftprop(2:nft)),0.0d0) 
          cov(1,1) = ftprop(1)/100.0d0
       ENDIF
       !PRINT*, 'G8' 
@@ -1318,7 +1339,7 @@
       pow = 3.0d0
 
 *----------------------------------------------------------------------*
-* Adjust for temperature.                                             *
+* Adjust for temperature.                                              *
 *----------------------------------------------------------------------*
       DO i=1,12
         IF (tmp(i).GT.tlim1) THEN
@@ -1332,7 +1353,7 @@
       ENDDO
 
 *----------------------------------------------------------------------*
-* Calculate yearly componet of index.                                  *
+* Calculate yearly component of index.                                 *
 *----------------------------------------------------------------------*
       totp = 0.0d0
       DO k=1,12
@@ -1384,6 +1405,7 @@
       REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
       REAL*8 atharvest(n_at),loss_frac,remain_frac
+      REAL*8 fprbtm 
       INTEGER at,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER nft,ftmor(maxnft),ft,age,fireres,n_at,NS
       LOGICAL harvest
@@ -1425,7 +1447,7 @@
             remain_frac = 1.0d0 - loss_frac  
         ENDIF
 *----------------------------------------------------------------------*
-* 'tmor' is the mortality rate of the forrest based on 'npp'.          *
+* 'tmor' is the mortality rate of the forest based on 'npp'.           *
 *----------------------------------------------------------------------*
         npp0 = 0.2d0
         tmor0 = 6.0d0
@@ -1458,6 +1480,7 @@
 *     &nppstore(ft)
         ENDIF
 *----------------------------------------------------------------------*
+        tmor = 0.0d0 !PCM turn tmor mortality off 
 
         DO age=2,ftmor(ft) 
           IF (age.LT.fireres) THEN
@@ -1466,23 +1489,25 @@
             fprob = 0.0d0
           ENDIF
           IF (fireres.LT.0) fprob = real(-fireres)/1000.0d0
+          fprob = 0.0d0 !PCM turn fire off
+
+          fprbtm = fprob-fprob*tmor+tmor
           
           !calculate litter from cover loss  
-          tot_ngcov = tot_ngcov + cov(age,ft)*(fprob-fprob*tmor+tmor)
-          ngcov(ft) = ngcov(ft) + cov(age,ft)*(fprob-fprob*tmor+tmor)
+          tot_ngcov = tot_ngcov + cov(age,ft)*fprbtm
+          ngcov(ft) = ngcov(ft) + cov(age,ft)*fprbtm
           
           IF (debug .EQV. .TRUE.) THEN
                 PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
      &         ft,tot_ngcov,ngcov(ft),
-     &         cov(age,ft),(fprob-fprob*tmor+tmor),
+     &         cov(age,ft),fprbtm,
      &         fprob,tmor
           ENDIF
           slc(ft) = slc(ft) + 
      &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) * 
      &(tmor - 0.2d0*fprob*tmor + 0.2d0*fprob) * cov(age,ft)
 
-          rlc(ft) = rlc(ft) + bio(age,2,ft)*(tmor - fprob*tmor + fprob)
-     &*cov(age,ft)
+          rlc(ft) = rlc(ft) + bio(age,2,ft)*fprbtm*cov(age,ft)
 
           firec   = firec + 
      &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *
