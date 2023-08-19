@@ -1195,6 +1195,12 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
         write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,3,3)
       ENDIF
 
+      l_lu = .TRUE.
+      IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
+        l_lu = .FALSE.
+        RETURN
+      ENDIF
+
 
       DO i=1,yrfa-yr0a+1
         IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
@@ -1534,8 +1540,9 @@ c
       ENDIF
 
 
-      IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.
-     &  (indx(3,3).EQ.1)) THEN
+!PCM      IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.
+!PCM     &  (indx(3,3).EQ.1)) THEN
+      IF (indx(3,3).EQ.1) THEN
         l_lu = .TRUE.
       ELSE
         l_lu = .FALSE.
