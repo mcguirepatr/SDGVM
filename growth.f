@@ -119,7 +119,7 @@
         ENDIF
        
 
-        IF ( ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN 
+        IF ( ilanduse.GE.4 .AND. ilanduse.LE.6) THEN 
           ! do for both ftphen(ft) == 1 and 2
           compute_covchange = .TRUE. !compute cover change 
         ELSE
@@ -198,7 +198,7 @@
             ftprop(ft) = ftprop(ft) +
      &              ft2frac(ft)*ft2frac(ft2)*atprop2(at2,at)
 
-            IF ((debug .EQV. .TRUE.) .AND. (at.eq.2)) THEN
+            IF ((debug .EQV. .TRUE.) .AND. (at.eq.1)) THEN
                 PRINT
      &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
      &              'GHG1',
@@ -243,7 +243,7 @@
 !         print*, (ftprop(ft)*1d-2) - sum_cov(ft)
 
          change_cover = .False. 
-         IF(sum_cov(ft).GT.0.0d0) THEN
+!         IF(sum_cov(ft).GT.0.0d0) THEN
          IF( ilanduse .LT. 3 ) THEN
 !           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
            IF( ( ftprop(ft)*1d-2 - sum_cov(ft)) .ne. 0.0  ) THEN
@@ -254,21 +254,23 @@
              change_cover = .True. !settings for gross transitions
            ENDIF
          ENDIF
-         ENDIF
+!         ENDIF
 
          IF( change_cover ) THEN 
          ! NET transitions: IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
          ! GROSS transitions IF( ftprop(ft)*1d-2 .LT. sum_cov(ft) ) THEN 
-          CALL LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
+          IF(loss.GT.0.0d0) THEN
+            CALL LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &loss,npp,nps,slc,rlc,fireres,flulccc,harvest,
      &leafdp,ft,debug)
+          ENDIF
 
           !ngcov(ft) = MAX(-loss_nowoodh,0.d0) * sum_cov(ft) !new growth only for -loss>0
           ngcov(ft) = MAX(-loss,0.d0) * sum_cov(ft) !new growth only for -loss>0
           tot_ngcov = tot_ngcov + ngcov(ft) 
           IF (debug .EQV. .TRUE.) THEN
-           PRINT '(A I2 F9.6 F9.6 F9.6 F9.6 F9.6 F9.6 F9.6 F9.6)','GG0',
-     &              ft,
+           PRINT '(A I2 F9.6 F9.6 F12.6 F12.6 F9.6 F9.6 F9.6 F9.6)',
+     &              'GG0',ft,
      &              ftprop(ft)*1d-2, woodh*1d-2,
      &              loss,loss_nowoodh,
      &              sum_cov(ft), ngcov(ft),
@@ -1596,8 +1598,7 @@
         IF(debug .EQV. .TRUE.) THEN
           PRINT '(A)','GG7 LULCC_LOSS'
         ENDIF
-        IF(loss.GT.0.0d0) THEN
-         DO age=1,ftmor(ft)
+        DO age=1,ftmor(ft)
            rlc(ft) = rlc(ft) + bio(age,2,ft) * 
      &loss * cov(age,ft)
 
@@ -1611,8 +1612,7 @@
              PRINT '(2I5,6F12.7)',age,ft,loss,flulccc,bio(age,1,ft),
      &bioleaf(ft),nppstore(ft),cov(age,ft)
            ENDIF
-         ENDDO
-        ENDIF
+        ENDDO
 
       RETURN
       END
