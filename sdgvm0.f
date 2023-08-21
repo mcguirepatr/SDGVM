@@ -1972,7 +1972,7 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 !PCM4 for running a single site in the main run from a gridded spinup;
 !PCM4 (other changes below)
-!      DO site=30,31
+!      DO site=28,28
       DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
@@ -2594,6 +2594,9 @@ c     &site_dat,lat,lon,ca
             WRITE(*,*) zlat,zlon
 !PCM4 comment the STOP out for running a single site in the main run from a gridded spinup
             STOP
+!PCM4 uncomment the following 2 lines (ELSE) for running a single site from a gridded spinup
+!          ELSE
+!            WRITE(*,'("Lat and lon matched.")')
           ENDIF
           READ(70,*) (zs1(ft),ft=1,nft)
           READ(70,*) (zs2(ft),ft=1,nft)
