@@ -492,6 +492,16 @@
         !   data_out_SDGVM(year_index,:,lon,lat) = JOIN_HYDE(esaarray(:,lon,lat))
         ! END DO
         !END DO
+
+        IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN
+          WRITE(*,*)'JH0' ! Assumes default "ADVANCE='yes'".
+          DO v=1,NE2
+            WRITE(*,FMT='(F9.4)', ADVANCE='no') esaarray(v,3,3)/100.0 
+          END DO
+          WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+        ENDIF
+
+        ! deal with forest or grass cover where no forest or grass cover existed in ESA
         data_out_SDGVM(year_index,:,3,3) = JOIN_HYDE(esaarray(:,3,3))
 
       
@@ -679,9 +689,15 @@
 
       ! ESA   PFTs: 1 BARE, 2 Ev_Bl, 3 Dc_Bl, 4 Ev_Nl, 5 Dc_Nl, 6 Shrub, 7 C3, 8 C4, 9 C3crop, 10 C4crop,
       ! HYDE aggregated land cover: 11 primf, 12 primn, 13 secdf, 14 secdn, 15 C3 crop, 16 C4 crop
+      !!  example:
+      !!            0.7800   0.0100   0.0300   0.0100   0.0000   0.0400   0.0400 0.0000 0.0000   0.0000   
+      !!                              0.7420   0.0000   0.0000       0.0000   0.0000   0.0000
 
       ! SDGVM PFTs: 1 BARE, 2 Ev_Bp, 3 Dc_Bp, 4 Ev_Np, 5 Dc_Np, 6 Shrup, 7 C3p, 8 C4p, 9 C3crop, 10 C4crop,
       !                    11 Ev_Bs,12 Dc_Bs,13 Ev_Ns,14 Dc_Ns,15 Shrus, 16 C3s, 17 C4s
+      !!  example:
+      !!            0.7800   0.0824   0.2473   0.0824   0.0000   0.3298   0.0000   0.0000  0.0000   0.0000
+      !!                     0.0000   0.0000   0.0000   0.0000   0.0000   0.0000   0.0000
       
       ! first forest area and potential forest area from HYDE is used to adjust forest area in ESA
       ! then C3 and C4 croplands in HYDE are used to adjust ESA
