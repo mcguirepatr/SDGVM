@@ -21,7 +21,7 @@
       REAL*8 fprob,ftprop(maxnft),tot_ngcov,ngcov(maxnft)
       REAL*8 gold,c3old,c4old,fri,norm
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
-      REAL*8 loss,sum_cov(maxnft),flulccc
+      REAL*8 loss,sum_cov(maxnft),flulccc,lossfrac
       REAL*8 cneed, cneed_leaf, cneed_store
       REAL*8 ftpropnew,ftprop3(maxnft)
       REAL*8 sum_cov_test(maxnft)
@@ -222,61 +222,76 @@
 
          !IF( ftprop(ft) .GT. 1d-1 ) THEN !this discretization leads to carbon imbalances
          !IF( ftprop(ft) .GT. 1d-2 ) THEN !this prevents cov<0
-         IF(sum_cov(ft).GT.0.0d0) THEN
-          IF(ftprop(ft) .GT. 0.0d0) THEN
-            loss = 1d0 - ftprop(ft)*1d-2/sum_cov(ft)
+         !IF(sum_cov(ft).GT.0.0d0) THEN
+         !IF(ftprop(ft) .GT. 0.0d0) THEN
+         ! loss = 1.0d0 - ftprop(ft)*1d-2/sum_cov(ft) 
          ! loss > 0 if there is a loss in cover; loss < 0 if there is a gain in cover
-            loss_nowoodh = 1d0 - (ftprop(ft)+woodh)*1d-2/sum_cov(ft)
-          ELSE
-            !ftloss_prop = 1d0   !PCM why isn't this ftloss_prop(ft) = 1d0 ??
-            loss = 1d0   !PCM 
-            loss_nowoodh = 1d0
-          ENDIF
-         ELSE
-            loss = 0d0   
-            loss_nowoodh = 0d0
-         ENDIF
+         ! loss_nowoodh = 1.0d0 - (ftprop(ft)+woodh)*1d-2/sum_cov(ft)
+         !ELSE
+         !   !ftloss_prop = 1d0   !PCM why isn't this ftloss_prop(ft) = 1d0 ??
+         !   loss = 1d0   !PCM 
+         !   loss_nowoodh = 1d0
+         !ENDIF
+         !ELSE
+         !   loss = 0d0   
+         !   loss_nowoodh = 0d0
+         !ENDIF
 
 
 !         print*, 'ftprop is less than sum_cov:',
 !     &ft, ftprop(ft)*1d-2, sum_cov(ft), loss 
 !         print*, (ftprop(ft)*1d-2) - sum_cov(ft)
 
-         change_cover = .False. 
-!         IF(sum_cov(ft).GT.0.0d0) THEN
-         IF( ilanduse .LT. 3 ) THEN
-!           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
-           IF( ( ftprop(ft)*1d-2 - sum_cov(ft)) .ne. 0.0  ) THEN
-             change_cover = .True. !settings for net transitions
-           ENDIF
-         ELSE IF( ilanduse .GE. 3 .AND. ilanduse .LE. 6 ) THEN
-           IF( ftprop(ft)*1d-2 .NE. sum_cov(ft) ) THEN 
-             change_cover = .True. !settings for gross transitions
-           ENDIF
-         ENDIF
+!         change_cover = .False. 
+!         change_cover = .True. 
+!!         IF(sum_cov(ft).GT.0.0d0) THEN
+!         IF( ilanduse .LT. 3 ) THEN
+!!           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+!           IF( ( ftprop(ft)*1d-2 - sum_cov(ft)) .ne. 0.0  ) THEN
+!             change_cover = .True. !settings for net transitions
+!           ENDIF
+!         ELSE IF( ilanduse .GE. 3 .AND. ilanduse .LE. 6 ) THEN
+!           IF( ftprop(ft)*1d-2 .NE. sum_cov(ft) ) THEN 
+!             change_cover = .True. !settings for gross transitions
+!           ENDIF
 !         ENDIF
+!!         ENDIF
 
-         IF( change_cover ) THEN 
+!         IF( change_cover ) THEN 
          ! NET transitions: IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
          ! GROSS transitions IF( ftprop(ft)*1d-2 .LT. sum_cov(ft) ) THEN 
-          IF(loss.GT.0.0d0) THEN
-            CALL LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &loss,npp,nps,slc,rlc,fireres,flulccc,harvest,
-     &leafdp,ft,debug)
-          ENDIF
 
-          !ngcov(ft) = MAX(-loss_nowoodh,0.d0) * sum_cov(ft) !new growth only for -loss>0
-          ngcov(ft) = MAX(-loss,0.d0) * sum_cov(ft) !new growth only for -loss>0
-          tot_ngcov = tot_ngcov + ngcov(ft) 
-          IF (debug .EQV. .TRUE.) THEN
+         IF(ftprop(ft).GE.0.0d0) THEN
+         ! loss > 0 if there is a loss in cover; loss < 0 if there is a gain in cover
+           loss = sum_cov(ft) - ftprop(ft)*1d-2
+           loss_nowoodh = sum_cov(ft) - (ftprop(ft)+woodh)*1d-2
+         ELSE !lose all cover if ftprop(ft).LT.0.0d0
+           loss = sum_cov(ft)
+           loss_nowoodh = sum_cov(ft) 
+         ENDIF
+
+         IF((loss.GT.0.0d0) .and. (sum_cov(ft).GT.0.0d0)) THEN
+            lossfrac = loss/sum_cov(ft)
+            CALL LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
+     &lossfrac,npp,nps,slc,rlc,fireres,flulccc,harvest,
+     &leafdp,ft,debug)
+         ENDIF
+
+         !ngcov(ft) = MAX(-loss_nowoodh,0.d0) * sum_cov(ft) !new growth only for -loss>0
+         IF(loss.LT.0.0d0) THEN
+           !ngcov(ft) = MAX(-loss,0.d0) * sum_cov(ft) !new growth only for -loss>0
+           ngcov(ft) = -loss !new growth only for -loss>0
+           tot_ngcov = tot_ngcov + ngcov(ft) 
+         ENDIF
+         IF (debug .EQV. .TRUE.) THEN
            PRINT '(A I2 F9.6 F9.6 F12.6 F12.6 F9.6 F9.6 F9.6 F9.6)',
      &              'GG0',ft,
      &              ftprop(ft)*1d-2, woodh*1d-2,
      &              loss,loss_nowoodh,
      &              sum_cov(ft), ngcov(ft),
      &              cov(1,ft),cov(2,ft)
-          ENDIF
          ENDIF
+!         ENDIF
         endif
 
       ENDDO
