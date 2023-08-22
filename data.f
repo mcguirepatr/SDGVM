@@ -1201,6 +1201,11 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
         RETURN
       ENDIF
 
+      IF (ANY(ABS(SDGVM_LUC2(:,:,:,3,3)).GT.200.0)) THEN
+        l_lu = .FALSE.
+        RETURN
+      ENDIF
+
 
       DO i=1,yrfa-yr0a+1
         IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
