@@ -385,7 +385,7 @@ c	enddo
      &form='formatted',status='old',iostat=kode)
         IF (kode.NE.0) THEN
           WRITE(*,*) 'Climate data file does not exist.'
-          WRITE(*,*) 'or record mismatch.'
+          WRITE(*,*) 'or record mismatch, fname1'
           WRITE(*,'(''"'',A,''"'')') fname1(1:blank(fname1))
           STOP
         ENDIF
@@ -394,7 +394,7 @@ c	enddo
      &form='formatted',status='old',iostat=kode)
         IF (kode.NE.0) THEN
           WRITE(*,*) 'Climate data file does not exist.'
-          WRITE(*,*) 'or record mismatch.'
+          WRITE(*,*) 'or record mismatch, fname2'
           WRITE(*,'(''"'',A,''"'')') fname2(1:blank(fname2))
           STOP
         ENDIF
@@ -403,7 +403,7 @@ c	enddo
      &form='formatted',status='old',iostat=kode)
         IF (kode.NE.0) THEN
           WRITE(*,*) 'Climate data file does not exist.'
-          WRITE(*,*) 'or record mismatch.'
+          WRITE(*,*) 'or record mismatch, fname3'
           WRITE(*,'(''"'',A,''"'')') fname3(1:blank(fname3))
           STOP
         ENDIF
