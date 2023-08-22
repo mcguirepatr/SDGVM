@@ -137,10 +137,7 @@
 !        if((compute_covchange.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then!PCM Site=11 has troubles here
 !       we need to handle the sum_cov(ft).eq.0d0 case as well
         if((compute_covchange.EQV..TRUE.)) then
-         IF(ilanduse.GE.3 .AND. ilanduse.LE.6) THEN 
-
           at = aggmap_SDGVM_to_aggHyde(ft)
-
 !compute fractions of cover (ft2frac(ft2)) of each ft2 in each aggregated class at2 
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
@@ -213,7 +210,6 @@
      &              ftprop(ft),woodh,sum_cov(ft),atharvest(at)
             ENDIF
           ENDDO
-         ENDIF
 !         totft = ftprop(ft) + woodh 
 !
 !         IF( totft .GT. 1d-1 ) THEN
