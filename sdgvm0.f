@@ -351,6 +351,7 @@ C        WRITE(*,*) 'bbbb'
       ENDIF
       READ(99,'(A)') st1
 
+
 *----------------------------------------------------------------------*
 * Determine whether climate is daily or monthly, from first line of    *
 * readme file.                                                         *
@@ -3578,10 +3579,10 @@ c        ENDIF
                 ftprop(ft) = cluse(ft,iyear-iyear_adj)
               else
 C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
-                if(co2const.gt.0.0) then !For TRENDY S1-S3
+                if(co2const.gt.0.0) then !For TRENDY S0 and spinup
 C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
                   ftprop(ft) = cluse(ft,1)
-                else
+                else !For TRENDY S1-S3
             !print*, ft, iyear, iyear_adj, cluse(ft,iyear-iyear_adj)
                   ftprop(ft) = cluse(ft,iyear-iyear_adj)
                 endif  
@@ -3600,10 +3601,10 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
                 atprop2(at,at2) = cluse2(at,at2,iyear-iyear_adj)
               else
 C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
-                if(co2const.gt.0.0) then !For TRENDY S1-S3
+                if(co2const.gt.0.0) then !For TRENDY S0 and spinup
 C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
                   atprop2(at,at2) = cluse2(at,at2,1)
-                else
+                else !For TRENDY S1-S3
                   atprop2(at,at2) = cluse2(at,at2,iyear-iyear_adj)
                 endif  
               endif  
@@ -3617,10 +3618,10 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
                 atharvest(at) = cluseh(at,iyear-iyear_adj)
               else
 C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
-                if(co2const.gt.0.0) then !For TRENDY S1-S3
+                if(co2const.gt.0.0) then !For TRENDY S0 and spinup
 C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
                   atharvest(at) = cluseh(at,1)
-                else
+                else !For TRENDY S1-S3
                   atharvest(at) = cluseh(at,iyear-iyear_adj)
                 endif  
               endif  
@@ -3668,7 +3669,8 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           !PRINT *,'SS3',nppstore(1:nft)
         ENDIF
 
-        IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN !turn on after 1st year
+        !IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN !turn on after 1st year
+        IF (ilanduse.EQ.4) THEN !turn on after 1st year
            closed_loop_ft = .TRUE.
         ENDIF
 
