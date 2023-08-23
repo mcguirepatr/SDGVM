@@ -454,35 +454,37 @@
           ELSE
             cov(1,ft) = ngcov(ft)
           ENDIF
-          ppm(1,ft) = ftppm0(ft)
-          hgt(1,ft) = 0.004d0
 
-          ! take new cohort carbon from stem litter (slc), then soil C
-          cneed_leaf   = bioleaf(ft)*cov(1,ft)
-          cneed_store  = nppstore(ft)*cov(1,ft)
-          cneed        = cneed_leaf + cneed_store
-          slc(ft) = slc(ft) - cneed 
-          !slc(ft) = slc(ft) - (nppstore(ft) + bioleaf(ft))*cov(1,ft)
-          IF (slc(ft).LT.0.0d0) THEN
-            sumc = 0.0d0
-            DO i=1,8
-               sumc = sumc + ic0(i)
-            ENDDO
+          IF(cov(1,ft).GT.0.0d0) THEN !only when new growth
+            ppm(1,ft) = ftppm0(ft)
+            hgt(1,ft) = 0.004d0
 
-            ! if soil C is insufficient to support required C do not use 
-            IF ((slc(ft)+sumc) .LT. 0.0d0 ) THEN
-              nppstore(ft) = nppstore(ft) + slc(ft)*cneed_store/cneed 
-              bioleaf(ft)  = bioleaf(ft)  + slc(ft)*cneed_leaf/cneed 
-              cov(1,ft)    = cov(1,ft) * (1.0d0 + slc(ft)/cneed)  
-            ELSE
+            ! take new cohort carbon from stem litter (slc), then soil C
+            cneed_leaf   = bioleaf(ft)*cov(1,ft)
+            cneed_store  = nppstore(ft)*cov(1,ft)
+            cneed        = cneed_leaf + cneed_store
+            slc(ft) = slc(ft) - cneed 
+            !slc(ft) = slc(ft) - (nppstore(ft) + bioleaf(ft))*cov(1,ft)
+            IF (slc(ft).LT.0.0d0) THEN
+              sumc = 0.0d0
               DO i=1,8
-                ic0(i) = ic0(i)*(1.0d0+slc(ft)/sumc)
+                 sumc = sumc + ic0(i)
               ENDDO
+
+              ! if soil C is insufficient to support required C do not use 
+              IF ((slc(ft)+sumc) .LT. 0.0d0 ) THEN
+                nppstore(ft) = nppstore(ft) + slc(ft)*cneed_store/cneed 
+                bioleaf(ft)  = bioleaf(ft)  + slc(ft)*cneed_leaf/cneed 
+                cov(1,ft)    = cov(1,ft) * (1.0d0 + slc(ft)/cneed)  
+              ELSE
+                DO i=1,8
+                  ic0(i) = ic0(i)*(1.0d0+slc(ft)/sumc)
+                ENDDO
+              ENDIF
+
+              slc(ft) = 0.0d0
             ENDIF
-
-            slc(ft) = 0.0d0
           ENDIF
-
         ENDIF
       ENDDO
       !loop added for testing purposes
@@ -531,7 +533,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE GROWTH(nft,ftmor,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
      &nppstore,npp,lai,nps,npr,evp,slc,rlc,sln,rln,stembio,rootbio,ppm,
-     &hgt,leaflit)
+     &hgt,leaflit,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 ftwd(maxnft),ftxyl(maxnft),ftpd(maxnft),cov(maxage,maxnft)
@@ -541,6 +543,7 @@
       REAL*8 stembio,ppm(maxage,maxnft),hgt(maxage,maxnft),ftgrf(maxnft)
       REAL*8 leaflit(maxnft),ftmat(maxnft)
       INTEGER nft,ftmor(maxnft),age,ft,i
+      LOGICAL debug
 
 *----------------------------------------------------------------------*
 * Initialise litter arrays, and add on leaf litter computed in DOLY.   *
@@ -572,7 +575,7 @@
 * growth rate.                                                         *
 *----------------------------------------------------------------------*
       CALL THIN(nft,ftmor,ftmat,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
-     &nppstore,npp,lai,nps,evp,slc,ppm,hgt)
+     &nppstore,npp,lai,nps,evp,slc,ppm,hgt,debug)
 
 *----------------------------------------------------------------------*
 * Add on biomasses for the year.                                       *
@@ -607,7 +610,7 @@
 *                          ***************                             *
 *----------------------------------------------------------------------*
       SUBROUTINE THIN(nft,ftmor,ftmat,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,
-     &bio,nppstore,npp,lai,nps,evp,slc,ppm,hgt)
+     &bio,nppstore,npp,lai,nps,evp,slc,ppm,hgt,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 ftwd(maxnft),ftmat(maxnft),ftxyl(maxnft),ftpd(maxnft)
@@ -621,6 +624,7 @@
       REAL*8 gm,grate(maxage),stlit,hgtnew(maxage),dimnew,maxhgt,minhgt
       REAL*8 hc1,hc2,tcov1,tcov2,sum,xxx
       INTEGER nft,ftmor(maxnft),ft,i,year,age
+      LOGICAL debug
 
       pi = 3.1415926d0
 
@@ -640,6 +644,11 @@
 * FT loop for thinning and height competition.                         *
 *----------------------------------------------------------------------*
       DO ft=1,nft
+!        IF(debug)THEN
+!          DO year=1,ftmor(ft)
+!                PRINT *,'GT0A',ft,year,cov(year,ft),ppm(year,ft)
+!          ENDDO
+!        ENDIF
         IF (ftgr0(ft).GT.0.0d0) THEN
 
         IF (npp(ft)*nps(ft).GT.0.0d0) THEN
@@ -673,6 +682,10 @@
             ENDDO
 
             DO year=1,ftmor(ft)
+!              IF(debug)THEN
+!                PRINT *,'GT0B',
+!     &ft,year,cov(year,ft),covnew(year,ft),ppm(year,ft)
+!              ENDIF
               IF (covnew(year,ft).GT.0.0d0) THEN
               covnew(year,ft) = covnew(year,ft)*tcov1/tcov2
               DO i=1,2
@@ -684,6 +697,10 @@
               ppm(year,ft) = ppm(year,ft)*cov(year,ft)/covnew(year,ft)
               cov(year,ft) = covnew(year,ft)
               ENDIF
+!              IF(debug)THEN
+!                PRINT *,'GT1A',
+!     &ft,year,cov(year,ft),covnew(year,ft),ppm(year,ft)
+!              ENDIF
             ENDDO
 
           ENDIF
@@ -729,6 +746,10 @@
               ppm(year,ft) = ppm(year,ft)*cov(year,ft)/covnew(year,ft)
               cov(year,ft) = covnew(year,ft)
               ENDIF
+!              IF(debug)THEN
+!                PRINT *,'GT1B',
+!     &ft,year,cov(year,ft),covnew(year,ft),ppm(year,ft)
+!              ENDIF
             ENDDO
 
           ENDIF
@@ -842,6 +863,10 @@
 * Correct biomass array, and adjust litter for any thinned trees.      *
 *----------------------------------------------------------------------*
           DO year=1,ftmor(ft)
+            !IF(debug)THEN
+            !  PRINT *,'GT2',
+!     &ft,year,cov(year,ft),covnew(year,ft),ppm(year,ft)
+            !ENDIF
             IF ((ppm(year,ft).GT.0.0d0).AND.(cov(year,ft).GT.0.0d0))
      &THEN
                 no = ppm(year,ft)*cov(year,ft) - 
@@ -859,13 +884,19 @@
                 ENDIF
               ENDDO
               storelit(ft) = storelit(ft) + nppstore(ft)/ppm(year,ft)*no
+!              IF(debug)THEN
+!                PRINT *,'GT3',ft,year,cov(year,ft), covnew(year,ft)
+!              ENDIF
               cov(year,ft) = covnew(year,ft)
               ppm(year,ft) = ppmnew(year,ft)
               hgt(year,ft) = hgtnew(year)
-            ELSE
-              cov(year,ft) = 0.0d0
-              ppm(year,ft) = 0.0d0
-              hgt(year,ft) = 0.0d0
+            !PCM3 ELSE
+              !PCM3 cov(year,ft) = 0.0d0
+              !IF(debug)THEN
+              !  PRINT *,'GT4',ft,year,cov(year,ft), covnew(year,ft)
+              !ENDIF
+              !PCM3 ppm(year,ft) = 0.0d0
+              !PCM3 hgt(year,ft) = 0.0d0
             ENDIF
 
           ENDDO
@@ -1510,12 +1541,12 @@
           tot_ngcov = tot_ngcov + cov(age,ft)*fprbtm
           ngcov(ft) = ngcov(ft) + cov(age,ft)*fprbtm
           
-          IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
-     &         ft,tot_ngcov,ngcov(ft),
-     &         cov(age,ft),fprbtm,
-     &         fprob,tmor
-          ENDIF
+!          IF (debug .EQV. .TRUE.) THEN
+!                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
+!     &         ft,tot_ngcov,ngcov(ft),
+!     &         cov(age,ft),fprbtm,
+!     &         fprob,tmor
+!          ENDIF
           slc(ft) = slc(ft) + 
      &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) * 
      &(tmor - 0.2d0*fprob*tmor + 0.2d0*fprob) * cov(age,ft)
