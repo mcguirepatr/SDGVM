@@ -1973,7 +1973,7 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 !PCM4 for running a single site in the main run from a gridded spinup;
 !PCM4 (other changes below)
-!      DO site=1,1
+!      DO site=123,123
       DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
@@ -4335,7 +4335,7 @@ c     check water cycle closure
 
       CALL GROWTH(nft,ftmor,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
      &nppstore,npp,lai,nps,npr,evp,slc,rlc,sln,rln,stembio,rootbio,ppm,
-     &hgt,leaflit)
+     &hgt,leaflit,debug)
 
       CALL SWAP(ic0,in0,iminn,is1,is2,is3,is4,isn,ilsn,tc0,tn0,
      &tminn,ts1,ts2,ts3,ts4,tsn,tlsn)
