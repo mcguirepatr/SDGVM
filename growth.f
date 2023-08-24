@@ -7,7 +7,7 @@
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
      &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
      &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen,atprop2,
-     &atharvest,aggmap_SDGVM_to_aggHyde,debug)
+     &atharvest,aggmap_SDGVM_to_aggHyde,ftprop_init,yield,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: n_at = 7 !number of aggregated (Hyde, functional) types
@@ -28,7 +28,7 @@
       REAL*8 atprop2(n_at,n_at),THRESH
       REAL*8 atharvest(n_at)
       REAL*8 ft2frac(maxnft),at2prop,woodh,totft,loss_nowoodh
-      REAL*8 ftprop_init(maxnft)
+      REAL*8 ftprop_init(maxnft),yield(maxnft)
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
@@ -138,21 +138,8 @@
 !       we need to handle the sum_cov(ft).eq.0d0 case as well
         if((compute_covchange.EQV..TRUE.)) then
           at = aggmap_SDGVM_to_aggHyde(ft)
-!compute fractions of cover (ft2frac(ft2)) of each ft2 in each aggregated class at2 
-          DO ft2=2,nft
-            at2 = aggmap_SDGVM_to_aggHyde(ft2)
-            at2prop = 0.0d0
-            ft2frac(ft2) = 0.0d0 
-            DO ft3=2,nft
-              at3 = aggmap_SDGVM_to_aggHyde(ft3)
-              if(at2.eq.at3) then
-                 at2prop = at2prop + ftprop_init(ft3)  
-              endif
-            ENDDO
-            if(at2prop.GT.0.0d0) then
-              ft2frac(ft2) = ftprop_init(ft2)/at2prop
-            endif
-          ENDDO
+          CALL CALC_FT2FRAC(ftprop_init,aggmap_SDGVM_to_aggHyde,nft,
+     &ft2frac)
 
           if(at.EQ.1 .OR. at.EQ.2) then
           ! losses to ft from wood harvest in ft 
@@ -328,7 +315,8 @@
 *----------------------------------------------------------------------*
       CALL NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
      &npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,leafdp,
-     &flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,debug)
+     &flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,yield,ft2frac,
+     &debug)
 
 *----------------------------------------------------------------------*
 
@@ -1440,7 +1428,8 @@
 *----------------------------------------------------------------------*
       SUBROUTINE NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &fprob,npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,
-     &leafdp,flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,debug)
+     &leafdp,flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,yield,
+     &ft2frac,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
@@ -1449,7 +1438,7 @@
       REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
       REAL*8 atharvest(n_at),loss_frac,remain_frac
-      REAL*8 fprbtm 
+      REAL*8 fprbtm,yield(maxnft),ft2frac(maxnft)
       INTEGER at,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER nft,ftmor(maxnft),ft,age,fireres,n_at,NS
       LOGICAL harvest
@@ -1486,9 +1475,12 @@
 * Compute harvest losses for each aggregated type (at)                 *
 *----------------------------------------------------------------------*
         at = aggmap_SDGVM_to_aggHyde(ft)
-        IF (atharvest(at).GT.0.0d0) THEN
-            loss_frac  = atharvest(at)*1.0d-2
+        IF ((atharvest(at).GT.0.0d0).AND.(at.LE.2)) THEN !only for primf&secdf
+            loss_frac  = ft2frac(ft)*atharvest(at)*1.0d-2
             remain_frac = 1.0d0 - loss_frac  
+        ELSE
+            loss_frac = 0.0d0
+            remain_frac = 1.0d0
         ENDIF
 *----------------------------------------------------------------------*
 * 'tmor' is the mortality rate of the forest based on 'npp'.           *
@@ -1573,18 +1565,18 @@
             bio(age,1,ft) =  0.0d0
           ENDIF
           
-!          ! calculate litter loss and biomass loss from harvest
-!          ! the cover array has already been adjusted in the COVER
-!          ! routine for harvest
-!          IF (atharvest(at).GT.0.0d0) THEN
-!            !add harvested/removed leaf biomass to surface soil litter
-!            slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)*loss_frac
-!            !add harvested/removed wood biomass (including 50% nppstore) to firec losses
-!            flulccc = flulccc + bio(age,1,ft)*cov(age,ft)*loss_frac
-!            firec   = firec   + nppstore(ft) *
-!     &                  0.50d0 * cov(age,ft)*loss_frac 
-!            bio(age,1,ft) = bio(age,1,ft)*remain_frac
-!          ENDIF
+          ! calculate litter loss and biomass loss from harvest
+          ! the cover array has already been adjusted in the COVER
+          ! routine for harvest
+          IF ((loss_frac.GT.0.0d0).AND.(at.LE.2)) THEN
+            !add harvested/removed leaf biomass to surface soil litter
+            slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)*loss_frac
+            !flulccc = flulccc + bio(age,1,ft)*cov(age,ft)*loss_frac
+            !add harvested/removed wood biomass (including 50% nppstore) to yield
+            yield(ft) = yield(ft)   + (bio(age,1,ft) + nppstore(ft) *
+     &                  0.50d0) * cov(age,ft)*loss_frac 
+            bio(age,1,ft) = bio(age,1,ft)*remain_frac
+          ENDIF
 
         ENDDO
 
@@ -1596,13 +1588,13 @@
           nppstore(ft)  = nppstore(ft) * 0.50d0
         ENDIF
 
-!        IF (atharvest(at).GT.0.0d0) THEN
-!          !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact
-!          !remove leaf mass - this leaves root mass and 50% nppstore untouched 
-!          bioleaf(ft)   = bioleaf(ft)*remain_frac 
-!          leafdp(:,ft)  = leafdp(:,ft)*remain_frac  
-!          nppstore(ft)  = nppstore(ft) * (1.0d0 - loss_frac*0.50d0)
-!        ENDIF
+        IF ((loss_frac.GT.0.0d0).AND.(at.LE.2)) THEN !only for primf&secdf
+          !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact
+          !remove leaf mass - this leaves root mass and 50% nppstore untouched 
+          bioleaf(ft)   = bioleaf(ft)*remain_frac 
+          leafdp(:,ft)  = leafdp(:,ft)*remain_frac  
+          nppstore(ft)  = nppstore(ft) * (1.0d0 - loss_frac*0.50d0)
+        ENDIF
 
       ENDDO
 
@@ -1825,3 +1817,36 @@
 
       RETURN
       END
+
+*----------------------------------------------------------------------*
+*                                                                      *
+*                     SUBROUTINE CALC_FT2FRAC                          *
+*                     ***********************                          *
+*----------------------------------------------------------------------*
+      SUBROUTINE CALC_FT2FRAC(ftprop_init,aggmap_SDGVM_to_aggHyde,nft,
+     &ft2frac)
+      INCLUDE 'array_dims.inc'
+      INTEGER, PARAMETER :: NS = 16 !number of SDGVM functional types
+      REAL*8 ftprop_init(maxnft)
+      INTEGER ft2,at,at2,at3,ft3,nft,aggmap_SDGVM_to_aggHyde(NS)
+      REAL*8 ft2frac(maxnft),at2prop
+
+!compute fractions of cover (ft2frac(ft2)) of each ft2 in each aggregated class at2 
+      DO ft2=2,nft
+        at2 = aggmap_SDGVM_to_aggHyde(ft2)
+        at2prop = 0.0d0
+        ft2frac(ft2) = 0.0d0 
+        DO ft3=2,nft
+          at3 = aggmap_SDGVM_to_aggHyde(ft3)
+          if(at2.eq.at3) then
+            at2prop = at2prop + ftprop_init(ft3)  
+          endif
+        ENDDO
+        if(at2prop.GT.0.0d0) then
+          ft2frac(ft2) = ftprop_init(ft2)/at2prop
+        endif
+      ENDDO
+
+      RETURN
+      END
+
