@@ -84,6 +84,7 @@
       REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
       REAL*8 cluseh(maxn_at,maxyrs)
       REAL*8 sum_cov_test(maxnft)
+      REAL*8 ftprop_init(maxnft)
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
@@ -3666,7 +3667,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
      &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,atprop2,
-     &atharvest,aggmap_SDGVM_to_aggHyde,debug)
+     &atharvest,aggmap_SDGVM_to_aggHyde,ftprop_init,yield,debug)
 
         IF(debug .EQV. .TRUE.) THEN
           PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '
