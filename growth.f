@@ -21,7 +21,7 @@
       REAL*8 fprob,ftprop(maxnft),tot_ngcov,ngcov(maxnft)
       REAL*8 gold,c3old,c4old,fri,norm
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
-      REAL*8 loss,sum_cov(maxnft),flulccc,lossfrac
+      REAL*8 loss,sum_cov(maxnft),flulccc,lossfrac,lossfrac_nowoodh
       REAL*8 cneed, cneed_leaf, cneed_store
       REAL*8 ftpropnew,ftprop3(maxnft)
       REAL*8 sum_cov_test(maxnft)
@@ -255,8 +255,9 @@
 
          IF((loss.GT.0.0d0) .and. (sum_cov(ft).GT.0.0d0)) THEN
             lossfrac = loss/sum_cov(ft)
+            lossfrac_nowoodh = loss_nowoodh/sum_cov(ft)
             CALL LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &lossfrac,npp,nps,slc,rlc,fireres,flulccc,harvest,
+     &lossfrac,lossfrac_nowoodh,npp,nps,slc,rlc,fireres,flulccc,harvest,
      &leafdp,ft,debug)
          ENDIF
 
@@ -1438,7 +1439,7 @@
       REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
       REAL*8 atharvest(n_at),loss_frac,remain_frac
-      REAL*8 fprbtm,yield(maxnft),ft2frac(maxnft)
+      REAL*8 fprbtm,yield(maxnft),ft2frac(maxnft),dflulccc
       INTEGER at,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER nft,ftmor(maxnft),ft,age,fireres,n_at,NS
       LOGICAL harvest
@@ -1571,10 +1572,12 @@
           IF ((loss_frac.GT.0.0d0).AND.(at.LE.2)) THEN
             !add harvested/removed leaf biomass to surface soil litter
             slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)*loss_frac
-            !flulccc = flulccc + bio(age,1,ft)*cov(age,ft)*loss_frac
+            !add harvested/removed wood biomass (including 50% nppstore) to lulccc losses
+            dflulccc = (bio(age,1,ft) + nppstore(ft) * 0.50d0) *
+     &cov(age,ft)*loss_frac 
+            flulccc = flulccc + dflulccc
             !add harvested/removed wood biomass (including 50% nppstore) to yield
-            yield(ft) = yield(ft)   + (bio(age,1,ft) + nppstore(ft) *
-     &                  0.50d0) * cov(age,ft)*loss_frac 
+            yield(ft) = yield(ft) + dflulccc
             bio(age,1,ft) = bio(age,1,ft)*remain_frac
           ENDIF
 
@@ -1610,13 +1613,13 @@
 * and land-cover change database                                       *
 *----------------------------------------------------------------------*
       SUBROUTINE LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &loss,npp,nps,slc,rlc,fireres,flulccc,harvest,leafdp,
+     &loss,loss_nowoodh,npp,nps,slc,rlc,fireres,flulccc,harvest,leafdp,
      &ft,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
       REAL*8 hgt(maxage,maxnft),npp(maxnft),nppstore(maxnft)
-      REAL*8 loss 
+      REAL*8 loss,loss_nowoodh
       REAL*8 nps(maxnft)
       REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,flulccc,xfprob,leafdp(3600,maxnft)
@@ -1637,13 +1640,14 @@
      &loss * cov(age,ft)
 
            flulccc = flulccc + 
-     &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *
+     &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *    
      &loss * cov(age,ft)
 
            !update cover array
            cov(age,ft) = cov(age,ft)*( 1.0d0 - loss )
            IF(debug .EQV. .TRUE.) THEN
-             PRINT '(2I5,6F12.7)',age,ft,loss,flulccc,bio(age,1,ft),
+             PRINT '(2I5,7F12.7)',age,ft,loss,loss_nowoodh,
+     &flulccc,bio(age,1,ft),
      &bioleaf(ft),nppstore(ft),cov(age,ft)
            ENDIF
         ENDDO
