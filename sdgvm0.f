@@ -1981,7 +1981,7 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 !PCM4 for running a single site in the main run from a gridded spinup;
 !PCM4 (other changes below)
-!      DO site=30,30
+!      DO site=1,1
       DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
@@ -2240,7 +2240,7 @@ C The following ordering is the order of ft's in the input.dat file
              !write(*,FMT="(16F7.3)") sum_cov_test(1:nft)
              write(*,FMT="(A)") 'SS2'
              write(*,FMT="(8A14)")
-     &      '     ','     primf', '     primn', '     secdf',
+     &              '     primf', '     primn', '     secdf',
      &              '     secdn', '    c3crop', '    c4crop',
      &              '     urban', '      harv' 
 
@@ -3523,6 +3523,7 @@ c        ENDIF
 *----------------------------------------------------------------------*
         DO ft=1,nft
           bioleaf(ft) = 0.0d0
+          yield(ft) = 0.0d0 !PCM3: moved here from after COVER( )
           if(s070607.eq.1) then
             DO day=1,ftlls(ft)
               bioleaf(ft) = bioleaf(ft) + 
@@ -3733,7 +3734,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 c initialisse for all the ft, even for those doly run is not required
         DO ft=1,nft
           leaflit(ft) = 0.0d0
-          yield(ft) = 0.0d0
+!          yield(ft) = 0.0d0 !PCM3: now computed previously in COVER( )
           stemlit(ft) = 0.0d0
           rootlit(ft) = 0.0d0
 
@@ -4846,7 +4847,7 @@ c       kg_beta    = kg_beta/wi
             ans1 = ans1 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(i,ft)
           ENDDO
-          ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
+          ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft) & yield(ft)
         ENDDO
         IF(debug .EQV. .TRUE.) THEN
           WRITE(*,'(''check0'',3f13.6)') ccheck
@@ -4869,9 +4870,11 @@ c       kg_beta    = kg_beta/wi
 !        ccheck = ccheck - (ans1 + tc0(1) + 
 !     &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) - 
 !     &(avnpp-avlch-avsresp-firec)) - avyield
+
+! PCM: now, avyield is included in the flulccc
         ccheck = ccheck + avnpp - (ans1 + tc0(1) + 
      &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) + 
-     &avlch + avsresp + firec +  avyield + flulccc)
+     &avlch + avsresp + firec +  flulccc) 
         IF(debug .EQV. .TRUE.) THEN
           WRITE(*,'(''check'',3f13.6)') ccheck
         ENDIF
