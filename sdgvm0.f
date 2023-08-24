@@ -147,7 +147,7 @@
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
       LOGICAL year0set
-      LOGICAL debug
+      LOGICAL debug,out_yie
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -1023,7 +1023,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       ENDIF
 
       CALL SET_SUBPIXEL_OUT(st1,st2,outyears2,otagsnft,
-     &otags,oymdft,out_cov,out_bio,out_bud,out_sen)
+     &otags,oymdft,out_cov,out_bio,out_bud,out_sen,out_yie)
       outyears2 = min(outyears2,nyears)
 
 *----------------------------------------------------------------------*
@@ -1887,9 +1887,10 @@ c CLOSE added by Ghislain 15/12/03
       OPEN(604,FILE=st1(1:blank(st1))//'/blg_c.dat')
       OPEN(605,FILE=st1(1:blank(st1))//'/leafc.dat')
       OPEN(606,FILE=st1(1:blank(st1))//'/lulccc.dat')
+      OPEN(607,FILE=st1(1:blank(st1))//'/yield.dat')
 
 *----------------------------------------------------------------------*
-* Open optional yearly cover, biomass, budburst and senescence files.  *
+* Open opt. yearly cover, biomass, budburst, senescence & yield files. *
 *----------------------------------------------------------------------*
       iofn = 200
       iofngft = iofn
@@ -1914,6 +1915,12 @@ c CLOSE added by Ghislain 15/12/03
           iofn = iofn + 1
 
           OPEN(iofn,FILE=st1(1:blank(st1))//'/sen_'//
+     &fttags(ft)(1:blank(fttags(ft)))//'.dat')
+        ENDIF
+        IF (out_yie) THEN
+          iofn = iofn + 1
+
+          OPEN(iofn,FILE=st1(1:blank(st1))//'/yie_'//
      &fttags(ft)(1:blank(fttags(ft)))//'.dat')
         ENDIF
       ENDDO
@@ -2333,7 +2340,7 @@ c     &site_dat,lat,lon,ca
         DO i=21,69
           WRITE(i,'(f7.3,f9.3,$)') lat,lon
         ENDDO
-        DO i=601,606
+        DO i=601,607
           WRITE(i,'(f7.3,f9.3,$)') lat,lon
         ENDDO
 
@@ -2356,6 +2363,10 @@ c     &site_dat,lat,lon,ca
             WRITE(iofn,'(f7.3,f9.3,$)') lat,lon
           ENDIF
           IF (out_sen) THEN
+            iofn = iofn + 1
+            WRITE(iofn,'(f7.3,f9.3,$)') lat,lon
+          ENDIF
+          IF (out_yie) THEN
             iofn = iofn + 1
             WRITE(iofn,'(f7.3,f9.3,$)') lat,lon
           ENDIF
@@ -4634,11 +4645,12 @@ c       kg_beta    = kg_beta/wi
           WRITE(604,'('' '',f12.2,$)') tblgc
           WRITE(605,'('' '',f10.2,$)') tbioleaf
           WRITE(606,'('' '',f10.2,$)') flulccc 
+          WRITE(607,'('' '',f10.2,$)') avyield 
         ENDIF
 
 
 *----------------------------------------------------------------------*
-* Write optional cov bio bud sen.                                      *
+* Write optional cov bio bud sen yie.                                  *
 *----------------------------------------------------------------------*
         iofn = iofngft
         IF (iyear.GE.nyears-outyears2+1) THEN
@@ -4658,6 +4670,10 @@ c       kg_beta    = kg_beta/wi
             IF (out_sen) THEN
               iofn = iofn + 1
               WRITE(iofn,'('' '',i8,$)') seno(ft)
+            ENDIF
+            IF (out_yie) THEN
+              iofn = iofn + 1
+              WRITE(iofn,'('' '',f12.6,$)') yield(ft)
             ENDIF
           ENDDO
         ENDIF
@@ -4882,7 +4898,7 @@ c       kg_beta    = kg_beta/wi
         DO i=21,69
           WRITE(i,*)
         ENDDO
-        DO i=601,606
+        DO i=601,607
           WRITE(i,*)
         ENDDO
 
@@ -4902,6 +4918,10 @@ c       kg_beta    = kg_beta/wi
               WRITE(iofn,*)
             ENDIF
             IF (out_sen) THEN
+              iofn = iofn + 1
+              WRITE(iofn,*)
+            ENDIF
+            IF (out_yie) THEN
               iofn = iofn + 1
               WRITE(iofn,*)
             ENDIF
@@ -5100,6 +5120,10 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
             CLOSE(iofn)
           ENDIF
           IF (out_sen) THEN
+            iofn = iofn + 1
+            CLOSE(iofn)
+          ENDIF
+          IF (out_yie) THEN
             iofn = iofn + 1
             CLOSE(iofn)
           ENDIF
