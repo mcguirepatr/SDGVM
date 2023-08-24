@@ -1524,7 +1524,7 @@
 *     &nppstore(ft)
         ENDIF
 *----------------------------------------------------------------------*
-        tmor = 0.0d0 !PCM turn tmor mortality off 
+        !tmor = 0.0d0 !PCM turn tmor mortality off 
 
         DO age=2,ftmor(ft) 
           IF (age.LT.fireres) THEN
@@ -1533,7 +1533,7 @@
             fprob = 0.0d0
           ENDIF
           IF (fireres.LT.0) fprob = real(-fireres)/1000.0d0
-          fprob = 0.0d0 !PCM turn fire off
+          !fprob = 0.0d0 !PCM turn fire off
 
           fprbtm = fprob-fprob*tmor+tmor
           
