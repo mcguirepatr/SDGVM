@@ -1476,7 +1476,7 @@
 * Compute harvest losses for each aggregated type (at)                 *
 *----------------------------------------------------------------------*
         at = aggmap_SDGVM_to_aggHyde(ft)
-        IF ((atharvest(at).GT.0.0d0).AND.(at.LE.2)) THEN !only for primf&secdf
+        IF ((atharvest(at).GT.0.0d0).AND.((at.EQ.1).OR.(at.EQ.3))) THEN !only for primf&secdf
             loss_frac  = ft2frac(ft)*atharvest(at)*1.0d-2
             remain_frac = 1.0d0 - loss_frac  
         ELSE
@@ -1569,7 +1569,7 @@
           ! calculate litter loss and biomass loss from harvest
           ! the cover array has already been adjusted in the COVER
           ! routine for harvest
-          IF ((loss_frac.GT.0.0d0).AND.(at.LE.2)) THEN
+          IF ((loss_frac.GT.0.0d0).AND.((at.EQ.1).OR.(at.EQ.3))) THEN
             !add harvested/removed leaf biomass to surface soil litter
             slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)*loss_frac
             !add harvested/removed wood biomass (including 50% nppstore) to lulccc losses
@@ -1591,7 +1591,7 @@
           nppstore(ft)  = nppstore(ft) * 0.50d0
         ENDIF
 
-        IF ((loss_frac.GT.0.0d0).AND.(at.LE.2)) THEN !only for primf&secdf
+        IF ((loss_frac.GT.0.0d0).AND.((at.EQ.1).OR.(at.EQ.3))) THEN !only for primf&secdf
           !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact
           !remove leaf mass - this leaves root mass and 50% nppstore untouched 
           bioleaf(ft)   = bioleaf(ft)*remain_frac 
