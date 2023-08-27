@@ -192,7 +192,6 @@
       zlat = -1000.0d0
       zlon = -1000.0d0
 
-      ft2frac0(:) = -1000.0
 
 *----------------------------------------------------------------------*
 * Read input common parameters.                                        *
@@ -1994,6 +1993,8 @@ c CLOSE added by Ghislain 15/12/03
 *    cluse table from the net land use transitions                     *
 *----------------------------------------------------------------------*
         closed_loop_ft = .FALSE.
+
+        ft2frac0(:) = -1000.0
 
         speedc = xspeedc
         swcnew = 0.0d0
