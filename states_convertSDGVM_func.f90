@@ -796,7 +796,9 @@
             END DO
           ELSE 
             ! no forest cover in ESA - forest cover stored for post-processing
-            ! write(paste('no ESA forest','BARE:',ov[1],'C3 CROP:',ov[9],'C4 CROP:',ov[10]),'1nofor_error.txt',append=T)
+            !write(paste('no ESA forest','BARE:',ov[1],'C3 CROP:',ov[9],'C4 CROP:',ov[10]),'1nofor_error.txt',append=T)
+            print *,'no ESA forest: ','BARE:',ov(1), &
+                    'C3 CROP:',ov(9),'C4 CROP:',ov(10)
             nofcov = diff
           END IF 
         ELSE IF(for_esa>for_hyde) THEN 
@@ -904,7 +906,9 @@
               
               !write(*,*) 'JJ8',diff
               ! no grass cover in ESA - grass cover stored for post-processing
-              ! write(paste('no ESA grass','BARE:',ov[1],'C3 CROP:',ov[9],'C4 CROP:',ov[10]),'1nopast_error.txt',append=T)
+              !write(paste('no ESA grass','BARE:',ov[1],'C3 CROP:',ov[9],'C4 CROP:',ov[10]),'1nopast_error.txt',append=T)
+              PRINT *,'no ESA grass: ','BARE:',ov(1),'C3 CROP:', &
+                          ov(9),'C4 CROP:',ov(10)
               nogcov = diff
             END IF 
           END IF 
@@ -914,9 +918,24 @@
         !IF( SUM(ov(1:NS))-100.0 > 1e-3 ) PRINT *,'Error,cov:',SUM(ov(1:NS)),hyde_cov,'. Bare:',v(1) !'1cov_error.txt'
         
         ! assign as yet unassigned forest cover as negative value to DcBp
-        IF(nofcov>0) ov(3)  = -nofcov
+        !IF(nofcov>0) ov(3)  = -nofcov
         ! assign as yet unassigned grass cover as negative value to C3p
-        IF(nogcov>0) ov(7)  = -nogcov
+        !IF(nogcov>0) ov(7)  = -nogcov
+
+        IF(nofcov>0) THEN !PCM3 
+              ov(3) = primf_frac_hyde*nofcov
+              ov(4:6) = 0.0
+              ov(3+DF) = secdf_frac_hyde*nofcov
+              ov(4+DF:6+DF) = 0.0
+        END IF
+
+        IF(nogcov>0) THEN !PCM3
+              ov(7) = primn_frac_hyde*nogcov
+              ov(8) = 0.0
+              ov(7+DN) = secdn_frac_hyde*nogcov
+              ov(8+DN) = 0.0
+        END IF
+
 
         
         result_join_hyde = ov(1:NS)
