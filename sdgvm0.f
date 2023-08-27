@@ -70,7 +70,7 @@
       REAL*8 soilpr,soilp_init,kg(maxnft),kg_beta,ftcan_clump(maxnft)
       REAL*8 map_clump,w_scalar,t_scalar,leafv_sum,stemv_sum,rootv_sum
       REAL*8 aprc_dryqv(10),aprc_dryq,yearprcdryq,prc_week(52),prcq(52)
-      REAL*8 matvar,aprc_rel,a2,b2,flulccc
+      REAL*8 matvar,aprc_rel,a2,b2,avflulccc,flulccc(maxnft)
       REAL*8 jmax_int(maxnft),jmax_int_er(maxnft)
       REAL*8 jmax_ci_low,jmax_ci_high
       REAL*8 ftToptV(maxnft),ftHaV(maxnft),ftHdV(maxnft)
@@ -84,7 +84,7 @@
       REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
       REAL*8 cluseh(maxn_at,maxyrs)
       REAL*8 sum_cov_test(maxnft)
-      REAL*8 ftprop_init(maxnft)
+      REAL*8 ftprop_init(maxnft),ft2frac0(maxnft)
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
@@ -191,6 +191,8 @@
       no_countries = 0
       zlat = -1000.0d0
       zlon = -1000.0d0
+
+      ft2frac0(:) = -1000.0
 
 *----------------------------------------------------------------------*
 * Read input common parameters.                                        *
@@ -2862,7 +2864,7 @@ c     &site_dat,lat,lon,ca
           !write(*,FMT="(16F7.3)") sum_cov_test(1:nft)
           write(*,FMT="(A)") 'UU2'
           write(*,FMT="(8A14)")
-     &      '     ','     primf', '     primn', '     secdf',
+     &              '     primf', '     primn', '     secdf',
      &              '     secdn', '    c3crop', '    c4crop',
      &              '     urban', '      harv' 
 
@@ -3668,7 +3670,8 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
      &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,atprop2,
-     &atharvest,aggmap_SDGVM_to_aggHyde,ftprop_init,yield,debug)
+     &atharvest,aggmap_SDGVM_to_aggHyde,ftprop_init,yield,ft2frac0,
+     &debug)
 
         IF(debug .EQV. .TRUE.) THEN
           PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '
@@ -4368,6 +4371,7 @@ c     check water cycle closure
         avgpp   = 0.0d0
         avlch   = 0.0d0
         avyield = 0.0d0
+        avflulccc = 0.0d0
         avnleaf = 0.0d0
         avleaf_nit = 0.0d0
         avvcmax = 0.0d0
@@ -4393,7 +4397,8 @@ c     check water cycle closure
           avpet   = avpet   + ftcov(ft)*fpet(ft)
           avgpp   = avgpp   + ftcov(ft)*gpp(ft)
           avlch   = avlch   + ftcov(ft)*lch(ft)
-          avyield = avyield + ftcov(ft)*yield(ft)
+          avyield = avyield + ftcov(ft)*yield(ft) 
+          avflulccc = avflulccc + ftcov(ft)*flulccc(ft) 
           hi = 0
           do i = 1,ftmor(ft)
             av_hgt(ft) = av_hgt(ft) + hgt(i,ft)
@@ -4609,7 +4614,7 @@ c       kg_beta    = kg_beta/wi
           WRITE(42,'('' '',f8.3,$)') avlch
           WRITE(43,'('' '',f8.1,$)') yearprc
           WRITE(44,'('' '',f8.1,$)') avnpp-avsresp-firec-avlch-avyield-
-     &flulccc
+     &avflulccc
           WRITE(45,'('' '',f8.1,$)') avtrn
           WRITE(46,'('' '',f8.5,$)') fprob
           WRITE(47,'('' '',f8.2,$)') yeartmp
@@ -4646,7 +4651,7 @@ c       kg_beta    = kg_beta/wi
           WRITE(603,'('' '',f12.2,$)') tabglitterc
           WRITE(604,'('' '',f12.2,$)') tblgc
           WRITE(605,'('' '',f10.2,$)') tbioleaf
-          WRITE(606,'('' '',f10.2,$)') flulccc 
+          WRITE(606,'('' '',f10.2,$)') avflulccc 
           WRITE(607,'('' '',f10.2,$)') avyield 
         ENDIF
 
@@ -4847,7 +4852,7 @@ c       kg_beta    = kg_beta/wi
             ans1 = ans1 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(i,ft)
           ENDDO
-          ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft) & yield(ft)
+          ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
         IF(debug .EQV. .TRUE.) THEN
           WRITE(*,'(''check0'',3f13.6)') ccheck
@@ -4865,16 +4870,15 @@ c       kg_beta    = kg_beta/wi
           WRITE(*,'(''avsresp'',3f12.6)') avsresp 
           WRITE(*,'(''firec'',3f12.6)') firec 
           WRITE(*,'(''avyield'',3f12.6)') avyield 
-          WRITE(*,'(''flulccc'',3f12.6)') flulccc 
+          WRITE(*,'(''avflulccc'',3f12.6)') avflulccc 
         ENDIF
 !        ccheck = ccheck - (ans1 + tc0(1) + 
 !     &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) - 
 !     &(avnpp-avlch-avsresp-firec)) - avyield
 
-! PCM: now, avyield is included in the flulccc
         ccheck = ccheck + avnpp - (ans1 + tc0(1) + 
      &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) + 
-     &avlch + avsresp + firec +  flulccc) 
+     &avlch + avsresp + firec + avflulccc + avyield ) 
         IF(debug .EQV. .TRUE.) THEN
           WRITE(*,'(''check'',3f13.6)') ccheck
         ENDIF
