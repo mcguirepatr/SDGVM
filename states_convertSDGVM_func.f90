@@ -833,7 +833,7 @@
         ! change grassland cover
         ! ESA grasslands (potential pasture)
         past_esa    = v(7) + v(8)
-        ! Hyde grassland cover (primary + secondary)
+        ! Hyde non-forest cover (primary + secondary + pasture + rangeland)
         past_hyde = v(12) + v(14) 
         IF(past_hyde .GT. 0) THEN
           primn_frac_hyde = v(12)/past_hyde
@@ -907,8 +907,8 @@
               !write(*,*) 'JJ8',diff
               ! no grass cover in ESA - grass cover stored for post-processing
               !write(paste('no ESA grass','BARE:',ov[1],'C3 CROP:',ov[9],'C4 CROP:',ov[10]),'1nopast_error.txt',append=T)
-              PRINT *,'no ESA grass: ','BARE:',ov(1),'C3 CROP:', &
-                          ov(9),'C4 CROP:',ov(10)
+              !PRINT *,'no ESA grass: ','BARE:',ov(1),'C3 CROP:', &
+              !            ov(9),'C4 CROP:',ov(10)
               nogcov = diff
             END IF 
           END IF 
@@ -929,10 +929,10 @@
               ov(4+DF:6+DF) = 0.0
         END IF
 
-        IF(nogcov>0) THEN !PCM3
-              ov(7) = primn_frac_hyde*nogcov
+        IF(nogcov>0) THEN !PCM3 : set to no grass
+              ov(7) = 0.0 
               ov(8) = 0.0
-              ov(7+DN) = secdn_frac_hyde*nogcov
+              ov(7+DN) = 0.0 
               ov(8+DN) = 0.0
         END IF
 
