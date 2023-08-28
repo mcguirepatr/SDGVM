@@ -84,7 +84,7 @@
       REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
       REAL*8 cluseh(maxn_at,maxyrs)
       REAL*8 sum_cov_test(maxnft)
-      REAL*8 ftprop_init(maxnft),ft2frac0(maxnft)
+      REAL*8 ftprop_init(maxnft),ft2frac0(maxnft),yieldo(maxnft)
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
@@ -4552,10 +4552,12 @@ c       kg_beta    = kg_beta/wi
         DO ft=1,nft
           bioo(ft) = 0.0d0
           covo(ft) = 0.0d0
+          yieldo(ft) = 0.0d0
           DO i=1,ftmor(ft)
             bioo(ft) = bioo(ft) + (bio(i,1,ft) +
      &bio(i,2,ft) + bioleaf(ft) + nppstore(ft))*cov(i,ft)
             covo(ft) = covo(ft) + cov(i,ft)
+            yieldo(ft) = yieldo(ft) + yield(ft)*cov(i,ft)
             leafper = leafper + npl(ft)*cov(i,ft)
             stemper = stemper + nps(ft)*cov(i,ft)
             rootper = rootper + npr(ft)*cov(i,ft)
@@ -4681,7 +4683,7 @@ c       kg_beta    = kg_beta/wi
             ENDIF
             IF (out_yie) THEN
               iofn = iofn + 1
-              WRITE(iofn,'('' '',f12.6,$)') yield(ft)
+              WRITE(iofn,'('' '',f12.6,$)') yieldo(ft)
             ENDIF
           ENDDO
         ENDIF
