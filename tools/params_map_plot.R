@@ -106,7 +106,7 @@ scn  <- list(
   name  = '"Total_Soil_Carbon"',
   nsub  = '',
   unit  = 'gCm^-2',
-  sunit = 'PCg',
+  sunit = 'PgC',
   gsum  = T,
   gmean = F,
   printsum = T,
@@ -299,8 +299,8 @@ wilting_point<- list(
   at    = c(0.01,0.025,0.05,0.075,0.1,0.125,0.15,0.175,0.2,0.225,0.25,0.3),
   cols  = col.inc
 )
-cov_C3 <- list(
-  name  = 'C3Grass_Cover',
+cov_C3p <- list(
+  name  = 'Primary_C3Grass_Cover',
   nsub  = '',
   unit  = 'proportion',
   sunit = 'proportion',
@@ -310,23 +310,86 @@ cov_C3 <- list(
   at    = c(0,0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1),
   cols  = col.inc
 )
-cov_C4 <- cov_C3
-cov_C4$name <- 'C4Grass_Cover'
-cov_C3crop <- cov_C3
+cov_C3crop <- cov_C3p
 cov_C3crop$name <- 'C3Crop_Cover'
-cov_C4crop <- cov_C3
-cov_C4crop$name <- 'C4_Crop_Cover'
-cov_Dc_Bl <- cov_C3
-cov_Dc_Bl$name <- 'Deciduous_Broadleaf_Cover'
-cov_Dc_Nl <- cov_C3
-cov_Dc_Nl$name <- 'Deciduous_Needleleaf_Cover'
-cov_Ev_Bl <- cov_C3
-cov_Ev_Bl$name <- 'Evergreen_Broadleaf_Cover'
-cov_Ev_Nl <- cov_C3
-cov_Ev_Nl$name <- 'Evergreen_Needleleaf_Cover'
-cov_BARE <- cov_C3
-cov_BARE$name <- 'Bareground'
-fab <- cov_C3
+cov_C4crop <- cov_C3p
+cov_C4crop$name <- 'C4Crop_Cover'
+
+cov_C4p <- cov_C3p
+cov_C4p$name <- 'Primary_C4Grass_Cover'
+cov_Dc_Bp <- cov_C3p
+cov_Dc_Bp$name <- 'Primary_Deciduous_Broadleaf_Cover'
+cov_Dc_Np <- cov_C3p
+cov_Dc_Np$name <- 'Primary_Deciduous_Needleleaf_Cover'
+cov_Ev_Bp <- cov_C3p
+cov_Ev_Bp$name <- 'Primary_Evergreen_Broadleaf_Cover'
+cov_Ev_Np <- cov_C3p
+cov_Ev_Np$name <- 'Primary_Evergreen_Needleleaf_Cover'
+
+cov_C3s <- cov_C3p
+cov_C3s$name <- 'Secondary_C3Grass_Cover'
+cov_C4s <- cov_C3p
+cov_C4s$name <- 'Secondary_C4Grass_Cover'
+cov_Dc_Bs <- cov_C3p
+cov_Dc_Bs$name <- 'Secondary_Deciduous_Broadleaf_Cover'
+cov_Dc_Ns <- cov_C3p
+cov_Dc_Ns$name <- 'Secondary_Deciduous_Needleleaf_Cover'
+cov_Ev_Bs <- cov_C3p
+cov_Ev_Bs$name <- 'Secondary_Evergreen_Broadleaf_Cover'
+cov_Ev_Ns <- cov_C3p
+cov_Ev_Ns$name <- 'Secondary_Evergreen_Needleleaf_Cover'
+
+cov_BARE <- cov_C3p
+cov_BARE$name <- 'Bareground_Cover'
+
+yie_C3p <- list(
+  name  = 'Primary_C3Grass_Yield',
+  nsub  = '',
+  unit  = 'gCm^-2*y^-1',
+  sunit = 'PgC',
+  gsum  = T,
+  gmean = F,
+  printsum = T,
+  at    = c(0,0.1,0.2,0.5,1.0,2.0,5.0,10,15,20,25,30),
+  cols  = col.inc
+)
+
+yield <- yie_C3p
+yield$name <- 'Total_Yield'
+
+yie_C3crop <- yie_C3p
+yie_C3crop$name <- 'C3Crop_Yield'
+yie_C4crop <- yie_C3p
+yie_C4crop$name <- 'C4Crop_Yield'
+
+yie_C4p <- yie_C3p
+yie_C4p$name <- 'Primary_C4Grass_Yield'
+yie_Dc_Bp <- yie_C3p
+yie_Dc_Bp$name <- 'Primary_Deciduous_Broadleaf_Yield'
+yie_Dc_Np <- yie_C3p
+yie_Dc_Np$name <- 'Primary_Deciduous_Needleleaf_Yield'
+yie_Ev_Bp <- yie_C3p
+yie_Ev_Bp$name <- 'Primary_Evergreen_Broadleaf_Yield'
+yie_Ev_Np <- yie_C3p
+yie_Ev_Np$name <- 'Primary_Evergreen_Needleleaf_Yield'
+
+yie_C3s <- yie_C3p
+yie_C3s$name <- 'Secondary_C3Grass_Yield'
+yie_C4s <- yie_C3p
+yie_C4s$name <- 'Secondary_C4Grass_Yield'
+yie_Dc_Bs <- yie_C3p
+yie_Dc_Bs$name <- 'Secondary_Deciduous_Broadleaf_Yield'
+yie_Dc_Ns <- yie_C3p
+yie_Dc_Ns$name <- 'Secondary_Deciduous_Needleleaf_Yield'
+yie_Ev_Bs <- yie_C3p
+yie_Ev_Bs$name <- 'Secondary_Evergreen_Broadleaf_Yield'
+yie_Ev_Ns <- yie_C3p
+yie_Ev_Ns$name <- 'Secondary_Evergreen_Needleleaf_Yield'
+
+yie_BARE <- yie_C3p
+yie_BARE$name <- 'Bareground_Yield'
+
+fab <- cov_C3p
 fab$name <- 'Fire_Burnt_Area'
 
 

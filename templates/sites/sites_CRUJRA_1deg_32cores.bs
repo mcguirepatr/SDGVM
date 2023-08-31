@@ -5,9 +5,9 @@
 # 32 cores 
 
 
-SDGVM_SITES=#HOME##DATA#/sites/global_1deg_CRUJRA2018.dat
-SDGVM_NODES=1 
-SDGVM_NP=32   # processors per node; if nodes empty total processors  
+SDGVM_SITES=#HOME##DATA#/sites/global_1deg_CRUJRA2023.dat
+SDGVM_NODES=4 
+SDGVM_NP=8   # processors per node; if nodes empty total processors  
 SDGVM_N_SITES=( 1980 625 620 610  615  515 515  515 500  510
                 575  575 560 430  500  500 520  525 550  575
                 530  630 540 540  455  445 490  510 400  400

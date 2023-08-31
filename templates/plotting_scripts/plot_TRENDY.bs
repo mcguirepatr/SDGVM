@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SRCDIR=#HOME##MOD#/tools
-ARGS="of<-'#PROJECT#' sim<-c( #S#  ) styr<-#STY# endyr<-#ENDY# yr_mean<-c(#ENDY#-9,#ENDY#) project<-'#PROJECT#'"
+ARGS="of<-'#PROJECT#' sim<-c(#S#) styr<-#STY# endyr<-#ENDY# yr_mean<-c(#ENDY#-9,#ENDY#) project<-'#PROJECT#'"
 
 
 cd $SRCDIR

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SRCDIR=#HOME##MOD#/tools
-ARGS="nsites<-#TSITES# grids<-#NP# cores<-#NP# fd<-'${SRCDIR}' dir<-'#DIR#' wd<-'#PDIR#' sim<-'#SIM#' person<-'#NAME#' email<-'#EMAIL#' institution<-'#INSTITUTION#'" 
+ARGS="nsites<-#TSITES# grids<-#NP# cores<-#NP# fd<-'${SRCDIR}' dir<-'#DIR#' wd<-'#PDIR#' sim<-'#SIM#'"
 TIMEARGS="ny<-#SPINNY# sty<-1"
 TIMEARGSMON="ny<-#SPINNY#"
 

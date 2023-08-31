@@ -71,23 +71,27 @@ source ./runtypes.bs
 if [ $? == 1 ]; then exit; fi
 TEMPINT="${SDGVM_SPIN[*]}"
 SDGVM_SPIN_STR=`echo ${TEMPINT// /,\ }`
+SDGVM_SPIN_STR_R=`echo \'${TEMPINT// /\',\'}\'`
 TEMPINT="${SDGVM_MAIN_SIMS[*]}"
 SDGVM_MAIN_SIMS_STR=`echo ${TEMPINT// /,\ }`
+SDGVM_MAIN_SIMS_STR_R=`echo \'${TEMPINT// /\',\'}\'`
 
 # print input vars 
 echo ""
 echo "Runtype specific variables"
 echo "======================================"
-echo "Copy directory (SDGVM_CPDIR):"
+echo "Copy directory (SDGVM_CPRUN):"
 echo "  ${SDGVM_CPRUN}"
 echo "Spin runs (SDGVM_SPIN):"
 echo "  ${SDGVM_SPIN[*]}"
-echo "Spin runs string (SDGVM_SPIN_STR):"
+echo "Spin runs strings (SDGVM_SPIN_STR, SDGVM_SPIN_STR_R):"
 echo "  ${SDGVM_SPIN_STR}"
+echo "  ${SDGVM_SPIN_STR_R}"
 echo "Main runs (SDGVM_MAIN_SIMS):"
 echo "  ${SDGVM_MAIN_SIMS[*]}"
-echo "Main runs string (SDGVM_MAIN_SIMS_STR):"
+echo "Main runs string (SDGVM_MAIN_SIMS_STR, SDGVM_MAIN_SIMS_STR_R):"
 echo "  ${SDGVM_MAIN_SIMS_STR}"
+echo "  ${SDGVM_MAIN_SIMS_STR_R}"
 echo "Number of spin up years (SDGVM_SPINNY):"
 echo "  ${SDGVM_SPINNY}"
 
@@ -142,6 +146,10 @@ echo "Number of nodes (SDGVM_NODES):"
 echo "  $SDGVM_NODES "
 echo "Number of processors, per node or total depending on submit script (SDGVM_NP):"
 echo "  $SDGVM_NP "
+echo "Number of nodes (SDGVM_NODES_PP):"
+echo "  $SDGVM_NODES_PP "
+echo "Number of processors, per node or total depending on submit script (SDGVM_NP):"
+echo "  $SDGVM_NP_PP "
 echo "Number of sites to run on each processor (SDGVM_N_SITES):"
 echo "  ${SDGVM_N_SITES[*]} "
 echo "Number of sites in output files (SDGVM_SITES_TOTAL):"
@@ -170,9 +178,9 @@ sed -i "s@#PROJDIR#@${SDGVM_PDIR}${SDGVM_PROJECT}@" $SDGVM_PDIR/$SDGVM_PROJECT/t
 sed -i "s/#EMAIL#/$SDGVM_USER_EMAIL/"               $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.* 
 sed -i "s@#ACCOUNT#@$SDGVM_USER_ACCOUNT@"           $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
 sed -i "s@#QUEUE#@$SDGVM_USER_QUEUE@"               $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
-sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION@"       $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
-sed -i "s@#NODES#@$SDGVM_NODES@"                    $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
-sed -i "s@#NP#@$SDGVM_NP@"                          $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION_PP@"    $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#NODES#@$SDGVM_NODES_PP@"                 $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#NP#@$SDGVM_NP_PP@"                       $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
 
 
 cd ${SDGVM_HOME}${SDGVM_MOD}/tools 

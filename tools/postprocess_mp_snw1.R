@@ -9,7 +9,6 @@
 
 rm(list=ls())
 
-outputdir <- 'output/'
 
 
 # Set default argument values
@@ -22,7 +21,7 @@ daily   <- F
 
 # stich output files from all grids into a single file, use multiple processors
 stich   <- T
-mc      <- F 
+mc      <- T 
 
 # delete sub-grid files once processesed
 delete  <- F 
@@ -34,12 +33,12 @@ netcdf  <- F
 deg1    <- T
 
 # main directory
-dir  <- '~/models/SDGVM/'
-#dir <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/'
+#dir  <- '~/models/SDGVM/'
+dir <- '/gws/nopw/j04/nexcs/pmcguire/TRENDYv10/'
 
 # source code tools directory
-fd   <- paste(dir,'src/sdgvm/tools/',sep='/')
-#fd   <- paste(dir,'sdgvm/tools/',sep='/')
+#fd   <- paste(dir,'src/sdgvm/tools/',sep='/')
+fd   <- paste(dir,'sdgvm/tools/',sep='/')
 
 # directory in which simulation directory lives
 wd   <- paste(dir,'run/',sep='/')
@@ -52,7 +51,7 @@ pia  <- 1
 
 # start year and number of years of data in SDGVM output files
 sty  <- 1700 
-ny   <- 319 
+ny   <- 321
 
 # years of output requested for netcdf
 outsyear <- NULL 
@@ -69,36 +68,37 @@ fend   <- '.dat'
 ncf    <- 'SDGVM'
 ncfend <- '.nc'
 
+root_dir <- '/work/scratch-pw/pmcguire/TRENDY2021_v1/'
+output_dir <- 'output_6_7_500/'
+
 
 # netcdf files to create
-#ncdf_avars <- c('cVeg','cLitter','cSoil','cRoot','burntArea')
-ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea')
+ncdf_avars <- c('cVeg','cLitter','cSoil','cRoot','burntArea','landCoverFrac')
+#ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea')
 #ncdf_avars <- c('fFire','fLuc')
 #ncdf_avars <- 'cVegpft' 
-#ncdf_avars <- 'landCoverFrac' 
+#ncdf_avars <- 'fLeach' 
 #ncdf_avars <- 'pot_evapotrans' 
 #ncdf_avars <- NULL 
 
 #ncdf_mvars <- c('tas','pr')
 #ncdf_mvars <- 'snow_depthpft' 
 #ncdf_mvars <- c('gpppft','tran','npppft')
-ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai','tran',
-                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft')
+ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai',
+                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran','laipft')
 #ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans')
 #ncdf_mvars <- c('gpp','ra','npp','rh','nbp','lai',
 #                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran','landCoverFrac')
 #ncdf_mvars <- 'nbp' 
 #ncdf_mvars <- 'laipft' 
-#ncdf_mvars <- c('evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft')
 
 # nc file parameters
 mis_val   <- -99999
 nsites    <- 62220 
 lon       <- 0.5 
 lat       <- 0.5
-#pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
+pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
 #pftnames  <- c('BARE','CITY','C3')
-pftnames  <- c('BARE','CITY','C3p','C3s','C3crop','C4p','C4s','C4crop','Dc_Bp','Dc_Np','Ev_Bp','Ev_Np','Dc_Bs','Dc_Ns','Ev_Bs','Ev_Ns')
 
 # specifiy a variable to process, this should be the filename not including the extension
 # - used to test whether the outputting is working correctly 
@@ -106,12 +106,15 @@ var       <- NULL
 
 # set variable for global attributes in netcdf files
 # person, email, institution
-person      <- 'Anthony P. Walker'
-email       <- 'walkerap@ornl.gov'
-institution <- 'Oak Ridge National Laboratory'
+#person      <- 'Anthony P. Walker'
+#email       <- 'walkerap@ornl.gov'
+#institution <- 'Oak Ridge National Laboratory'
+person      <- 'Patrick C. McGuire'
+email       <- 'mcguirepatr@gmail.com'
+institution <- 'University of Reading'
 
 # project name
-project   <- 'TRENDYv12, 2023'
+project   <- 'TRENDYv10, 2021'
 
 
 ### Parse command line arguments   
@@ -146,14 +149,16 @@ print(ny)
 ### Read in functions 
 ##########################
 setwd(fd)
-source('read_SDGVM_output.R')
+source('read_SDGVM_output_snw1.R')
 if(netcdf) source('functions_netcdf.R')
 
 
 
 ### Start Program
 ##########################
-wd_list <- paste(wd,sim,outputdir,sep='/')
+#wd_list <- paste(wd,sim,'output_6_7/',sep='/')
+#wd_list <- paste(wd,sim,'output_6_7_500/',sep='/')
+wd_list <- paste(root_dir,sim,output_dir,sep='/')
 print(wd_list)
 
 # if single variable specified process that and nothing else
@@ -206,7 +211,7 @@ outnyears <- outeyear - outsyear + 1
 if(netcdf) lapply(wd_list[pia], write_sdgvm_netcdf,
                   afiles=ncdf_avars,
                   mfiles=ncdf_mvars,
-                  mc=T, procs=cores,
+                  mc=mc, procs=cores,
                   nsites=nsites, nyears=outnyears, styr=sty, lon=lon, lat=lat,
                   osyr=outsyear, person=person, email=email, institution=institution )
 

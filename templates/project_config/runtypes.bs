@@ -13,14 +13,16 @@ if [ $SDGVM_RUNTYPE == 'TRENDY' ]; then
 
   # directory where template simulations are to be copied from 
   # - relative to "template" directory in model source code directory 
-  SDGVM_CPRUN="master_mp"
+  #SDGVM_CPRUN="master_mp"
+  SDGVM_CPRUN="main_mp"
 
   # Spinup 
   SDGVM_SPIN="spin_accel"
   SDGVM_SPINNY=500
 
   # Main simulation ensemble  
-  SDGVM_MAIN_SIMS=( S0 S1 S2 S3 S4 S8 )
+  #SDGVM_MAIN_SIMS=( S0 S1 S2 S3 S4 S8 )
+  SDGVM_MAIN_SIMS=( S0 S1 S2 S3 )
   
   # Default specific time variables that can be over-written when projects.bs is run
   SDGVM_CLIMSTY=1901
