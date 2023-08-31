@@ -3,8 +3,8 @@
 
 #===============================================================================
 
-#SBATCH -A #ACCOUNT#                      ### account to run job under
-#SBATCH -J #SIM#_#PROJECT#_SDGVM          ### jobname 
+##SBATCH -A #ACCOUNT#                     ### account to run job under #comment out if no ACCOUNT
+#SBATCH -J #SIM#_pp_SDGVM                 ### jobname 
 #SBATCH -p #PARTITION#                    ### partition to run job in (sinfo)
 #SBATCH --mem=#MEMORY#                    ### <number>[unit], when 0, all available memory requested
 #SBATCH -N #NODES#                        ### nodes requested for job
@@ -19,10 +19,13 @@
 #===============================================================================
 
 
+module load jasr
+
 cd #RUNDIR#
 
 echo "`date` -- PP EXECUTION HAS STARTED" 
 ./run_postprocessing.bs
+module unload jasr
 echo "`date` -- PP EXECUTION HAS FINISHED" 
 
 

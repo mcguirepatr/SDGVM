@@ -1,8 +1,12 @@
 #!/bin/bash
 
-SRCDIR=#HOME##MOD#/tools
-ARGS="of<-'#PROJECT#_spin' sim<-c(#S#) styr<-1 endyr<-#SPINNY# yr_mean<-c(#SPINNY#-9,#SPINNY#) project<-'#PROJECT#'"
+module load jasr
 
+SRCDIR=#HOME##MOD#/tools
+ARGS="of<-'#PROJECT#_spin' sim<-c(#S#) styr<-1 endyr<-#SPINNY# yr_mean<-c(#SPINNY#-9,#SPINNY#) project<-'#PROJECT#' date<-'230719spin' dir<-'/work/scratch-pw3/pmcguire' rdir<-'sdgvmR2' edir<-'eval_data' tdir<-'${SRCDIR}'"
+
+echo 'ARGS'
+echo $ARGS
 
 cd $SRCDIR
 # dynamic variables
@@ -14,5 +18,5 @@ ALLARGS="${ARGS} via<-24:32 cov_fixed<-T"
 Rscript plot_maps_lattice.R ${ALLARGS} 
 
 
-
+module unload jasr
 ### END ###

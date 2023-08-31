@@ -40,13 +40,14 @@ if [ $SDGVM_USER == 'ORNL_APW' ]; then
 elif [ $SDGVM_USER == 'UR_PCM' ]; then
 
   # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
-  #SDGVM_HOME="/gws/nopw/j04/nexcs/pmcguire"
-  SDGVM_HOME="/work/scratch-pw2/pmcguire"
+  SDGVM_HOME="/gws/nopw/j04/nexcs/pmcguire"
+  #SDGVM_HOME="/work/scratch-pw3/pmcguire"
 
   # relative to SDGVM_HOME
-  SDGVM_PROJECTS_DIR="/sdgvmR"
+  SDGVM_PROJECTS_DIR="/sdgvmR2"
   SDGVM_DATA="/TRENDYv12/db"
-  SDGVM_MOD="/TRENDYv12/sdgvm"
+  #SDGVM_MOD="/TRENDYv12/sdgvm"
+  SDGVM_MOD="/TRENDYv10/sdgvm_v6n_debug" #copy from v10
 
   # cluster scheduling variables
   SDGVM_BATCHPROC="sbatch"
