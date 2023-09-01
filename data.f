@@ -553,8 +553,8 @@ C PCM2      WRITE(*,*) '111111111'
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
 *----------------------------------------------------------------------*
-      rrow = 1.0 + (latf - lat)/latr
-      rcol = 1.0 + (lon - lon0)/lonr
+      rrow = (latf - lat)/latr
+      rcol = (lon - lon0)/lonr
 
 
       ynorm = rrow - real(int(rrow))
