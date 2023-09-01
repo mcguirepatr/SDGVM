@@ -824,8 +824,8 @@
         
         ! increase or decrease grass (pasture) cover 
         ! total cover so far in hyde ESA combined dataset - accounts for forest cover as yet unassigned to a PFT
-        ! PCM: skip BARE soil (ov(1)) for now in esahyde_cov calc
-        esahyde_cov = SUM(ov(2:(NE+NH))) + nofcov
+        !PCM don't skip BARE soil anymore ! PCM: skip BARE soil (ov(1)) for now in esahyde_cov calc
+        esahyde_cov = SUM(ov(1:(NE+NH))) + nofcov
         
         ! total cover in hyde
         hyde_cov    = SUM(v(11:(NE+NH)))
