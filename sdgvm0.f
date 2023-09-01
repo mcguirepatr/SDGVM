@@ -1982,7 +1982,7 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 !PCM4 for running a single site in the main run from a gridded spinup;
 !PCM4 (other changes below)
-!      DO site=1,1
+!      DO site=55,55
       DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
