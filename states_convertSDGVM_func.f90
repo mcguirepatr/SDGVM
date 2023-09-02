@@ -517,6 +517,10 @@
           data_out_SDGVM = 255.0 
         END WHERE 
 
+        ! deal with forest or grass cover where no forest or grass cover existed in ESA
+        CALL F_LAT_ASSIGNPFT(data_out_SDGVM(year_index,:,:,:),NS,NY,DXY, &
+                           minii,minjj,maxii,maxjj,lat_offset,Y0,debug)
+  
         IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN
           WRITE(*,*)'JH1' ! Assumes default "ADVANCE='yes'".
           DO v=1,NS
@@ -525,10 +529,6 @@
           WRITE(*,*) ! Assumes default "ADVANCE='yes'".
         ENDIF
 
-        ! deal with forest or grass cover where no forest or grass cover existed in ESA
-        CALL F_LAT_ASSIGNPFT(data_out_SDGVM(year_index,:,:,:),NS,NY,DXY, &
-                             minii,minjj,maxii,maxjj,lat_offset)
-  
         IF(get_transitions) THEN
           data_out_AggHydeTransitions(year_index,:,:,:,:) = data_t_agg 
           data_out_AggHarvest(year_index,:,:,:) = data_out_harvest
@@ -653,7 +653,7 @@
     !  y2/n
     !}
 
-    FUNCTION JOIN_HYDE(v) RESULT( result_join_hyde ) 
+      FUNCTION JOIN_HYDE(v) RESULT( result_join_hyde ) 
       !ORIG:
       ! takes a 15 element vector, 1:10 - SDGVM PFTs from ESA data, 11:15 HYDE aggregated land cover 
       ! and combines into a 10 element vector of SDGVM PFTs
@@ -772,9 +772,11 @@
           primf_frac_hyde = 0.0
           secdf_frac_hyde = 0.0 
         ENDIF
-        !write(*,*) 'JI0a',v
-        !write(*,*) 'JI0b',ov
-        !write(*,*) 'JI1',for_esa,for_hyde,primf_frac_hyde,secdf_frac_hyde
+        IF(debug)THEN
+          write(*,*) 'JI0a',v
+          write(*,*) 'JI0b',ov
+          write(*,*) 'JI1',for_esa,for_hyde,primf_frac_hyde,secdf_frac_hyde
+        ENDIF
         !PCM initialize primary and secondary fractions of output field 
         IF(NS.GT.NE) THEN
           ovp(fid_min:fid_max) = ov(fid_min:fid_max)
@@ -786,7 +788,9 @@
         ! If forest cover is greater in hyde
         IF(for_hyde > for_esa) THEN 
           diff   = for_hyde  - for_esa
-          !write(*,*) 'JI2',for_esa,for_hyde,diff
+          IF(debug)THEN
+            write(*,*) 'JI2',for_esa,for_hyde,diff
+          ENDIF
           IF(for_esa>0) THEN 
             ! increase forest cover proportionally
             DO f=fid_min,fid_max
@@ -804,7 +808,9 @@
         ELSE IF(for_esa>for_hyde) THEN 
           ! forest cover greater in ESA
           diff   = for_esa - for_hyde 
-          !write(*,*) 'JI3',for_esa,for_hyde,diff
+          IF(debug)THEN
+            write(*,*) 'JI3',for_esa,for_hyde,diff
+          ENDIF
           ! decrease forest cover proportionally
           DO f=fid_min,fid_max
              ov(f)  = primf_frac_hyde * (ov(f) - diff * (v(f) / for_esa))
@@ -812,7 +818,9 @@
              ov(fsec)  = secdf_frac_hyde * (ov(fsec) - diff * (v(f) / for_esa))
           END DO
         END IF 
-        !write(*,*) 'JI4b',ov
+        IF(debug)THEN
+          write(*,*) 'JI4b',ov
+        ENDIF
         
         
         ! increase or decrease crop cover 
@@ -844,9 +852,11 @@
         ENDIF
 
 
-        !write(*,*) 'JJ0a',v
-        !write(*,*) 'JJ0b',ov
-        !write(*,*) 'JJ1',past_hyde,primn_frac_hyde,secdn_frac_hyde
+        IF(debug)THEN
+          write(*,*) 'JJ0a',v
+          write(*,*) 'JJ0b',ov
+          write(*,*) 'JJ1',past_hyde,primn_frac_hyde,secdn_frac_hyde
+        ENDIF
         !PCM initialize primary and secondary fractions of output field 
         IF(NS.GT.NE) THEN
           ovp(nid_min:nid_max) = ov(nid_min:nid_max)
@@ -856,14 +866,20 @@
         ENDIF
 
         
-        !write(*,*) 'JJ2',esahyde_cov,hyde_cov
+        IF(debug)THEN
+          write(*,*) 'JJ2',esahyde_cov,hyde_cov
+        ENDIF
         ! if new cover is different from hyde cover
         IF(esahyde_cov .NE. hyde_cov) THEN 
           diff   = hyde_cov - esahyde_cov
-          !write(*,*) 'JJ3',diff,past_esa
+          IF(debug)THEN
+            write(*,*) 'JJ3',diff,past_esa
+          ENDIF
           IF(diff<0.0) THEN 
             IF(ABS(diff)<past_esa) THEN 
-              !write(*,*) 'JJ4'
+              IF(debug)THEN
+                write(*,*) 'JJ4'
+              ENDIF
               
               ! change C3/C4 grass cover proportionally
               DO n=nid_min,nid_max
@@ -882,7 +898,9 @@
               
               ! assume remaining reduction from bare ground
               diff = abs(diff) - past_esa
-              !write(*,*) 'JJ5',diff,past_esa
+              IF(debug)THEN
+                write(*,*) 'JJ5',diff,past_esa
+              ENDIF
               IF(ov(1)>=diff) THEN
                  ov(1) = ov(1) - diff
               ELSE
@@ -892,19 +910,25 @@
             
           ELSE IF(diff>0.0) THEN 
             IF(past_esa>0.0) THEN 
-              
-              !write(*,*) 'JJ6',diff,past_esa,v(nid_min),ov(nid_min)
+             
+              IF(debug)THEN  
+                write(*,*) 'JJ6',diff,past_esa,v(nid_min),ov(nid_min)
+              ENDIF
               ! change C3/C4 grass cover proportionally
               DO n=nid_min,nid_max
                 ov(n)  = primn_frac_hyde * (ov(n) + diff * (v(n) / past_esa))
                 nsec = n + DN !secondary non-forest
                 ov(nsec)  = secdn_frac_hyde * (ov(nsec) +  diff * (v(n) / past_esa))
               ENDDO
-              !write(*,*) 'JJ7',diff,past_esa,v(nid_min),ov(nid_min)
+              IF(debug)THEN
+                write(*,*) 'JJ7',diff,past_esa,v(nid_min),ov(nid_min)
+              ENDIF
               
             ELSE 
               
-              !write(*,*) 'JJ8',diff
+              IF(debug)THEN
+                write(*,*) 'JJ8',diff
+              ENDIF
               ! no grass cover in ESA - grass cover stored for post-processing
               !write(paste('no ESA grass','BARE:',ov[1],'C3 CROP:',ov[9],'C4 CROP:',ov[10]),'1nopast_error.txt',append=T)
               !PRINT *,'no ESA grass: ','BARE:',ov(1),'C3 CROP:', &
@@ -923,16 +947,18 @@
         !IF(nogcov>0) ov(7)  = -nogcov
 
         IF(nofcov>0) THEN !PCM3 
-              ov(3) = primf_frac_hyde*nofcov
+              ov(2) = 0.0
+              ov(3) = -primf_frac_hyde*nofcov !set to Dc_Bp
               ov(4:6) = 0.0
-              ov(3+DF) = secdf_frac_hyde*nofcov
+              ov(2+DF) = 0.0
+              ov(3+DF) = -secdf_frac_hyde*nofcov !set to Dc_Bs
               ov(4+DF:6+DF) = 0.0
         END IF
 
-        IF(nogcov>0) THEN !PCM3 : set to no grass
-              ov(7) = 0.0 
+        IF(nogcov>0) THEN !PCM3
+              ov(7) = -primn_frac_hyde*nogcov !set to C3p 
               ov(8) = 0.0
-              ov(7+DN) = 0.0 
+              ov(7+DN) = -secdn_frac_hyde*nogcov !set to C3s 
               ov(8+DN) = 0.0
         END IF
 
@@ -947,37 +973,44 @@
        ELSE 
         result_join_hyde = (/ NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA /) 
        END IF 
-    END FUNCTION JOIN_HYDE
+      END FUNCTION JOIN_HYDE
 
-    SUBROUTINE F_LAT_ASSIGNPFT(m,NS,NY,DXY,minii,minjj,maxii,maxjj,loff)
-    ! Assigns forest or grass pfts to ESA HYDE according to latitude when no forest or grass PFTs exist in ESA but do in HYDE 
-
-    ! this function assigns forest and grassland cover to an appropriate PFT in the combined HYDE ESA dataset
-    !     when there was no forest or grass cover in the ESA data.
-    !     in this case the forest cover is assigned as a negative value to primary deciduous broadleaved (DcBp) PFT m(3,j) 
-    !     in this case the grass  cover is assigned as a negative value to C3 primary grass (C3p) PFT m(7,j)
-    ! if in temperate latitudes this negative value is simply switched to positive
-    ! if in tropical latitudes this negative value is switched to positive and assigned to evergreen broadleaved PFT or C4 grass 
+      SUBROUTINE F_LAT_ASSIGNPFT(m,NS,NY,DXY,minii,minjj,maxii,maxjj, &
+                                  loff,Y0,debug)
+      ! Assigns forest or grass pfts to ESA HYDE according to latitude when no forest or grass PFTs exist in ESA but do in HYDE 
+  
+      ! this function assigns forest and grassland cover to an appropriate PFT in the combined HYDE ESA dataset
+      !     when there was no forest or grass cover in the ESA data.
+      !     in this case the forest cover is assigned as a negative value to primary deciduous broadleaved (DcBl) PFT m(3,j) 
+      !     in this case the forest cover is assigned as a negative value to secondary deciduous broadleaved (DcBs) PFT m(11,j) 
+      !     in this case the grass  cover is assigned as a negative value to C3 primary grass (C3p) PFT m(7,j)
+      !     in this case the grass  cover is assigned as a negative value to C3 secondary grass (C3p) PFT m(16,j)
+      ! if in temperate latitudes this negative value is simply switched to positive
+      ! if in tropical latitudes this negative value is switched to positive and assigned to evergreen broadleaved PFT or C4 grass 
       IMPLICIT NONE
      
       INTEGER :: NS !number of PFTs
       INTEGER :: DXY !dimension of array 
       INTEGER :: NY !dimension of latitude loff array 
-    ! m is a pft x DXY x DXY matrix
+      ! m is a pft x DXY x DXY matrix
       REAL*8, DIMENSION(NS,DXY,DXY) :: m
-    ! loff is the change in subscript by lat - 0 for temperate (DcBp & C3p), 1 for tropical (EvBp & C4p)
+      ! loff is the change in subscript by lat - 0 for temperate (DcBp & C3p & DcBs & C3s), 1 for tropical (EvBp & C4p & EvBs & C4s)
       INTEGER, DIMENSION(NY) :: loff 
-      INTEGER :: j !latitude dummy index
+      INTEGER :: i,j !longitude & latitude dummy indices
+      INTEGER :: Y0 !latitude index
       INTEGER :: minii,minjj,maxii,maxjj ! longitude, latitude indices
-      INTEGER, DIMENSION(2) :: indx = [2,7] !permuted DcBp & unpermuted C3p
+      INTEGER, DIMENSION(2) :: indx !'permuted DcBp & unpermuted C3p' or 'permuted DcBs & unpermuted C3s'
       INTEGER :: k,kk
       REAL*8 :: tmp3
+      LOGICAL :: debug !used to print out more debugging info
     
       
       DO i=minii,maxii !longitude loop 
        DO j=minjj,maxjj !latitude loop
       ! if there was no forest or grass cover in the ESA data 
         IF(any(m(:,i,j)<0)) THEN
+
+          indx = [2,7] !permuted DcBp & unpermuted C3p
           ! switch DcBp and EvBp PFT to allow loff to work for both forest and grass
           tmp3 = m(3,i,j)
           m(3,i,j) =  m(2,i,j) 
@@ -997,11 +1030,34 @@
           tmp3 = m(3,i,j)
           m(3,i,j) =  m(2,i,j) 
           m(2,i,j) = tmp3 
+
+
+          indx = [10,16] !permuted DcBs & unpermuted C3s
+          ! switch DcBs and EvBs PFT to allow loff to work for both forest and grass
+          tmp3 = m(11,i,j)
+          m(11,i,j) =  m(10,i,j) 
+          m(10,i,j) = tmp3 
+
+          DO k = 1,2
+            kk = indx(k)
+            IF(m(kk,i,j)<0) THEN
+            ! take absolute value of negative covers and assign to appropriate PFT
+              m(kk+loff(Y0+j-1),i,j) = ABS(m(kk,i,j))
+            ! if tropical PFT is appropriate, zero negative cover in temperate PFT
+              IF(loff(Y0+j-1) .NE. 0) m(kk,i,j) = 0.0
+            END IF
+          END DO
+
+          ! switch DcBp and EvBp PFT back to original placement in vector
+          tmp3 = m(11,i,j)
+          m(11,i,j) =  m(10,i,j) 
+          m(10,i,j) = tmp3 
+
         END IF 
        END DO
       END DO
 
-    END SUBROUTINE F_LAT_ASSIGNPFT
+      END SUBROUTINE F_LAT_ASSIGNPFT
 
-    END SUBROUTINE states_convertSDGVM_func
-    END MODULE FUNCTIONS_CLU
+     END SUBROUTINE states_convertSDGVM_func
+     END MODULE FUNCTIONS_CLU
