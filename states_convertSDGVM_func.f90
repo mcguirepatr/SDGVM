@@ -1032,11 +1032,11 @@
           m(2,i,j) = tmp3 
 
 
-          indx = [10,16] !permuted DcBs & unpermuted C3s
+          indx = [11,16] !permuted DcBs & unpermuted C3s
           ! switch DcBs and EvBs PFT to allow loff to work for both forest and grass
-          tmp3 = m(11,i,j)
-          m(11,i,j) =  m(10,i,j) 
-          m(10,i,j) = tmp3 
+          tmp3 = m(12,i,j)
+          m(12,i,j) =  m(11,i,j) 
+          m(11,i,j) = tmp3 
 
           DO k = 1,2
             kk = indx(k)
@@ -1048,10 +1048,10 @@
             END IF
           END DO
 
-          ! switch DcBp and EvBp PFT back to original placement in vector
-          tmp3 = m(11,i,j)
-          m(11,i,j) =  m(10,i,j) 
-          m(10,i,j) = tmp3 
+          ! switch DcBs and EvBs PFT back to original placement in vector
+          tmp3 = m(12,i,j)
+          m(12,i,j) =  m(11,i,j) 
+          m(11,i,j) = tmp3 
 
         END IF 
        END DO
