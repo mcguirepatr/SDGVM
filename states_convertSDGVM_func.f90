@@ -321,7 +321,7 @@
                   start=[minx,miny,t], count=[maxii-minii+1,maxjj-minjj+1,1]) )
       !  print *,'Finished reading data'
           IF( t == SINDEX .AND. v == 1) THEN
-            WHERE(data_in(1,:,:) <= 1.00)
+            WHERE(ABS(data_in(1,:,:)) <= 1.00 )
               mask = .TRUE.
             ELSEWHERE
               mask = .FALSE.
@@ -393,6 +393,12 @@
             dummya = data_in_t(v,:,:)
             WHERE (isNAN(dummya(:,:)))
                dummya = NA
+            ENDWHERE
+            ! there are some gridcells in northern South America that
+            ! have very small negative values for the c3nfx_to_c4ann
+            ! transition in the year 1700, for example
+            WHERE ((dummya(:,:).NE.NA).AND.(dummya(:,:).LT.0.0d0))
+               dummya = 0.0  
             ENDWHERE
             
             DO v2=1,NV-2
@@ -529,7 +535,8 @@
         esaarray(11:NE2,:,:) = data_out(1:6,:,:)
         esamask(11:NE2,:,:) = esamask(1:6,:,:)
     
-        IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN
+        !IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN
+        IF( debug .EQV. .TRUE. ) THEN
           WRITE(*,*)'JH0' ! Assumes default "ADVANCE='yes'".
           IF(num_land.GT.0.0d0)THEN
             DO v=1,NE2
@@ -575,7 +582,8 @@
         CALL F_LAT_ASSIGNPFT(data_out_SDGVM(year_index,:,:,:),NS,NY,DXY, &
                            minii,minjj,maxii,maxjj,lat_offset,Y0,debug)
   
-        IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN
+        !IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN
+        IF( debug .EQV. .TRUE. ) THEN
           WRITE(*,*)'JH1' ! Assumes default "ADVANCE='yes'".
           IF(num_land_SDGVM.GT.0) THEN
            DO v=1,NS
