@@ -84,28 +84,17 @@
       tot_ngcov = 0.0d0
       ngcov(:) = 0.0d0
 
-*      CHARACTER(LEN=7),PARAMETER :: varname(NV)=(/'primf', 'primn', 'secdf', 'secdn', 'urban', &
-*          'c3ann', 'c4ann', 'c3per', 'c4per', 'c3nfx', 'pastr', 'range', &
-*          'secmb', 'secma'/)
-*      CHARACTER(LEN=7),PARAMETER :: varname_sdgvm(NS)=(/'  BARE',' Ev_Bp',' Dc_Bp',' Ev_Np',' Dc_Np', &
-*          ' Shrup','   C3p','   C4p','C3crop','C4crop',' Ev_Bs',' Dc_Bs',' Ev_Ns',' Dc_Ns',' Shrus', &
-*          '   C3s','   C4s'/)
-*      CHARACTER(LEN=9),PARAMETER :: varname2(NV2)=(/'    primf', '    primn', '    secdf', '    secdn', &
-*          '   c3crop', '   c4crop', '   pastnr', '    urban' /)
-
-*      IF(ilanduse.EQ.4 .OR. ilanduse.EQ.6) THEN
-*        aggmap_SDGVM_to_aggHyde(1)  =  0 
-*        aggmap_SDGVM_to_aggHyde(2:6)  =  1 
-*        aggmap_SDGVM_to_aggHyde(7:8)  =  2 
-*        aggmap_SDGVM_to_aggHyde(9)  =  5 
-*        aggmap_SDGVM_to_aggHyde(10) =  6 
-*        aggmap_SDGVM_to_aggHyde(11:15) =  3 
-*        aggmap_SDGVM_to_aggHyde(16) =  4 
-*        aggmap_SDGVM_to_aggHyde(17) =  4 
-*      ELSE
-*        aggmap_SDGVM_to_aggHyde(:) = 0
-*      ENDIF
-
+      ! HYDE aggregated land cover: 1 primf, 2 primn, 3 secdf, 4 secdn, 5 C3 crop, 6 C4 crop, 7 urban
+C The following ordering is the order of ft's in the input.dat file
+      !                                    ft       at
+      !            aggmap_SDGVM_to_aggHyde(1)     =  0 !BARE 
+      !            aggmap_SDGVM_to_aggHyde(2)     =  7 !urban 
+      !            aggmap_SDGVM_to_aggHyde(3:4)   =  2 !C3p, C4p 
+      !            aggmap_SDGVM_to_aggHyde(5)     =  5 !C3crop 
+      !            aggmap_SDGVM_to_aggHyde(6)     =  6 !C4crop 
+      !            aggmap_SDGVM_to_aggHyde(7:8)   =  4 !C3s, C4s
+      !            aggmap_SDGVM_to_aggHyde(9:12)  =  1 !Ev_Bp, Dc_Bp, Ev_Np, Dc_Np 
+      !            aggmap_SDGVM_to_aggHyde(13:16) =  3 !Ev_Bs, Dc_Bs, Ev_Ns, Dc_Ns  
       IF (ilanduse.ne.2 ) THEN
       sum_cov(:)     = 0.0d0
       loss           = 0.0d0
@@ -191,14 +180,13 @@
             ftprop(ft) = ftprop(ft) +
      &              ft2frac0(ft)*ft2frac(ft2)*atprop2(at2,at)
 
-            IF ((debug .EQV. .TRUE.) .AND. (at.eq.3)) THEN
+            IF ((debug.EQV..TRUE.).AND.((ft.eq.4).OR.(ft2.eq.4))) THEN
                 PRINT
      &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
      &              'GHG1',
      &              at2,at,ft2,ft,
      &              ft2frac(ft),ft2frac(ft2),atprop2(at2,at),
      &              ftprop(ft),woodh,sum_cov(ft),atharvest(at)
-!GHG1 4 3  7 13   0.000000   1.000000   0.286612   0.000000   0.000000   0.000000   0.009814
                 PRINT
      &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
      &              'GHL1',
@@ -279,6 +267,8 @@
            tot_ngcov = tot_ngcov + ngcov(ft) 
          ENDIF
          IF (debug .EQV. .TRUE.) THEN
+! ft SUM_COV(ft):           5   9.6228569383682772E-011
+!GG0 5 9.990000 0.000000   -9.990000   -9.990000 0.000000 9.990000 0.000000 0.000000
            PRINT '(A I2 F9.6 F9.6 F12.6 F12.6 F9.6 F9.6 F9.6 F9.6)',
      &              'GG0',ft,
      &              ftprop(ft)*1d-2, woodh*1d-2,
@@ -291,6 +281,14 @@
 
       ENDDO
       ENDIF
+
+      WHERE(ftprop(:).GT.100.0d0)
+         ftprop = 100.0
+      ENDWHERE
+
+      WHERE(ftprop(:).LT.0.0d0)
+         ftprop = 0.0
+      ENDWHERE
 
       IF(debug .EQV. .TRUE.) THEN
         PRINT '(A)','GG4b ftprop '
@@ -411,7 +409,7 @@
          cov(1,1) = tot_ngcov*ftprop3(1)/100.0d0
       ELSE
          !cov(1,1) = ngcov(1)
-         ftprop(1) = MAX(100.0d0 - SUM(ftprop(2:nft)),0.0d0) 
+         ftprop(1) = MIN(MAX(100.0d0-SUM(ftprop(2:nft)),0.0d0),100.0d0) 
          cov(1,1) = ftprop(1)/100.0d0
       ENDIF
       !PRINT*, 'G8' 
