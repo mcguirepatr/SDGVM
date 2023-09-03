@@ -86,7 +86,7 @@
       INTEGER :: ncid, varid(NV)
       INTEGER :: ncid_t, varid_t(NVT)
 
-      INTEGER :: num_land,blank
+      INTEGER :: num_land,blank,num_land_hyde,num_land_SDGVM
 
       ! Loop indexes, and error handling.
       INTEGER :: x, y, t, v, v2, v3, i, lon, lat, year_index, shift_year
@@ -280,7 +280,7 @@
         esamask = .FALSE.      
       END WHERE
 
-      num_land = COUNT( esamask(1,:,:) .EQV. .TRUE.)
+      num_land = COUNT( esamask(1,3:4,3:4) .EQV. .TRUE.)
       IF(debug) THEN
         PRINT *, 'ESA num_land=',num_land,'num_tot=',maxii*maxjj 
         PRINT *, pname(1:blank(pname)) 
@@ -326,9 +326,21 @@
             ELSEWHERE
               mask = .FALSE.
             END WHERE
+            num_land_hyde = COUNT( mask(3:4,3:4) .EQV. .TRUE.)
             IF(debug) THEN
-              PRINT *, 'num_land=',num_land,'num_tot=',maxii*maxjj 
+              PRINT *, 'num_land_hyde=',num_land_hyde,'num_tot=',maxii*maxjj,'val=',data_in(1,3,3),'mask=',mask(3,3) 
+              PRINT *, '          1     2    3     4'
+              PRINT *, '    1 ',data_in(1,:,1)
+              PRINT *, '    2 ',data_in(1,:,2)
+              PRINT *, '    3 ',data_in(1,:,3)
+              PRINT *, '    4 ',data_in(1,:,4)
             ENDIF
+            IF(num_land_hyde.eq.0) THEN
+              data_out_AggHydeTransitions = 255.0 
+              data_out_AggHarvest = 255.0 
+              data_out_SDGVM = 255.0
+              RETURN
+            END IF
           END IF
 
         ! for now, use regridded states.nc file from CDO, so we skip the next two steps
@@ -412,8 +424,13 @@
                     data_t_agg(aggmap(v2),aggmap(v3),:,:) = data_t_agg(aggmap(v2),aggmap(v3),:,:) + dummya
                     if(t == SINDEX) then
                      IF(debug) THEN
-                      PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3),100.0*dummya(3,3),  &
-                              data_t_agg(aggmap(v2),aggmap(v3),3,3)
+                     IF(num_land_hyde.gt.0)THEN
+                      PRINT *, varname_t(v), from_t,varname(v3), v2, v3,aggmap(v2),aggmap(v3), &
+                              100.0*SUM(dummya(3:4,3:4),mask(3:4,3:4))/num_land_hyde,  &
+                              SUM(data_t_agg(aggmap(v2),aggmap(v3),3:4,3:4),mask(3:4,3:4))/num_land_hyde
+                     ELSE
+                      PRINT *,'No Valid Hyde Data (in transitions code)'
+                     ENDIF
                      ENDIF
                     end if
                   END IF
@@ -436,31 +453,57 @@
             END DO
            END DO
         ! change to percent      
-           data_t_agg = data_t_agg * 100.0      
-           data_out_harvest = data_out_harvest * 100.0      
+           WHERE (data_t_agg.GE.0.0d0)
+             data_t_agg = data_t_agg * 100.0      
+           ENDWHERE
+           WHERE (data_t_agg.LT.0.0d0)
+             data_t_agg = NA      
+           ENDWHERE
+
+           WHERE (data_out_harvest.GE.0.0d0)
+             data_out_harvest = data_out_harvest * 100.0      
+           ENDWHERE
+           WHERE (data_out_harvest.LT.0.0d0)
+             data_out_harvest = NA 
+           ENDWHERE
 
 
            if(debug) then
 
              write(*,FMT="(A)") 'STSS1'
-             write(*,*)'     ','     primf', '     primn', '     secdf', &
+             IF(num_land_hyde.GT.0)THEN
+              write(*,*)'     ','     primf', '     primn', '     secdf', &
                        '     secdn', '    c3crop', '    c4crop', &
                        '     urban', '     harv' 
-!          use the 3,3 coordinates of the 4x4 region
-             write(*,FMT="(A,8E10.3)") ' primf',data_t_agg(1,:,3,3), &
-               data_out_harvest(1,3,3)
-             write(*,FMT="(A,8E10.3)") ' primn',data_t_agg(2,:,3,3), &
-               data_out_harvest(2,3,3)
-             write(*,FMT="(A,8E10.3)") ' secdf',data_t_agg(3,:,3,3), &
-               data_out_harvest(3,3,3)
-             write(*,FMT="(A,8E10.3)") ' secdn',data_t_agg(4,:,3,3), &
-               data_out_harvest(4,3,3)
-             write(*,FMT="(A,8E10.3)") 'c3crop',data_t_agg(5,:,3,3), &
-               data_out_harvest(5,3,3)
-             write(*,FMT="(A,8E10.3)") 'c4crop',data_t_agg(6,:,3,3), &
-               data_out_harvest(6,3,3)
-             write(*,FMT="(A,8E10.3)") ' urban',data_t_agg(7,:,3,3), &
-               data_out_harvest(7,3,3)
+!          use the 3:4,3:4 coordinates of the 4x4 region for averaging
+              DO v3=1,7
+               IF(v3.EQ.1)THEN
+                 write(*,FMT="(A)",ADVANCE='no') ' primf'
+               ELSE IF(v3.EQ.2)THEN
+                 write(*,FMT="(A)",ADVANCE='no') ' primn'
+               ELSE IF(v3.EQ.3)THEN
+                 write(*,FMT="(A)",ADVANCE='no') ' secdf'
+               ELSE IF(v3.EQ.4)THEN
+                 write(*,FMT="(A)",ADVANCE='no') ' secdn'
+               ELSE IF(v3.EQ.5)THEN
+                 write(*,FMT="(A)",ADVANCE='no') 'c3crop'
+               ELSE IF(v3.EQ.6)THEN
+                 write(*,FMT="(A)",ADVANCE='no') 'c4crop'
+               ELSE IF(v3.EQ.7)THEN
+                 write(*,FMT="(A)",ADVANCE='no') ' urban'
+               END IF
+               DO v2=1,7
+                 write(*,FMT="(E10.3)",ADVANCE='no') SUM(data_t_agg(v3,v2,3:4,3:4), &
+                   mask(3:4,3:4))/num_land_hyde
+               END DO
+               write(*,FMT="(E10.3)",ADVANCE='no') SUM(data_out_harvest(v3,3:4,3:4),&
+                  mask(3:4,3:4))/num_land_hyde
+               write(*,*) !advance = 'yes'
+             END DO
+            ELSE
+             write(*,*) 'No Valid SDGVM land points'
+            ENDIF
+
            endif
         END IF
     
@@ -484,25 +527,35 @@
         data_out = data_out * 100.0      
 
         esaarray(11:NE2,:,:) = data_out(1:6,:,:)
+        esamask(11:NE2,:,:) = esamask(1:6,:,:)
     
-        ! process, returns an array of PFT, lon, lat  
-        !data_out_SDGVM   <- apply(esaarray,c(1,2),join_hyde)
-        !DO lon=1,DXY
-        ! DO lat=1,DXY
-        !   data_out_SDGVM(year_index,:,lon,lat) = JOIN_HYDE(esaarray(:,lon,lat))
-        ! END DO
-        !END DO
-
         IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN
           WRITE(*,*)'JH0' ! Assumes default "ADVANCE='yes'".
-          DO v=1,NE2
-            WRITE(*,FMT='(F9.4)', ADVANCE='no') esaarray(v,3,3)/100.0 
-          END DO
-          WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+          IF(num_land.GT.0.0d0)THEN
+            DO v=1,NE2
+            !WRITE(*,FMT='(F9.4)', ADVANCE='no') esaarray(v,3,3)/100.0 
+            WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(esaarray(v,3:4,3:4), & 
+               esamask(v,3:4,3:4))/num_land/100.0 
+            END DO
+            WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+          ELSE
+            WRITE(*,*) 'no valid data for esaarray' ! Assumes default "ADVANCE='yes'".
+          ENDIF
+
         ENDIF
 
         ! deal with forest or grass cover where no forest or grass cover existed in ESA
-        data_out_SDGVM(year_index,:,3,3) = JOIN_HYDE(esaarray(:,3,3))
+        ! process, returns an array of PFT, lon, lat  
+        ! R code: data_out_SDGVM   <- apply(esaarray,c(1,2),join_hyde)
+        !DO lon=1,DXY !PCM skip lon,lat from 1,2
+        ! DO lat=1,DXY
+        DO lon=3,DXY
+         DO lat=3,DXY
+           data_out_SDGVM(year_index,:,lon,lat) = JOIN_HYDE(esaarray(:,lon,lat))
+         END DO
+        END DO
+
+        !data_out_SDGVM(year_index,:,3,3) = JOIN_HYDE(esaarray(:,3,3))
 
       
         WHERE(ABS(data_out_SDGVM(year_index,1,:,:)) <= 100.00)
@@ -516,6 +569,7 @@
         WHERE (data_out_SDGVM == NA)
           data_out_SDGVM = 255.0 
         END WHERE 
+        num_land_SDGVM = COUNT( mask_SDGVM(3:4,3:4) .EQV. .TRUE.)
 
         ! deal with forest or grass cover where no forest or grass cover existed in ESA
         CALL F_LAT_ASSIGNPFT(data_out_SDGVM(year_index,:,:,:),NS,NY,DXY, &
@@ -523,10 +577,16 @@
   
         IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN
           WRITE(*,*)'JH1' ! Assumes default "ADVANCE='yes'".
-          DO v=1,NS
-            WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,3,3)/100.0 
-          END DO
-          WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+          IF(num_land_SDGVM.GT.0) THEN
+           DO v=1,NS
+            WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index, &
+              v,3:4,3:4),mask_SDGVM(3:4,3:4))/num_land_SDGVM/100.0 
+           END DO
+           WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+          ELSE
+           WRITE(*,*) 'no valid SDGVM PFT data' ! Assumes default "ADVANCE='yes'".
+          ENDIF
+            
         ENDIF
 
         IF(get_transitions) THEN
@@ -542,9 +602,8 @@
         ENDIF
 
         IF( t == SINDEX ) THEN
-          num_land = COUNT( mask_SDGVM .EQV. .TRUE.)
           IF(debug) THEN
-            PRINT *, 'SDGVM num_land=',num_land,'num_tot=',maxii*maxjj
+            PRINT *, 'SDGVM num_land=',num_land_SDGVM,'num_tot=',maxii*maxjj
             WRITE(*,FMT='(A5,A2)',ADVANCE='no')'   t','  '
             IF(print_type=='unagg') THEN
               DO v=1,NV
@@ -577,28 +636,35 @@
              IF(compute_next_year) THEN
                DO v=1,NV
 !                  WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_in_new(v,:,:),mask)/num_land
-                  WRITE(*,FMT='(F9.4)', ADVANCE='no') data_in_new(v,3,3)
+!                  WRITE(*,FMT='(F9.4)', ADVANCE='no') data_in_new(v,3,3)
+                  WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_in_new(v,3:4,3:4),mask(3:4,3:4))/num_land
                END DO
              ELSE
                DO v=1,NV
 !                  WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_in(v,:,:),mask)/num_land
-                  WRITE(*,FMT='(F9.4)', ADVANCE='no') data_in(v,3,3)
+!                  WRITE(*,FMT='(F9.4)', ADVANCE='no') data_in(v,3,3)
+                  WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_in(v,3:4,3:4),mask(3:4,3:4))/num_land
                END DO
              END IF
            ELSE IF(print_type=='agg') THEN
              DO v=1,NV2
 !                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out(v,:,:)/100.0,mask)/num_land 
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out(v,3,3)/100.0
+!                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out(v,3,3)/100.0
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out(v,3:4,3:4)/100.0,mask(3:4,3:4))/num_land 
              END DO
            ELSE IF(print_type=='sdgvm') THEN 
              DO v=1,NS
 !                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,:,:)/100.0,mask_SDGVM)/num_land 
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,3,3)/100.0 
+!                WRITE(*,FMT='(F9.4)', ADVANCE='no') data_out_SDGVM(year_index,v,3,3)/100.0 
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,  &
+                      v,3:4,3:4)/100.0,mask_SDGVM(3:4,3:4))/num_land_SDGVM 
              END DO
            ELSE IF(print_type=='esa') THEN 
              DO v=1,NE
 !                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,:,:)/100.0,mask_SDGVM)/num_land 
-                WRITE(*,FMT='(F9.4)', ADVANCE='no') esaarray(v,3,3)/100.0 
+!                WRITE(*,FMT='(F9.4)', ADVANCE='no') esaarray(v,3,3)/100.0 
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') SUM(data_out_SDGVM(year_index,v,3:4,3:4)/100.0, &
+                       esamask(v,3:4,3:4))/num_land 
              END DO
            END IF
            WRITE(*,*) ! Assumes default "ADVANCE='yes'".

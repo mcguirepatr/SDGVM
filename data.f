@@ -1196,12 +1196,14 @@ CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (comp
       ENDIF
 
       l_lu = .TRUE.
-      IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
+!      IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
+      IF (ALL(ABS(SDGVM_LUC(:,:,3:4,3:4)).GT.200.0)) THEN
         l_lu = .FALSE.
         RETURN
       ENDIF
 
-      IF (ANY(ABS(SDGVM_LUC2(:,:,:,3,3)).GT.200.0)) THEN
+!      IF (ANY(ABS(SDGVM_LUC2(:,:,:,3,3)).GT.200.0)) THEN
+      IF (ALL(ABS(SDGVM_LUC2(:,:,:,3:4,3:4)).GT.200.0)) THEN
         l_lu = .FALSE.
         RETURN
       ENDIF
@@ -1290,7 +1292,7 @@ C              ENDIF
 C            ENDIF
 
 
-            CALL NEARN(xx,indx,xnorm,ynorm,ans)
+            CALL AVE4(xx,indx,xnorm,ynorm,ans)
 
             x = int(ans+0.5d0)
 
@@ -1341,6 +1343,9 @@ C            ENDIF
                        ELSE
                          indx2(ii,jj,k2) = 0
                        ENDIF
+                       !IF(debug)THEN
+                       !  WRITE(*,*) 'LUC2',ii,jj,xf2,indx2(ii,jj,k2)
+                       !ENDIF
                     ENDDO
                   ELSE
                     indx2(ii,jj,:) = -1
@@ -1363,7 +1368,7 @@ C                   WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00
 C                 ENDIF
 C               ENDIF
 
-               CALL NEARN(xx2(:,:,k2),indx2(:,:,k2),xnorm,ynorm,ans)
+               CALL AVE4(xx2(:,:,k2),indx2(:,:,k2),xnorm,ynorm,ans)
                x2 = int(ans+0.5d0)
                agclassprop2(agclasses(k3),agclasses(k2)) = ans
 C               print *,'DD1',k3,k2,agclasses(k3),agclasses(k2),
@@ -1403,7 +1408,7 @@ C            ENDIF
               ENDDO
 
 
-              CALL NEARN(xx(:,:),indx(:,:),xnorm,ynorm,ans)
+              CALL AVE4(xx(:,:),indx(:,:),xnorm,ynorm,ans)
               x = int(ans+0.5d0)
               agclassprop(agclasses(k3)) = ans
 
@@ -1547,7 +1552,9 @@ c
 
 !PCM      IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.
 !PCM     &  (indx(3,3).EQ.1)) THEN
-      IF (indx(3,3).EQ.1) THEN
+!PCM4     IF (indx(3,3).EQ.1) THEN
+      IF ((indx(3,3).EQ.1).OR.(indx(3,4).EQ.1).OR.(indx(4,3).EQ.1).OR.
+     &  (indx(4,4).EQ.1)) THEN
         l_lu = .TRUE.
       ELSE
         l_lu = .FALSE.
@@ -1779,7 +1786,7 @@ c
 
       ELSE
 *----------------------------------------------------------------------*
-* Nearest pixel.                                                       *
+* Nearest grid cell.                                                   *
 *----------------------------------------------------------------------*
         !ans = xx(int(xnorm+2.5d0),int(ynorm+2.5d0))
         ans = xx(3,3)
@@ -1793,18 +1800,18 @@ c
 
 *----------------------------------------------------------------------*
 *                                                                      *
-*                          SUBROUTINE NEARN                            *
+*                          SUBROUTINE AVE4                             *
 *                          *****************                           *
 *                                                                      *
-* Performs nearest neighbor sampling between four points,              *
+* Performs averaging of up to four points,                             *
 * the normalised distances from the point (1,1) are given by 'xnorm'   *
 * and 'ynorm'.                                                         *
 *                                                                      *
 *----------------------------------------------------------------------*
-      SUBROUTINE NEARN(xx,indx,xnorm,ynorm,ans)
+      SUBROUTINE AVE4(xx,indx,xnorm,ynorm,ans)
 *----------------------------------------------------------------------*
-      REAL*8 xx(4,4),xnorm,ynorm,ans,av
-      INTEGER indx(4,4),iav,ii,jj
+      REAL*8 xx(4,4),xnorm,ynorm,ans,av,av4
+      INTEGER indx(4,4),iav,ii,jj,iav4
       LOGICAL use_bilinear
 
       use_bilinear = .False. !use nearest-neighbor sampling instead
@@ -1867,11 +1874,37 @@ c
 
       ELSE
 *----------------------------------------------------------------------*
-* Nearest pixel.                                                       *
+* Nearest grid cell.                                                   *
 *----------------------------------------------------------------------*
         !ans = xx(int(xnorm+2.5d0),int(ynorm+2.5d0))
-        ans = xx(3,3)
+        !ans = xx(3,3)
 *----------------------------------------------------------------------*
+*----------------------------------------------------------------------*
+* AVE of up to 4 grid cells                                            *
+*----------------------------------------------------------------------*
+         av4 = 0.0d0
+         iav4 = 0
+         IF(indx(3,3).EQ.1) THEN
+            av4 = av4 + xx(3,3)
+            iav4 = iav4 + 1
+         ENDIF
+         IF(indx(3,4).EQ.1) THEN
+            av4 = av4 + xx(3,4)
+            iav4 = iav4 + 1
+         ENDIF
+         IF(indx(4,3).EQ.1) THEN
+            av4 = av4 + xx(4,3)
+            iav4 = iav4 + 1
+         ENDIF
+         IF(indx(4,4).EQ.1) THEN
+            av4 = av4 + xx(4,4)
+            iav4 = iav4 + 1
+         ENDIF
+         IF (iav4.GT.0) THEN
+            ans = av4/real(iav4)
+         ELSE
+            ans = -999.0
+         ENDIF
       ENDIF
 
 
