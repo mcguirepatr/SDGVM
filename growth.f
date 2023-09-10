@@ -7,7 +7,7 @@
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
      &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
      &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen,atprop2,
-     &atharvest,aggmap_SDGVM_to_aggHyde,ftprop_init,yield,ft2frac0,
+     &atharvest,aggmap_SDGVM_to_aggHyde,ftprop_init,yield,lat,ftprops,
      &debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
@@ -30,13 +30,14 @@
       REAL*8 atprop2(n_at,n_at),THRESH
       REAL*8 atharvest(n_at)
       REAL*8 ft2frac(maxnft),at2prop,woodh,totft,loss_nowoodh
-      REAL*8 ftprop_init(maxnft),yield(maxnft),ft2frac0(maxnft)
+      REAL*8 ftprop_init(maxnft),yield(maxnft),lat
+      REAL*8 tot_secdn,barefrac_secdn,nonbarefrac,ftprops(maxnft)
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER ft3,at3
       LOGICAL burn,harvest
-      LOGICAL compute_covchange,change_cover
+      LOGICAL compute_covchange,change_cover,corrct_ft,corrct_ft2
 
       IF(debug .EQV. .TRUE.) THEN
         PRINT '(A)','GG4a ftprop '
@@ -102,6 +103,8 @@ C The following ordering is the order of ft's in the input.dat file
       DO ft=2,nft
         !print*, 'G2',ft,ftphen(ft)
         !PRINT*, 'G2a',ft,ftprop(ft) 
+        CALL CALC_CORRCT_FT(ft,lat,corrct_ft)
+
         DO age=1,ftmor(ft)
           sum_cov(ft) = sum_cov(ft) + cov(age,ft)
         ENDDO
@@ -132,9 +135,18 @@ C The following ordering is the order of ft's in the input.dat file
           CALL CALC_FT2FRAC(ftprop_init,aggmap_SDGVM_to_aggHyde,nft,
      &ft2frac,debug)
 
-          IF(ft2frac0(1).LT.0.0d0) THEN
-            ft2frac0(:) = ft2frac(:) !set values from YEAR 1
-          ENDIF
+          if(at.EQ.4) then
+            !use ftprops = states vector from net transitions; this allows for transitions from bare secondary non-forest to non-bare secondary non-forest 
+            tot_secdn = ftprops(1)+ftprops(7)+ftprops(8)
+            if(tot_secdn.GT.0.0d0)then
+              barefrac_secdn = ftprops(1)/tot_secdn
+            else
+              barefrac_secdn = 0.0d0
+            endif
+            nonbarefrac = 1.0d0-barefrac_secdn
+          else
+            nonbarefrac = 1.0d0 
+          endif
 
           !if(at.EQ.1 .OR. at.EQ.2) then
           if(at.EQ.1) then
@@ -153,6 +165,8 @@ C The following ordering is the order of ft's in the input.dat file
 
           DO ft2=2,nft
             at2 = aggmap_SDGVM_to_aggHyde(ft2)
+            CALL CALC_CORRCT_FT(ft2,lat,corrct_ft2)
+
            
             if(at2.EQ.4 .AND. at.EQ.2 ) then
             ! gains to ft2 from wood harvest in ft 
@@ -169,18 +183,19 @@ C The following ordering is the order of ft's in the input.dat file
             endif
 
             ! losses from ft to ft2: !atprop2 additive in %/year
-            ! split the losses to each at2 from each ft2 by a fraction ft2frac0(ft2)
             ! split the losses from each ft by a fraction ft2frac(ft)
-            ftprop(ft) = ftprop(ft) -
-     &              ft2frac(ft)*ft2frac0(ft2)*atprop2(at,at2)
+            IF(corrct_ft2) THEN !check if tropical or temperate 
+              ftprop(ft) = ftprop(ft) - ft2frac(ft)*atprop2(at,at2)
+            ENDIF
 
             ! gains to ft from ft2:
             ! split the gains from each at2 from each ft2 by a fraction ft2frac(ft2)
-            ! split the gains to each ft by a fraction ft2frac0(ft)
-            ftprop(ft) = ftprop(ft) +
-     &              ft2frac0(ft)*ft2frac(ft2)*atprop2(at2,at)
+            IF((corrct_ft.EQV..TRUE.).AND.(nonbarefrac.GT.0.0d0)) THEN !check if tropical or temperate 
+               ftprop(ft) = ftprop(ft) +
+     &                  ft2frac(ft2)*atprop2(at2,at)
+            ENDIF
 
-            IF ((debug.EQV..TRUE.).AND.((ft.eq.4).OR.(ft2.eq.4))) THEN
+            IF ((debug.EQV..TRUE.).AND.((at.eq.1).OR.(at2.eq.1))) THEN
                 PRINT
      &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
      &              'GHG1',
@@ -1899,6 +1914,42 @@ C The following ordering is the order of ft's in the input.dat file
         !ENDIF
       ENDDO
 
+      RETURN
+      END
+
+*----------------------------------------------------------------------*
+*                                                                      *
+*                     SUBROUTINE CALC_CORRCT_FT                        *
+*                     ***********************                          *
+*----------------------------------------------------------------------*
+      SUBROUTINE CALC_CORRCT_FT(ft,lat,corrct_ft)
+      INTEGER ft
+      REAL*8 lat
+      LOGICAL corrct_ft
+
+      corrct_ft = .FALSE.
+      IF(ABS(lat).LE.24.5)THEN
+       IF((ft.EQ.4).OR.(ft.EQ.8).OR.(ft.EQ.9).OR.(ft.EQ.13))THEN !Tropical
+           corrct_ft = .TRUE.
+       ELSE IF((ft.EQ.2).OR.(ft.EQ.5).OR.(ft.EQ.6))THEN !URBAN or crop
+           corrct_ft = .TRUE.
+       ELSE
+           corrct_ft = .FALSE.
+      ENDIF
+       ELSE
+         IF((ft.EQ.3).OR.(ft.EQ.7))THEN !C3 grasses
+           corrct_ft = .TRUE.
+         ELSE IF((ft.GT.9).AND.(ft.LE.12))THEN !Temperate trees (primary)
+           corrct_ft = .TRUE.
+         ELSE IF((ft.GT.13).AND.(ft.LE.16))THEN !Temperate trees (secondary)
+           corrct_ft = .TRUE.
+         ELSE IF((ft.EQ.2).OR.(ft.EQ.5).OR.(ft.EQ.6))THEN !URBAN or crop
+           corrct_ft = .TRUE.
+         ELSE
+           corrct_ft = .FALSE.
+         ENDIF
+       ENDIF
+      
       RETURN
       END
 

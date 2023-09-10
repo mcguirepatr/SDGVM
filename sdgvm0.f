@@ -84,7 +84,7 @@
       REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
       REAL*8 cluseh(maxn_at,maxyrs)
       REAL*8 sum_cov_test(maxnft)
-      REAL*8 ftprop_init(maxnft),ft2frac0(maxnft),yieldo(maxnft)
+      REAL*8 ftprop_init(maxnft),yieldo(maxnft),ftprops(maxnft)
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
@@ -1982,7 +1982,7 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 !PCM4 for running a single site in the main run from a gridded spinup;
 !PCM4 (other changes below)
-!      DO site=55,55
+!      DO site=10,10
       DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
@@ -1993,8 +1993,6 @@ c CLOSE added by Ghislain 15/12/03
 *    cluse table from the net land use transitions                     *
 *----------------------------------------------------------------------*
         closed_loop_ft = .FALSE.
-
-        ft2frac0(:) = -1000.0
 
         speedc = xspeedc
         swcnew = 0.0d0
@@ -3662,6 +3660,8 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           ftprop1 = ftprop !net transitions or 1st year of gross transitions 
         ENDIF
 
+        ftprops = ftprop !net transitions (from states vector)
+
         IF(debug .EQV. .TRUE.) THEN
           PRINT '(A)','SS3c ftprop1 (before COVER( ) routine) '
           PRINT '(16F11.7)',ftprop1(1:nft)
@@ -3671,7 +3671,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
      &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,atprop2,
-     &atharvest,aggmap_SDGVM_to_aggHyde,ftprop_init,yield,ft2frac0,
+     &atharvest,aggmap_SDGVM_to_aggHyde,ftprop_init,yield,lat,ftprops,
      &debug)
 
         IF(debug .EQV. .TRUE.) THEN
