@@ -183,19 +183,30 @@ C The following ordering is the order of ft's in the input.dat file
             endif
 
             ! losses from ft to ft2: !atprop2 additive in %/year
+            IF(ft2frac(ft2).GT.0.0d0) THEN !check for pre-existing cover in the ft2
             ! split the losses from each ft by a fraction ft2frac(ft)
-            IF(corrct_ft2) THEN !check if tropical or temperate 
-              ftprop(ft) = ftprop(ft) - ft2frac(ft)*atprop2(at,at2)
+            ! split the losses to each ft to each ft2 by a fraction ft2frac(ft2)
+              ftprop(ft) = ftprop(ft) -
+     &  ft2frac(ft)*ft2frac(ft2)*atprop2(at,at2)
+            ELSE IF(corrct_ft2) THEN !check if tropical or temperate
+            ! split the losses from each ft by a fraction ft2frac(ft)
+              ftprop(ft) = ftprop(ft) -
+     &  ft2frac(ft)*             atprop2(at,at2)
             ENDIF
 
             ! gains to ft from ft2:
+            IF(ft2frac(ft).GT.0.0d0) THEN ! check for pre-existing cover in the ft !also check if tropical or temperate 
             ! split the gains from each at2 from each ft2 by a fraction ft2frac(ft2)
-            IF((corrct_ft.EQV..TRUE.).AND.(nonbarefrac.GT.0.0d0)) THEN !check if tropical or temperate 
+            ! split the gains to each at to each ft by a fraction ft2frac(ft)
                ftprop(ft) = ftprop(ft) +
-     &                  ft2frac(ft2)*atprop2(at2,at)
+     &  ft2frac(ft)*ft2frac(ft2)*atprop2(at2,at)
+            ELSE IF((corrct_ft.EQV..TRUE.).AND.
+     &(nonbarefrac.GT.0.0d0)) THEN ! check for pre-existing cover in the ft !also check if tropical or temperate 
+               ftprop(ft) = ftprop(ft) +
+     &             ft2frac(ft2)*atprop2(at2,at)
             ENDIF
 
-            IF ((debug.EQV..TRUE.).AND.((at.eq.1).OR.(at2.eq.1))) THEN
+            IF ((debug.EQV..TRUE.).AND.((at.eq.5).OR.(at2.eq.5))) THEN
                 PRINT
      &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
      &              'GHG1',
