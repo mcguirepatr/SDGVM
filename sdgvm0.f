@@ -17,6 +17,7 @@
       REAL*8 lat,lon,dep,ca(12,31),npp(maxnft),lai(maxnft),evp(maxnft)
       REAL*8 gpp(maxnft),sresp(maxnft),evt(maxnft),soilt,grassrc,resp
       REAL*8 tmp(12,31),prc(12,31),hum(12,31),cld(12),latdel,londel
+      REAL*8 wnd(12,31)
       REAL*8 leafper,stemper,rootper,avnpp,avgpp,avlai,avdof,co20,co2f
       REAL*8 avrof,infix,nppsold,avnppst,co2const,ic0(8),in0(8),iminn(3)
       REAL*8 avnleaf,avvcmax,avjmax,avleaf_nit,avsla,sl,hrs
@@ -113,6 +114,7 @@
       INTEGER check_ft_grow,no_countries,n_param_0,n_param_f,n_param
       REAL*8 xtmpv(500,12,31),xprcv(500,12,31),xhumv(500,12,31)
       REAL*8 xcldv(500,12),xswrv(500,12,31),swr(12,31),mnthswr(12)
+      REAL*8 xwndv(500,12,31)
       REAL*8 yearswr,mapv(10),maswrv(30),maprc,maswr,maprcr,maswrr
       REAL*8 maprc_init,maswr_init,leafresp,rootresp,stemresp
       REAL*8 matmpv(10),matmp_maxv(10),yeartmp_max,gi,wi,covind
@@ -2068,7 +2070,7 @@ c CLOSE added by Ghislain 15/12/03
 * DAILY Gridded.                                                       *
 *----------------------------------------------------------------------*
         CALL EX_CLIM(st2,lat,lon,xlatf,xlatres,xlatresn,xlon0,xlonres,
-     &xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,isite,xyear0,xyearf,
+     &xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,xwndv,isite,xyear0,xyearf,
      &siteno,du,xswrv,read_par)
         if(siteno.NE.0) THEN !PCM
           l_clim = .TRUE.    !PCM
@@ -2090,25 +2092,25 @@ C PCM2        WRITE(*,*) 'bbbbbbbbb'
 *----------------------------------------------------------------------*
         CALL EX_CLIM_WEATHER_GENERATOR(st2,ststats,lat,lon,xlatf,
      &xlatres,xlatresn,xlon0,xlonres,xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,
-     &xcldv,isite,xyear0,xyearf,du,seed1,seed2,seed3,l_clim,l_stats,
-     &xswrv,read_par)
+     &xwndv,xcldv,isite,xyear0,xyearf,du,seed1,seed2,seed3,
+     &l_clim,l_stats,xswrv,read_par)
         withcloudcover=.TRUE.
       ELSEIF (clim_type.EQ.3) THEN
 *----------------------------------------------------------------------*
 * DAILY Site                                                           *
 *----------------------------------------------------------------------*
-        CALL EX_CLIM_SITE(st2,yr0,yrf,xtmpv,xhumv,xprcv,xyear0,xyearf,
-     &xswrv,read_par)
+        CALL EX_CLIM_SITE(st2,yr0,yrf,xtmpv,xhumv,xprcv,xwndv,
+     &xyear0,xyearf,xswrv,read_par)
         withcloudcover=.FALSE.
         siteno = 1
         l_clim = .TRUE.
         l_stats = .TRUE.
       ELSEIF (clim_type.EQ.4) THEN
 *----------------------------------------------------------------------*
-* MONTHLY Site                                                           *
+* MONTHLY Site                                                         *
 *----------------------------------------------------------------------*
-        CALL EX_CLIM_SITE_MONTH(st2,yr0,yrf,xtmpv,xhumv,xprcv,xcldv,
-     &xyear0,xyearf,xswrv,read_par)
+        CALL EX_CLIM_SITE_MONTH(st2,yr0,yrf,xtmpv,xhumv,xprcv,xwndv,
+     &xcldv,xyear0,xyearf,xswrv,read_par)
         withcloudcover=.FALSE.
         siteno = 1
         CALL GENERATE_MONTHLY(ststats,yr0,yrf,xtmpv,xhumv,xprcv,
@@ -2941,6 +2943,8 @@ c     &site_dat,lat,lon,ca
                if(read_par.eq.1) cld(mnth) = 1.0d0
                !print*, cld(1)
             ENDIF
+            wnd(mnth,day) = 
+     &real(xwndv(metyear-yr0m+1,mnth,day))/1000.0d0
           ENDDO
         ENDDO
 C PCM2        WRITE(*,*)'metyear,yr0m' 
@@ -3984,7 +3988,8 @@ C PCM2     &ft,soilc(ft),s1(ft),year,mnth,day
             CALL DOLYDAY(ftsla(ft),ftc3(ft),ftphen(ft),ftagh(ft),
      &ftdth(ft),ftlls(ft),ftsls(ft),ftrls(ft),ftbbm(ft),
      &ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),ftsslim(ft),
-     &ftrat(ft),lat,dep,tmp(mnth,day),prc(mnth,day),hum(mnth,day),
+     &ftrat(ft),lat,dep,tmp(mnth,day),prc(mnth,day),
+     &wnd(mnth,day),hum(mnth,day),
      &cld(mnth),ca(mnth,day),soilc(ft),soiln(ft),minnv,s1(ft),s2(ft),
      &s3(ft),s4(ft),sn(ft),lsn(ft),adp,sfc,sw,sswc,awl,kd,kx,daygpp,
      &dayra,lai(ft),nppstore(ft),nppstorx(ft),nppstor2(ft),evp(ft),

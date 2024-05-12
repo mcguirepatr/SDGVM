@@ -185,23 +185,24 @@
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLIM(stinput,lat,lon,xlatf,xlatres,xlatresn,xlon0,
-     &xlonres,xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,isite,year0,yearf,
-     &siteno,du,swrv,read_par)
+     &xlonres,xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,xwndv,isite,
+     &year0,yearf,siteno,du,swrv,read_par)
 *----------------------------------------------------------------------*
       REAL*8 lat,lon,xlon0,xlatf,xlatres,xlonres,ans(12)
       REAL*8  xtmpv(500,12,31),xhumv(500,12,31),xprcv(500,12,31) !PCM
-      REAL*8  swrv(500,12,31)
+      REAL*8  swrv(500,12,31),xwndv(500,12,31) !PCM
       INTEGER year,year0,yearf,nrec,ncol,ans2(1000),siteno,i,du
       INTEGER nyears,yr0,mnth,day,isite,yrf,blank,recl1,recl2
       INTEGER no_days
       INTEGER recl3                      !PCM
       INTEGER xlatresn,xlonresn,fno,read_par
       !CHARACTER ii(4),jj(5),fname4*1000 !PCM
-      CHARACTER ii*7,jj*8,fname4*1000 !PCM
+      CHARACTER ii*7,jj*8,fname4*1000,fname5*1000 !PCM
       CHARACTER fname1*1000,fname2*1000,fname3*1000,stinput*1000
       CHARACTER num*15 !PCM
       INTEGER*2 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31) !PCM
-      REAL*8 TMP_MULT,PRC_MULT,HUM_MULT,PRC_MULT1
+      INTEGER*2 wndv(500,12,31) !PCM
+      REAL*8 TMP_MULT,PRC_MULT,HUM_MULT,PRC_MULT1,WND_MULT
 
       IF (du.eq.1) THEN
         !recl1 = 730  !PCM
@@ -258,6 +259,8 @@ C       PCM added trailing '.dat'
      &'/prc_',num
         WRITE(fname4,'(100a)') (stinput(i:i),i=1,blank(stinput)),
      &'/swr_',num
+        WRITE(fname5,'(100a)') (stinput(i:i),i=1,blank(stinput)),
+     &'/wnd_',num
 
 C        write(*,*) 'siteno before mod'
 C        write(*,*) siteno
@@ -272,6 +275,8 @@ C        write(*,*) siteno
 C         OPEN(fno+4,file=fname4,access='direct',recl=recl1, !PCM
 C     &form='unformatted',status='old')                      !PCM
         OPEN(fno+4,file=fname4,access='direct',recl=recl3,   !PCM
+     &form='formatted',status='old')                         !PCM
+        OPEN(fno+5,file=fname5,access='direct',recl=recl3,   !PCM
      &form='formatted',status='old')                         !PCM
 
         IF (du.eq.1) THEN
@@ -289,6 +294,9 @@ C     &form='unformatted',status='old')                      !PCM
      & READ(fno+4,1002,                          !PCM
      & REC=(siteno-1)*nyears+year-year0+1)
      &jj, ((swrv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
+            READ(fno+5,1001,                     !PCM
+     & REC=(siteno-1)*nyears+year-year0+1) jj,
+     &((wndv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
 C            DO mnth=1,12
 C              DO day=1,30
 C                prcv(year-yr0+1,mnth,day) = 
@@ -318,6 +326,9 @@ C            write(*,*) (siteno-1)*nyears+year-year0+1
      &READ(fno+4,1002,                       !PCM
      & REC=(siteno-1)*nyears+year-year0+1)
      &ii, ((swrv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
+            READ(fno+5,1001,                   !PCM
+     & REC=(siteno-1)*nyears+year-year0+1) ii,
+     &((wndv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
 C PCM            DO mnth=1,12
 C PCM              DO day=1,30
 C PCM                prcv(year-yr0+1,mnth,day) = 
@@ -329,6 +340,7 @@ C PCM            ENDDO
         CLOSE(fno+1)
         CLOSE(fno+2)
         CLOSE(fno+3)
+        CLOSE(fno+5)
 
       ENDIF
 
@@ -344,15 +356,16 @@ C PCM            ENDDO
       enddo
 
 C   PCM added the following triple DO loop
-C     PCM : Each of these 3 variables
+C     PCM : Each of these 4 variables
 C           are required to be passed to sdgvm0 in units of
-C           0.01 oC, 0.1 mm, 0.01 % hum
+C           0.01 oC, 0.1 mm, 0.01 % hum, 1 mm/s
 C           They are read as:
-C           0.1 oC, 0.01 mm, 0.1 % hum
+C           0.1 oC, 0.01 mm, 0.1 % hum, 1 m/s
 C     The following scalars convert from read units to sdgvm0 expected units
       TMP_MULT = 10.0                         
       HUM_MULT = 10.0
       PRC_MULT = 1/10.0 
+      WND_MULT = 0.001 
       DO year=year0,yearf
        DO mnth=1,12
         DO day=1,no_days(year,mnth,0)
@@ -360,6 +373,7 @@ C     The following scalars convert from read units to sdgvm0 expected units
           xtmpv(year-yr0+1,mnth,day)= tmpv(year-yr0+1,mnth,day)*TMP_MULT
           xprcv(year-yr0+1,mnth,day)= prcv(year-yr0+1,mnth,day)*PRC_MULT
           xhumv(year-yr0+1,mnth,day)= humv(year-yr0+1,mnth,day)*HUM_MULT
+          xwndv(year-yr0+1,mnth,day)= wndv(year-yr0+1,mnth,day)*HUM_MULT
          ENDIF
         ENDDO
       ENDDO
@@ -389,11 +403,12 @@ C PCM2      WRITE(*,*) '111111111'
 *                          ***********************                     *
 *                                                                      *
 *----------------------------------------------------------------------*
-      SUBROUTINE EX_CLIM_SITE(stinput,yr0,yrf,tmpv,humv,prcv,year0,
+      SUBROUTINE EX_CLIM_SITE(stinput,yr0,yrf,tmpv,humv,prcv,wndv,year0,
      &yearf,swrv,read_par)
 *----------------------------------------------------------------------*
-      REAL*8 tmp,prc,hum,swr,swrv(500,12,31)
+      REAL*8 tmp,prc,hum,swr,swrv(500,12,31),wnd
       REAL*8 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31)
+      REAL*8 wndv(500,12,31)
       INTEGER year,year0,yearf,yr0,mnth,day,yrf,iyear,imnth,iday
       INTEGER blank,no_days,read_par
       CHARACTER stinput*1000
@@ -404,9 +419,9 @@ C PCM2      WRITE(*,*) '111111111'
         DO mnth=1,12
           DO day=1,no_days(year,mnth,0)
             IF(read_par.eq.1) THEN
-              READ(91,*) iyear,imnth,iday,tmp,prc,hum,swr
+              READ(91,*) iyear,imnth,iday,tmp,prc,hum,wnd,swr
             ELSE
-              READ(91,*) iyear,imnth,iday,tmp,prc,hum
+              READ(91,*) iyear,imnth,iday,tmp,prc,hum,wnd
             ENDIF
 
             IF ((iday.NE.day).OR.(imnth.NE.mnth).OR.(iyear.NE.year)) 
@@ -420,6 +435,7 @@ C PCM2      WRITE(*,*) '111111111'
               tmpv(year-yr0+1,mnth,day) = tmp*100.0d0
               prcv(year-yr0+1,mnth,day) = prc*10.0d0
               humv(year-yr0+1,mnth,day) = hum*100.0d0
+              wndv(year-yr0+1,mnth,day) = wnd/1000.0d0
               IF(read_par.eq.1) swrv(year-yr0+1,mnth,day) = swr
             ENDIF
           ENDDO
@@ -437,11 +453,11 @@ C PCM2      WRITE(*,*) '111111111'
 *                          SUBROUTINE EX_CLIM_SITE_MONTH               *
 *                          *****************************               *
 *----------------------------------------------------------------------*
-      SUBROUTINE EX_CLIM_SITE_MONTH(stinput,yr0,yrf,tmpv,humv,prcv,cldv,
-     &year0,yearf)
+      SUBROUTINE EX_CLIM_SITE_MONTH(stinput,yr0,yrf,tmpv,humv,prcv,wndv,
+     &cldv,year0,yearf)
 *----------------------------------------------------------------------*
-      REAL*8 tmp(12),prc(12),hum(12),cld(12),swr(12)
-      REAL*8 swrv(500,12,31),cldv(500,12)
+      REAL*8 tmp(12),prc(12),hum(12),cld(12),swr(12),wnd(12)
+      REAL*8 swrv(500,12,31),cldv(500,12),wndv(500,12,31)
       REAL*8 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31)
       INTEGER year,year0,yearf,yr0,mnth,day,yrf,iyear,imnth,iday
       INTEGER blank,no_days,fno,cld_default,kode,read_par
@@ -468,6 +484,8 @@ C PCM2      WRITE(*,*) '111111111'
         OPEN(fno+5,file=stinput(1:blank(stinput))//'/swr.dat',
      &status='old',iostat=kode)
       ENDIF
+      OPEN(fno+6,file=stinput(1:blank(stinput))//'/wnd.dat',
+     &status='old',iostat=kode)
 
       DO year=year0,yearf
         READ(fno+1,*) iyear,tmp
@@ -475,6 +493,7 @@ C PCM2      WRITE(*,*) '111111111'
         READ(fno+3,*) iyear,hum
         IF (cloud)     READ(fno+4,*) iyear,cld
         IF (read_par.eq.1)  READ(fno+5,*) iyear,cld
+        READ(fno+6,*) iyear,wnd
         IF (iyear.NE.year) THEN
           WRITE(*,'('' PROGRAM TERMINATED'')')
           WRITE(*,*) 'Error in climate data file',year,mnth,day
@@ -492,6 +511,7 @@ C PCM2      WRITE(*,*) '111111111'
               cldv(year-yr0+1,mnth) = cld_default
             ENDIF
             IF (read_par.eq.1) swrv(year-yr0+1,mnth,1) = swr(mnth)
+            wndv(year-yr0+1,mnth,1) = wnd(mnth)
           ENDDO
         ENDIF
 
@@ -502,6 +522,7 @@ C PCM2      WRITE(*,*) '111111111'
       CLOSE(fno+3)
       CLOSE(fno+4)
       CLOSE(fno+5)
+      CLOSE(fno+6)
 
       RETURN
       END
