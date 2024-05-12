@@ -8,6 +8,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE DOLYDAY(sla,c3,ftphen,ftagh,ftdth,leafls,stemls,
      &rootls,bbm,bb0,bbmax,bblim,ssm,sss,sslim,lairat,lat,dep,tmp,prc,
+     &wnd,
      &hum,cld,ca,soilc,soiln,minn,s1,s2,s3,s4,sn,lsn,adp,sfc,sw,sswc,
      &awl,kd,kx,daygpp,dayra,rlai,nppstore,nppstorx,nppstor2,maxevap,
      &daysoff,evap,tran,roff,interc,evbs,flow1,flow2,year,mnth,day,pet,
@@ -28,7 +29,8 @@
       REAL*8 oi
       PARAMETER(oi = 21000.0d0)
 *----------------------------------------------------------------------*
-      REAL*8 bb0,bbmax,bblim,sslim,lat,dep,tmp,prc,hum,cld,ca,maxevap
+      REAL*8 bb0,bbmax,bblim,sslim,lat,dep,tmp,prc,wnd
+      REAL*8 hum,cld,ca,maxevap
       REAL*8 lairat,interc,evbs,leafv(3600),stemv(1000),rootv(1000),t
       REAL*8 soilc,soiln,rh,tk,rn,pet,petmm,petv,laimax,q,qdiff
       REAL*8 qdirect,hrs,vpd,canga,lam,rho,s,gam,amx,gsn,dp2,pet2,wtfc
@@ -60,7 +62,7 @@
       maxlai = 11.9d0
 
 *      print*,rlai,day,mnth
-*      if ((day.eq.1).and.(mnth.eq.1)) print*,tmp,prc,hum,cld
+*      if ((day.eq.1).and.(mnth.eq.1)) print*,tmp,prc,wnd,hum,cld
 
 *----------------------------------------------------------------------*
 * SET parameter for THROUGHFALL.                                       *
@@ -222,7 +224,9 @@ c     z=reference height
 c     d=zero plane displacement
 c     z0=roughness length
 
-      windspeed= 5.0d0 ! in m/s
+      !windspeed= 5.0d0 ! in m/s
+      windspeed= wnd ! in m/s !PCM
+C      WRITE(*,*) 'windspeed = ',windspeed
       canga = 0.168d0*windspeed/log((200.0d0 - 
      &0.7d0*ht)/(0.1d0*ht))**2
 
