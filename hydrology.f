@@ -309,7 +309,8 @@ c changed by Ghislain 6/10/03
       IF (ev.LT.0.0d0)  ev = 0.0d0
       bst = 0.0d0
       if (t.gt.0) bst = (t/16.0d0)
-      evbs = ev*p_bs*0.33d0*pet3*1.3d0*bst
+c PCM      evbs = ev*p_bs*0.33d0*pet3*1.3d0*bst
+      evbs = ev*pet3*bst !PCM
 
       IF (evbs.GT.pet2)  evbs = pet2
       pet2 = pet2 - evbs
