@@ -49,6 +49,7 @@
       REAL*8 rootresp,stemresp
       REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30),cos_zen,kg,can_clump
       REAL*8 ce_maxlight(30,12),ce_ga(30,12),ce_rh(30)
+      REAL*8 z_m,z_om,z_oh,zpdh
       INTEGER leafls,stemls,rootls,bbm,ssm,sss,ftphen,c3,thty_dys,ft
       INTEGER mnth,i,iter,no_day,ndsum(12),lai,day,year,bb,bbgs
       INTEGER ftdth,ss,dsbb,chill,dschill,ncalc_type,read_par,iyear
@@ -216,15 +217,28 @@ c     &      ,pfd_without_cloud(lat,no_day(year,mnth,day,thty_dys),hrs)
 
 
 *----------------------------------------------------------------------*
-c     canga=k^2 u / (log[(z-d)/z0])^2
+c     canga=k^2 u / (log[(z-d)/z0])^2 !canopy aerodynamic conductance
 c     k=von Karman constant. k=0.41
 c     z=reference height
 c     d=zero plane displacement
 c     z0=roughness length
 
       windspeed= 5.0d0 ! in m/s
-      canga = 0.168d0*windspeed/log((200.0d0 - 
-     &0.7d0*ht)/(0.1d0*ht))**2
+C      WRITE(*,*) 'windspeed = ',windspeed
+
+C PCM      canga = 0.168d0*windspeed/log((200.0d0 - 
+C     &0.7d0*ht)/(0.1d0*ht))**2
+
+C PCM  using canga from FAO:
+C     https://www.fao.org/4/X0490E/x0490e06.htm#(bulk)%20surface%20resistance%20(rs)
+      !z_m = measurement height
+      z_m    = 50 !to have a positive argument for log() for the tallest tree (z_m = ht = 50m > zpdh = 0.6667 * 50m) 
+      z_om   = 0.1230 * ht   !Roughness scale for momentum
+      z_oh   = 0.1000 * z_om !Roughness scale for heat & vapor
+      zpdh   = 0.6667 * ht  !Zero-plane displacement height
+      canga = 0.168d0  * windspeed/log((z_m - zpdh)/z_om)/
+     &log((z_m - zpdh)/z_oh)
+>>>>>>> 477238d (changed canga calculation to FAO inspired)
 
       npp_eff = 0.0d0
       sum = 0.0d0
