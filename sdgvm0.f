@@ -3820,8 +3820,9 @@ c            print*, ft, env_vcmax(ft)
           
 * Height (m)
 cccn           ht(ft) = 0.807d0*(laimax(ft)**2.13655d0)
-          ht(ft) = 0.807d0*(5.0d0**2.13655d0)
-          IF (ht(ft).GT.50.0d0)  ht(ft)=50.0d0
+cc PCM         ht(ft) = 0.807d0*(5.0d0**2.13655d0)
+cc PCM         IF (ht(ft).GT.50.0d0)  ht(ft)=50.0d0
+
           laimax(ft)=0.0d0   
 cThis is to do what doly did... but 
 cit's strange. Initialisation to 0.0d0 is ok, but the previous 
@@ -3861,6 +3862,23 @@ c     monthly initialisations
 
            laimnth(mnth,ft) = 0.0d0
            avmnpet(ft) = 0.0d0
+
+
+cc PCM added the following ten lines to compute ht(ft) for ET calculation
+           hi = 0
+           av_hgt(ft) = 0.0d0 
+           do i = 1,ftmor(ft)
+             av_hgt(ft) = av_hgt(ft) + hgt(i,ft)
+             if(hgt(i,ft).gt.0.0d0) hi = hi + 1 
+           enddo
+ 
+           IF (av_hgt(ft).GT.50.0d0) THEN
+             ht(ft)=50.0d0
+           ELSE IF (av_hgt(ft).LT.0.01d0) THEN
+             ht(ft)=0.01d0
+           ELSE
+             ht(ft)=av_hgt(ft)
+           ENDIF
 
            !traceability analysis soil pool outputs 
            ! are flows consistent due to the mixing of resources, probably not
@@ -4406,6 +4424,7 @@ c     check water cycle closure
           avyield = avyield + ftcov(ft)*yield(ft) 
           avflulccc = avflulccc + ftcov(ft)*flulccc(ft) 
           hi = 0
+          av_hgt(ft) = 0.0d0 
           do i = 1,ftmor(ft)
             av_hgt(ft) = av_hgt(ft) + hgt(i,ft)
             if(hgt(i,ft).gt.0.0d0) hi = hi + 1 
