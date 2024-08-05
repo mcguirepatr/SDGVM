@@ -4096,7 +4096,8 @@ c      endif
             !PRINT *,"daily_gpp",ft,mnth,day,daily_out(6,ft,mnth,day)
             daily_out(7,ft,mnth,day) = srespm/                        ! heterotrophic respiration
      &real(no_days(year,mnth,thty_dys))
-            if(srespm.lt.1e-6) daily_out(7,ft,mnth,day) = 0.000       ! heterotrophic respiration
+            !PCM if(srespm.lt.1e-6) daily_out(7,ft,mnth,day) = 0.000       ! heterotrophic respiration
+            if(srespm.lt.0.0) daily_out(7,ft,mnth,day) = 0.000        ! heterotrophic respiration
             daily_out(8,ft,mnth,day) = daily_out(5,ft,mnth,day) -     ! NEE
      &daily_out(7,ft,mnth,day)
             daily_out(9,ft,mnth,day) = tmp(mnth,day)
