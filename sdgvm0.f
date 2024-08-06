@@ -52,7 +52,8 @@
       REAL*8 nppstor2(maxnft),maxlai(maxnft),ftbb0(maxnft),wtfc,wtwp
       REAL*8 ftbbmax(maxnft),ftbblim(maxnft),ftsslim(maxnft),nleaf,cal
       REAL*8 flow1(maxnft),flow2(maxnft),h2o,adp(4),sfc(4),sw(4),sswc(4)
-      REAL*8 leafnpp(maxnft),stemnpp(maxnft),rootnpp(maxnft),srespm,lchm
+      REAL*8 leafnpp(maxnft),stemnpp(maxnft),rootnpp(maxnft)
+      REAL*8 srespm(maxnft),lchm(maxnft)
       REAL*8 evapm(12,maxnft),tranm(12,maxnft),roffm(12,maxnft),avyield
       REAL*8 photm(12,maxnft),avmnpet(maxnft),avmnt,avmnppt,tc,ts,tsi
       REAL*8 bulk,nupc,nfix,daygpp,evap,tran,roff,pet,yrtran,yrevap
@@ -1801,11 +1802,11 @@ c CLOSE added by Ghislain 15/12/03
       tsumam(2) = 0.0d0
 
 *----------------------------------------------------------------------*
-      srespm = 0.0d0
 
       co2(1,:,:) = 0.0d0
 
       DO ft=1,nft
+        srespm(ft) = 0.0d0
         ftxyl(ft) =  ftxyl(ft)*1.0e-9
         ftpd(ft)  =  ftpd(ft)*1.0e+3
       ENDDO
@@ -4094,10 +4095,12 @@ c      endif
      &nppsold)*12.0d0
             daily_out(6,ft,mnth,day) = daygpp*12.0d0                  ! GPP
             !PRINT *,"daily_gpp",ft,mnth,day,daily_out(6,ft,mnth,day)
-            daily_out(7,ft,mnth,day) = srespm/                        ! heterotrophic respiration
+            !PCM daily_out(7,ft,mnth,day) = srespm/                   ! heterotrophic respiration
+!PCM     &real(no_days(year,mnth,thty_dys))
+            daily_out(7,ft,mnth,day) = srespm(ft)/                    ! heterotrophic respiration, PCM
      &real(no_days(year,mnth,thty_dys))
-            !PCM if(srespm.lt.1e-6) daily_out(7,ft,mnth,day) = 0.000       ! heterotrophic respiration
-            if(srespm.lt.0.0) daily_out(7,ft,mnth,day) = 0.000        ! heterotrophic respiration
+            !PCM if(srespm(ft).lt.1e-6) daily_out(7,ft,mnth,day) = 0.000       ! heterotrophic respiration
+            !PCM if(srespm(ft).lt.0.0) daily_out(7,ft,mnth,day) = 0.000    ! heterotrophic respiration
             daily_out(8,ft,mnth,day) = daily_out(5,ft,mnth,day) -     ! NEE
      &daily_out(7,ft,mnth,day)
             daily_out(9,ft,mnth,day) = tmp(mnth,day)
@@ -4229,12 +4232,12 @@ c      endif
 
 *          print*,avmnpet(ft),avmnppt,avmnt
           CALL DOLYMONTH(ts,tc,avmnpet(ft),avmnppt,avmnt,h2o,flow1(ft),
-     &flow2(ft),c0v,n0v,minnv,nfix,nci,dslc,drlc,dsln,srespm,lchm,ca,
-     &site,year,yr0,yrf,speedc,soilc(ft),soiln(ft),mnth,w_scalar,
-     &t_scalar,fl,cal)
+     &flow2(ft),c0v,n0v,minnv,nfix,nci,dslc,drlc,dsln,srespm(ft),
+     &lchm(ft),ca,site,year,yr0,yrf,speedc,soilc(ft),soiln(ft),mnth,
+     &w_scalar,t_scalar,fl,cal)
 
-          sresp(ft) = sresp(ft) + srespm
-          lch(ft) = lch(ft) + lchm
+          sresp(ft) = sresp(ft) + srespm(ft)
+          lch(ft) = lch(ft) + lchm(ft)
                
           DO i=1,8
             c0(i,ft)=c0v(i)
