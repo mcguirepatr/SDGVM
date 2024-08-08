@@ -130,7 +130,11 @@ C The following ordering is the order of ft's in the input.dat file
 !        endif
 !        if((compute_covchange.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then!PCM Site=11 has troubles here
 !       we need to handle the sum_cov(ft).eq.0d0 case as well
-        if((compute_covchange.EQV..TRUE.)) then
+        if((compute_covchange.EQV..FALSE.)) then
+          loss = sum_cov(ft) - ftprop(ft)*1d-2
+          woodh = 0.0d0
+          loss_nowoodh = sum_cov(ft) - (ftprop(ft)+woodh)*1d-2
+        else 
           at = aggmap_SDGVM_to_aggHyde(ft)
           CALL CALC_FT2FRAC(ftprop_init,aggmap_SDGVM_to_aggHyde,nft,
      &ft2frac,debug)
@@ -201,7 +205,7 @@ C The following ordering is the order of ft's in the input.dat file
                ftprop(ft) = ftprop(ft) +
      &  ft2frac(ft)*ft2frac(ft2)*atprop2(at2,at)
             ELSE IF((corrct_ft.EQV..TRUE.).AND.
-     &(nonbarefrac.GT.0.0d0)) THEN ! check for pre-existing cover in the ft !also check if tropical or temperate 
+     &(nonbarefrac.GT.0.0d0)) THEN ! check if tropical or temperate !also, only do this if there is non-bare secdn ground or if it's not secdn
                ftprop(ft) = ftprop(ft) +
      &             ft2frac(ft2)*atprop2(at2,at)
             ENDIF
@@ -277,22 +281,23 @@ C The following ordering is the order of ft's in the input.dat file
          !  loss_nowoodh = sum_cov(ft) 
          !  !ftprop(ft) = 0.0d0
          !ENDIF
+        endif !compute_covchange !PCM move this endif here, so that ngcov gets calculated right 
 
-         IF((loss.GT.0.0d0) .and. (sum_cov(ft).GT.0.0d0)) THEN
+        IF((loss.GT.0.0d0) .and. (sum_cov(ft).GT.0.0d0)) THEN
             lossfrac         = MIN(loss/sum_cov(ft),1.0d0)
             lossfrac_nowoodh = MIN(loss_nowoodh/sum_cov(ft),1.0d0)
             CALL LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &lossfrac,lossfrac_nowoodh,npp,nps,slc,rlc,fireres,flulccc,harvest,
      &leafdp,sum_cov,ft,debug)
-         ENDIF
+        ENDIF
 
          !ngcov(ft) = MAX(-loss_nowoodh,0.d0) * sum_cov(ft) !new growth only for -loss>0
-         IF(loss.LT.0.0d0) THEN
+        IF(loss.LT.0.0d0) THEN
            !ngcov(ft) = MAX(-loss,0.d0) * sum_cov(ft) !new growth only for -loss>0
            ngcov(ft) = -loss !new growth only for -loss>0
            tot_ngcov = tot_ngcov + ngcov(ft) 
-         ENDIF
-         IF (debug .EQV. .TRUE.) THEN
+        ENDIF
+        IF (debug .EQV. .TRUE.) THEN
 ! ft SUM_COV(ft):           5   9.6228569383682772E-011
 !GG0 5 9.990000 0.000000   -9.990000   -9.990000 0.000000 9.990000 0.000000 0.000000
            PRINT '(A I2 F9.6 F9.6 F12.6 F12.6 F9.6 F9.6 F9.6 F9.6)',
@@ -301,9 +306,9 @@ C The following ordering is the order of ft's in the input.dat file
      &              loss,loss_nowoodh,
      &              sum_cov(ft), ngcov(ft),
      &              cov(1,ft),cov(2,ft)
-         ENDIF
+        ENDIF
 !         ENDIF
-        endif
+!PCM        endif !compute_covchange !PCM move this endif, so that ngcov gets calculated right 
 
       ENDDO
       ENDIF
@@ -1938,6 +1943,7 @@ C The following ordering is the order of ft's in the input.dat file
       REAL*8 lat
       LOGICAL corrct_ft
 
+!PCM this needs to be fixed; the ft values are wrong
       corrct_ft = .FALSE.
       IF(ABS(lat).LE.24.5)THEN
        IF((ft.EQ.4).OR.(ft.EQ.8).OR.(ft.EQ.9).OR.(ft.EQ.13))THEN !Tropical

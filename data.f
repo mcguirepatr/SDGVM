@@ -1182,12 +1182,13 @@ c     look for the first year
 
       IF(ilanduse.GE.3 .and. ilanduse.LE.6 ) THEN
 CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
+CPCM get_transitions==.true. : compute transitions
          IF(ilanduse.EQ.3 .or. ilanduse.EQ.5 ) THEN
            compute_next_year = .false.
            get_transitions = .true. !PCM for now
          ELSE IF(ilanduse.EQ.4 .or. ilanduse.EQ.6 ) THEN
-           !compute_next_year = .true. !for testing: add transitions to states
-           compute_next_year = .false.
+           !compute_next_year = .true. !for testing: add transitions to states; PCM
+           compute_next_year = .false. 
            get_transitions = .true.
          ENDIF
          ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
