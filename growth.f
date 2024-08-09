@@ -1943,7 +1943,6 @@ C The following ordering is the order of ft's in the input.dat file
       REAL*8 lat
       LOGICAL corrct_ft
 
-!PCM this needs to be fixed; the ft values are wrong
       corrct_ft = .FALSE.
       IF(ABS(lat).LE.24.5)THEN
        IF((ft.EQ.4).OR.(ft.EQ.8).OR.(ft.EQ.9).OR.(ft.EQ.13))THEN !Tropical
