@@ -1033,8 +1033,9 @@ C PCM2      WRITE(*,*) '111111111'
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,lutab2,
-     &pname,pname_t,wdg,cluse2,cluseh,debug)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,SYR_FIRE,NYR_FIRE,
+     &prescr_fire,lutab2,
+     &pname,pname_t,pname_f,wdg,cluse2,cluseh,fprob_prescrh,debug)
 *----------------------------------------------------------------------*
       USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
@@ -1042,28 +1043,32 @@ C PCM2      WRITE(*,*) '111111111'
       INTEGER, PARAMETER :: NS = 17
       INTEGER, PARAMETER :: maxn_at = 7 !max number of aggregrated (functional) types
       INTEGER :: NYR,SYR 
+      INTEGER :: NYR_FIRE,SYR_FIRE 
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
       REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
       REAL*8 cluseh(maxn_at,maxyrs)
+      REAL*8 fprob_prescrh(maxyrs),fprob_prescr
       REAL*8 SDGVM_LUC(NYR, NS, 4, 4),xf,x2,xf2,xx2(4,4,maxn_at)
       REAL*8 SDGVM_LUC2(NYR, maxn_at, maxn_at, 4, 4)
       REAL*8 SDGVM_LUC2_HARVEST(NYR, maxn_at, 4, 4)
+      REAL*8 SDGVM_LUC_FIRE(NYR, 4, 4)
       REAL*8 agclassprop2(255,255), atprop2(maxn_at,maxn_at)
       REAL*8 agclassprop(255),atharvest(maxn_at)
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
       INTEGER ii,jj,stcmp,indx(4,4),years(1000),nrecl,yr0a,yrfa
-      INTEGER classes(1000),nclasses,kode,spinl,yr_offset
-      INTEGER ij,ij1,j1,num_land
+      INTEGER classes(1000),nclasses,kode,spinl,yr_offset,yr_offset_fire
+      INTEGER ij,ij1,j1,num_land,years_fire(1000)
       INTEGER ilanduse,k2,k3,agclasses(1000),indx2(4,4,maxn_at)
       INTEGER iat2,iat3
+      INTEGER n_fire,j_fire,j1_fire
       REAL*8 lutab2(255,100) 
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
-      CHARACTER pname*1000,pname_t*1000,wdg*1000
+      CHARACTER pname*1000,pname_t*1000,wdg*1000,pname_f*1000
       CHARACTER st4*4000
       INTEGER n_fields4000
-      LOGICAL l_lu,year0set
+      LOGICAL l_lu,year0set,prescr_fire
       LOGICAL compute_next_year,get_transitions,mindx(4,4)
       LOGICAL :: debug !used to print out more debugging info
 
@@ -1078,6 +1083,10 @@ C PCM2      WRITE(*,*) '111111111'
         lonn = 720
         n    = NYR 
         years(1:n) = (/(i, i=SYR,SYR+n-1)/)
+        if(prescr_fire .EQV. .TRUE.) THEN
+          n_fire = NYR_FIRE !1901-2020=120
+          years_fire(1:n_fire) = (/(i, i=SYR_FIRE,SYR_FIRE+n_fire-1)/)
+        END IF
         nclasses   = NS 
         classes(1:nclasses) = (/(i, i=1,nclasses)/)
         agclasses(1:maxn_at) = (/(i, i=1,maxn_at)/)
@@ -1133,7 +1142,7 @@ C PCM2      WRITE(*,*) '111111111'
           WRITE(*,*) 'The first year of land use data
      &will be used and the first year of CO2 data will be used in',
      & yr0a,'. This has the potential to uncouple the land use year
-     &from theCO2 year if their datasets start in different years.' 
+     &from the CO2 year if their datasets start in different years.' 
           WRITE(*,*) 'If this message is telling you that
      &the simulation was requested to start in year 1, then
      &you have requested a spin only with co2const < 0.'
@@ -1143,6 +1152,25 @@ C PCM2      WRITE(*,*) '111111111'
           !STOP
       ENDIF
 
+
+      yr_offset_fire = 0 
+      IF ((n_fire.GT.1).AND.(yr0a.LT.years_fire(1))) THEN
+          WRITE(*,*) 'Cannot start running in year',yr0a,
+     &      ' since prescribed fire map begins in ',years_fire(1)
+          WRITE(*,*) 'The first year of prescribed fire data
+     &will be used and the first year of CO2 data will be used in',
+     & yr0a,'. This has the potential to uncouple the prescribed-fire
+     & year from the CO2 year if their datasets start in different
+     & years.' 
+          WRITE(*,*) 'If this message is telling you that
+     &the simulation was requested to start in year 1, then
+     &you have requested a spin only with co2const < 0.'
+          WRITE(*,*) 'Alternatively you have requested a spin and a run
+     &proper and prescribed fire and CO2 will be out of sync
+     &with climate.'  
+          yr_offset_fire = years_fire(1) - yr0a 
+          !STOP
+      ENDIF
 
 c     look for the first year
       ! Currently this selects the starting landuse of the simulation to be the landuse specified in the 
@@ -1158,12 +1186,24 @@ c     look for the first year
       ! This also applies to land-use specified in the input.dat file.
    
       j=1
+
    10 CONTINUE
       IF ((j.LT.n).AND.(years(j)-yr_offset.LT.yr0a)) THEN
          j = j + 1
          GOTO 10
       ENDIF
       j1 = j
+
+      j_fire=1
+   20 CONTINUE
+      IF(prescr_fire .EQV. .TRUE.) THEN
+        IF ((j_fire.LT.n_fire)
+     & .AND.(years_fire(j_fire)-yr_offset_fire.LT.yr0a)) THEN
+         j_fire = j_fire + 1
+         GOTO 20 
+        ENDIF
+      END IF
+      j1_fire = j_fire
 
       !print*, 'start year:', years(j)
 *----------------------------------------------------------------------*
@@ -1193,10 +1233,13 @@ CPCM get_transitions==.true. : compute transitions
          ENDIF
          ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
          ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
-         CALL states_convertSDGVM_func(years(1),years(n),INT(rcol), ! with the definition of rcol, rcol+2 starts at 1 for lon==lon0
-     &          INT(rrow),4,get_transitions,compute_next_year, 
-     &          pname,pname_t,wdg,
-     &          SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST,debug)  
+         CALL states_convertSDGVM_func(
+     &     years(1),years(n),years_fire(1),years_fire(n_fire),
+     &     INT(rcol),INT(rrow),4, ! with the definition of rcol, rcol+2 starts at 1 for lon==lon0
+     &     get_transitions,compute_next_year,prescr_fire, 
+     &     pname,pname_t,pname_f,wdg,
+     &     SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST,SDGVM_LUC_FIRE,
+     &     debug)  
          IF(debug .EQV. .TRUE.) THEN
            WRITE(*,*)
      &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
@@ -1207,6 +1250,7 @@ CPCM get_transitions==.true. : compute transitions
          SDGVM_LUC=0.0
          SDGVM_LUC2=0.0
          SDGVM_LUC2_HARVEST=0.0
+         SDGVM_LUC_FIRE=0.0
          IF(debug .EQV. .TRUE.) THEN
           WRITE(*,*)
      &'    t   BARE     Ev_Bl    Dc_Bl    Ev_Nl    Dc_Nl    ',
@@ -1230,6 +1274,11 @@ CPCM get_transitions==.true. : compute transitions
         RETURN
       ENDIF
 
+      IF ((prescr_fire .EQV. .TRUE.) .AND.
+     &   (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4)).GT.200.0)) ) THEN
+        l_lu = .FALSE.
+        RETURN
+      ENDIF
 
       DO i=1,yrfa-yr0a+1
         IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
@@ -1238,6 +1287,14 @@ CPCM get_transitions==.true. : compute transitions
           CALL STRIPB(st2)
           !print*, st2(1:4) 
           j=j+1
+          
+          IF(prescr_fire .EQV. .TRUE.) THEN
+            IF(j_fire.LT.years_fire(n_fire)) THEN
+              j_fire=j_fire+1
+            ELSE
+              j_fire=1
+            END IF
+          END IF
 
           IF((MOD(years(j-1)-years(1),20)==0).AND.
      & (debug.EQV..TRUE.))THEN 
@@ -1341,6 +1398,47 @@ C            ENDIF
      &                   .AND.(debug.EQV..TRUE.))THEN 
               WRITE(*,*) ! Assumes default "ADVANCE='yes'".
           ENDIF
+
+
+          fprob_prescr = 0.0d0
+          IF (prescr_fire .EQV. .TRUE. ) THEN !PCM
+            DO ii=1,4
+                DO jj=1,4
+                  row = int(rrow)+jj-1
+                  col = int(rcol)+ii-1
+                  !PCM: currently, there is no wrapping at longitude of date-line
+                  !for the 4x4 interpolation
+                  IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
+     &               (col.LE.lonn)) THEN
+                    recn = (row-1)*lonn + col
+                    xf = SDGVM_LUC_FIRE(j_fire, ii, jj) !for j_fire=1, years(j)=1901
+                    xx(ii,jj) = xf 
+                    x = INT(xf) !need this for indx and mindx masking, below
+                    IF (x.LT.200) THEN
+                      indx(ii,jj) = 1
+                      mindx(ii,jj) = .true. 
+                    ELSE
+                      indx(ii,jj) = 0
+                      mindx(ii,jj) = .false. 
+                    ENDIF
+                  ELSE
+                    indx(ii,jj) = -1
+                    mindx(ii,jj) = .false. 
+                  ENDIF
+                ENDDO
+            ENDDO
+
+            num_land = COUNT( mindx .EQV. .true.)
+
+            CALL AVE4(xx,indx,xnorm,ynorm,ans)
+
+            x = int(ans+0.5d0)
+
+            fprob_prescr = ans !should be between 0 & 1
+
+          END IF ! end of prescr_fire 
+
+
 
           IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
            DO k3=1,maxn_at
@@ -1513,6 +1611,10 @@ c
           write(*,'(I4,10F8.2)') yr0a+i-1, cluse(1:10,i)  
          ENDIF
         ENDIF
+
+        IF(prescr_fire .EQV. .TRUE.) THEN
+          fprob_prescrh(i) = fprob_prescr
+        END IF
 
 
         IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM

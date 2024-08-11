@@ -5,10 +5,10 @@
 *----------------------------------------------------------------------*
       SUBROUTINE COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
-     &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
-     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen,atprop2,
-     &atharvest,aggmap_SDGVM_to_aggHyde,ftprop_init,yield,lat,ftprops,
-     &debug)
+     &fireres,fprob,fprob_prescr,ftprop,ftstmx,stemdp,rootdp,ftsls,
+     &ftrls,ilanduse,prescr_fire,nat_map,ic0,burn,harvest,leafdp,
+     &flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
+     &ftprop_init,yield,lat,ftprops,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: n_at = 7 !number of aggregated (Hyde, functional) types
@@ -28,7 +28,7 @@
       REAL*8 ftpropnew,ftprop3(maxnft)
       REAL*8 sum_cov_test(maxnft)
       REAL*8 atprop2(n_at,n_at),THRESH
-      REAL*8 atharvest(n_at)
+      REAL*8 atharvest(n_at),fprob_prescr
       REAL*8 ft2frac(maxnft),at2prop,woodh,totft,loss_nowoodh
       REAL*8 ftprop_init(maxnft),yield(maxnft),lat
       REAL*8 tot_secdn,barefrac_secdn,nonbarefrac,ftprops(maxnft)
@@ -36,7 +36,7 @@
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER ft3,at3
-      LOGICAL burn,harvest
+      LOGICAL burn,harvest,prescr_fire
       LOGICAL compute_covchange,change_cover,corrct_ft,corrct_ft2
 
       IF(debug .EQV. .TRUE.) THEN
@@ -331,23 +331,39 @@ C The following ordering is the order of ft's in the input.dat file
         PRINT '(A)','GN4b ngcov '
         PRINT '(16F11.6)',ngcov(1:nft)
       ENDIF
-*----------------------------------------------------------------------*
-* Compute the likelyhood of fire in the current year 'fprob'.          *
-* 'find' is the fire index                                             *
-*----------------------------------------------------------------------*
+
       IF(debug .EQV. .TRUE.) THEN
         PRINT '(A)','GF4b prc '
         PRINT '(12F11.6)',prc
         PRINT '(A)','GF4b tmp '
         PRINT '(12F11.6)',tmp
       ENDIF
-      CALL FIRE(prc,tmp,fri,fprob,burn)
+
+      IF(prescr_fire .EQV. .TRUE.) THEN
+        IF(fprob_prescr.LE.1.0d0 .AND. fprob_prescr.GE.0.0d0) THEN
+          fprob = fprob_prescr
+        ELSE
+          PRINT '(A)',
+     & 'fprob_prescr is not in bounds. Here is the value.'
+          PRINT '(16F11.6)',fprob_prescr
+          PRINT '(A)','Stopping.'
+          STOP
+        END IF
+        fri   = -1.0d0
+      ELSE
+*----------------------------------------------------------------------*
+* Compute the likelihood of fire in the current year 'fprob'.          *
+* 'find' is the fire index                                             *
+*----------------------------------------------------------------------*
+        CALL FIRE(prc,tmp,fri,fprob,burn)
+      ENDIF
+
       IF(debug .EQV. .TRUE.) THEN
         PRINT '(A)','GF4b fri fprob'
         PRINT '(F11.6 F11.6)',fri,fprob
         PRINT '(A)','GF4b burn '
         PRINT *,burn
-      ENDIF
+      END IF
 
 *----------------------------------------------------------------------*
 * Take off area burnt by fire together with plants past there sell by  *

@@ -21,18 +21,21 @@
 
       MODULE FUNCTIONS_CLU
       CONTAINS
-      SUBROUTINE states_convertSDGVM_func(SYR,FYR,X0,Y0,DXY,get_transitions,compute_next_year, &
-           pname,pname_t,wdg,data_out_SDGVM,data_out_AggHydeTransitions,data_out_AggHarvest,debug )
+      SUBROUTINE states_convertSDGVM_func(SYR,FYR,SYR_FIRE,FYR_FIRE,X0,Y0,DXY, &
+           get_transitions,compute_next_year,prescr_fire, &
+           pname,pname_t,pname_f,wdg,data_out_SDGVM,data_out_AggHydeTransitions,data_out_AggHarvest, &
+           data_out_fire,debug )
       USE netcdf
       IMPLICIT NONE
 
       INTEGER, PARAMETER :: NS = 17
       INTEGER, PARAMETER :: NV2 = 7 
-      INTEGER SYR,FYR,X0,Y0,DXY 
-      LOGICAL :: compute_next_year,get_transitions
+      INTEGER SYR,FYR,SYR_FIRE,FYR_FIRE,X0,Y0,DXY 
+      LOGICAL :: compute_next_year,get_transitions,prescr_fire
       REAL*8, DIMENSION(FYR-SYR+1,NS,DXY,DXY) ::  data_out_SDGVM
       REAL*8, DIMENSION(FYR-SYR+1,NV2,NV2,DXY,DXY) ::  data_out_AggHydeTransitions
       REAL*8, DIMENSION(FYR-SYR+1,NV2,DXY,DXY) ::  data_out_AggHarvest
+      REAL*8, DIMENSION(FYR_FIRE-SYR_FIRE+1,DXY,DXY) :: data_out_fire
 
       INTEGER, PARAMETER :: NX = 720, NY = 360
       ! half-resolution version computed with: module load jasppy ! on JASMIN
@@ -46,6 +49,7 @@
       ! "/gws/nopw/j04/nexcs/pmcguire/sdgvmD/data/land_use/global/ESACCILCP2014/30min/"
       CHARACTER (LEN = *) :: pname !path to half-resolution version of states.nc
       CHARACTER (LEN = *) :: pname_t !path to half-resolution version of transitions.nc
+      CHARACTER (LEN = *) :: pname_f !path to 0.5-degree prescribed-fire files 
       CHARACTER (LEN = *) :: wdg
       CHARACTER (LEN = *), PARAMETER :: fname_s = "cont_lu"
       CHARACTER (LEN = *), PARAMETER :: esadate = "2009"
@@ -63,11 +67,13 @@
       !INTEGER, PARAMETER :: SINDEX = 1001 !starting year for prints ! for 1851
       !INTEGER, PARAMETER :: SINDEX = 850 !starting year for prints ! for 1700
       INTEGER, PARAMETER :: SYR0 = 850 !starting year for NETCDF data 
+      INTEGER, PARAMETER :: SYR0_FIRE = 1901 !starting year for NETCDF data for fire
       INTEGER SINDEX,FINDEX
       REAL*8 :: data_in(NV, DXY, DXY), dummya(DXY, DXY)
       REAL*8 :: data_in_old(NV, DXY, DXY)
       REAL*8 :: data_in_new(NV, DXY, DXY)
       REAL*8 :: data_in_t(NVT, DXY, DXY)
+      REAL*8 :: data_in_fire(DXY, DXY)
       REAL*8 :: data_out(NV-2, DXY, DXY)
       REAL*8 :: data_t_agg(NV2, NV2, DXY, DXY)
       REAL*8 :: data_out_harvest(NV2, DXY, DXY)
@@ -85,11 +91,14 @@
       ! This will be the netCDF ID for the file and data variable.
       INTEGER :: ncid, varid(NV)
       INTEGER :: ncid_t, varid_t(NVT)
+      INTEGER :: ncid_f, varid_f
 
-      INTEGER :: num_land,blank,num_land_hyde,num_land_SDGVM
+      INTEGER :: num_land,blank,num_land_hyde,num_land_SDGVM,num_fire
 
       ! Loop indexes, and error handling.
       INTEGER :: x, y, t, v, v2, v3, i, lon, lat, year_index, shift_year
+      INTEGER :: year
+      CHARACTER (LEN = 5) :: year_string
 
 
 
@@ -164,6 +173,8 @@
            'secyf_bioh    ','secnf_bioh    ' /)
 
       INTEGER aggmap(NV-2) !don't include 'secmb', 'secma'
+
+      CHARACTER(LEN=1),PARAMETER :: varname_f='ba'
 
       ! Orig: NV2=6
       ! aggregate Hyde landcover types 
@@ -302,6 +313,44 @@
       ! Get the varid of the data variable, based on its name.
         CALL CHECK( NF90_INQ_VARID(ncid_t, varname_t(v), varid_t(v)) )
       END DO
+
+      IF(prescr_fire) THEN
+        SINDEX = SYR_FIRE - SYR0_FIRE + 1 + shift_year
+        FINDEX = FYR_FIRE - SYR0_FIRE + 1 + shift_year
+        DO t=SINDEX,FINDEX 
+          year_index = t - SINDEX + 1 
+          year       = SYR_FIRE + year_index - 1  
+          write (year_string,'(I4)') year 
+!      /gws/nopw/j04/nexcs/pmcguire/TRENDYv13/db/burned_area/global_monthly_burned_area_fraction_05deg_1901.nc
+!      pname_f = 
+!      /gws/nopw/j04/nexcs/pmcguire/TRENDYv13/db/burned_area/global_monthly_burned_area_fraction_05deg_
+          CALL CHECK( NF90_OPEN(pname_f(1:blank(pname_f))//trim(year_string)//'.nc',  &
+                      NF90_NOWRITE, ncid_f) )
+
+          ! Get the varid of the data variable, based on its name.
+          CALL CHECK( NF90_INQ_VARID(ncid_f, varname_f, varid_f) )
+
+          data_in_fire(:,:) = NA
+          CALL CHECK( NF90_GET_VAR(ncid_f, varid_f, data_in_fire(minii:maxii,minjj:maxjj), &
+                  start=[minx,miny,t], count=[maxii-minii+1,maxjj-minjj+1,1]) )
+
+          WHERE(ABS(data_in_fire(:,:)) <= 1.00 )
+            mask = .TRUE.
+          ELSEWHERE
+            mask = .FALSE.
+          END WHERE
+
+          num_fire = COUNT( mask(3:4,3:4) .EQV. .TRUE.)
+          IF(num_fire.eq.0) THEN
+            data_out_fire = 255.0
+          END IF
+
+          WHERE (isNAN(data_in_fire(:,:)))
+               data_in_fire = NA
+          ENDWHERE
+          data_out_fire(year_index,:,:) = data_in_fire(:,:) 
+        END DO
+      END IF
 
       !DO t=ST,NT,1 
       SINDEX = SYR - SYR0 + 1 + shift_year

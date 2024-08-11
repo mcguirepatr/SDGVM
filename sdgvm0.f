@@ -74,7 +74,7 @@
       REAL*8 aprc_dryqv(10),aprc_dryq,yearprcdryq,prc_week(52),prcq(52)
       REAL*8 matvar,aprc_rel,a2,b2,avflulccc,flulccc(maxnft)
       REAL*8 jmax_int(maxnft),jmax_int_er(maxnft)
-      REAL*8 jmax_ci_low,jmax_ci_high
+      REAL*8 jmax_ci_low,jmax_ci_high,fprob_prescr,fprob_prescrh(maxyrs)
       REAL*8 ftToptV(maxnft),ftHaV(maxnft),ftHdV(maxnft)
       REAL*8 ftToptJ(maxnft),ftHaJ(maxnft),ftHdJ(maxnft)
       REAL*8 jmax_slope(maxnft),jmax_slope_er(maxnft)
@@ -97,7 +97,7 @@
       INTEGER snp_year,ftlls(maxnft),ftsls(maxnft),ftrls(maxnft),day,d
       INTEGER isite,ntags,du,ii,otagsn(douts),otagsnft(douts),sit_grd
       INTEGER ftmor(maxnft),ftc3(maxnft),nft,site0,sitef,nat_map(8)
-      INTEGER ilanduse,siteno,iofn,iofnft,iofngft,recl1
+      INTEGER ilanduse,siteno,iofn,iofnft,iofngft,recl1,ifire
       INTEGER icontinuouslanduse,ftphen(maxnft),ftdth(maxnft),kode
       INTEGER i,j,k,l,m,ft,s,w,w1,f
       INTEGER at2,at
@@ -142,7 +142,7 @@
       CHARACTER stinput*1000,stoutput*1000,stinit*1000,stco2*1000
       CHARACTER stmask*1000,country_name*1000,countries(100)*20
       CHARACTER sttxdp*1000,stlu*1000,ststats*1000,buff1*80
-      CHARACTER stpname*1000,stpname_t*1000,stwdg*1000
+      CHARACTER stpname*1000,stpname_t*1000,stwdg*1000,stpname_f*1000
       CHARACTER param_file*1000,date*8,time*10,fttags(maxnft)*1000
 
       LOGICAL initise,initiseo,speedc,crand,xspeedc,withcloudcover
@@ -151,7 +151,7 @@
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
       LOGICAL year0set
-      LOGICAL debug,out_yie
+      LOGICAL debug,out_yie,prescr_fire
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -170,6 +170,7 @@
       INTEGER hi,xi,gs_func
       INTEGER PHASE !PCM
       INTEGER SYR,NYR !PCM
+      INTEGER SYR_FIRE,NYR_FIRE !PCM
       INTEGER aggmap_SDGVM_to_aggHyde(NS) !PCM
       REAL*8 lutab2(255,100) !PCM
       LOGICAL closed_loop_ft !PCM
@@ -478,11 +479,55 @@ C        WRITE(*,*) 'bbbb'
         STOP
       ENDIF
 
+*----------------------------------------------------------------------*
+* Read in type of landuse: 0 = defined by map; 1 = defined explicitly  *
+* in the input file; 2 = natural vegetation based on average monthly   *
+* temperatures.                                                        *
+*----------------------------------------------------------------------*
+      READ(98,'(1000a)') st1
+
+      ii = n_fields(st1)
+      IF (ii.EQ.3) THEN
+        !read in ifire 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  ifire  = i
+        !read start year of extraction from fire database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  SYR_FIRE   = i
+        !read number of years of extraction from fire database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  NYR_FIRE   = i
+        IF (ifire.EQ.1) NYR_FIRE = 1 !override number from input.dat if set that way accidently
+        IF (ifire.EQ.2 .OR. ifire.EQ.3) prescr_fire = .TRUE.
+      ELSE IF (ii.EQ.1) THEN
+        READ(st1,*) ifire
+        ifire = 1
+        prescr_fire = .FALSE.
+        SYR_FIRE = -1 !SYR_FIRE and NYR_FIRE not used and not defined here
+        NYR_FIRE = -1
+      ELSE
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'ifire: either 1 or 3 arguments required'
+        STOP
+      ENDIF
+
+      IF ((ifire.LT.1).OR.(ifire.GT.3)) THEN
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'No ifire defined'
+        WRITE(*,*) '1:=Fire burned-area not prescribed.'
+        WRITE(*,*) '2:=Fire burned-area is prescribed (Pre-industrial).'
+        WRITE(*,*) '3:=Fire burned-area is prescribed (1901-2020).'
+        STOP
+      ENDIF
+
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname)
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname_t)
+
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stpname_f)
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stwdg)
@@ -2220,8 +2265,9 @@ C The following ordering is the order of ft's in the input.dat file
           END IF
 
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,lutab2,
-     &stpname,stpname_t,stwdg,cluse2,cluseh,debug)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,SYR_FIRE,NYR_FIRE,
+     &prescr_fire,lutab2,stpname,stpname_t,stpname_f,stwdg,
+     &cluse2,cluseh,fprob_prescrh,debug)
 
       !loop added for testing purposes
           DO ft=1,nft
@@ -3648,12 +3694,20 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 
 
           ENDDO
+
           IF (ftprop(1).LT.0.0d0) THEN
             DO ft=2,nft
               ftprop(ft) = ftprop(ft)*100.0d0/(100.0 - ftprop(1))
             ENDDO
             ftprop(1) = 0.0d0
           ENDIF
+
+          IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
+            IF(prescr_fire .EQV. .TRUE.) THEN
+                 fprob_prescr = fprob_prescrh(iyear-iyear_adj)
+            END IF
+          END IF
+
         ENDIF
 
         IF(debug .EQV. .TRUE.) THEN
@@ -3674,10 +3728,10 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
-     &fprob,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
-     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,atprop2,
-     &atharvest,aggmap_SDGVM_to_aggHyde,ftprop_init,yield,lat,ftprops,
-     &debug)
+     &fprob,fprob_prescr,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,
+     &ilanduse,prescr_fire,nat_map,ic0,fire(iyear),harvest(iyear),
+     &leafdp,flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
+     &ftprop_init,yield,lat,ftprops,debug)
 
         IF(debug .EQV. .TRUE.) THEN
           PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '
