@@ -174,7 +174,7 @@
 
       INTEGER aggmap(NV-2) !don't include 'secmb', 'secma'
 
-      CHARACTER(LEN=1),PARAMETER :: varname_f='ba'
+      CHARACTER(LEN=2),PARAMETER :: varname_f='ba'
 
       ! Orig: NV2=6
       ! aggregate Hyde landcover types 
