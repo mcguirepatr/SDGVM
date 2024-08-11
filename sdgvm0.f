@@ -74,7 +74,8 @@
       REAL*8 aprc_dryqv(10),aprc_dryq,yearprcdryq,prc_week(52),prcq(52)
       REAL*8 matvar,aprc_rel,a2,b2,avflulccc,flulccc(maxnft)
       REAL*8 jmax_int(maxnft),jmax_int_er(maxnft)
-      REAL*8 jmax_ci_low,jmax_ci_high,fprob_prescr,fprob_prescrh(maxyrs)
+      REAL*8 jmax_ci_low,jmax_ci_high
+      REAL*8 fprob_prescr(12),fprob_prescrh(maxyrs,12)
       REAL*8 ftToptV(maxnft),ftHaV(maxnft),ftHdV(maxnft)
       REAL*8 ftToptJ(maxnft),ftHaJ(maxnft),ftHdJ(maxnft)
       REAL*8 jmax_slope(maxnft),jmax_slope_er(maxnft)
@@ -3704,7 +3705,8 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 
           IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
             IF(prescr_fire .EQV. .TRUE.) THEN
-                 fprob_prescr = fprob_prescrh(iyear-iyear_adj)
+                 fprob_prescr(1:12) =                    
+     &                       fprob_prescrh(iyear-iyear_adj,1:12)
             END IF
           END IF
 

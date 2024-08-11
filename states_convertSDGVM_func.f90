@@ -35,7 +35,7 @@
       REAL*8, DIMENSION(FYR-SYR+1,NS,DXY,DXY) ::  data_out_SDGVM
       REAL*8, DIMENSION(FYR-SYR+1,NV2,NV2,DXY,DXY) ::  data_out_AggHydeTransitions
       REAL*8, DIMENSION(FYR-SYR+1,NV2,DXY,DXY) ::  data_out_AggHarvest
-      REAL*8, DIMENSION(FYR_FIRE-SYR_FIRE+1,DXY,DXY) :: data_out_fire
+      REAL*8, DIMENSION(FYR_FIRE-SYR_FIRE+1,DXY,DXY,12) :: data_out_fire
 
       INTEGER, PARAMETER :: NX = 720, NY = 360
       ! half-resolution version computed with: module load jasppy ! on JASMIN
@@ -73,7 +73,7 @@
       REAL*8 :: data_in_old(NV, DXY, DXY)
       REAL*8 :: data_in_new(NV, DXY, DXY)
       REAL*8 :: data_in_t(NVT, DXY, DXY)
-      REAL*8 :: data_in_fire(DXY, DXY)
+      REAL*8 :: data_in_fire(DXY, DXY,12)
       REAL*8 :: data_out(NV-2, DXY, DXY)
       REAL*8 :: data_t_agg(NV2, NV2, DXY, DXY)
       REAL*8 :: data_out_harvest(NV2, DXY, DXY)
@@ -330,11 +330,12 @@
           ! Get the varid of the data variable, based on its name.
           CALL CHECK( NF90_INQ_VARID(ncid_f, varname_f, varid_f) )
 
-          data_in_fire(:,:) = NA
-          CALL CHECK( NF90_GET_VAR(ncid_f, varid_f, data_in_fire(minii:maxii,minjj:maxjj), &
-                  start=[minx,miny,t], count=[maxii-minii+1,maxjj-minjj+1,1]) )
+          data_in_fire(:,:,1:12) = NA
+          CALL CHECK( NF90_GET_VAR(ncid_f, varid_f,           &
+                  data_in_fire(minii:maxii,minjj:maxjj,1:12), &
+                  start=[minx,miny,1], count=[maxii-minii+1,maxjj-minjj+1,12]) )
 
-          WHERE(ABS(data_in_fire(:,:)) <= 1.00 )
+          WHERE(ABS(data_in_fire(:,:,1)) <= 1.00 ) !just check for january
             mask = .TRUE.
           ELSEWHERE
             mask = .FALSE.
@@ -345,10 +346,10 @@
             data_out_fire = 255.0
           END IF
 
-          WHERE (isNAN(data_in_fire(:,:)))
+          WHERE (isNAN(data_in_fire(:,:,1:12)))
                data_in_fire = NA
           ENDWHERE
-          data_out_fire(year_index,:,:) = data_in_fire(:,:) 
+          data_out_fire(year_index,:,:,1:12) = data_in_fire(:,:,1:12) 
         END DO
       END IF
 

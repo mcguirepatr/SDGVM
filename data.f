@@ -1049,11 +1049,11 @@ C PCM2      WRITE(*,*) '111111111'
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
       REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
       REAL*8 cluseh(maxn_at,maxyrs)
-      REAL*8 fprob_prescrh(maxyrs),fprob_prescr
+      REAL*8 fprob_prescrh(maxyrs,12),fprob_prescr(12)
       REAL*8 SDGVM_LUC(NYR, NS, 4, 4),xf,x2,xf2,xx2(4,4,maxn_at)
       REAL*8 SDGVM_LUC2(NYR, maxn_at, maxn_at, 4, 4)
       REAL*8 SDGVM_LUC2_HARVEST(NYR, maxn_at, 4, 4)
-      REAL*8 SDGVM_LUC_FIRE(NYR, 4, 4)
+      REAL*8 SDGVM_LUC_FIRE(NYR, 4, 4, 12)
       REAL*8 agclassprop2(255,255), atprop2(maxn_at,maxn_at)
       REAL*8 agclassprop(255),atharvest(maxn_at)
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
@@ -1062,7 +1062,7 @@ C PCM2      WRITE(*,*) '111111111'
       INTEGER ij,ij1,j1,num_land,years_fire(1000)
       INTEGER ilanduse,k2,k3,agclasses(1000),indx2(4,4,maxn_at)
       INTEGER iat2,iat3
-      INTEGER n_fire,j_fire,j1_fire
+      INTEGER n_fire,j_fire,j1_fire,mm
       REAL*8 lutab2(255,100) 
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
       CHARACTER pname*1000,pname_t*1000,wdg*1000,pname_f*1000
@@ -1275,7 +1275,7 @@ CPCM get_transitions==.true. : compute transitions
       ENDIF
 
       IF ((prescr_fire .EQV. .TRUE.) .AND.
-     &   (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4)).GT.200.0)) ) THEN
+     &   (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4,1:12)).GT.200.0)) ) THEN
         l_lu = .FALSE.
         RETURN
       ENDIF
@@ -1400,9 +1400,10 @@ C            ENDIF
           ENDIF
 
 
-          fprob_prescr = 0.0d0
+          fprob_prescr(1:12) = 0.0d0
           IF (prescr_fire .EQV. .TRUE. ) THEN !PCM
-            DO ii=1,4
+            DO mm=1,12
+              DO ii=1,4
                 DO jj=1,4
                   row = int(rrow)+jj-1
                   col = int(rcol)+ii-1
@@ -1410,8 +1411,7 @@ C            ENDIF
                   !for the 4x4 interpolation
                   IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
      &               (col.LE.lonn)) THEN
-                    recn = (row-1)*lonn + col
-                    xf = SDGVM_LUC_FIRE(j_fire, ii, jj) !for j_fire=1, years(j)=1901
+                    xf = SDGVM_LUC_FIRE(j_fire, ii, jj, mm) !for j_fire=1, years(j)=1901
                     xx(ii,jj) = xf 
                     x = INT(xf) !need this for indx and mindx masking, below
                     IF (x.LT.200) THEN
@@ -1426,15 +1426,16 @@ C            ENDIF
                     mindx(ii,jj) = .false. 
                   ENDIF
                 ENDDO
-            ENDDO
+              ENDDO
 
-            num_land = COUNT( mindx .EQV. .true.)
+              num_land = COUNT( mindx .EQV. .true.)
 
-            CALL AVE4(xx,indx,xnorm,ynorm,ans)
+              CALL AVE4(xx,indx,xnorm,ynorm,ans)
 
-            x = int(ans+0.5d0)
+              x = int(ans+0.5d0)
 
-            fprob_prescr = ans !should be between 0 & 1
+              fprob_prescr(mm) = ans !should be between 0 & 1
+            END DO
 
           END IF ! end of prescr_fire 
 
@@ -1613,7 +1614,7 @@ c
         ENDIF
 
         IF(prescr_fire .EQV. .TRUE.) THEN
-          fprob_prescrh(i) = fprob_prescr
+          fprob_prescrh(i,1:12) = fprob_prescr(1:12)
         END IF
 
 

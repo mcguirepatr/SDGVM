@@ -28,14 +28,14 @@
       REAL*8 ftpropnew,ftprop3(maxnft)
       REAL*8 sum_cov_test(maxnft)
       REAL*8 atprop2(n_at,n_at),THRESH
-      REAL*8 atharvest(n_at),fprob_prescr
+      REAL*8 atharvest(n_at),fprob_prescr(12)
       REAL*8 ft2frac(maxnft),at2prop,woodh,totft,loss_nowoodh
       REAL*8 ftprop_init(maxnft),yield(maxnft),lat
       REAL*8 tot_secdn,barefrac_secdn,nonbarefrac,ftprops(maxnft)
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
-      INTEGER ft3,at3
+      INTEGER ft3,at3,mm
       LOGICAL burn,harvest,prescr_fire
       LOGICAL compute_covchange,change_cover,corrct_ft,corrct_ft2
 
@@ -340,15 +340,18 @@ C The following ordering is the order of ft's in the input.dat file
       ENDIF
 
       IF(prescr_fire .EQV. .TRUE.) THEN
-        IF(fprob_prescr.LE.1.0d0 .AND. fprob_prescr.GE.0.0d0) THEN
-          fprob = fprob_prescr
-        ELSE
+        DO mm=1,12
+         IF( fprob_prescr(mm).GT.1.0d0
+     & .OR.  fprob_prescr(mm).LT.0.0d0 ) THEN
           PRINT '(A)',
-     & 'fprob_prescr is not in bounds. Here is the value.'
-          PRINT '(16F11.6)',fprob_prescr
+     & 'fprob_prescr is not in bounds. For the month:'
+          PRINT '(I4,12F11.6)',mm,fprob_prescr(mm)
           PRINT '(A)','Stopping.'
           STOP
-        END IF
+         ENDIF
+        END DO
+!PCM: for now, use equal-weighted average of all months 
+        fprob = SUM(fprob_prescr(1:12)/12.0d0)
         fri   = -1.0d0
       ELSE
 *----------------------------------------------------------------------*
