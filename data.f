@@ -1053,7 +1053,7 @@ C PCM2      WRITE(*,*) '111111111'
       REAL*8 SDGVM_LUC(NYR, NS, 4, 4),xf,x2,xf2,xx2(4,4,maxn_at)
       REAL*8 SDGVM_LUC2(NYR, maxn_at, maxn_at, 4, 4)
       REAL*8 SDGVM_LUC2_HARVEST(NYR, maxn_at, 4, 4)
-      REAL*8 SDGVM_LUC_FIRE(NYR, 4, 4, 12)
+      REAL*8 SDGVM_LUC_FIRE(NYR_FIRE, 4, 4, 12)
       REAL*8 agclassprop2(255,255), atprop2(maxn_at,maxn_at)
       REAL*8 agclassprop(255),atharvest(maxn_at)
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
@@ -1070,6 +1070,7 @@ C PCM2      WRITE(*,*) '111111111'
       INTEGER n_fields4000
       LOGICAL l_lu,year0set,prescr_fire
       LOGICAL compute_next_year,get_transitions,mindx(4,4)
+      LOGICAL do_fire_interp
       LOGICAL :: debug !used to print out more debugging info
 
 
@@ -1085,6 +1086,7 @@ C PCM2      WRITE(*,*) '111111111'
         years(1:n) = (/(i, i=SYR,SYR+n-1)/)
         if(prescr_fire .EQV. .TRUE.) THEN
           n_fire = NYR_FIRE !1901-2020=120
+          !write(*,*)'NYR_FIRE=',n_fire
           years_fire(1:n_fire) = (/(i, i=SYR_FIRE,SYR_FIRE+n_fire-1)/)
         END IF
         nclasses   = NS 
@@ -1154,23 +1156,23 @@ C PCM2      WRITE(*,*) '111111111'
 
 
       yr_offset_fire = 0 
-      IF ((n_fire.GT.1).AND.(yr0a.LT.years_fire(1))) THEN
-          WRITE(*,*) 'Cannot start running in year',yr0a,
-     &      ' since prescribed fire map begins in ',years_fire(1)
-          WRITE(*,*) 'The first year of prescribed fire data
-     &will be used and the first year of CO2 data will be used in',
-     & yr0a,'. This has the potential to uncouple the prescribed-fire
-     & year from the CO2 year if their datasets start in different
-     & years.' 
-          WRITE(*,*) 'If this message is telling you that
-     &the simulation was requested to start in year 1, then
-     &you have requested a spin only with co2const < 0.'
-          WRITE(*,*) 'Alternatively you have requested a spin and a run
-     &proper and prescribed fire and CO2 will be out of sync
-     &with climate.'  
-          yr_offset_fire = years_fire(1) - yr0a 
-          !STOP
-      ENDIF
+!      IF ((n_fire.GT.1).AND.(yr0a.LT.years_fire(1))) THEN
+!          WRITE(*,*) 'Cannot start running in year',yr0a,
+!     &      ' since prescribed fire map begins in ',years_fire(1)
+!          WRITE(*,*) 'The first year of prescribed fire data
+!     &will be used and the first year of CO2 data will be used in',
+!     & yr0a,'. This has the potential to uncouple the prescribed-fire
+!     & year from the CO2 year if their datasets start in different
+!     & years.' 
+!          WRITE(*,*) 'If this message is telling you that
+!     &the simulation was requested to start in year 1, then
+!     &you have requested a spin only with co2const < 0.'
+!          WRITE(*,*) 'Alternatively you have requested a spin and a run
+!     &proper and prescribed fire and CO2 will be out of sync
+!     &with climate.'  
+!          yr_offset_fire = years_fire(1) - yr0a 
+!          !STOP
+!      ENDIF
 
 c     look for the first year
       ! Currently this selects the starting landuse of the simulation to be the landuse specified in the 
@@ -1205,7 +1207,15 @@ c     look for the first year
       END IF
       j1_fire = j_fire
 
-      !print*, 'start year:', years(j)
+!      print*, 'EX_CLU:before_loop'
+!      print*, 'j,n:', j,n
+!      print*, 'start year:', years(j)
+!      print*, 'year 2:', years(j+1)
+!      print*, 'year n:', years(n)
+!      print*, 'j_fire,n_fire:', j_fire,n_fire
+!      print*, 'fire start year:', years_fire(j_fire)
+!      print*, 'fire year 2:', years_fire(j_fire+1)
+!      print*, 'fire year n_fire:', years_fire(n_fire)
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
 * PCM: offset this by 2 gridcells, since we have a box of 4 x 4        *
@@ -1240,6 +1250,11 @@ CPCM get_transitions==.true. : compute transitions
      &     pname,pname_t,pname_f,wdg,
      &     SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST,SDGVM_LUC_FIRE,
      &     debug)  
+!         WRITE(*,*)'EX_CLU: after states_convertSDGVM_func'
+!         write(*,FMT="(A)") "EX_CLU:SDGVM_LUC2_FIRE"
+!         DO jj=1,n_fire
+!           write(*,FMT="(12F7.4)") SDGVM_LUC_FIRE(jj,3,3,:)
+!         END DO
          IF(debug .EQV. .TRUE.) THEN
            WRITE(*,*)
      &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
@@ -1280,21 +1295,79 @@ CPCM get_transitions==.true. : compute transitions
         RETURN
       ENDIF
 
+      IF (prescr_fire .EQV. .TRUE. ) THEN !PCM
+       DO i=1,yrfa-yr0a+1
+!       DO i=1,yrfa-yr0a+1
+!!        print*, yr0a,yrfa 
+!!        print*, j, years(j), i, years(j) - yr_offset,i+yr0a-1
+!        IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
+!          WRITE(*,*)'j_fire,n_fire',
+!     &                 j_fire,n_fire
+          IF(j_fire.LE.n_fire) THEN
+              j_fire=j_fire+1
+          ELSE
+              j_fire=2 !first time in loop j_fire-1 = 1
+          END IF
+
+!          WRITE(*,*)'EX_CLU:before_AVE4,j_fire=',j_fire
+          fprob_prescr(1:12) = 0.0d0
+          DO mm=1,12
+              DO ii=1,4
+                DO jj=1,4
+                  row = int(rrow)+jj-1
+                  col = int(rcol)+ii-1
+                  !PCM: currently, there is no wrapping at longitude of date-line
+                  !for the 4x4 interpolation
+                  IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
+     &               (col.LE.lonn)) THEN
+                    xf = SDGVM_LUC_FIRE(j_fire-1, ii, jj, mm) !for j_fire=1, years(j)=1901
+!                    xf = SDGVM_LUC_FIRE(j_fire-1, 3, 3, mm) !for j_fire=1, years(j)=1901
+                    xx(ii,jj) = xf 
+                    x = INT(xf) !need this for indx and mindx masking, below
+                    IF (x.LT.2 .AND. x.GE.0) THEN
+                      indx(ii,jj) = 1
+                      mindx(ii,jj) = .true. 
+                    ELSE
+                      indx(ii,jj) = 0
+                      mindx(ii,jj) = .false. 
+                    ENDIF
+                  ELSE
+                    indx(ii,jj) = -1
+                    mindx(ii,jj) = .false. 
+                  ENDIF
+                ENDDO
+              ENDDO
+
+              num_land = COUNT( mindx .EQV. .true.)
+              !print*, num_land,mm
+              
+              CALL AVE4(xx,indx,xnorm,ynorm,ans)
+
+              x = int(ans+0.5d0)
+
+              fprob_prescr(mm) = ans !should be between 0 & 1
+              !fprob_prescr(mm) = xf !should be between 0 & 1
+          END DO
+!          WRITE(*,'(A)')'EX_CLU:after_AVE4'
+!          WRITE(*,'(12F7.4)')fprob_prescr
+          fprob_prescrh(j_fire-1,1:12) = fprob_prescr(1:12)
+
+!        ENDIF ! finished reading
+       ENDDO !year loop #1
+
+      END IF ! end of prescr_fire 
+
+
       DO i=1,yrfa-yr0a+1
+!        print*, yr0a,yrfa 
+!        print*, j, years(j), i, years(j) - yr_offset,i+yr0a-1
         IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
-          !print*, j, years(j), i, years(j) - yr_offset
+
           st2=in2st(years(j))
           CALL STRIPB(st2)
           !print*, st2(1:4) 
           j=j+1
           
-          IF(prescr_fire .EQV. .TRUE.) THEN
-            IF(j_fire.LT.years_fire(n_fire)) THEN
-              j_fire=j_fire+1
-            ELSE
-              j_fire=1
-            END IF
-          END IF
 
           IF((MOD(years(j-1)-years(1),20)==0).AND.
      & (debug.EQV..TRUE.))THEN 
@@ -1398,46 +1471,6 @@ C            ENDIF
      &                   .AND.(debug.EQV..TRUE.))THEN 
               WRITE(*,*) ! Assumes default "ADVANCE='yes'".
           ENDIF
-
-
-          fprob_prescr(1:12) = 0.0d0
-          IF (prescr_fire .EQV. .TRUE. ) THEN !PCM
-            DO mm=1,12
-              DO ii=1,4
-                DO jj=1,4
-                  row = int(rrow)+jj-1
-                  col = int(rcol)+ii-1
-                  !PCM: currently, there is no wrapping at longitude of date-line
-                  !for the 4x4 interpolation
-                  IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
-     &               (col.LE.lonn)) THEN
-                    xf = SDGVM_LUC_FIRE(j_fire, ii, jj, mm) !for j_fire=1, years(j)=1901
-                    xx(ii,jj) = xf 
-                    x = INT(xf) !need this for indx and mindx masking, below
-                    IF (x.LT.200) THEN
-                      indx(ii,jj) = 1
-                      mindx(ii,jj) = .true. 
-                    ELSE
-                      indx(ii,jj) = 0
-                      mindx(ii,jj) = .false. 
-                    ENDIF
-                  ELSE
-                    indx(ii,jj) = -1
-                    mindx(ii,jj) = .false. 
-                  ENDIF
-                ENDDO
-              ENDDO
-
-              num_land = COUNT( mindx .EQV. .true.)
-
-              CALL AVE4(xx,indx,xnorm,ynorm,ans)
-
-              x = int(ans+0.5d0)
-
-              fprob_prescr(mm) = ans !should be between 0 & 1
-            END DO
-
-          END IF ! end of prescr_fire 
 
 
 
@@ -1613,11 +1646,6 @@ c
          ENDIF
         ENDIF
 
-        IF(prescr_fire .EQV. .TRUE.) THEN
-          fprob_prescrh(i,1:12) = fprob_prescr(1:12)
-        END IF
-
-
         IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
          DO iat3=1,maxn_at
           cluseh(iat3,i)       = atharvest(iat3)
@@ -1626,7 +1654,14 @@ c
           ENDDO
          ENDDO
         ENDIF
-      ENDDO !year loop
+      ENDDO !year loop #2
+
+!      IF(prescr_fire .EQV. .TRUE.) THEN
+!          WRITE(*,'(A,I3)')'EX_CLU:After year loop, fprob_prescrh'
+!          DO jj=1,n_fire
+!            WRITE(*,'(12F7.4)')fprob_prescrh(jj,1:12)
+!          END DO
+!      END IF
 
 
       ! TRENDY SDGVM method 
@@ -1639,12 +1674,14 @@ c
         ENDIF
         DO i=1,years(n)-yr0a-yr_offset
           IF ( (i.EQ.1).OR.((i+yr0a-1).EQ.(years(j1)-yr_offset)) ) THEN
-            !print*, j, years(j1), years(j1+1)
+!            print*, j, years(j1), years(j1+1)
             ij  = i
             ij1 = ij + years(j1+1) - years(j1)  
             j1  = j1 + 1
-            !print*, i,j1,ij,ij1
+!            print*, i,j1,ij,ij1
           ELSE
+!            print*, i,j1,ij,ij1,'INTERPOLATING in TIME'
+!       for S3 experiment, it never reaches here
             DO ift=1,nft
               cluse(ift,i) = cluse(ift,ij) + 
      &  ( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
@@ -1673,6 +1710,53 @@ c
           ENDIF
         ENDDO
       ENDIF
+
+      do_fire_interp = .false. !this doesn't work now, so turn it off
+      IF (do_fire_interp .and. prescr_fire) THEN
+      ! TRENDY SDGVM method 
+      !- assumes linear interpolation of land-use between years
+      !specified in input dataset
+       IF ((n_fire-j1_fire+1).ne.1) THEN
+        IF(debug .EQV. .True.) THEN
+          print*, 'Linear interpolation of dynamic Land-Cover fractions'
+          print*, n_fire,j1_fire,n_fire-j1_fire+1
+        ENDIF
+        DO i=1,years_fire(n_fire)-yr0a-yr_offset
+          IF ( (i.EQ.1).OR.((i+yr0a-1).EQ.    
+     &          (years_fire(j1_fire)-yr_offset)) ) THEN
+!            print*, j_fire, years(j1_fire), years(j1_fire+1)
+            ij  = i
+            ij1 = ij + years_fire(j1_fire+1) - years_fire(j1_fire)  
+            j1_fire  = j1_fire + 1
+!            print*, i,j1_fire,ij,ij1
+          ELSE
+!              print*, i,j1_fire,ij,ij1,'INTERPOLATING in TIME'
+              fprob_prescrh(i,1:12) = fprob_prescrh(ij,1:12) + 
+     &  ( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
+     &  (fprob_prescrh(ij1,1:12) - fprob_prescrh(ij,1:12)) )
+          ENDIF
+        ENDDO
+       ENDIF
+      ENDIF
+
+!      IF(prescr_fire .EQV. .TRUE.) THEN
+!          WRITE(*,'(A,I3)')'EX_CLU:After TRENDY SDGVM method:fprob'
+!          DO jj=1,n_fire
+!            WRITE(*,'(12F7.4)')fprob_prescrh(jj,1:12)
+!          END DO
+!      END IF
+!      WRITE(*,'(A,I3)')'EX_CLU:After TRENDY SDGVM method:cluseh(1)'
+!      DO jj=1,n
+!        WRITE(*,'(F7.4)')cluseh(1,jj)
+!      END DO
+!      WRITE(*,'(A,I3)')'EX_CLU:After TRENDY SDGVM method:cluseh(2)'
+!      DO jj=1,n
+!        WRITE(*,'(F7.4)')cluseh(2,jj)
+!      END DO
+!      WRITE(*,'(A,I3)')'EX_CLU:After TRENDY SDGVM method:cluseh(3)'
+!      DO jj=1,n
+!        WRITE(*,'(F7.4)')cluseh(3,jj)
+!      END DO
 
 
 !PCM      IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.

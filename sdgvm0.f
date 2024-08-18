@@ -109,7 +109,7 @@
       INTEGER stcmp,iargc,yearind(maxyrs),idum,outyears,thty_dys
       INTEGER xlatresn,xlonresn,day_mnth,yearv(maxyrs),nyears,narg
       INTEGER met_seqv(maxyrs),metyear,met_yearv(maxyrs)
-      INTEGER yr0ms,yrfms,yr0m,yrfm,iyear_adj,yr0a,yrfa
+      INTEGER yr0ms,yrfms,yr0m,yrfm,iyear_adj,yr0a,yrfa,iyear_fire
       INTEGER seed1,seed2,seed3,spinl,yr0s,yr0p,yrfp,xseed1,site_dat
       INTEGER ibox,jbox,last_blank,site_out,country_id,outyears1,fti
       INTEGER outyears2,budo(maxnft),seno(maxnft),ss(maxnft),clim_type
@@ -448,7 +448,7 @@ C        WRITE(*,*) 'bbbb'
         !read number of years of extraction from LUC database 
         CALL STRIPBN(st1,i)
         IF (i.gt.-1)  NYR   = i
-        IF (ilanduse.EQ.5. .OR. ilanduse.EQ.6) NYR = 1 !override number from input.dat if set that way accidently
+!        IF (ilanduse.EQ.5. .OR. ilanduse.EQ.6) NYR = 1 !override number from input.dat if set that way accidently
       ELSE IF (ii.EQ.1) THEN
         READ(st1,*) ilanduse
         SYR = -1 !SYR and NYR not used and not defined here
@@ -3705,8 +3705,14 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 
           IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
             IF(prescr_fire .EQV. .TRUE.) THEN
+!using the year variable, which accounts for recycling of fire data
+!before the main run
+                 iyear_fire = year-yr0s+1 
+!                 write(*,*)'FIRE PROBS: in SDGVM0.f,year,iyear_fire,',
+!     &                'yr0s=',year,iyear_fire,yr0s
+!                 write(*,'(12F7.4)')fprob_prescrh(iyear_fire,1:12)
                  fprob_prescr(1:12) =                    
-     &                       fprob_prescrh(iyear-iyear_adj,1:12)
+     &                       fprob_prescrh(iyear_fire,1:12)
             END IF
           END IF
 
@@ -3727,6 +3733,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           PRINT '(A)','SS3c ftprop1 (before COVER( ) routine) '
           PRINT '(16F11.7)',ftprop1(1:nft)
         ENDIF
+        iyear_fire = MOD(iyear-iyear_adj-1,NYR_FIRE)+1
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,

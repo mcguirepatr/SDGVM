@@ -21,9 +21,10 @@
 
       MODULE FUNCTIONS_CLU
       CONTAINS
-      SUBROUTINE states_convertSDGVM_func(SYR,FYR,SYR_FIRE,FYR_FIRE,X0,Y0,DXY, &
-           get_transitions,compute_next_year,prescr_fire, &
-           pname,pname_t,pname_f,wdg,data_out_SDGVM,data_out_AggHydeTransitions,data_out_AggHarvest, &
+      SUBROUTINE states_convertSDGVM_func(SYR,FYR,SYR_FIRE,FYR_FIRE, &
+           X0,Y0,DXY,get_transitions,compute_next_year,prescr_fire, &
+           pname,pname_t,pname_f,wdg,data_out_SDGVM, &
+           data_out_AggHydeTransitions,data_out_AggHarvest, &
            data_out_fire,debug )
       USE netcdf
       IMPLICIT NONE
@@ -33,7 +34,8 @@
       INTEGER SYR,FYR,SYR_FIRE,FYR_FIRE,X0,Y0,DXY 
       LOGICAL :: compute_next_year,get_transitions,prescr_fire
       REAL*8, DIMENSION(FYR-SYR+1,NS,DXY,DXY) ::  data_out_SDGVM
-      REAL*8, DIMENSION(FYR-SYR+1,NV2,NV2,DXY,DXY) ::  data_out_AggHydeTransitions
+      REAL*8, DIMENSION(FYR-SYR+1,NV2,NV2,DXY,DXY) ::  &
+                         data_out_AggHydeTransitions
       REAL*8, DIMENSION(FYR-SYR+1,NV2,DXY,DXY) ::  data_out_AggHarvest
       REAL*8, DIMENSION(FYR_FIRE-SYR_FIRE+1,DXY,DXY,12) :: data_out_fire
 
@@ -73,7 +75,7 @@
       REAL*8 :: data_in_old(NV, DXY, DXY)
       REAL*8 :: data_in_new(NV, DXY, DXY)
       REAL*8 :: data_in_t(NVT, DXY, DXY)
-      REAL*8 :: data_in_fire(DXY, DXY,12)
+      REAL*8 :: data_in_fire(DXY, DXY, 12)
       REAL*8 :: data_out(NV-2, DXY, DXY)
       REAL*8 :: data_t_agg(NV2, NV2, DXY, DXY)
       REAL*8 :: data_out_harvest(NV2, DXY, DXY)
@@ -88,16 +90,20 @@
       INTEGER, PARAMETER :: NA= -999
       INTEGER :: minx,miny,minii,minjj
       INTEGER :: maxx,maxy,maxii,maxjj
+      INTEGER :: miny_fire,minjj_fire
+      INTEGER :: maxy_fire,maxjj_fire
       ! This will be the netCDF ID for the file and data variable.
       INTEGER :: ncid, varid(NV)
       INTEGER :: ncid_t, varid_t(NVT)
       INTEGER :: ncid_f, varid_f
+      INTEGER :: ndims_f, dimids_f(10), dimlen
+      CHARACTER (LEN = NF90_MAX_NAME) :: dimname ! Dimension nam  
 
       INTEGER :: num_land,blank,num_land_hyde,num_land_SDGVM,num_fire
 
       ! Loop indexes, and error handling.
       INTEGER :: x, y, t, v, v2, v3, i, lon, lat, year_index, shift_year
-      INTEGER :: year
+      INTEGER :: year,jj
       CHARACTER (LEN = 5) :: year_string
 
 
@@ -263,9 +269,16 @@
       minjj=MAX(DXY/2-Y0,1) 
       maxii=MIN(NX-X0+1,DXY) 
       maxjj=MIN(NY-Y0+1,DXY) 
+
+      maxy_fire=NY-miny  !the fire y axis is flipped
+      miny_fire=NY-maxy
+      maxjj_fire=maxjj
+      minjj_fire=minjj
       IF(debug) THEN
         PRINT *,'X0,Y0,minx,maxx,miny,maxy,minii,maxii,minjj,maxjj'
         PRINT *,X0,Y0,minx,maxx,miny,maxy,minii,maxii,minjj,maxjj
+        PRINT *,'FIRE:miny,maxy,minjj,maxjj'
+        PRINT *,miny_fire,maxy_fire,minjj_fire,maxjj_fire
       ENDIF
 
       ! Open ESA CCILCP 2014 dataset 
@@ -273,13 +286,15 @@
       DO i=1,NE 
         esaarray(i,:,:) = 255.0
         esaarray_global(i,:,:) = 255
-        WRITE (fname_s2, "(A,I0,A)") wdg(1:blank(wdg))//"/"//fname_s//"-", i,"-"//esadate//".dat" 
+        WRITE (fname_s2, "(A,I0,A)") wdg(1:blank(wdg))//"/"//fname_s// &
+                         "-", i,"-"//esadate//".dat" 
         !esav          <- scan(fname_s2)
         !! esamat <- if(i==1) esav else cbind(esamat,esav)
         !esaarray(,,i) <- as.matrix(esav,nrow=lon_ress)
         OPEN(15,FILE=fname_s2,STATUS='old')
         READ(15,*) esaarray_global(i,:,:)
-        esaarray(i,minii:maxii,minjj:maxjj) = REAL(esaarray_global(i,minx:maxx,miny:maxy),8)
+        esaarray(i,minii:maxii,minjj:maxjj) =  &
+                     REAL(esaarray_global(i,minx:maxx,miny:maxy),8)
         CLOSE(15)
       END DO 
 
@@ -293,8 +308,8 @@
 
       num_land = COUNT( esamask(1,3:4,3:4) .EQV. .TRUE.)
       IF(debug) THEN
-        PRINT *, 'ESA num_land=',num_land,'num_tot=',maxii*maxjj 
-        PRINT *, pname(1:blank(pname)) 
+        PRINT *, 'ESA num_land=',num_land,'num_tot=',2*2 
+!        PRINT *, pname(1:blank(pname)) 
       ENDIF
 
 
@@ -307,7 +322,8 @@
         CALL check( nf90_inq_varid(ncid, varname(v), varid(v)) )
       END DO
 
-      CALL CHECK( NF90_OPEN(pname_t(1:blank(pname_t)), NF90_NOWRITE, ncid_t) )
+      CALL CHECK( NF90_OPEN(pname_t(1:blank(pname_t)), NF90_NOWRITE, &
+          ncid_t) )
 
       DO v=1,NVT
       ! Get the varid of the data variable, based on its name.
@@ -321,19 +337,44 @@
           year_index = t - SINDEX + 1 
           year       = SYR_FIRE + year_index - 1  
           write (year_string,'(I4)') year 
-!      /gws/nopw/j04/nexcs/pmcguire/TRENDYv13/db/burned_area/global_monthly_burned_area_fraction_05deg_1901.nc
+          IF(debug) then
+            write(*,*) 'states_*: prescr_fire', year 
+          END IF
+!      /gws/nopw/j04/nexcs/pmcguire/TRENDYv13/db/burned_area/&
+!      &global_monthly_burned_area_fraction_05deg_1901.nc
 !      pname_f = 
-!      /gws/nopw/j04/nexcs/pmcguire/TRENDYv13/db/burned_area/global_monthly_burned_area_fraction_05deg_
-          CALL CHECK( NF90_OPEN(pname_f(1:blank(pname_f))//trim(year_string)//'.nc',  &
-                      NF90_NOWRITE, ncid_f) )
+!      /gws/nopw/j04/nexcs/pmcguire/TRENDYv13/db/burned_area/&
+!      &global_monthly_burned_area_fraction_05deg_
+          CALL CHECK( NF90_OPEN(pname_f(1:blank(pname_f))//   &
+                      trim(year_string)//'.nc',NF90_NOWRITE, ncid_f) )
 
           ! Get the varid of the data variable, based on its name.
           CALL CHECK( NF90_INQ_VARID(ncid_f, varname_f, varid_f) )
 
-          data_in_fire(:,:,1:12) = NA
+!          CALL CHECK( NF90_INQUIRE_VARIABLE(ncid_f, varid_f,  &
+!                      ndims=ndims_f) )
+!          CALL CHECK( NF90_INQUIRE_VARIABLE(ncid_f, varid_f,  &
+!                      dimids=dimids_f) )
+!          WRITE(*,*) ndims_f
+!          DO i = 1, ndims_f
+!              CALL CHECK( NF90_INQUIRE_DIMENSION(ncid_f, dimids_f(i), &
+!                          dimname, dimlen) )
+!              WRITE(*,*) dimids_f(i),dimlen,dimname
+!          END DO
+
+          data_in_fire(1:4,1:4,1:12) = NA
+!          CALL CHECK( NF90_GET_VAR(ncid_f, varid_f,           &
+!                  data_in_fire(1:4,1:4,1:12), &
+!                  start=[180,180,1], count=[4,4,12]) )
+
+!    Thie fire data has a flipped y axis, so we use miny_fire array values
+
           CALL CHECK( NF90_GET_VAR(ncid_f, varid_f,           &
-                  data_in_fire(minii:maxii,minjj:maxjj,1:12), &
-                  start=[minx,miny,1], count=[maxii-minii+1,maxjj-minjj+1,12]) )
+                  data_in_fire(minii:maxii,                   &
+                  minjj_fire:maxjj_fire,1:12),                &
+                  start=[minx,miny_fire,1], count=[maxii-minii+1,  &
+                  maxjj_fire-minjj_fire+1,12]) )
+          CALL CHECK( NF90_CLOSE(ncid_f) )
 
           WHERE(ABS(data_in_fire(:,:,1)) <= 1.00 ) !just check for january
             mask = .TRUE.
@@ -343,7 +384,13 @@
 
           num_fire = COUNT( mask(3:4,3:4) .EQV. .TRUE.)
           IF(num_fire.eq.0) THEN
-            data_out_fire = 255.0
+            data_in_fire = NA 
+!            data_out_fire = 255.0
+!            data_out_AggHydeTransitions = 255.0 
+!            data_out_AggHarvest = 255.0 
+!            data_out_SDGVM = 255.0
+             
+!            RETURN
           END IF
 
           WHERE (isNAN(data_in_fire(:,:,1:12)))
@@ -352,6 +399,27 @@
           data_out_fire(year_index,:,:,1:12) = data_in_fire(:,:,1:12) 
         END DO
       END IF
+      IF(debug) THEN
+       PRINT *, 'num_fire=',num_fire,'num_tot=',2*2
+       WRITE(*,*)'in states_*; data_out_fire'
+!      DO jj=1,FYR_FIRE-SYR_FIRE+1
+       WRITE(*,*)'3,3'
+       DO jj=1,4
+         WRITE(*,'(12F11.4)')data_out_fire(jj,3,3,1:12)
+       END DO
+       WRITE(*,*)'3,4'
+       DO jj=1,4
+         WRITE(*,'(12F11.4)')data_out_fire(jj,3,4,1:12)
+       END DO
+       WRITE(*,*)'4,3'
+       DO jj=1,4
+         WRITE(*,'(12F11.4)')data_out_fire(jj,4,3,1:12)
+       END DO
+       WRITE(*,*)'4,4'
+       DO jj=1,4
+         WRITE(*,'(12F11.4)')data_out_fire(jj,4,4,1:12)
+       END DO
+      ENDIF
 
       !DO t=ST,NT,1 
       SINDEX = SYR - SYR0 + 1 + shift_year
@@ -367,8 +435,10 @@
       ! Read the data.
         DO v=1,NV
           data_in(v,:,:) = NA
-          CALL CHECK( NF90_GET_VAR(ncid, varid(v), data_in(v,minii:maxii,minjj:maxjj), &
-                  start=[minx,miny,t], count=[maxii-minii+1,maxjj-minjj+1,1]) )
+          CALL CHECK( NF90_GET_VAR(ncid, varid(v),   &
+                  data_in(v,minii:maxii,minjj:maxjj), &
+                  start=[minx,miny,t],                &
+                  count=[maxii-minii+1,maxjj-minjj+1,1]) )
       !  print *,'Finished reading data'
           IF( t == SINDEX .AND. v == 1) THEN
             WHERE(ABS(data_in(1,:,:)) <= 1.00 )
@@ -378,7 +448,8 @@
             END WHERE
             num_land_hyde = COUNT( mask(3:4,3:4) .EQV. .TRUE.)
             IF(debug) THEN
-              PRINT *, 'num_land_hyde=',num_land_hyde,'num_tot=',maxii*maxjj,'val=',data_in(1,3,3),'mask=',mask(3,3) 
+              PRINT *, 'num_land_hyde=',num_land_hyde,'num_tot=', &
+                 maxii*maxjj,'val=',data_in(1,3,3),'mask=',mask(3,3) 
               PRINT *, '          1     2    3     4'
               PRINT *, '    1 ',data_in(1,:,1)
               PRINT *, '    2 ',data_in(1,:,2)
@@ -389,6 +460,7 @@
               data_out_AggHydeTransitions = 255.0 
               data_out_AggHarvest = 255.0 
               data_out_SDGVM = 255.0
+              data_out_fire = 255.0
               RETURN
             END IF
           END IF
@@ -419,8 +491,10 @@
 
            DO v=1,NVT-5 ! skip bioh 
             data_in_t(v,:,:) = NA        !data_in_t = transitions matrix element for transition with the name varname_t(v)
-            CALL CHECK( NF90_GET_VAR(ncid_t, varid_t(v), data_in_t(v,minii:maxii,minjj:maxjj), &
-                      start=[minx,miny,t], count=[maxii-minii+1,maxjj-minjj+1,1]) )
+            CALL CHECK( NF90_GET_VAR(ncid_t, varid_t(v),  &
+                      data_in_t(v,minii:maxii,minjj:maxjj), &
+                      start=[minx,miny,t], &
+                      count=[maxii-minii+1,maxjj-minjj+1,1]) )
             !write(*,*)v,NVT-5,NVT-10,NVT,varname_t(v)
             IF(v.LE.NVT-10) THEN
                from_t = varname_t(v)(1:5)   !from_t = the state from which the transition is coming
@@ -462,10 +536,12 @@
                ! only wood harvest from mature forest is counted
                IF(to_t == 'harv') THEN
                  IF(varname_t(v)(1:10).NE.'secyf_harv') THEN
-                   data_out_harvest(aggmap(v2),:,:) = data_out_harvest(aggmap(v2),:,:) + dummya
+                   data_out_harvest(aggmap(v2),:,:) = &
+                        data_out_harvest(aggmap(v2),:,:) + dummya
                    if(t == SINDEX) then
                     IF(debug) THEN
-                      PRINT *, varname_t(v), from_t,to_t, v2, aggmap(v2),100.0*dummya(3,3),  &
+                      PRINT *, varname_t(v), from_t,to_t, v2, &
+                               aggmap(v2),100.0*dummya(3,3),  &
                             data_out_harvest(aggmap(v2),3,3)
                     ENDIF
                    end if
@@ -629,7 +705,8 @@
         num_land_SDGVM = COUNT( mask_SDGVM(3:4,3:4) .EQV. .TRUE.)
 
         ! deal with forest or grass cover where no forest or grass cover existed in ESA
-        CALL F_LAT_ASSIGNPFT(data_out_SDGVM(year_index,:,:,:),NS,NY,DXY, &
+        CALL F_LAT_ASSIGNPFT(data_out_SDGVM(year_index,:,:,:), &
+                           NS,NY,DXY,                          &
                            minii,minjj,maxii,maxjj,lat_offset,Y0,debug)
   
         !IF( (t == SINDEX) .AND. (debug .EQV. .TRUE.) ) THEN

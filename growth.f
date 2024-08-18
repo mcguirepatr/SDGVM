@@ -36,7 +36,7 @@
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER ft3,at3,mm
-      LOGICAL burn,harvest,prescr_fire
+      LOGICAL burn,harvest,prescr_fire,fprob_allok
       LOGICAL compute_covchange,change_cover,corrct_ft,corrct_ft2
 
       IF(debug .EQV. .TRUE.) THEN
@@ -340,18 +340,25 @@ C The following ordering is the order of ft's in the input.dat file
       ENDIF
 
       IF(prescr_fire .EQV. .TRUE.) THEN
+        fprob_allok = .TRUE.
         DO mm=1,12
          IF( fprob_prescr(mm).GT.1.0d0
      & .OR.  fprob_prescr(mm).LT.0.0d0 ) THEN
+          fprob_allok = .FALSE.
           PRINT '(A)',
      & 'fprob_prescr is not in bounds. For the month:'
           PRINT '(I4,12F11.6)',mm,fprob_prescr(mm)
-          PRINT '(A)','Stopping.'
-          STOP
+          CONTINUE
+!          PRINT '(A)','Stopping.'
+!          STOP
          ENDIF
         END DO
 !PCM: for now, use equal-weighted average of all months 
-        fprob = SUM(fprob_prescr(1:12)/12.0d0)
+        IF(fprob_allok) THEN
+           fprob = SUM(fprob_prescr(1:12)/12.0d0)
+        ELSE
+           RETURN
+        END IF
         fri   = -1.0d0
       ELSE
 *----------------------------------------------------------------------*
