@@ -3707,9 +3707,10 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
             IF(prescr_fire .EQV. .TRUE.) THEN
 !using the year variable, which accounts for recycling of fire data
 !before the main run
-                 iyear_fire = year-yr0s+1 
                  IF(ifire .EQ. 2) THEN
-                   iyear_fire = MOD(iyear_fire,NYR_FIRE)
+                   iyear_fire = MOD(year-yr0s,NYR_FIRE)+1
+                 ELSE IF (ifire .EQ. 3) THEN
+                   iyear_fire = year-yr0s+1 
                  END IF
 !                 write(*,*)'FIRE PROBS: in SDGVM0.f,year,iyear_fire,',
 !     &                'yr0s=',year,iyear_fire,yr0s
