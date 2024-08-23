@@ -3708,6 +3708,9 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 !using the year variable, which accounts for recycling of fire data
 !before the main run
                  iyear_fire = year-yr0s+1 
+                 IF(ifire .EQ. 2) THEN
+                   iyear_fire = MOD(iyear_fire,NYR_FIRE)
+                 END IF
 !                 write(*,*)'FIRE PROBS: in SDGVM0.f,year,iyear_fire,',
 !     &                'yr0s=',year,iyear_fire,yr0s
 !                 write(*,'(12F7.4)')fprob_prescrh(iyear_fire,1:12)
@@ -3733,7 +3736,6 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           PRINT '(A)','SS3c ftprop1 (before COVER( ) routine) '
           PRINT '(16F11.7)',ftprop1(1:nft)
         ENDIF
-        iyear_fire = MOD(iyear-iyear_adj-1,NYR_FIRE)+1
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
