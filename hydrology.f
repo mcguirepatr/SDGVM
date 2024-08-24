@@ -305,12 +305,13 @@ c changed by Ghislain 6/10/03
 *----------------------------------------------------------------------*
 *        ev = (rwc(1) - 0.25d0)/0.75d0
 *        ev = (rwc(1) - 0.01d0)/0.75d0
-      ev = (s2 - lsw(2))/(lsfc(2) - lsw(2))
+C PCM      ev = (s2 - lsw(2))/(lsfc(2) - lsw(2))
+      ev = (s1 - lsw(1))/(lsfc(1) - lsw(1)) !PCM
       IF (ev.LT.0.0d0)  ev = 0.0d0
       bst = 0.0d0
       if (t.gt.0) bst = (t/16.0d0)
-c PCM      evbs = ev*p_bs*0.33d0*pet3*1.3d0*bst
-      evbs = ev*pet3*bst !PCM
+C PCM      evbs = ev*p_bs*0.33d0*pet3*1.3d0*bst
+      evbs = ev*p_bs*0.2d0*pet3*bst !PCM
 
       IF (evbs.GT.pet2)  evbs = pet2
       pet2 = pet2 - evbs
