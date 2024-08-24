@@ -1084,11 +1084,11 @@ C PCM2      WRITE(*,*) '111111111'
         lonn = 720
         n    = NYR 
         years(1:n) = (/(i, i=SYR,SYR+n-1)/)
-        if(prescr_fire .EQV. .TRUE.) THEN
-          n_fire = NYR_FIRE !1901-2020=120
-          !write(*,*)'NYR_FIRE=',n_fire
-          years_fire(1:n_fire) = (/(i, i=SYR_FIRE,SYR_FIRE+n_fire-1)/)
-        END IF
+!        if(prescr_fire .EQV. .TRUE.) THEN
+        n_fire = NYR_FIRE !1901-2020=120
+        !write(*,*)'NYR_FIRE=',n_fire
+        years_fire(1:n_fire) = (/(i, i=SYR_FIRE,SYR_FIRE+n_fire-1)/)
+!        END IF
         nclasses   = NS 
         classes(1:nclasses) = (/(i, i=1,nclasses)/)
         agclasses(1:maxn_at) = (/(i, i=1,maxn_at)/)
