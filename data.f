@@ -1283,18 +1283,25 @@ CPCM get_transitions==.true. : compute transitions
       l_lu = .TRUE.
 !      IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
       IF (ALL(ABS(SDGVM_LUC(:,:,3:4,3:4)).GT.200.0)) THEN
+!        WRITE(*,*)'SDGVM_LUC: l_lu=.FALSE.'
         l_lu = .FALSE.
         RETURN
       ENDIF
 
-!      IF (ANY(ABS(SDGVM_LUC2(:,:,:,3,3)).GT.200.0)) THEN
-      IF (ALL(ABS(SDGVM_LUC2(:,:,:,3:4,3:4)).GT.200.0)) THEN
+!     check for all but the last year, since it may not be valid for the
+!     last year
+!      IF (ANY(ABS(SDGVM_LUC2(1:NYR-1,:,:,3,3)).GT.200.0)) THEN
+      IF (NYR.GT.1) THEN
+       IF (ALL(ABS(SDGVM_LUC2(1:NYR-1,:,:,3:4,3:4)).GT.200.0)) THEN 
+!        WRITE(*,*)'SDGVM_LUC2: l_lu=.FALSE.'
         l_lu = .FALSE.
         RETURN
+       ENDIF
       ENDIF
 
       IF ((prescr_fire .EQV. .TRUE.) .AND.
      &   (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4,1:12)).GT.200.0)) ) THEN
+!        WRITE(*,*)'SDGVM_LUC_FIRE: l_lu=.FALSE.'
         l_lu = .FALSE.
         RETURN
       ENDIF
@@ -1763,15 +1770,19 @@ c
 !      END DO
 
 
-!PCM      IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.
-!PCM     &  (indx(3,3).EQ.1)) THEN
-!PCM4     IF (indx(3,3).EQ.1) THEN
-      IF ((indx(3,3).EQ.1).OR.(indx(3,4).EQ.1).OR.(indx(4,3).EQ.1).OR.
-     &  (indx(4,4).EQ.1)) THEN
-        l_lu = .TRUE.
-      ELSE
-        l_lu = .FALSE.
-      ENDIF
+
+!!old method:
+!!PCM      IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.
+!!PCM     &  (indx(3,3).EQ.1)) THEN
+!!PCM4     IF (indx(3,3).EQ.1) THEN
+!PCM new method:
+!comment this out, since this indx was computed for various time slices 
+!      IF ((indx(3,3).EQ.1).OR.(indx(3,4).EQ.1).OR.(indx(4,3).EQ.1).OR.
+!     &  (indx(4,4).EQ.1)) THEN
+!        l_lu = .TRUE.
+!      ELSE
+!        l_lu = .FALSE.
+!      ENDIF
 
 
       RETURN

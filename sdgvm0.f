@@ -2366,9 +2366,9 @@ C The following ordering is the order of ft's in the input.dat file
         ENDDO
         cluse(1,1) = 100.0d0
       ENDIF
-      !print*, 'end landuse, ', site
-      !print*, l_clim,l_stats,l_soil(1),l_soil(3),l_soil(8),l_lu, 
-      !&l_countries
+!      print*, 'end landuse, ', site
+!      print*, l_clim,l_stats,l_soil(1),l_soil(3),l_soil(8),l_lu, 
+!     &l_countries
 
 *----------------------------------------------------------------------*
       ENDIF
