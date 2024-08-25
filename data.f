@@ -1033,16 +1033,16 @@ C PCM2      WRITE(*,*) '111111111'
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,SYR_FIRE,NYR_FIRE,
-     &prescr_fire,lutab2,
-     &pname,pname_t,pname_f,wdg,cluse2,cluseh,fprob_prescrh,debug)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,NYR_FILE,
+     &SYR_FIRE,NYR_FIRE,prescr_fire,lutab2,pname,pname_t,pname_f,wdg,
+     &cluse2,cluseh,fprob_prescrh,debug)
 *----------------------------------------------------------------------*
       USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: NX = 720, NY = 360
       INTEGER, PARAMETER :: NS = 17
       INTEGER, PARAMETER :: maxn_at = 7 !max number of aggregrated (functional) types
-      INTEGER :: NYR,SYR 
+      INTEGER :: NYR,SYR,NYR_FILE 
       INTEGER :: NYR_FIRE,SYR_FIRE 
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
@@ -1062,7 +1062,7 @@ C PCM2      WRITE(*,*) '111111111'
       INTEGER ij,ij1,j1,num_land,years_fire(1000)
       INTEGER ilanduse,k2,k3,agclasses(1000),indx2(4,4,maxn_at)
       INTEGER iat2,iat3
-      INTEGER n_fire,j_fire,j1_fire,mm
+      INTEGER n_fire,j_fire,j1_fire,mm,years_NYR_FILE
       REAL*8 lutab2(255,100) 
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
       CHARACTER pname*1000,pname_t*1000,wdg*1000,pname_f*1000
@@ -1084,6 +1084,7 @@ C PCM2      WRITE(*,*) '111111111'
         lonn = 720
         n    = NYR 
         years(1:n) = (/(i, i=SYR,SYR+n-1)/)
+        years_NYR_FILE = SYR + NYR_FILE - 1
 !        write(*,*)'SYR,years(1)=',SYR,years(1)
 !        if(prescr_fire .EQV. .TRUE.) THEN
         n_fire = NYR_FIRE !1901-2020=120
@@ -1246,7 +1247,8 @@ CPCM get_transitions==.true. : compute transitions
          ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
          !write(*,*)'BEFORE STATES, years(1)=',years(1)
          CALL states_convertSDGVM_func(
-     &     years(1),years(n),years_fire(1),years_fire(n_fire),
+     &     years(1),years(n),years_NYR_FILE,
+     &     years_fire(1),years_fire(n_fire),
      &     INT(rcol),INT(rrow),4, ! with the definition of rcol, rcol+2 starts at 1 for lon==lon0
      &     get_transitions,compute_next_year,prescr_fire, 
      &     pname,pname_t,pname_f,wdg,

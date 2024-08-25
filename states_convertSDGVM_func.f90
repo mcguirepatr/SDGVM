@@ -21,8 +21,9 @@
 
       MODULE FUNCTIONS_CLU
       CONTAINS
-      SUBROUTINE states_convertSDGVM_func(SYR,FYR,SYR_FIRE,FYR_FIRE, &
-           X0,Y0,DXY,get_transitions,compute_next_year,prescr_fire, &
+      SUBROUTINE states_convertSDGVM_func(SYR,FYR,FYR_FILE, &
+           SYR_FIRE,FYR_FIRE,X0,Y0,DXY,get_transitions, &
+           compute_next_year,prescr_fire, &
            pname,pname_t,pname_f,wdg,data_out_SDGVM, &
            data_out_AggHydeTransitions,data_out_AggHarvest, &
            data_out_fire,debug )
@@ -31,7 +32,7 @@
 
       INTEGER, PARAMETER :: NS = 17
       INTEGER, PARAMETER :: NV2 = 7 
-      INTEGER SYR,FYR,SYR_FIRE,FYR_FIRE,X0,Y0,DXY 
+      INTEGER SYR,FYR,FYR_FILE,SYR_FIRE,FYR_FIRE,X0,Y0,DXY 
       LOGICAL :: compute_next_year,get_transitions,prescr_fire
       REAL*8, DIMENSION(FYR-SYR+1,NS,DXY,DXY) ::  data_out_SDGVM
       REAL*8, DIMENSION(FYR-SYR+1,NV2,NV2,DXY,DXY) ::  &
@@ -70,7 +71,7 @@
       !INTEGER, PARAMETER :: SINDEX = 850 !starting year for prints ! for 1700
       INTEGER, PARAMETER :: SYR0 = 850 !starting year for NETCDF data 
       INTEGER, PARAMETER :: SYR0_FIRE = 1901 !starting year for NETCDF data for fire
-      INTEGER SINDEX,FINDEX
+      INTEGER SINDEX,FINDEX,FINDEX_FILE
       REAL*8 :: data_in(NV, DXY, DXY), dummya(DXY, DXY)
       REAL*8 :: data_in_old(NV, DXY, DXY)
       REAL*8 :: data_in_new(NV, DXY, DXY)
@@ -424,6 +425,7 @@
       !DO t=ST,NT,1 
       SINDEX = SYR - SYR0 + 1 + shift_year
       FINDEX = FYR - SYR0 + 1 + shift_year
+      FINDEX_FILE = FYR_FILE - SYR0 + 1 + shift_year
       DO t=SINDEX,FINDEX 
       !  write(*,*)'ST1',t,SYR,SYR0,shift_year,FINDEX,FYR
         year_index = t - SINDEX + 1 
@@ -480,7 +482,7 @@
                data_in = NA
         ENDWHERE
 
-        IF(get_transitions .AND. (t .LT. FINDEX)) THEN
+        IF(get_transitions .AND. (t .LT. FINDEX_FILE)) THEN
           ! the secondary vegetation doesn't match up unless we
           ! add the transitions to the states for each time step (rather than
           ! accumulating all the transitions in an open loop).
@@ -489,7 +491,7 @@
              data_in_new(:,:,:)=data_in(:,:,:) 
            ENDIF
           ! end if
-          ! write(*,*)'ST1b tr',t,SYR,SYR0,shift_year,FINDEX,FYR
+          ! write(*,*)'ST1b tr',t,SYR,SYR0,shift_year,FINDEX_FILE,FYR
 
            DO v=1,NVT-5 ! skip bioh 
             data_in_t(v,:,:) = NA        !data_in_t = transitions matrix element for transition with the name varname_t(v)
@@ -639,7 +641,7 @@
             ENDIF
 
            endif
-        ELSE
+        ELSE IF(get_transitions .AND. (t .EQ. FINDEX_FILE)) THEN
            data_t_agg = NA
            data_out_harvest = NA
         END IF

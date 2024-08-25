@@ -170,7 +170,7 @@
       INTEGER zbb(maxnft),zbbgs(maxnft),zdsbb(maxnft)
       INTEGER hi,xi,gs_func
       INTEGER PHASE !PCM
-      INTEGER SYR,NYR !PCM
+      INTEGER SYR,NYR,NYR_FILE !PCM
       INTEGER SYR_FIRE,NYR_FIRE !PCM
       INTEGER aggmap_SDGVM_to_aggHyde(NS) !PCM
       REAL*8 lutab2(255,100) !PCM
@@ -438,7 +438,7 @@ C        WRITE(*,*) 'bbbb'
       READ(98,'(1000a)') st1
 
       ii = n_fields(st1)
-      IF (ii.EQ.3) THEN
+      IF (ii.EQ.4) THEN
         !read in ilanduse 
         CALL STRIPBN(st1,i)
         IF (i.gt.-1)  ilanduse  = i
@@ -448,14 +448,17 @@ C        WRITE(*,*) 'bbbb'
         !read number of years of extraction from LUC database 
         CALL STRIPBN(st1,i)
         IF (i.gt.-1)  NYR   = i
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  NYR_FILE   = i
 !        IF (ilanduse.EQ.5. .OR. ilanduse.EQ.6) NYR = 1 !override number from input.dat if set that way accidently
       ELSE IF (ii.EQ.1) THEN
         READ(st1,*) ilanduse
         SYR = -1 !SYR and NYR not used and not defined here
         NYR = -1
+        NYR_FILE = -1
       ELSE
         WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'ilanduse: either 1 or 3 arguments required'
+        WRITE(*,*) 'ilanduse: either 1 or 4 arguments required'
         STOP
       ENDIF
 
@@ -481,9 +484,9 @@ C        WRITE(*,*) 'bbbb'
       ENDIF
 
 *----------------------------------------------------------------------*
-* Read in type of landuse: 0 = defined by map; 1 = defined explicitly  *
-* in the input file; 2 = natural vegetation based on average monthly   *
-* temperatures.                                                        *
+* Read in type of prescribed fire: 1 = not prescribed;                 *
+* 2  = burned-area is prescribed, preindustrial cycling for all time   * 
+* 3  = burned-area is prescribed, preindustrial cycling before 1901    * 
 *----------------------------------------------------------------------*
       READ(98,'(1000a)') st1
 
@@ -2266,8 +2269,9 @@ C The following ordering is the order of ft's in the input.dat file
           END IF
 
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,SYR_FIRE,NYR_FIRE,
-     &prescr_fire,lutab2,stpname,stpname_t,stpname_f,stwdg,
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,NYR_FILE,
+     &SYR_FIRE,NYR_FIRE,prescr_fire,lutab2,
+     &stpname,stpname_t,stpname_f,stwdg,
      &cluse2,cluseh,fprob_prescrh,debug)
 
       !loop added for testing purposes
@@ -3738,10 +3742,11 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           PRINT '(16F11.7)',ftprop1(1:nft)
         ENDIF
 
-        IF ( iyear.LT.nyears ) THEN
+        IF ( iyear.LT.NYR_FILE ) THEN
            finalyear = .FALSE.
         ELSE
-           finalyear = .TRUE.
+!needed since the transitions matrix is not defined for the finalyear in the states file
+           finalyear = .TRUE. 
         ENDIF
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
