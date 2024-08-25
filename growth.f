@@ -8,7 +8,7 @@
      &fireres,fprob,fprob_prescr,ftprop,ftstmx,stemdp,rootdp,ftsls,
      &ftrls,ilanduse,prescr_fire,nat_map,ic0,burn,harvest,leafdp,
      &flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
-     &ftprop_init,yield,lat,ftprops,debug)
+     &ftprop_init,yield,lat,ftprops,finalyear,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       INTEGER, PARAMETER :: n_at = 7 !number of aggregated (Hyde, functional) types
@@ -36,7 +36,7 @@
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER ft3,at3,mm
-      LOGICAL burn,harvest,prescr_fire,fprob_allok
+      LOGICAL burn,harvest,prescr_fire,fprob_allok,finalyear
       LOGICAL compute_covchange,change_cover,corrct_ft,corrct_ft2
 
       IF(debug .EQV. .TRUE.) THEN
@@ -113,7 +113,8 @@ C The following ordering is the order of ft's in the input.dat file
         ENDIF
        
 
-        IF ( ilanduse.GE.4 .AND. ilanduse.LE.6) THEN 
+        IF ( ilanduse.GE.4 .AND. ilanduse.LE.6 .AND.
+     &        finalyear.EQV..FALSE.) THEN 
           ! do for both ftphen(ft) == 1 and 2
           compute_covchange = .TRUE. !compute cover change 
         ELSE

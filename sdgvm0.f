@@ -152,7 +152,7 @@
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
       LOGICAL year0set
-      LOGICAL debug,out_yie,prescr_fire
+      LOGICAL debug,out_yie,prescr_fire,finalyear
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -3737,13 +3737,19 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           PRINT '(A)','SS3c ftprop1 (before COVER( ) routine) '
           PRINT '(16F11.7)',ftprop1(1:nft)
         ENDIF
+
+        IF ( iyear.LT.nyears ) THEN
+           finalyear = .FALSE.
+        ELSE
+           finalyear = .TRUE.
+        ENDIF
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,fprob_prescr,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,
      &ilanduse,prescr_fire,nat_map,ic0,fire(iyear),harvest(iyear),
      &leafdp,flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
-     &ftprop_init,yield,lat,ftprops,debug)
+     &ftprop_init,yield,lat,ftprops,finalyear,debug)
 
         IF(debug .EQV. .TRUE.) THEN
           PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '

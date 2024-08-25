@@ -425,6 +425,7 @@
       SINDEX = SYR - SYR0 + 1 + shift_year
       FINDEX = FYR - SYR0 + 1 + shift_year
       DO t=SINDEX,FINDEX 
+      !  write(*,*)'ST1',t,SYR,SYR0,shift_year,FINDEX,FYR
         year_index = t - SINDEX + 1 
         data_out(:,:,:) = 0.0
         data_t_agg(:,:,:,:) = 0.0
@@ -479,7 +480,7 @@
                data_in = NA
         ENDWHERE
 
-        IF(get_transitions) THEN
+        IF(get_transitions .AND. (t .LT. FINDEX)) THEN
           ! the secondary vegetation doesn't match up unless we
           ! add the transitions to the states for each time step (rather than
           ! accumulating all the transitions in an open loop).
@@ -488,6 +489,7 @@
              data_in_new(:,:,:)=data_in(:,:,:) 
            ENDIF
           ! end if
+          ! write(*,*)'ST1b tr',t,SYR,SYR0,shift_year,FINDEX,FYR
 
            DO v=1,NVT-5 ! skip bioh 
             data_in_t(v,:,:) = NA        !data_in_t = transitions matrix element for transition with the name varname_t(v)
@@ -637,7 +639,11 @@
             ENDIF
 
            endif
+        ELSE
+           data_t_agg = NA
+           data_out_harvest = NA
         END IF
+        !write(*,*)'ST2'
     
 
 

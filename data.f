@@ -1084,6 +1084,7 @@ C PCM2      WRITE(*,*) '111111111'
         lonn = 720
         n    = NYR 
         years(1:n) = (/(i, i=SYR,SYR+n-1)/)
+!        write(*,*)'SYR,years(1)=',SYR,years(1)
 !        if(prescr_fire .EQV. .TRUE.) THEN
         n_fire = NYR_FIRE !1901-2020=120
         !write(*,*)'NYR_FIRE=',n_fire
@@ -1243,6 +1244,7 @@ CPCM get_transitions==.true. : compute transitions
          ENDIF
          ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
          ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
+         !write(*,*)'BEFORE STATES, years(1)=',years(1)
          CALL states_convertSDGVM_func(
      &     years(1),years(n),years_fire(1),years_fire(n_fire),
      &     INT(rcol),INT(rrow),4, ! with the definition of rcol, rcol+2 starts at 1 for lon==lon0
@@ -1250,11 +1252,11 @@ CPCM get_transitions==.true. : compute transitions
      &     pname,pname_t,pname_f,wdg,
      &     SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST,SDGVM_LUC_FIRE,
      &     debug)  
-!         WRITE(*,*)'EX_CLU: after states_convertSDGVM_func'
-!         write(*,FMT="(A)") "EX_CLU:SDGVM_LUC2_FIRE"
-!         DO jj=1,n_fire
-!           write(*,FMT="(12F7.4)") SDGVM_LUC_FIRE(jj,3,3,:)
-!         END DO
+        ! WRITE(*,*)'EX_CLU: after states_convertSDGVM_func'
+        ! write(*,FMT="(A)") "EX_CLU:SDGVM_LUC2_FIRE"
+        ! DO jj=1,n_fire
+        !   write(*,FMT="(12F7.4)") SDGVM_LUC_FIRE(jj,3,3,:)
+        ! END DO
          IF(debug .EQV. .TRUE.) THEN
            WRITE(*,*)
      &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
