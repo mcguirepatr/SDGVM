@@ -3662,7 +3662,25 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
             ELSE
               ftprop(ft) = 0.0d0
             ENDIF
+            IF ( iyear.LT.NYR_FILE ) THEN
+               finalyear = .FALSE.
+            ELSE
+!needed since the transitions matrix is not defined for the finalyear in the states file
+               finalyear = .TRUE. 
+            ENDIF
+!            IF (ft.EQ.1) THEN
+!            IF (MOD(iyear,20).EQ.0 .OR. iyear.GE.(nyears-20)) THEN
+!                write(*,*)finalyear
+!            ENDIF 
+!            ENDIF
 
+            IF (finalyear.EQV..TRUE.) THEN
+              at = aggmap_SDGVM_to_aggHyde(ft)
+              DO at2=1,maxn_at
+                    atprop2(at,at2) = 0.0d0 
+              END DO
+              atharvest(at) = 0.0d0 
+            ELSE
             IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
             at = aggmap_SDGVM_to_aggHyde(ft)
             DO at2=1,maxn_at
@@ -3695,6 +3713,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
                   atharvest(at) = cluseh(at,iyear-iyear_adj)
                 endif  
               endif  
+            ENDIF
             ENDIF
 
 
@@ -3742,12 +3761,6 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           PRINT '(16F11.7)',ftprop1(1:nft)
         ENDIF
 
-        IF ( iyear.LT.NYR_FILE ) THEN
-           finalyear = .FALSE.
-        ELSE
-!needed since the transitions matrix is not defined for the finalyear in the states file
-           finalyear = .TRUE. 
-        ENDIF
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
@@ -4700,6 +4713,9 @@ c       kg_beta    = kg_beta/wi
         IF (iyear.GE.nyears-outyears+1) THEN
           WRITE(21,'('' '',f8.1,$)') avlai
           WRITE(22,'('' '',f8.1,$)') avnpp
+!          IF (MOD(iyear,20).EQ.0 .OR. iyear.GE.(nyears-20)) THEN
+!            WRITE(*,*) iyear,avnpp
+!          END IF
           WRITE(23,'('' '',f8.1,$)') tsoilc
           WRITE(24,'('' '',f8.1,$)') tsoiln
           WRITE(25,'('' '',f8.1,$)') avnpp-avsresp

@@ -113,8 +113,8 @@ C The following ordering is the order of ft's in the input.dat file
         ENDIF
        
 
-        IF ( ilanduse.GE.4 .AND. ilanduse.LE.6 .AND.
-     &        finalyear.EQV..FALSE.) THEN 
+        IF ( (ilanduse.GE.4) .AND. (ilanduse.LE.6) .AND.
+     &        (finalyear.EQV..FALSE.)) THEN 
           ! do for both ftphen(ft) == 1 and 2
           compute_covchange = .TRUE. !compute cover change 
         ELSE
@@ -384,7 +384,7 @@ C The following ordering is the order of ft's in the input.dat file
       CALL NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
      &npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,leafdp,
      &flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,yield,ft2frac,
-     &sum_cov,debug)
+     &sum_cov,finalyear,debug)
 
 *----------------------------------------------------------------------*
 
@@ -1497,7 +1497,7 @@ C The following ordering is the order of ft's in the input.dat file
       SUBROUTINE NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &fprob,npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,
      &leafdp,flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,yield,
-     &ft2frac,sum_cov,debug)
+     &ft2frac,sum_cov,finalyear,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
@@ -1511,7 +1511,7 @@ C The following ordering is the order of ft's in the input.dat file
       REAL*8 sum_cov(maxnft)
       INTEGER at,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER nft,ftmor(maxnft),ft,age,fireres,n_at,NS
-      LOGICAL harvest
+      LOGICAL harvest,finalyear
       LOGICAL debug !used to print out more debugging info
 
       xfprob = fprob
@@ -1545,7 +1545,8 @@ C The following ordering is the order of ft's in the input.dat file
 * Compute harvest losses for each aggregated type (at)                 *
 *----------------------------------------------------------------------*
         at = aggmap_SDGVM_to_aggHyde(ft)
-        IF ((atharvest(at).GT.0.0d0).AND.((at.EQ.1).OR.(at.EQ.3))) THEN !only for primf&secdf
+        IF ((finalyear.EQV..FALSE.).AND.(atharvest(at).GT.0.0d0).AND.
+     &((at.EQ.1).OR.(at.EQ.3))) THEN !only for primf&secdf
             loss_frac  = ft2frac(ft)*atharvest(at)*1.0d-2
             remain_frac = 1.0d0 - loss_frac  
         ELSE
