@@ -311,7 +311,8 @@ C PCM      ev = (s2 - lsw(2))/(lsfc(2) - lsw(2))
       bst = 0.0d0
       if (t.gt.0) bst = (t/16.0d0)
 C PCM      evbs = ev*p_bs*0.33d0*pet3*1.3d0*bst
-      evbs = ev*p_bs*0.2d0*pet3*bst !PCM
+C PCM      evbs = ev*p_bs*0.2d0*pet3*bst !PCM
+      evbs = ev*p_bs*0.1d0*pet3*bst !PCM
 
       IF (evbs.GT.pet2)  evbs = pet2
       pet2 = pet2 - evbs
