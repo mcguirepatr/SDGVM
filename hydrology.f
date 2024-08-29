@@ -16,7 +16,7 @@
       REAL*8 ladp(4),lsfc(4),lsw(4),lsswc(4),s1in
       REAL*8 sn,lsn,eemm,etmm,pet2,dp2,t,rlai,evap,tran,roff,f2,f3
       REAL*8 bst,kf,interc,ms,fs,rwc(4),w(4),rem,f1,ds,st,ws,sl,sf,sd
-      REAL*8 fav,ev,ss,sums,evbs,pet3,dep,ans1
+      REAL*8 fav,ev,ss,sums,evbs,pet3,dep,ans1,p_interc
       INTEGER lai,iter,ft,i
       INCLUDE 'param.inc'
 
@@ -70,6 +70,9 @@
         IF (rlai.GT.0) THEN
           interc = dp2*(1.0 - (tf(lai) + rem*(tf(lai+1) - tf(lai))))
           interc = interc*min(1.0d0,(0.5d0 + t/32.0d0))
+          p_interc = 0.8d0         !added by PCM, in order to be like p_bs
+          interc = interc*p_interc !added by PCM 
+
           evap = eemm
           IF (evap.GT.pet2) evap = pet2
           IF (evap.GT.interc)  evap = interc
@@ -305,15 +308,15 @@ c changed by Ghislain 6/10/03
 *----------------------------------------------------------------------*
 *        ev = (rwc(1) - 0.25d0)/0.75d0
 *        ev = (rwc(1) - 0.01d0)/0.75d0
-C PCM      ev = (s2 - lsw(2))/(lsfc(2) - lsw(2))
+C PCM      ev = (s2 - lsw(2))/(lsfc(2) - lsw(2)) !original setting
       ev = (s1 - lsw(1))/(lsfc(1) - lsw(1)) !PCM
       IF (ev.LT.0.0d0)  ev = 0.0d0
       bst = 0.0d0
       if (t.gt.0) bst = (t/16.0d0)
-C PCM      evbs = ev*p_bs*0.33d0*pet3*1.3d0*bst
+      evbs = ev*p_bs*0.33d0*pet3*1.3d0*bst !Original settings
 C PCM      evbs = ev*p_bs*0.2d0*pet3*bst !PCM
 C PCM      evbs = ev*p_bs*0.1d0*pet3*bst !PCM
-      evbs = ev*p_bs*0.02d0*pet3*bst !PCM
+C PCM      evbs = ev*p_bs*0.02d0*pet3*bst !PCM
 
       IF (evbs.GT.pet2)  evbs = pet2
       pet2 = pet2 - evbs
