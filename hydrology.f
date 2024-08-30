@@ -70,7 +70,7 @@
         IF (rlai.GT.0) THEN
           interc = dp2*(1.0 - (tf(lai) + rem*(tf(lai+1) - tf(lai))))
           interc = interc*min(1.0d0,(0.5d0 + t/32.0d0))
-          p_interc = 0.2d0         !added by PCM, in order to be like p_bs
+          p_interc = 0.05d0         !added by PCM, in order to be like p_bs
           interc = interc*p_interc !added by PCM 
 
           evap = eemm
