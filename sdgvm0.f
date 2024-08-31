@@ -3750,7 +3750,8 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           PRINT '(16F11.7)',ftprop(1:nft)
         ENDIF
 
-        IF (closed_loop_ft .EQV. .FALSE.) THEN
+        IF (closed_loop_ft .EQV. .FALSE. .OR.
+     &     ((ilanduse .EQ. 4) .AND. (finalyear .EQV. .TRUE.))) THEN
           ftprop1 = ftprop !net transitions or 1st year of gross transitions 
         ENDIF
 
