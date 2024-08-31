@@ -117,6 +117,11 @@ C The following ordering is the order of ft's in the input.dat file
      &        (finalyear.EQV..FALSE.)) THEN 
           ! do for both ftphen(ft) == 1 and 2
           compute_covchange = .TRUE. !compute cover change 
+        ELSE IF ( (ilanduse.GE.4) .AND. (ilanduse.LE.6) .AND.
+     &        (finalyear.EQV..TRUE.)) THEN 
+          ! do for both ftphen(ft) == 1 and 2
+          compute_covchange = .FALSE. !compute cover change 
+          ftprop(ft) = ftprops(ft) !we can't use the transitions matrix for the last year, since it's not known, so we use the states vector
         ELSE
           !IF ( ftphen(ft).EQ.2 ) THEN
           !! need to make this tree specific 
