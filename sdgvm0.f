@@ -152,7 +152,7 @@
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
       LOGICAL year0set
-      LOGICAL debug,out_yie,prescr_fire,finalyear
+      LOGICAL debug,out_yie,prescr_fire
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -3662,25 +3662,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
             ELSE
               ftprop(ft) = 0.0d0
             ENDIF
-            IF ( iyear.LT.NYR_FILE ) THEN
-               finalyear = .FALSE.
-            ELSE
-!needed since the transitions matrix is not defined for the finalyear in the states file
-               finalyear = .TRUE. 
-            ENDIF
-!            IF (ft.EQ.1) THEN
-!            IF (MOD(iyear,20).EQ.0 .OR. iyear.GE.(nyears-20)) THEN
-!                write(*,*)finalyear
-!            ENDIF 
-!            ENDIF
 
-            IF (finalyear.EQV..TRUE.) THEN
-              at = aggmap_SDGVM_to_aggHyde(ft)
-              DO at2=1,maxn_at
-                    atprop2(at,at2) = 0.0d0 
-              END DO
-              atharvest(at) = 0.0d0 
-            ELSE
             IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
             at = aggmap_SDGVM_to_aggHyde(ft)
             DO at2=1,maxn_at
@@ -3713,7 +3695,6 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
                   atharvest(at) = cluseh(at,iyear-iyear_adj)
                 endif  
               endif  
-            ENDIF
             ENDIF
 
 
@@ -3750,8 +3731,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           PRINT '(16F11.7)',ftprop(1:nft)
         ENDIF
 
-        IF (closed_loop_ft .EQV. .FALSE. .OR.
-     &     ((ilanduse .EQ. 4) .AND. (finalyear .EQV. .TRUE.))) THEN
+        IF (closed_loop_ft .EQV. .FALSE.) THEN
           ftprop1 = ftprop !net transitions or 1st year of gross transitions 
         ENDIF
 
@@ -3768,7 +3748,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
      &fprob,fprob_prescr,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,
      &ilanduse,prescr_fire,nat_map,ic0,fire(iyear),harvest(iyear),
      &leafdp,flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
-     &ftprop_init,yield,lat,ftprops,finalyear,debug)
+     &ftprop_init,yield,lat,ftprops,debug)
 
         IF(debug .EQV. .TRUE.) THEN
           PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '

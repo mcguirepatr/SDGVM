@@ -61,7 +61,7 @@
       !CHARACTER (LEN = *), PARAMETER :: print_type='esa'
       !CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
 
-      INTEGER, PARAMETER :: NT = 1172, NV = 14
+      INTEGER, PARAMETER :: NV = 14
       REAL*8, PARAMETER    :: misval = 1e19
       INTEGER, PARAMETER :: NE = 10, NE2 = 16
       INTEGER, PARAMETER :: NVT = 118 
@@ -71,7 +71,7 @@
       !INTEGER, PARAMETER :: SINDEX = 850 !starting year for prints ! for 1700
       INTEGER, PARAMETER :: SYR0 = 850 !starting year for NETCDF data 
       INTEGER, PARAMETER :: SYR0_FIRE = 1901 !starting year for NETCDF data for fire
-      INTEGER SINDEX,FINDEX,FINDEX_FILE
+      INTEGER SINDEX,FINDEX
       REAL*8 :: data_in(NV, DXY, DXY), dummya(DXY, DXY)
       REAL*8 :: data_in_old(NV, DXY, DXY)
       REAL*8 :: data_in_new(NV, DXY, DXY)
@@ -425,7 +425,6 @@
       !DO t=ST,NT,1 
       SINDEX = SYR - SYR0 + 1 + shift_year
       FINDEX = FYR - SYR0 + 1 + shift_year
-      FINDEX_FILE = FYR_FILE - SYR0 + 1 + shift_year
       DO t=SINDEX,FINDEX 
         !write(*,*)'ST1',t,SYR,SYR0,shift_year,FINDEX,FYR
         year_index = t - SINDEX + 1 
@@ -483,7 +482,7 @@
         ENDWHERE
 
 !        write(*,*)'ST1b   ',t,SYR,SYR0,shift_year,FINDEX_FILE,FYR
-        IF(get_transitions .AND. (t .LT. FINDEX_FILE)) THEN
+        IF(get_transitions) THEN
           ! the secondary vegetation doesn't match up unless we
           ! add the transitions to the states for each time step (rather than
           ! accumulating all the transitions in an open loop).
@@ -642,9 +641,6 @@
             ENDIF
 
            endif
-        ELSE IF(get_transitions .AND. (t .EQ. FINDEX_FILE)) THEN
-           data_t_agg = NA
-           data_out_harvest = NA
         END IF
     
 
