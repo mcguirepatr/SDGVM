@@ -4644,7 +4644,7 @@ c       kg_beta    = kg_beta/wi
      &leafdp(day,ft)/(ftsla(ft)/0.480d0)
             ENDDO
           endif
-          tbioleaf = bioleaf(ft) 
+          tbioleaf = tbioleaf + bioleaf(ft) 
         ENDDO
 
         avppm = 0.0
