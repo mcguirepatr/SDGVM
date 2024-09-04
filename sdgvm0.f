@@ -41,7 +41,7 @@
       REAL*8 sumbio,ans1,ftstmx(maxnft),leaflit(maxnft),stemlit(maxnft)
       REAL*8 rootlit(maxnft),ftwd(maxnft),ftxyl(maxnft),ftpd(maxnft)
       REAL*8 ftsla(maxnft),ftcov(maxnft),lon0,lonf,ftrat(maxnft),kd,kx
-      REAL*8 input_ftsla(maxnft)
+      REAL*8 input_ftsla(maxnft),bioleafo(maxnft)
       REAL*8 ftvna(maxnft),ftvnb(maxnft),ftjva(maxnft),ftjvb(maxnft)
       REAL*8 ftg0(maxnft),ftg1(maxnft),amax(maxnft),vcmax_from_amax
       REAL*8 stembio,rootbio,sum,solcoo,biotoo,lutab(255,100),awl(4)
@@ -122,7 +122,7 @@
       REAL*8 matmpv(10),matmp_maxv(10),yeartmp_max,gi,wi,covind
       REAL*8 matmp_minv(10),yeartmp_min,map_daysv(10),yearp_days
       REAL*8 mahumv(10),masoilcv(10),yearsoilc
-      REAL*8 masoilwv(10),yearsoilw,tabglitterc,tblgc,tbioleaf
+      REAL*8 masoilwv(10),yearsoilw,tabglitterc,tblgc,sumbioleaf
       REAL*8 matmp,matmp_max,matmp_min,map_days
       REAL*8 mahum,masoilc,masoilw,eco2
       REAL*8 matmp_init,matmp_max_init,matmp_min_init,map_days_init
@@ -4630,7 +4630,6 @@ c       kg_beta    = kg_beta/wi
         rootper = 0.0d0
         soilcn = tsoilc/tsoiln
 
-        tbioleaf = 0.0000
         DO ft=1,nft
           bioleaf(ft) = 0.0d0
           if(s070607.eq.1) then
@@ -4644,17 +4643,19 @@ c       kg_beta    = kg_beta/wi
      &leafdp(day,ft)/(ftsla(ft)/0.480d0)
             ENDDO
           endif
-          tbioleaf = tbioleaf + bioleaf(ft) 
         ENDDO
 
         avppm = 0.0
+        sumbioleaf = 0.0000
         DO ft=1,nft
           bioo(ft) = 0.0d0
           covo(ft) = 0.0d0
           yieldo(ft) = 0.0d0
+          bioleafo(ft) = 0.0d0
           DO i=1,ftmor(ft)
             bioo(ft) = bioo(ft) + (bio(i,1,ft) +
      &bio(i,2,ft) + bioleaf(ft) + nppstore(ft))*cov(i,ft)
+            bioleafo(ft) = bioleafo(ft) + bioleaf(ft)*cov(i,ft)
             covo(ft) = covo(ft) + cov(i,ft)
             yieldo(ft) = yieldo(ft) + yield(ft)*cov(i,ft)
             leafper = leafper + npl(ft)*cov(i,ft)
@@ -4665,6 +4666,7 @@ c       kg_beta    = kg_beta/wi
             ENDIF
           ENDDO
           sumbio = sumbio + bioo(ft)
+          sumbioleaf = sumbioleaf + bioleafo(ft)
           IF (covo(ft).GT.maxcov) THEN
             maxcov = covo(ft)
             !covind = ft
@@ -4755,7 +4757,7 @@ c       kg_beta    = kg_beta/wi
           WRITE(602,'('' '',f8.6,$)') wtwp
           WRITE(603,'('' '',f12.2,$)') tabglitterc
           WRITE(604,'('' '',f12.2,$)') tblgc
-          WRITE(605,'('' '',f10.2,$)') tbioleaf
+          WRITE(605,'('' '',f10.2,$)') sumbioleaf
           WRITE(606,'('' '',f10.2,$)') avflulccc 
           WRITE(607,'('' '',f10.2,$)') avyield 
         ENDIF
