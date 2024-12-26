@@ -3379,6 +3379,7 @@ c        ENDIF
           !print*, env_jmax(:)
           
           !bounds for TRY traits
+          print *,"nft=",nft
           env_vcmax_min(1:nft) = (/ 0.0,0.0,25.34,21.72,25.34,21.72,
      &16.3,19.9,19.43,19.9 /)
           env_vcmax_max(1:nft) = (/ 0.0,0.0,116.08,46.33,116.08,46.33,
