@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#exps="spin_accel spin_accelFS4 S0 S1 S2 S3 S5 FS4 FS5"
+exp0="FS4"
+exps="FS42"
+oldrun="TRENDYv13_v9"
+newrun="TRENDYv13_v10"
+oldrun_path="/gws/nopw/j04/landsurf_rdg/pmcguire/sdgvmR2"
+newrun_path="/work/scratch-pw2/pmcguire/sdgvmR"
+
+cd $newrun_path/$newrun
+
+for exp in $exps; do
+  mkdir $exp 
+  mkdir $exp/logs
+  cp -pr $oldrun_path/$oldrun/$exp0/[c-i,m,p-z]* $exp/. 
+  sed -i -e 's/sdgvm_v8._debug/sdgvm_v8y_debug/g' $exp'/start_v10c.scr'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/start_v10c.scr'
+  sed -i -e 's/'$exp0'/'$exp'/g' $exp'/start_v10c.scr'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/submit_v10c.sbatch'
+  sed -i -e 's/\/'$exp0'/\/'$exp'/g' $exp'/submit_v10c.sbatch'
+  sed -i -e 's/sdgvm_v8._debug/sdgvm_v8y_debug/g' $exp'/submit_v10c.sbatch'
+  sed -i -e 's/spin_accel\/output_v10a/spin_accel\/output_v10c/g' $exp'/submit_v10c.sbatch'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/submit_pp_v10c.sbatch'
+  sed -i -e 's/\/'$exp0'/\/'$exp'/g' $exp'/submit_pp_v10c.sbatch'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/run_postprocessing_v10c.bs'
+  sed -i -e 's/'$exp0'/'$exp'/g' $exp'/run_postprocessing_v10c.bs'
+done
