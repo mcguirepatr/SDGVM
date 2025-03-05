@@ -1,0 +1,60 @@
+#!/bin/bash
+SDGVMinput='input_global_v5a10g8S3.dat'
+#GRIDNUM='25' #site 1
+#GRIDNUM='69' #site 4
+#GRIDNUM='36' #site 1
+#GRIDNUM='38' #site 1
+#GRIDNUM='69' #site 159
+#GRIDNUM='21' #site 12
+#GRIDNUM='61' #site 55, East coast of Florida
+#GRIDNUM='61' #site 54 
+#GRIDNUM='79' #site 114, Brazil-area 
+#GRIDNUM='82' #site 103, Brazil-area 
+GRIDNUM='65' #site 22, Saudi Arabia 
+#GRIDNUM='22' #site 176, north-central Sweden 
+#GRIDNUM='60' #site 10, Tibet 
+#GRIDNUM='63' #site 117, Himalayas 
+
+GRID='grid'${GRIDNUM}
+GRID2='grid'${GRIDNUM}'tr124'
+VERSION='tr179'
+GRIDLOG='g'${GRIDNUM}${VERSION}
+EXE_DIR='./src_debug'
+INPUT_DIR='/work/scratch-pw3/pmcguire/sdgvmR/TRENDYv12_v3/spin_accel/output_v8a/'${GRID}
+#INPUT_DIR='/work/scratch-pw3/pmcguire/sdgvmR/TRENDYv12_v2/spin_accel/outputdbg/'${GRID2}
+OUTPUT_DIR='/work/scratch-pw3/pmcguire/sdgvmR/TRENDYv12_v3/S3/outputdebug/'
+OUTPUTGRIDDIR=${OUTPUT_DIR}${GRID}${VERSION} #just running for one subgrid = GRIDNUM
+SITES='/gws/nopw/j04/nexcs/pmcguire/TRENDYv12/db/sites/global_1deg_CRUJRA2023.dat'
+
+SDGVM_N_SITES=( \
+199 183 183 183 183 183 183 183 183 183 \
+183 183 183 183 183 183 183 183 183 183 \
+183 183 183 183 183 183 183 183 183 183 \
+183 183 183 183 183 183 183 183 183 183 \
+183 183 183 183 183 183 183 183 183 183 \
+183 183 183 183 183 183 183 183 183 183 \
+183 183 183 183 183 183 183 183 183 183 \
+183 183 183 183 183 183 183 183 183 183 \
+183 183 183 183 183 183 183 183 183 183 \
+183 183 183 183 183 183 183 183 183 183 ) 
+
+#
+# run loop 
+s4=0
+((e=${#SDGVM_N_SITES[*]}))
+s=${GRIDNUM}
+for t in `seq 1 $s` ;do
+ ((s1=$t - 1))
+ ((s3=1 + $s4))
+ ((s4=$s4 + ${SDGVM_N_SITES[$s1]}))
+done
+FIRSTSITE=$s3
+LASTSITE=$s4
+
+mkdir -p ${OUTPUTGRIDDIR}
+echo 'mkdir '${OUTPUTGRIDDIR}
+cp -pr src_debug ${OUTPUTGRIDDIR}/.
+cp -p $(basename $0)  ${OUTPUTGRIDDIR}/.
+cp -p ${SDGVMinput} ${OUTPUTGRIDDIR}/.
+echo 'log '${OUTPUT_DIR}/${GRIDLOG}out.txt 
+${EXE_DIR}/sdgvm0 ${SDGVMinput} ${INPUT_DIR} ${OUTPUTGRIDDIR} ${SITES} ${FIRSTSITE} ${LASTSITE} > ${OUTPUT_DIR}/${GRIDLOG}out.txt 2> ${OUTPUT_DIR}/${GRIDLOG}err.txt

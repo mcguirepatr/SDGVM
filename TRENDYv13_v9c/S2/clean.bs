@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# clear output directories
+rm -r ./output
+rm -r ./src
+rm    ./logs/*.o*
+

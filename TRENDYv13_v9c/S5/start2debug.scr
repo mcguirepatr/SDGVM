@@ -1,0 +1,21 @@
+#!/bin/bash
+
+MODEL=/gws/nopw/j04/nexcs/pmcguire/TRENDYv10/sdgvm_v7b_debug/
+OUTPUT=outputdebug
+
+
+# start script
+# clear output directories
+#rm -r ./$OUTPUT
+rm -r ./src_debug
+
+
+# copy source code and compiled model run file
+#mkdir ./$OUTPUT
+mkdir ./src_debug
+mkdir logs_debug
+cp -p $MODEL/*.f    ./src_debug
+cp -p $MODEL/*.f90  ./src_debug
+cp -p $MODEL/Makefile  ./src_debug
+cp -p $MODEL/sdgvm0 ./src_debug
+
