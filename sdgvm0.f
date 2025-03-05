@@ -3282,6 +3282,9 @@ c          tleaf_sla = tleaf_sla/1000
           env_jmax(3)    = - 269.21d0 - 0.197d0*maprc - 7.06d0*matvar
           ftsla(3)       = 20.44 + 0.59d0*matmp - 0.018*aprc_dryq +
      &30.76*aprc_rel - 0.089*maswr + 0.00043*maprc*matvar
+          env_vcmax(7)   = env_vcmax(3)
+          env_jmax(7)    = env_jmax(3)
+          ftsla(7)       = ftsla(3)
  
           !C4 grass/forb
           env_vcmax(4)   = 61.02d0 - 0.549d0*mahum
@@ -3289,35 +3292,53 @@ c          tleaf_sla = tleaf_sla/1000
           ftsla(4)       = - 66.94d0 + 1.19d0*mahum + 4.53d0*matmp -
      &5.10*matmp_min + 0.051*mahum*matvar + 0.16*mahum*matmp_min -
      &0.158*mahum*matmp
+          env_vcmax(8)   = env_vcmax(4)
+          env_jmax(8)    = env_jmax(4)
+          ftsla(8)       = ftsla(4)
  
           !Ev_Bl
-          env_vcmax(7)   = 54.90d0 + 2.76d0*matvar - 335.63d0*aprc_rel
-          env_jmax(7)    = 148.25d0 - 2.91d0*matmp_min
-          ftsla(7)    = 14.45d0 + 0.272d0*matmp + 0.0023*maprc -
+          env_vcmax(9)   = 54.90d0 + 2.76d0*matvar - 335.63d0*aprc_rel
+          env_jmax(9)    = 148.25d0 - 2.91d0*matmp_min
+          ftsla(9)    = 14.45d0 + 0.272d0*matmp + 0.0023*maprc -
      &0.0072*aprc_dryq - 0.063*maswr
+          env_vcmax(13)   = env_vcmax(9)
+          env_jmax(13)    = env_jmax(9)
+          ftsla(13)       = ftsla(9)
  
           !Ev_Nl
-          env_vcmax(8)   = -199.41d0 - 6.49d0*mahum - 371.52d0*aprc_rel 
+          env_vcmax(10)   = -199.41d0 - 6.49d0*mahum -
+     &371.52d0*aprc_rel 
      &+ 79.51d0*matmp_max + 48.59d0*matvar - 1.74d0*maswr - 
      &3.53*matmp_max*matvar
-          env_jmax(8)    = 795.67d0 - 0.22d0*maprc + 19.09d0*matmp_min -
+          env_jmax(10)    = 795.67d0 - 0.22d0*maprc +
+     &19.09d0*matmp_min -
      &0.78*aprc_dryq - 1.67*maswr
-          ftsla(8)       = -10.37 + 0.075d0*mahum - 28.57d0*aprc_rel +
+          ftsla(10)       = -10.37 + 0.075d0*mahum - 28.57d0*aprc_rel +
      &0.31d0*matvar - 1.05d0*matmp_max + 0.96d0*matmp - 0.0047*maprc +
      &0.021*aprc_dryq
+          env_vcmax(14)   = env_vcmax(10)
+          env_jmax(14)    = env_jmax(10)
+          ftsla(14)       = ftsla(10)
  
           !Dc_Bl
-          env_vcmax(9)   = - 31.55d0 + 287.41d0*aprc_rel + 3.51d0*matvar
+          env_vcmax(11)   = - 31.55d0 + 287.41d0*aprc_rel +
+     &3.51d0*matvar
      &- 30.11d0*aprc_rel*matvar
-          env_jmax(9)    = 74.22d0 + 2.05d0*matvar 
-          ftsla(9)       = 28.73d0 + 3.11d0*matmp - 1.62d0*matmp_max -
+          env_jmax(11)    = 74.22d0 + 2.05d0*matvar 
+          ftsla(11)       = 28.73d0 + 3.11d0*matmp - 1.62d0*matmp_max -
      &1.54*matmp_min - 0.067d0*maswr
+          env_vcmax(15)   = env_vcmax(11)
+          env_jmax(15)    = env_jmax(11)
+          ftsla(15)       = ftsla(11)
  
           !Dc_Nl - vcmax and jmax same as Ev_Nl
-          env_vcmax(10)  = env_vcmax(8)
-          env_jmax(10)   = env_jmax(8)
-          ftsla(10)      = -50.60d0 + 0.76d0*mahum + 409.75*aprc_rel -
+          env_vcmax(12)  = env_vcmax(11)
+          env_jmax(12)   = env_jmax(11)
+          ftsla(12)      = -50.60d0 + 0.76d0*mahum + 409.75*aprc_rel -
      &5.20d0*mahum*aprc_rel
+          env_vcmax(16)   = env_vcmax(12)
+          env_jmax(16)    = env_jmax(12)
+          ftsla(16)       = ftsla(12)
  
           ELSEIF(vcmax_type.eq.3) THEN
           ! Calculate Vcmax, Jmax and SLA for the TERRABITES sims
@@ -3327,31 +3348,49 @@ c          tleaf_sla = tleaf_sla/1000
           env_vcmax(3)   = 62.220d0
           env_jmax(3)    = 121.25d0
           ftsla(3)       = 20.15d0
+          env_vcmax(7)   = env_vcmax(3)
+          env_jmax(7)    = env_jmax(3)
+          ftsla(7)       = ftsla(3)
  
           !C4 grass/forb
           env_vcmax(4)   = 27.270d0
           env_jmax(4)    = 176.44d0
           ftsla(4)       = 18.50d0
+          env_vcmax(8)   = env_vcmax(4)
+          env_jmax(8)    = env_jmax(4)
+          ftsla(8)       = ftsla(4)
           
           !Ev_Bl
-          env_vcmax(7)   = 35.5d0 
-          env_jmax(7)    = 84.2d0
-          ftsla(7)       = 9.350d0 
+          env_vcmax(9)   = 35.5d0 
+          env_jmax(9)    = 84.2d0
+          ftsla(9)       = 9.350d0 
+          env_vcmax(13)   = env_vcmax(9)
+          env_jmax(13)    = env_jmax(9)
+          ftsla(13)       = ftsla(9)
  
           !Ev_Nl
-          env_vcmax(8)   = 71.0d0
-          env_jmax(8)    = 148.2d0
-          ftsla(8)       = 4.520d0
+          env_vcmax(10)   = 71.0d0
+          env_jmax(10)    = 148.2d0
+          ftsla(10)       = 4.520d0
+          env_vcmax(14)   = env_vcmax(10)
+          env_jmax(14)    = env_jmax(10)
+          ftsla(14)       = ftsla(10)
  
           !Dc_Bl
-          env_vcmax(9)   = 55.0d0
-          env_jmax(9)    = 92.870d0
-          ftsla(9)       = 14.48d0
+          env_vcmax(11)   = 55.0d0
+          env_jmax(11)    = 92.870d0
+          ftsla(11)       = 14.48d0
+          env_vcmax(15)   = env_vcmax(11)
+          env_jmax(15)    = env_jmax(11)
+          ftsla(15)       = ftsla(11)
  
           !Dc_Nl
-          env_vcmax(10)  = env_vcmax(8)
-          env_jmax(10)   = env_jmax(8)
-          ftsla(10)      = 9.46d0
+          env_vcmax(12)  = env_vcmax(11)
+          env_jmax(12)   = env_jmax(11)
+          ftsla(12)      = 9.46d0
+          env_vcmax(16)   = env_vcmax(12)
+          env_jmax(16)    = env_jmax(12)
+          ftsla(16)       = ftsla(12)
           ENDIF
        
 c        ELSE
@@ -3377,39 +3416,86 @@ c        ENDIF
           
           !print*, env_vcmax(:)
           !print*, env_jmax(:)
-          
+
+c     !nft=10          
+c          !bounds for TRY traits
+c          env_vcmax_min(1:nft) = (/ 0.0,0.0,25.34,21.72,25.34,21.72,
+c     &16.3,19.9,19.43,19.9 /)
+c          env_vcmax_max(1:nft) = (/ 0.0,0.0,116.08,46.33,116.08,46.33,
+c     &93.99,178.0,130.0,180.0 /)
+c          env_jmax_min(1:nft)  = (/ 0.0,0.0,44.87,92.3,44.87,92.3,
+c     &35.8,57.43,41.9,57.43 /)
+c          env_jmax_max(1:nft)  = (/ 0.0,0.0,230.79,465.4,230.79,465.4,
+c     &164.7,333.2,206.5,333.2 /)
+c          env_sla_min(1:nft)   = (/ 0.0,0.0,5.42,5.71,5.42,5.71,
+c     &4.37,2.4,7.51,4.52 /)
+c          env_sla_max(1:nft)   = (/ 0.0,0.0,43.34,34.34,43.34,34.34,
+c     &21.3,9.84,39.85,13.93 /) 
+c
+c          ! trait regression parameters
+c          jmax_int(1:nft)      = (/ 0.0,0.0,35.46,-236.96,35.46,-236.96,
+c     &29.34,30.62,25.54,30.62 /)
+c          jmax_int_er(1:nft)   = (/ 0.0,0.0,83.95,0.0062,83.95,0.0062,
+c     &16.03,35.61,15.55,35.61 /)
+c          jmax_slope(1:nft)     = (/ 0.0,0.0,1.51,15.15,1.51,15.15,
+c     &0.96,1.88,1.32,1.88 /)
+c          jmax_slope_er(1:nft)  = (/ 0.0,0.0,1.28,0.0002,1.28,0.0002,
+c     &0.23,0.467,0.27,0.467 /)
+c          sla_int(1:nft)        = (/ 0.0,0.0,0.0,45.26,0.0,45.26,
+c     &0.0,0.0,25.7,0.0 /)
+c          sla_int_er(1:nft)     = (/ 0.0,0.0,0.0,9.58,0.0,9.58,
+c     &0.0,0.0,3.84,0.0 /)
+c          sla_slope(1:nft)      = (/ 0.0,0.0,0.0,-0.97,0.0,-0.97,
+c     &0.0,0.0,-0.22,0.0 /)
+c          sla_slope_er(1:nft)   = (/ 0.0,0.0,0.0,0.30,0.0,0.30,
+c     &0.0,0.0,0.076,0.0 /)
+
+c     !nft=16          
           !bounds for TRY traits
-          print *,"nft=",nft
           env_vcmax_min(1:nft) = (/ 0.0,0.0,25.34,21.72,25.34,21.72,
-     &16.3,19.9,19.43,19.9 /)
+     &25.34,21.72,
+     &16.3,19.9,19.43,19.9,16.3,19.9,19.43,19.9 /)
           env_vcmax_max(1:nft) = (/ 0.0,0.0,116.08,46.33,116.08,46.33,
-     &93.99,178.0,130.0,180.0 /)
+     &116.08,46.33,
+     &93.99,178.0,130.0,180.0,93.99,178.0,130.0,180.0 /)
           env_jmax_min(1:nft)  = (/ 0.0,0.0,44.87,92.3,44.87,92.3,
-     &35.8,57.43,41.9,57.43 /)
+     &44.87,92.3,
+     &35.8,57.43,41.9,57.43,35.8,57.43,41.9,57.43 /)
           env_jmax_max(1:nft)  = (/ 0.0,0.0,230.79,465.4,230.79,465.4,
-     &164.7,333.2,206.5,333.2 /)
+     &230.79,465.4,
+     &164.7,333.2,206.5,333.2,164.7,333.2,206.5,333.2 /)
           env_sla_min(1:nft)   = (/ 0.0,0.0,5.42,5.71,5.42,5.71,
-     &4.37,2.4,7.51,4.52 /)
+     &5.42,5.71,
+     &4.37,2.4,7.51,4.52,4.37,2.4,7.51,4.52 /)
           env_sla_max(1:nft)   = (/ 0.0,0.0,43.34,34.34,43.34,34.34,
-     &21.3,9.84,39.85,13.93 /) 
+     &43.34,34.34,
+     &21.3,9.84,39.85,13.93,21.3,9.84,39.85,13.93  /) 
 
           ! trait regression parameters
           jmax_int(1:nft)      = (/ 0.0,0.0,35.46,-236.96,35.46,-236.96,
-     &29.34,30.62,25.54,30.62 /)
+     &35.46,-236.96,
+     &29.34,30.62,25.54,30.62,29.34,30.62,25.54,30.62 /)
           jmax_int_er(1:nft)   = (/ 0.0,0.0,83.95,0.0062,83.95,0.0062,
-     &16.03,35.61,15.55,35.61 /)
+     &83.95,0.0062,
+     &16.03,35.61,15.55,35.61,16.03,35.61,15.55,35.61 /)
           jmax_slope(1:nft)     = (/ 0.0,0.0,1.51,15.15,1.51,15.15,
-     &0.96,1.88,1.32,1.88 /)
+     &1.51,15.15,
+     &0.96,1.88,1.32,1.88,0.96,1.88,1.32,1.88 /)
           jmax_slope_er(1:nft)  = (/ 0.0,0.0,1.28,0.0002,1.28,0.0002,
-     &0.23,0.467,0.27,0.467 /)
+     &1.28,0.0002,
+     &0.23,0.467,0.27,0.467,0.23,0.467,0.27,0.467 /)
           sla_int(1:nft)        = (/ 0.0,0.0,0.0,45.26,0.0,45.26,
-     &0.0,0.0,25.7,0.0 /)
+     &0.0,45.26,
+     &0.0,0.0,25.7,0.0,0.0,0.0,25.7,0.0 /)
           sla_int_er(1:nft)     = (/ 0.0,0.0,0.0,9.58,0.0,9.58,
-     &0.0,0.0,3.84,0.0 /)
+     &0.0,9.58,
+     &0.0,0.0,3.84,0.0,0.0,0.0,3.84,0.0 /)
           sla_slope(1:nft)      = (/ 0.0,0.0,0.0,-0.97,0.0,-0.97,
-     &0.0,0.0,-0.22,0.0 /)
+     &0.0,-0.97,
+     &0.0,0.0,-0.22,0.0,0.0,0.0,-0.22,0.0 /)
           sla_slope_er(1:nft)   = (/ 0.0,0.0,0.0,0.30,0.0,0.30,
-     &0.0,0.0,0.076,0.0 /)
+     &0.0,0.30,
+     &0.0,0.0,0.076,0.0,0.0,0.0,0.076,0.0 /)
 
           !zero bounds flag arrays
           env_vcmax_bounds(:) = 0
@@ -3455,8 +3541,8 @@ c        ENDIF
             if(env_jmax(ft).lt.jmax_ci_low) then
               !first determine slope and intercept for the perpendicular line:
               ! Jmax=a2*Vmax+b2
-              a2 = (-1/(jmax_slope(ft)-jmax_slope_er(ft))) !slope perpendiculair line
-              b2 = env_jmax(ft)-(a2*env_vcmax(ft))         ! intercept perpendiculair line
+              a2 = (-1/(jmax_slope(ft)-jmax_slope_er(ft))) !slope perpendicular line
+              b2 = env_jmax(ft)-(a2*env_vcmax(ft))         ! intercept perpendicular line
               !search values when slopes cross:
               !(a2*Vmax2)+b2=(a*Vmax)+intercept_lower
               !(a2-slope_lower)*Vmax=intercept_lower-b2
@@ -3489,7 +3575,9 @@ c        ENDIF
             endif
 
             !evaluate whether Vmax matches the trade-off with SLA and adjust SLA if necessary
-            if((ft.eq.4).or.(ft.eq.9))then
+            !only do this where sla_int_er(ft).ne.0.0
+            if((ft.eq.4).or.(ft.eq.6).or.
+     &(ft.eq.8).or.(ft.eq.11).or.(ft.eq.15))then 
               !Regression CI95 lower range:
               sla_ci_low  = sla_int(ft)-sla_int_er(ft) +
      &((sla_slope(ft)-sla_slope_er(ft))*env_vcmax(ft))
@@ -3533,16 +3621,20 @@ c        ENDIF
           ENDIF
       
           !trees
-          env_vcmax(7:10) = (-2.570d-4*eco2+1.090d0)/0.9990d0*
-     &env_vcmax(7:10)
-          env_jmax(7:10)  = (-3.430d-4*eco2+1.120d0)/0.99860d0*
-     &env_jmax(7:10)
+          env_vcmax(9:16) = (-2.570d-4*eco2+1.090d0)/0.9990d0*
+     &env_vcmax(9:16)
+          env_jmax(9:16)  = (-3.430d-4*eco2+1.120d0)/0.99860d0*
+     &env_jmax(9:16)
         
           !C3 grass/crop
           env_vcmax(3) = (-7.570d-4*eco2+1.274d0)/1.0060d0*
      &env_vcmax(3)
           env_jmax(3)  = (-3.80d-4*eco2+1.138d0)/1.00350d0*
      &env_jmax(3)
+          env_vcmax(7) = (-7.570d-4*eco2+1.274d0)/1.0060d0*
+     &env_vcmax(7)
+          env_jmax(7)  = (-3.80d-4*eco2+1.138d0)/1.00350d0*
+     &env_jmax(7)
           env_vcmax(5) = (-7.570d-4*eco2+1.274d0)/1.0060d0*
      &env_vcmax(5)
           env_jmax(5)  = (-3.80d-4*eco2+1.138d0)/1.12250d0*
@@ -3553,6 +3645,10 @@ c        ENDIF
      &  exp(-0.2510d0+8.0d-4*35.39- 2.90d-5*35.39**2 )   )  
 
           ftsla(4)     = ftsla(4) /
+     &( exp(-0.06510d0+3.380d-4*eco2 - 3.90d-5*(eco2/10)**2) / 
+     &  exp(-0.06510d0+3.380d-4*35.39- 3.90d-5*35.39**2 )   )   
+
+          ftsla(8)     = ftsla(8) /
      &( exp(-0.06510d0+3.380d-4*eco2 - 3.90d-5*(eco2/10)**2) / 
      &  exp(-0.06510d0+3.380d-4*35.39- 3.90d-5*35.39**2 )   )   
 
