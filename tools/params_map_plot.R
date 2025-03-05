@@ -53,8 +53,22 @@ nbp <- list(
   gmean = F,
   printsum = T,
   #at    = c(-400,-300,-200,-100,-50,-10,10,50,100,200,300,400),
-  at    = c(-300,-250,-200,-150,-100,-50,50,100,150,200,250,300),
+  #at    = c(-300,-250,-200,-150,-100,-50,50,100,150,200,250,300),
+  at    = c(-150,-100,-50,-10,-5,-1,1,5,10,50,100,150),
   cols  = col.nbp
+)  
+rof <- list(
+  name  = 'runoff',
+  nsub  = '',
+  unit  = 'mm',
+  sunit = 'Eg',
+  gsum  = T,
+  gmean = F,
+  printsum = T,
+  at    = c(0,10,25,50,75,100,150,200,300,400),
+  #at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500),
+  #cols  = viridis(14)
+  cols  = col.inc.gpp
 )  
 anlfn <- list(
   name  = 'LeafN',
@@ -198,6 +212,18 @@ biot <- list(
   at    = c(0,1000,2000,3000,5000,7500,10000,15000,20000,25000,30000,35000),
   cols  = col.inc
 )
+leafc <- list(
+  name  = '"Leaf_Carbon"',
+  nsub  = '',
+  unit  = 'gCm^-2',
+  sunit = 'PgC',
+  gsum  = T,
+  gmean = F,
+  printsum = T,
+  #at    = c(0,1000,2000,3000,5000,7500,10000,15000,20000,25000,30000,35000),
+  at    = c(0,50,100,150,200,250,300,350,400,500,600,700),
+  cols  = col.inc
+)
 nppstore <- list(
   name  = '"Vegetation_Stored_Carbon"',
   nsub  = '',
@@ -256,7 +282,7 @@ tmp <- list(
   cols  = c(rev(heat.colors(10))[1:9],'darkred','purple4')
 )
 prc <- list(
-  name  = 'Precipitaton',
+  name  = 'Precipitation',
   nsub  = '',
   unit  = 'kgm^-2',
   sunit = 'Eg',
@@ -350,9 +376,12 @@ yie_C3p <- list(
   gsum  = T,
   gmean = F,
   printsum = T,
-  at    = c(0,0.1,0.2,0.5,1.0,2.0,5.0,10,15,20,25,30),
+  at    = c(0,0.01,0.1,0.2,0.5,1,2,3,4,5,6,12),
   cols  = col.inc
 )
+
+nep <- nbp 
+nep$name <- 'NEP'
 
 yield <- yie_C3p
 yield$name <- 'Total_Yield'

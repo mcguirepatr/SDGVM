@@ -31,13 +31,16 @@ write_sdgvm_netcdf <- function(wd, afiles=NULL, mfiles=NULL, dfiles=NULL,
   if(grepl('T3',wd)) fref   <- 'T3'
   if(grepl('Stest',wd)) fref <- 'Stest'
   if(grepl('spin_short',wd)) fref   <- 'spin_short'
-  if(grepl('spin_accel',wd)) fref   <- 'spin_accel'
+  if(grepl('spin_accelFS4',wd)) fref   <- 'spin_accelFS4'
+  else { if(grepl('spin_accel',wd)) fref   <- 'spin_accel'}
   if(grepl('S0',wd)) fref   <- 'S0'
   if(grepl('S1',wd)) fref   <- 'S1'
   if(grepl('S2',wd)) fref   <- 'S2'
   if(grepl('S3',wd)) fref   <- 'S3'
-  if(grepl('S4',wd)) fref   <- 'S4'
-  if(grepl('S5',wd)) fref   <- 'S5'
+  if(grepl('FS4',wd)) fref   <- 'FS4' 
+  else {if(grepl('S4',wd)) fref   <- 'S4'}
+  if(grepl('FS5',wd)) fref   <- 'FS5'
+  else {if(grepl('S5',wd)) fref   <- 'S5'}
   if(grepl('S6',wd)) fref   <- 'S6'
   if(grepl('S7',wd)) fref   <- 'S7'
   if(grepl('S8',wd)) fref   <- 'S8'
@@ -213,14 +216,18 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
   print(head(df),quote=F)
   print('',quote=F)
 
-  # for monthly grid square NBP remove fire flux, lulcc flux, and leached DOC flux
-  if(fname=='monthly_nep.dat') {
 
-    #print('Made it to routine to add C fluxes to nep')
+
+  # for monthly grid square NBP remove fire flux, lulcc flux, yield flux, and leached DOC flux
+  #PCM if(fname=='monthly_nep.dat') {
+  if(var$name=='nbp') { #PCM
+
+    print('Made it to routine to add C fluxes to nep')
 
     m1 <- as.matrix(read.table('lch.dat'))
     m2 <- as.matrix(read.table('lulccc.dat'))
     m3 <- as.matrix(read.table('fcn.dat'))
+    m4 <- as.matrix(read.table('yield.dat')) #PCM
 
     #print('')
     #print(df[1:12,cs:length(df)])  
@@ -230,18 +237,22 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
     #print(apply(m2[,(dim(m2)[2]-length(df)+cs):dim(m2)[2]], 2, function(v) rep(v,each=12)/12 )[1:12,] )  
     #print('')
     #print(apply(m3[,(dim(m3)[2]-length(df)+cs):dim(m3)[2]], 2, function(v) rep(v,each=12)/12 )[1:12,] ) 
-
     #print('')
-    #print(sum(df[,cs:length(df)]))  
-    #print(sum(apply(m1[,(dim(m1)[2]-length(df)+cs):dim(m1)[2]], 2, function(v) rep(v,each=12)/12 )))  
-    #print(sum(apply(m2[,(dim(m2)[2]-length(df)+cs):dim(m2)[2]], 2, function(v) rep(v,each=12)/12 )))  
-    #print(sum(apply(m3[,(dim(m3)[2]-length(df)+cs):dim(m3)[2]], 2, function(v) rep(v,each=12)/12 ))) 
+    #print(apply(m4[,(dim(m4)[2]-length(df)+cs):dim(m4)[2]], 2, function(v) rep(v,each=12)/12 )[1:12,] ) 
+
+    print('')
+    print(sum(df[,cs:length(df)]))  
+    print(sum(apply(m1[,(dim(m1)[2]-length(df)+cs):dim(m1)[2]], 2, function(v) rep(v,each=12)/12 )))  
+    print(sum(apply(m2[,(dim(m2)[2]-length(df)+cs):dim(m2)[2]], 2, function(v) rep(v,each=12)/12 )))  
+    print(sum(apply(m3[,(dim(m3)[2]-length(df)+cs):dim(m3)[2]], 2, function(v) rep(v,each=12)/12 ))) 
+    print(sum(apply(m4[,(dim(m4)[2]-length(df)+cs):dim(m4)[2]], 2, function(v) rep(v,each=12)/12 ))) 
 
     df[,cs:length(df)] <- df[,cs:length(df)] - 
 				apply(m1[,(dim(m1)[2]-length(df)+cs):dim(m1)[2]], 2, function(v) rep(v,each=12)/12 ) - 
 				apply(m2[,(dim(m2)[2]-length(df)+cs):dim(m2)[2]], 2, function(v) rep(v,each=12)/12 ) - 
-				apply(m3[,(dim(m3)[2]-length(df)+cs):dim(m3)[2]], 2, function(v) rep(v,each=12)/12 ) 
-    rm(m1,m2,m3)
+				apply(m3[,(dim(m3)[2]-length(df)+cs):dim(m3)[2]], 2, function(v) rep(v,each=12)/12 ) - 
+				apply(m4[,(dim(m4)[2]-length(df)+cs):dim(m4)[2]], 2, function(v) rep(v,each=12)/12 ) 
+    rm(m1,m2,m3,m4)
   } 
 
 

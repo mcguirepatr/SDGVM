@@ -176,7 +176,7 @@ vars <- c('npp','gpp','nbp','anlfn','antlfn',
           'yield','yie_C3p','yie_C4p',
           'yie_C3s','yie_C4s','yie_Dc_Bs','yie_Dc_Ns','yie_Ev_Bs',
           'yie_Ev_Ns','yie_C3crop','yie_C4crop','yie_Dc_Bp','yie_Dc_Np',
-          'yie_Ev_Bp','yie_Ev_Np','yie_BARE')
+          'yie_Ev_Bp','yie_Ev_Np','yie_BARE','rof','nep','leafc')
 
 # land-cover is fixed and so has only a single column in the output file
 #cov_fixed  <- F

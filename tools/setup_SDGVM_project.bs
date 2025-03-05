@@ -6,7 +6,7 @@
 # Arguments:
 # $1 - SDGVM_USER (required) -- options: ORNL_APW, UR_PCM
 # $2 - SDGVM_RUNTYPE (required) -- use a predefined 'runtype' 
-# $3 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PROJECTS_DIR, houses a collection of runs (i.e. a project) 
+# $3 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PROJECTS_DIR, houses a collection of runs (i.e. a project)
 # $4 - SDGVM_SITESCORES (required) -- use a predefined set of sites, resolution, and cores  
 # $5 - SUBPROJECT name (optional) -- a label for a subgroup of simulations within a SDGVM_PROJECT 
 
@@ -201,8 +201,8 @@ cd $SDGVM_PDIR/$SDGVM_PROJECT/results/
 cp ${SDGVM_HOME}${SDGVM_MOD}/templates/plotting_scripts/plot*${SDGVM_RUNTYPE}.bs .
 sed -i "s@#HOME#@$SDGVM_HOME@"         plot*${SDGVM_RUNTYPE}.bs 
 sed -i "s@#MOD#@$SDGVM_MOD@"           plot*${SDGVM_RUNTYPE}.bs 
-sed -i "s@#S#@${SDGVM_SPIN_STR_R}@"      plot_spin_${SDGVM_RUNTYPE}.bs 
-sed -i "s@#S#@${SDGVM_MAIN_SIMS_STR_R}@" plot_${SDGVM_RUNTYPE}.bs 
+sed -i "s@#S#@${SDGVM_SPIN_STR}@"      plot_spin_${SDGVM_RUNTYPE}.bs 
+sed -i "s@#S#@${SDGVM_MAIN_SIMS_STR}@" plot_${SDGVM_RUNTYPE}.bs 
 sed -i "s@#PROJECT#@$SDGVM_PROJECT@g"  plot*${SDGVM_RUNTYPE}.bs   
 sed -i "s@#SPINNY#@$SDGVM_SPINNY@g"    plot*${SDGVM_RUNTYPE}.bs   
 sed -i "s@#STY#@$SDGVM_SIMSTY@g"       plot*${SDGVM_RUNTYPE}.bs   
@@ -220,7 +220,7 @@ echo
 echo
 echo
 echo "Set up each simulation directory"
-echo "in SDGVM projects directory: $SDGVM_PDIR/$SDGVM_PROJECT"
+echo "in SDGVM projects directory: $SDGVM_PDIR$SDGVM_PROJECT"
 echo "======================================"
 SIMS=( $SDGVM_SPIN ${SDGVM_MAIN_SIMS[@]} )
 for s in ${SIMS[*]};do

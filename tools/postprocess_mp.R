@@ -72,7 +72,7 @@ ncfend <- '.nc'
 
 # netcdf files to create
 #ncdf_avars <- c('cVeg','cLitter','cSoil','cRoot','burntArea')
-ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea')
+ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea','cYield','nbpAnnual','nepAnnual','rhAnnual','nppAnnual')
 #ncdf_avars <- c('fFire','fLuc')
 #ncdf_avars <- 'cVegpft' 
 #ncdf_avars <- 'landCoverFrac' 
@@ -82,8 +82,9 @@ ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntAr
 #ncdf_mvars <- c('tas','pr')
 #ncdf_mvars <- 'snow_depthpft' 
 #ncdf_mvars <- c('gpppft','tran','npppft')
-ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai','tran',
-                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft')
+ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','nep','lai','tran',
+                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft','soilr')
+
 #ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans')
 #ncdf_mvars <- c('gpp','ra','npp','rh','nbp','lai',
 #                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran','landCoverFrac')
@@ -111,7 +112,8 @@ email       <- 'walkerap@ornl.gov'
 institution <- 'Oak Ridge National Laboratory'
 
 # project name
-project   <- 'TRENDYv12, 2023'
+#project   <- 'TRENDYv13, 2024' #We can't put this in the command-line, maybe due to the comma
+project   <- 'TRENDYv13(2024)'
 
 
 ### Parse command line arguments   

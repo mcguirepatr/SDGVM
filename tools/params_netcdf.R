@@ -135,7 +135,7 @@ fLuc <- list(
 
 
 ### Monthly data
-# total soil water (inc. snow), runoff & drainage, Total ET, Sensible Heat, Surface tmp, GPP, Ra, NPP, Rh, CO2 from fire,  
+# total soil water (inc. snow), runoff & drainage, Total ET, Sensible Heat, Surface tmp, GPP, Ra, NPP, Rh, total soil respiration (Rh + rootrsp), CO2 from fire,  
 mrso <- list(
   name  = 'mrso',
   file  = c('swc','snw'),
@@ -265,6 +265,26 @@ rh <- list(
   scale = 1/(1000*30*24*3600)
 )
 
+soilr <- list(
+  name  = 'soilr',
+  file  = c('rtr','srp'),
+  pft   = F,
+  lname = 'Soil Respiration',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*30*24*3600),
+  notes = 'This is the sum of root respiration and heterotrophic respiration.'
+)
+
+nep <- list(
+  name  = 'nep',
+  file  = 'nep',
+  pft   = F,
+  lname = 'Net Ecosystem Production',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*30*24*3600),
+  notes = 'These data are per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
+)
+
 nbp <- list(
   name  = 'nbp',
   file  = 'nep',
@@ -275,20 +295,49 @@ nbp <- list(
   notes = 'These data include fire, lulcc, and leached C losses (which are annual fluxes distributed across the 12 months equally).'
 )
 
-nbp_annual <- list(
+nepAnnual <- list(
+  name  = 'nepAnnual',
+  file  = 'nep',
+  pft   = F,
+  lname = 'Net Ecosystem Production',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600),
+  notes = 'These data are per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
+)
+
+nbpAnnual <- list(
   name  = 'nbpAnnual',
   file  = 'nbp',
   pft   = F,
   lname = 'Net Biome Production',
   units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600),
+  notes = 'These data include fire, lulcc, and leached C losses (which are annual fluxes distributed across the 12 months equally).'
+)
+
+rhAnnual <- list(
+  name  = 'rhAnnual',
+  file  = 'sresp',
+  pft   = F,
+  lname = 'Heterotrophic Respiration',
+  units = 'kg m-2 s-1',
   scale = 1/(1000*360*24*3600)
 )
 
-nbppft <- list(
-  name  = 'nbppft',
+nppAnnual <- list(
+  name  = 'nppAnnual',
+  file  = 'npp',
+  pft   = F,
+  lname = 'Net Primary Production',
+  units = 'kg m-2 s-1',
+  scale = 1/(1000*360*24*3600)
+)
+
+neppft <- list(
+  name  = 'neppft',
   file  = 'nep',
   pft   = T,
-  lname = 'Vegtype level NBP',
+  lname = 'Vegtype level NEP',
   units = 'kg m-2 s-1, per unit land area occupied by the PFT',
   scale = 1/(1000*30*24*3600),
   notes = 'These data are per unit area covered by the PFT and do not include fire, lulcc, and leached C carbon losses. i.e. they are GPP - Ra - Rh'
@@ -330,6 +379,17 @@ cYieldpft <- list(
   units = 'kg m-2 yr-1, per unit land area occupied by the PFT',
   scale = 1/1000
 )
+
+cYield <- list(
+  name = 'cYield',
+  file  = 'yield',
+  pft   = F,
+  lname = 'Yield Carbon from crop or wood harvest',
+  units = 'kg m-2 yr-1',
+  scale = 1/1000
+)
+
+
 
 
 
