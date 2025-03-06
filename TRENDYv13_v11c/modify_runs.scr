@@ -8,7 +8,7 @@ for exp in $exps; do
   if [[ "$exp" == "spin_accel" ]]; then
      exp2="spin"
   elif [[ "$exp" == "spin_accelFS" ]]; then
-     exp2="spinFS4"
+     exp2="spinFS"
   else
      exp2=$exp
   fi
