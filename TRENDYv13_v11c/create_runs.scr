@@ -1,0 +1,18 @@
+#!/bin/bash
+
+exps="spin_accel spin_accelFS S0 S1 S2 S3 S5 FS4 FS5"
+oldrun="TRENDYv13_v9c"
+newrun="TRENDYv13_v11d"
+
+for exp in $exps; do
+  mkdir $exp 
+  mkdir $exp/logs
+  cp -pr ../$oldrun/$exp/[c-i,m,p-z]* $exp/. 
+  sed -i -e 's/sdgvm_v8._debug/sdgvm_v8y_debug/g' $exp'/start_v10c.scr'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/start_v10c.scr'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/submit_v10c.sbatch'
+  sed -i -e 's/sdgvm_v8._debug/sdgvm_v8y_debug/g' $exp'/submit_v10c.sbatch'
+  sed -i -e 's/spin_accel\/output_v10a/spin_accel\/output_v10c/g' $exp'/submit_v10c.sbatch'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/submit_pp_v10c.sbatch'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/run_postprocessing_v10c.bs'
+done

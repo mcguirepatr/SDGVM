@@ -1,0 +1,13 @@
+#!/bin/bash
+
+exps="spin_accel spin_accelFS S0 S1 S2 S3 S5 FS4 FS5"
+oldrun="TRENDYv13_v9"
+newrun="TRENDYv13_v9c"
+
+mkdir ../$newrun 
+
+for exp in $exps; do
+  mkdir ../$newrun/$exp 
+  mkdir ../$newrun/$exp/logs
+  cp -pr ../$oldrun/$exp/[c-i,m,p-z]* ../$newrun/$exp/. 
+done
