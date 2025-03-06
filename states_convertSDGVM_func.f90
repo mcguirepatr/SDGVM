@@ -41,7 +41,7 @@
       REAL*8, DIMENSION(FYR_FIRE-SYR_FIRE+1,DXY,DXY,12) :: data_out_fire
 
       INTEGER, PARAMETER :: NX = 720, NY = 360
-      ! half-resolution version computed with: module load jasppy ! on JASMIN
+      ! half-resolution version computed with: module load jaspy ! on JASMIN
       !                                        cdo gridboxmean,2,2 transitions.nc transitions2b.nc
       !                                        cdo gridboxmean,2,2 states.nc states2b.nc
       !CHARACTER (LEN = *), PARAMETER :: fname = "states2b.nc" !half-resolution version of states.nc
