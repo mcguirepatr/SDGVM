@@ -1,0 +1,41 @@
+#!/bin/bash
+module load jasr
+
+SRCDIR='/gws/nopw/j04/nexcs/pmcguire/TRENDYv13/sdgvm_bugfix_negsoilc/tools'
+ARGS="of<-'TRENDYv13_v11d' sim<-c('S0','S1','S2','S3','S5','FS4','FS5') styr<-1700 endyr<-2023 yr_mean<-c(2023-9,2023) project<-'TRENDYv13_v11d' date<-'250306a' dir<-'/work/scratch-pw2/pmcguire' rdir<-'sdgvmR' output_dir<-'output_v10c/' edir<-'eval_data' tdir<-'${SRCDIR}'"
+echo 'ARGS'
+echo $ARGS
+
+cd $SRCDIR
+
+
+# general plots
+ALLARGS="${ARGS} via<-c(1:15,18:23,39:41,59:61)"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+# NBP TRENDY csv files
+ALLARGS="${ARGS} via<-3 of<-'TRENDYv13_NBP' trendy<-T"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+# NPP store plots 
+ALLARGS="${ARGS} via<-42 of<-'TRENDYv13_NPP_store'"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+# cover variables
+ALLARGS="${ARGS} via<-24:38 cov_fixed<-F styr<-1700"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+# early
+ALLARGS="${ARGS} via<-c(3,8,15) of<-'TRENDYv13_nbp1700' yr_mean<-c(1700,1700+1) pyear<-1700"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+# yield variables
+ALLARGS="${ARGS} via<-43:58 yie_fixed<-F styr<-1700"
+Rscript plot_maps_lattice.R ${ALLARGS} 
+
+module unload jasr
+
+### END ###
+
+
+
