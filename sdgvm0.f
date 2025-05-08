@@ -430,105 +430,13 @@ C        WRITE(*,*) 'bbbb'
       READ(98,'(A)') sttxdp  !soil data
       CALL STRIPB(sttxdp)
 
-*----------------------------------------------------------------------*
-* Read in type of landuse: 0 = defined by map; 1 = defined explicitly  *
-* in the input file; 2 = natural vegetation based on average monthly   *
-* temperatures.                                                        *
-*----------------------------------------------------------------------*
-      READ(98,'(1000a)') st1
-
-      ii = n_fields(st1)
-      IF (ii.EQ.4) THEN
-        !read in ilanduse 
-        CALL STRIPBN(st1,i)
-        IF (i.gt.-1)  ilanduse  = i
-        !read start year of extraction from LUC database 
-        CALL STRIPBN(st1,i)
-        IF (i.gt.-1)  SYR   = i
-        !read number of years of extraction from LUC database 
-        CALL STRIPBN(st1,i)
-        IF (i.gt.-1)  NYR   = i
-        CALL STRIPBN(st1,i)
-        IF (i.gt.-1)  NYR_FILE   = i
-!        IF (ilanduse.EQ.5. .OR. ilanduse.EQ.6) NYR = 1 !override number from input.dat if set that way accidently
-      ELSE IF (ii.EQ.1) THEN
-        READ(st1,*) ilanduse
-        SYR = -1 !SYR and NYR not used and not defined here
-        NYR = -1
-        NYR_FILE = -1
-      ELSE
-        WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'ilanduse: either 1 or 4 arguments required'
-        STOP
-      ENDIF
-
-      fire(:)    = .FALSE.
-      harvest(:) = .FALSE.
-      IF (ilanduse.EQ.1) THEN
-* Use landuse defined in input file.
-        CALL LANDUSE1(luse,fire,harvest,yr0a,yrfa,year0set,spinl)
-      ENDIF
-      IF ((ilanduse.LT.0).OR.(ilanduse.GT.6)) THEN
-        WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'No landuse defined'
-        WRITE(*,*) '0:= Defined from a map.'
-        WRITE(*,*) '1:= Defined in the input file.'
-        WRITE(*,*) '2:= Natural vegetation.'
-        WRITE(*,*) '3:= Defined from the maps in states2b.nc file.'
-        WRITE(*,*) '4:= Defined from the maps in transitions2b.nc file.'
-        WRITE(*,*)
-     & '5:= Defined from the 1st-yr maps in states2b.nc file.'
-        WRITE(*,*)
-     & '6:= Defined from the 1st-yr maps in transitions2b.nc file.'
-        STOP
-      ENDIF
-
-*----------------------------------------------------------------------*
-* Read in type of prescribed fire: 1 = not prescribed;                 *
-* 2  = burned-area is prescribed, preindustrial cycling for all time   * 
-* 3  = burned-area is prescribed, preindustrial cycling before 1901    * 
-*----------------------------------------------------------------------*
-      READ(98,'(1000a)') st1
-
-      ii = n_fields(st1)
-      IF (ii.EQ.3) THEN
-        !read in ifire 
-        CALL STRIPBN(st1,i)
-        IF (i.gt.-1)  ifire  = i
-        !read start year of extraction from fire database 
-        CALL STRIPBN(st1,i)
-        IF (i.gt.-1)  SYR_FIRE   = i
-        !read number of years of extraction from fire database 
-        CALL STRIPBN(st1,i)
-        IF (i.gt.-1)  NYR_FIRE   = i
-        IF (ifire.EQ.1) NYR_FIRE = 1 !override number from input.dat if set that way accidently
-        IF (ifire.EQ.2 .OR. ifire.EQ.3) prescr_fire = .TRUE.
-      ELSE IF (ii.EQ.1) THEN
-        READ(st1,*) ifire
-        ifire = 1
-        prescr_fire = .FALSE.
-        SYR_FIRE = -1 !SYR_FIRE and NYR_FIRE not used and not defined here
-        NYR_FIRE = -1
-      ELSE
-        WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'ifire: either 1 or 3 arguments required'
-        STOP
-      ENDIF
-
-      IF ((ifire.LT.1).OR.(ifire.GT.3)) THEN
-        WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'No ifire defined'
-        WRITE(*,*) '1:=Fire burned-area not prescribed.'
-        WRITE(*,*) '2:=Fire burned-area is prescribed (Pre-industrial).'
-        WRITE(*,*) '3:=Fire burned-area is prescribed (1901-2020).'
-        STOP
-      ENDIF
-
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname)
+      stpname = stpname // 'states2b.nc'
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname_t)
+      stpname_t = stpname_t // 'transitions2b.nc'
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname_f)
@@ -1814,6 +1722,100 @@ c CLOSE added by Ghislain 15/12/03
 
       ELSE
         l_parameter = .false.
+      ENDIF
+
+*----------------------------------------------------------------------*
+* Read in type of landuse: 0 = defined by map; 1 = defined explicitly  *
+* in the input file; 2 = natural vegetation based on average monthly   *
+* temperatures.                                                        *
+*----------------------------------------------------------------------*
+      READ(98,'(1000a)') st1
+
+      ii = n_fields(st1)
+      IF (ii.EQ.4) THEN
+        !read in ilanduse 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  ilanduse  = i
+        !read start year of extraction from LUC database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  SYR   = i
+        !read number of years of extraction from LUC database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  NYR   = i
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  NYR_FILE   = i
+!        IF (ilanduse.EQ.5. .OR. ilanduse.EQ.6) NYR = 1 !override number from input.dat if set that way accidently
+      ELSE IF (ii.EQ.1) THEN
+        READ(st1,*) ilanduse
+        SYR = -1 !SYR and NYR not used and not defined here
+        NYR = -1
+        NYR_FILE = -1
+      ELSE
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'ilanduse: either 1 or 4 arguments required'
+        STOP
+      ENDIF
+
+      fire(:)    = .FALSE.
+      harvest(:) = .FALSE.
+      IF (ilanduse.EQ.1) THEN
+* Use landuse defined in input file.
+        CALL LANDUSE1(luse,fire,harvest,yr0a,yrfa,year0set,spinl)
+      ENDIF
+      IF ((ilanduse.LT.0).OR.(ilanduse.GT.6)) THEN
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'No landuse defined'
+        WRITE(*,*) '0:= Defined from a map.'
+        WRITE(*,*) '1:= Defined in the input file.'
+        WRITE(*,*) '2:= Natural vegetation.'
+        WRITE(*,*) '3:= Defined from the maps in states2b.nc file.'
+        WRITE(*,*) '4:= Defined from the maps in transitions2b.nc file.'
+        WRITE(*,*)
+     & '5:= Defined from the 1st-yr maps in states2b.nc file.'
+        WRITE(*,*)
+     & '6:= Defined from the 1st-yr maps in transitions2b.nc file.'
+        STOP
+      ENDIF
+
+*----------------------------------------------------------------------*
+* Read in type of prescribed fire: 1 = not prescribed;                 *
+* 2  = burned-area is prescribed, preindustrial cycling for all time   * 
+* 3  = burned-area is prescribed, preindustrial cycling before 1901    * 
+*----------------------------------------------------------------------*
+      READ(98,'(1000a)') st1
+
+      ii = n_fields(st1)
+      IF (ii.EQ.3) THEN
+        !read in ifire 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  ifire  = i
+        !read start year of extraction from fire database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  SYR_FIRE   = i
+        !read number of years of extraction from fire database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  NYR_FIRE   = i
+        IF (ifire.EQ.1) NYR_FIRE = 1 !override number from input.dat if set that way accidently
+        IF (ifire.EQ.2 .OR. ifire.EQ.3) prescr_fire = .TRUE.
+      ELSE IF (ii.EQ.1) THEN
+        READ(st1,*) ifire
+        ifire = 1
+        prescr_fire = .FALSE.
+        SYR_FIRE = -1 !SYR_FIRE and NYR_FIRE not used and not defined here
+        NYR_FIRE = -1
+      ELSE
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'ifire: either 1 or 3 arguments required'
+        STOP
+      ENDIF
+
+      IF ((ifire.LT.1).OR.(ifire.GT.3)) THEN
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'No ifire defined'
+        WRITE(*,*) '1:=Fire burned-area not prescribed.'
+        WRITE(*,*) '2:=Fire burned-area is prescribed (Pre-industrial).'
+        WRITE(*,*) '3:=Fire burned-area is prescribed (1901-2020).'
+        STOP
       ENDIF
 
 
