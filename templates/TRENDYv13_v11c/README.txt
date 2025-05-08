@@ -32,9 +32,8 @@ Notes:
  #  The 2024 copy of the preprocessed data is found here:
     /gws/nopw/j04/nexcs/pmcguire/TRENDYv13/db/clim/global/crujra_2024/30min
  #The preprocessing scripts are found here:
-  cd /gws/nopw/j04/nexcs/pmcguire/TRENDYv10/sdgvm_v8y_debug/reformat/
- # The current preprocessing script for this has a few most-recent versions, i.e.:
-  process_CRUJRAmet_4SDGVM-2_v2b4.R 
+  cd /gws/nopw/j04/nexcs/pmcguire/TRENDYv10/sdgvm_v8y_debug/tools/reformat/
+ # The current preprocessing script for this has the most-recent version, i.e.:
   process_CRUJRAmet_4SDGVM-2_v2c.R 
  #And they can be run with:
   screen
