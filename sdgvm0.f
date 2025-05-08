@@ -432,11 +432,11 @@ C        WRITE(*,*) 'bbbb'
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname)
-      stpname = stpname // 'states2b.nc'
+      stpname = stpname // '/states2b.nc'
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname_t)
-      stpname_t = stpname_t // 'transitions2b.nc'
+      stpname_t = stpname_t // '/transitions2b.nc'
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname_f)
