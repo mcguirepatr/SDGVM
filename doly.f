@@ -8,6 +8,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE DOLYDAY(sla,c3,ftphen,ftagh,ftdth,leafls,stemls,
      &rootls,bbm,bb0,bbmax,bblim,ssm,sss,sslim,lairat,lat,dep,tmp,prc,
+     &wnd,
      &hum,cld,ca,soilc,soiln,minn,s1,s2,s3,s4,sn,lsn,adp,sfc,sw,sswc,
      &awl,kd,kx,daygpp,dayra,rlai,nppstore,nppstorx,nppstor2,maxevap,
      &daysoff,evap,tran,roff,interc,evbs,flow1,flow2,year,mnth,day,pet,
@@ -28,7 +29,8 @@
       REAL*8 oi
       PARAMETER(oi = 21000.0d0)
 *----------------------------------------------------------------------*
-      REAL*8 bb0,bbmax,bblim,sslim,lat,dep,tmp,prc,hum,cld,ca,maxevap
+      REAL*8 bb0,bbmax,bblim,sslim,lat,dep,tmp,prc,wnd
+      REAL*8 hum,cld,ca,maxevap
       REAL*8 lairat,interc,evbs,leafv(3600),stemv(1000),rootv(1000),t
       REAL*8 soilc,soiln,rh,tk,rn,pet,petmm,petv,laimax,q,qdiff
       REAL*8 qdirect,hrs,vpd,canga,lam,rho,s,gam,amx,gsn,dp2,pet2,wtfc
@@ -49,6 +51,7 @@
       REAL*8 rootresp,stemresp
       REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30),cos_zen,kg,can_clump
       REAL*8 ce_maxlight(30,12),ce_ga(30,12),ce_rh(30)
+      REAL*8 z_m,z_om,z_oh,zpdh
       INTEGER leafls,stemls,rootls,bbm,ssm,sss,ftphen,c3,thty_dys,ft
       INTEGER mnth,i,iter,no_day,ndsum(12),lai,day,year,bb,bbgs
       INTEGER ftdth,ss,dsbb,chill,dschill,ncalc_type,read_par,iyear
@@ -60,7 +63,7 @@
       maxlai = 11.9d0
 
 *      print*,rlai,day,mnth
-*      if ((day.eq.1).and.(mnth.eq.1)) print*,tmp,prc,hum,cld
+*      if ((day.eq.1).and.(mnth.eq.1)) print*,tmp,prc,wnd,hum,cld
 
 *----------------------------------------------------------------------*
 * SET parameter for THROUGHFALL.                                       *
@@ -216,15 +219,28 @@ c     &      ,pfd_without_cloud(lat,no_day(year,mnth,day,thty_dys),hrs)
 
 
 *----------------------------------------------------------------------*
-c     canga=k^2 u / (log[(z-d)/z0])^2
+c     canga=k^2 u / (log[(z-d)/z0])^2 !canopy aerodynamic conductance
 c     k=von Karman constant. k=0.41
 c     z=reference height
 c     d=zero plane displacement
 c     z0=roughness length
 
-      windspeed= 5.0d0 ! in m/s
-      canga = 0.168d0*windspeed/log((200.0d0 - 
-     &0.7d0*ht)/(0.1d0*ht))**2
+      !windspeed= 5.0d0 ! in m/s
+      windspeed= wnd ! in m/s !PCM
+C      WRITE(*,*) 'windspeed = ',windspeed
+
+C PCM      canga = 0.168d0*windspeed/log((200.0d0 - 
+C     &0.7d0*ht)/(0.1d0*ht))**2
+
+C PCM  using canga from FAO:
+C     https://www.fao.org/4/X0490E/x0490e06.htm#(bulk)%20surface%20resistance%20(rs)
+      !z_m = measurement height
+      z_m    = 50 !to have a positive argument for log() for the tallest tree (z_m = ht = 50m > zpdh = 0.6667 * 50m) 
+      z_om   = 0.1230 * ht   !Roughness scale for momentum
+      z_oh   = 0.1000 * z_om !Roughness scale for heat & vapor
+      zpdh   = 0.6667 * ht  !Zero-plane displacement height
+      canga = 0.168d0  * windspeed/log((z_m - zpdh)/z_om)/
+     &log((z_m - zpdh)/z_oh)
 
       npp_eff = 0.0d0
       sum = 0.0d0

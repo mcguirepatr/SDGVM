@@ -185,23 +185,24 @@
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLIM(stinput,lat,lon,xlatf,xlatres,xlatresn,xlon0,
-     &xlonres,xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,isite,year0,yearf,
-     &siteno,du,swrv,read_par)
+     &xlonres,xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,xwndv,isite,
+     &year0,yearf,siteno,du,swrv,read_par)
 *----------------------------------------------------------------------*
       REAL*8 lat,lon,xlon0,xlatf,xlatres,xlonres,ans(12)
       REAL*8  xtmpv(500,12,31),xhumv(500,12,31),xprcv(500,12,31) !PCM
-      REAL*8  swrv(500,12,31)
+      REAL*8  swrv(500,12,31),xwndv(500,12,31) !PCM
       INTEGER year,year0,yearf,nrec,ncol,ans2(1000),siteno,i,du
       INTEGER nyears,yr0,mnth,day,isite,yrf,blank,recl1,recl2
       INTEGER no_days
       INTEGER recl3                      !PCM
       INTEGER xlatresn,xlonresn,fno,read_par
       !CHARACTER ii(4),jj(5),fname4*1000 !PCM
-      CHARACTER ii*7,jj*8,fname4*1000 !PCM
+      CHARACTER ii*7,jj*8,fname4*1000,fname5*1000 !PCM
       CHARACTER fname1*1000,fname2*1000,fname3*1000,stinput*1000
       CHARACTER num*15 !PCM
       INTEGER*2 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31) !PCM
-      REAL*8 TMP_MULT,PRC_MULT,HUM_MULT,PRC_MULT1
+      INTEGER*2 wndv(500,12,31) !PCM
+      REAL*8 TMP_MULT,PRC_MULT,HUM_MULT,PRC_MULT1,WND_MULT
 
       IF (du.eq.1) THEN
         !recl1 = 730  !PCM
@@ -258,6 +259,8 @@ C       PCM added trailing '.dat'
      &'/prc_',num
         WRITE(fname4,'(100a)') (stinput(i:i),i=1,blank(stinput)),
      &'/swr_',num
+        WRITE(fname5,'(100a)') (stinput(i:i),i=1,blank(stinput)),
+     &'/wnd_',num
 
 C        write(*,*) 'siteno before mod'
 C        write(*,*) siteno
@@ -272,6 +275,8 @@ C        write(*,*) siteno
 C         OPEN(fno+4,file=fname4,access='direct',recl=recl1, !PCM
 C     &form='unformatted',status='old')                      !PCM
         OPEN(fno+4,file=fname4,access='direct',recl=recl3,   !PCM
+     &form='formatted',status='old')                         !PCM
+        OPEN(fno+5,file=fname5,access='direct',recl=recl3,   !PCM
      &form='formatted',status='old')                         !PCM
 
         IF (du.eq.1) THEN
@@ -289,6 +294,9 @@ C     &form='unformatted',status='old')                      !PCM
      & READ(fno+4,1002,                          !PCM
      & REC=(siteno-1)*nyears+year-year0+1)
      &jj, ((swrv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
+            READ(fno+5,1001,                     !PCM
+     & REC=(siteno-1)*nyears+year-year0+1) jj,
+     &((wndv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
 C            DO mnth=1,12
 C              DO day=1,30
 C                prcv(year-yr0+1,mnth,day) = 
@@ -318,6 +326,9 @@ C            write(*,*) (siteno-1)*nyears+year-year0+1
      &READ(fno+4,1002,                       !PCM
      & REC=(siteno-1)*nyears+year-year0+1)
      &ii, ((swrv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
+            READ(fno+5,1001,                   !PCM
+     & REC=(siteno-1)*nyears+year-year0+1) ii,
+     &((wndv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
 C PCM            DO mnth=1,12
 C PCM              DO day=1,30
 C PCM                prcv(year-yr0+1,mnth,day) = 
@@ -329,6 +340,7 @@ C PCM            ENDDO
         CLOSE(fno+1)
         CLOSE(fno+2)
         CLOSE(fno+3)
+        CLOSE(fno+5)
 
       ENDIF
 
@@ -344,15 +356,16 @@ C PCM            ENDDO
       enddo
 
 C   PCM added the following triple DO loop
-C     PCM : Each of these 3 variables
+C     PCM : Each of these 4 variables
 C           are required to be passed to sdgvm0 in units of
-C           0.01 oC, 0.1 mm, 0.01 % hum
+C           0.01 oC, 0.1 mm, 0.01 % hum, 1 mm/s
 C           They are read as:
-C           0.1 oC, 0.01 mm, 0.1 % hum
+C           0.1 oC, 0.01 mm, 0.1 % hum, 1 m/s
 C     The following scalars convert from read units to sdgvm0 expected units
       TMP_MULT = 10.0                         
       HUM_MULT = 10.0
       PRC_MULT = 1/10.0 
+      WND_MULT = 0.001 
       DO year=year0,yearf
        DO mnth=1,12
         DO day=1,no_days(year,mnth,0)
@@ -360,6 +373,7 @@ C     The following scalars convert from read units to sdgvm0 expected units
           xtmpv(year-yr0+1,mnth,day)= tmpv(year-yr0+1,mnth,day)*TMP_MULT
           xprcv(year-yr0+1,mnth,day)= prcv(year-yr0+1,mnth,day)*PRC_MULT
           xhumv(year-yr0+1,mnth,day)= humv(year-yr0+1,mnth,day)*HUM_MULT
+          xwndv(year-yr0+1,mnth,day)= wndv(year-yr0+1,mnth,day)*HUM_MULT
          ENDIF
         ENDDO
       ENDDO
@@ -389,11 +403,12 @@ C PCM2      WRITE(*,*) '111111111'
 *                          ***********************                     *
 *                                                                      *
 *----------------------------------------------------------------------*
-      SUBROUTINE EX_CLIM_SITE(stinput,yr0,yrf,tmpv,humv,prcv,year0,
+      SUBROUTINE EX_CLIM_SITE(stinput,yr0,yrf,tmpv,humv,prcv,wndv,year0,
      &yearf,swrv,read_par)
 *----------------------------------------------------------------------*
-      REAL*8 tmp,prc,hum,swr,swrv(500,12,31)
+      REAL*8 tmp,prc,hum,swr,swrv(500,12,31),wnd
       REAL*8 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31)
+      REAL*8 wndv(500,12,31)
       INTEGER year,year0,yearf,yr0,mnth,day,yrf,iyear,imnth,iday
       INTEGER blank,no_days,read_par
       CHARACTER stinput*1000
@@ -404,9 +419,9 @@ C PCM2      WRITE(*,*) '111111111'
         DO mnth=1,12
           DO day=1,no_days(year,mnth,0)
             IF(read_par.eq.1) THEN
-              READ(91,*) iyear,imnth,iday,tmp,prc,hum,swr
+              READ(91,*) iyear,imnth,iday,tmp,prc,hum,wnd,swr
             ELSE
-              READ(91,*) iyear,imnth,iday,tmp,prc,hum
+              READ(91,*) iyear,imnth,iday,tmp,prc,hum,wnd
             ENDIF
 
             IF ((iday.NE.day).OR.(imnth.NE.mnth).OR.(iyear.NE.year)) 
@@ -420,6 +435,7 @@ C PCM2      WRITE(*,*) '111111111'
               tmpv(year-yr0+1,mnth,day) = tmp*100.0d0
               prcv(year-yr0+1,mnth,day) = prc*10.0d0
               humv(year-yr0+1,mnth,day) = hum*100.0d0
+              wndv(year-yr0+1,mnth,day) = wnd/1000.0d0
               IF(read_par.eq.1) swrv(year-yr0+1,mnth,day) = swr
             ENDIF
           ENDDO
@@ -437,11 +453,11 @@ C PCM2      WRITE(*,*) '111111111'
 *                          SUBROUTINE EX_CLIM_SITE_MONTH               *
 *                          *****************************               *
 *----------------------------------------------------------------------*
-      SUBROUTINE EX_CLIM_SITE_MONTH(stinput,yr0,yrf,tmpv,humv,prcv,cldv,
-     &year0,yearf)
+      SUBROUTINE EX_CLIM_SITE_MONTH(stinput,yr0,yrf,tmpv,humv,prcv,wndv,
+     &cldv,year0,yearf)
 *----------------------------------------------------------------------*
-      REAL*8 tmp(12),prc(12),hum(12),cld(12),swr(12)
-      REAL*8 swrv(500,12,31),cldv(500,12)
+      REAL*8 tmp(12),prc(12),hum(12),cld(12),swr(12),wnd(12)
+      REAL*8 swrv(500,12,31),cldv(500,12),wndv(500,12,31)
       REAL*8 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31)
       INTEGER year,year0,yearf,yr0,mnth,day,yrf,iyear,imnth,iday
       INTEGER blank,no_days,fno,cld_default,kode,read_par
@@ -468,6 +484,8 @@ C PCM2      WRITE(*,*) '111111111'
         OPEN(fno+5,file=stinput(1:blank(stinput))//'/swr.dat',
      &status='old',iostat=kode)
       ENDIF
+      OPEN(fno+6,file=stinput(1:blank(stinput))//'/wnd.dat',
+     &status='old',iostat=kode)
 
       DO year=year0,yearf
         READ(fno+1,*) iyear,tmp
@@ -475,6 +493,7 @@ C PCM2      WRITE(*,*) '111111111'
         READ(fno+3,*) iyear,hum
         IF (cloud)     READ(fno+4,*) iyear,cld
         IF (read_par.eq.1)  READ(fno+5,*) iyear,cld
+        READ(fno+6,*) iyear,wnd
         IF (iyear.NE.year) THEN
           WRITE(*,'('' PROGRAM TERMINATED'')')
           WRITE(*,*) 'Error in climate data file',year,mnth,day
@@ -492,6 +511,7 @@ C PCM2      WRITE(*,*) '111111111'
               cldv(year-yr0+1,mnth) = cld_default
             ENDIF
             IF (read_par.eq.1) swrv(year-yr0+1,mnth,1) = swr(mnth)
+            wndv(year-yr0+1,mnth,1) = wnd(mnth)
           ENDDO
         ENDIF
 
@@ -502,6 +522,7 @@ C PCM2      WRITE(*,*) '111111111'
       CLOSE(fno+3)
       CLOSE(fno+4)
       CLOSE(fno+5)
+      CLOSE(fno+6)
 
       RETURN
       END
@@ -555,6 +576,7 @@ C PCM2      WRITE(*,*) '111111111'
 *----------------------------------------------------------------------*
       rrow = (latf - lat)/latr
       rcol = (lon - lon0)/lonr
+
 
       ynorm = rrow - real(int(rrow))
       xnorm = rcol - real(int(rcol))
@@ -787,9 +809,11 @@ C PCM2      WRITE(*,*) '111111111'
 
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
+* PCM: offset this by 2 gridcells, since we have a box of 4 x 4        *
 *----------------------------------------------------------------------*
-      rrow = (latf - lat)/latr
-      rcol = (lon - lon0)/lonr
+      rrow = 1.0 + (latf - lat)/latr - 2.0
+      rcol = 1.0 + (lon - lon0)/lonr - 2.0
+
 
       ynorm = rrow - real(int(rrow))
       xnorm = rcol - real(int(rcol))
@@ -1009,80 +1033,148 @@ C PCM2      WRITE(*,*) '111111111'
 *                                                                      *
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLU(fname1,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,NYR_FILE,
+     &SYR_FIRE,NYR_FIRE,prescr_fire,lutab2,pname,pname_t,pname_f,wdg,
+     &cluse2,cluseh,fprob_prescrh,debug)
 *----------------------------------------------------------------------*
+      USE FUNCTIONS_CLU
       INCLUDE 'array_dims.inc'
+      INTEGER, PARAMETER :: NX = 720, NY = 360
+      INTEGER, PARAMETER :: NS = 17
+      INTEGER, PARAMETER :: maxn_at = 7 !max number of aggregrated (functional) types
+      INTEGER :: NYR,SYR,NYR_FILE 
+      INTEGER :: NYR_FIRE,SYR_FIRE 
       REAL*8 lat,lon,lon0,latf,latr,lonr,classprop(255)
       REAL*8 cluse(maxnft,maxyrs),lutab(255,100),ans
       REAL*8 ftprop(maxnft),rrow,rcol,xx(4,4),xnorm,ynorm,co2const
+      REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
+      REAL*8 cluseh(maxn_at,maxyrs)
+      REAL*8 fprob_prescrh(maxyrs,12),fprob_prescr(12)
+      REAL*8 SDGVM_LUC(NYR, NS, 4, 4),xf,x2,xf2,xx2(4,4,maxn_at)
+      REAL*8 SDGVM_LUC2(NYR, maxn_at, maxn_at, 4, 4)
+      REAL*8 SDGVM_LUC2_HARVEST(NYR, maxn_at, 4, 4)
+      REAL*8 SDGVM_LUC_FIRE(NYR_FIRE, 4, 4, 12)
+      REAL*8 agclassprop2(255,255), atprop2(maxn_at,maxn_at)
+      REAL*8 agclassprop(255),atharvest(maxn_at)
       INTEGER i,n_fields,n,j,du,latn,lonn,blank,row,col,recn,k,x,nft,ift
       INTEGER ii,jj,stcmp,indx(4,4),years(1000),nrecl,yr0a,yrfa
-      INTEGER classes(1000),nclasses,kode,spinl,yr_offset
-      INTEGER ij,ij1,j1
+      INTEGER classes(1000),nclasses,kode,spinl,yr_offset,yr_offset_fire
+      INTEGER ij,ij1,j1,num_land,years_fire(1000)
+      INTEGER ilanduse,k2,k3,agclasses(1000),indx2(4,4,maxn_at)
+      INTEGER iat2,iat3
+      INTEGER n_fire,j_fire,j1_fire,mm,years_NYR_FILE
+      REAL*8 lutab2(255,100) 
       CHARACTER fname1*1000,st1*1000,st2*1000,in2st*1000,st3*1000
+      CHARACTER pname*1000,pname_t*1000,wdg*1000,pname_f*1000
       CHARACTER st4*4000
       INTEGER n_fields4000
-      LOGICAL l_lu,year0set
+      LOGICAL l_lu,year0set,prescr_fire
+      LOGICAL compute_next_year,get_transitions,mindx(4,4)
+      LOGICAL do_fire_interp
+      LOGICAL :: debug !used to print out more debugging info
 
+
+      IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM Use states2b.nc or transitions2b.nc file: half-res
+       !PCM hardwire these numbers for now
+        latf = 89.75
+        lon0 = -179.75
+        latr = 0.5
+        lonr = 0.5
+        latn = 360
+        lonn = 720
+        n    = NYR 
+        years(1:n) = (/(i, i=SYR,SYR+n-1)/)
+        years_NYR_FILE = SYR + NYR_FILE - 1
+!        write(*,*)'SYR,years(1)=',SYR,years(1)
+!        if(prescr_fire .EQV. .TRUE.) THEN
+        n_fire = NYR_FIRE !1901-2020=120
+        !write(*,*)'NYR_FIRE=',n_fire
+        years_fire(1:n_fire) = (/(i, i=SYR_FIRE,SYR_FIRE+n_fire-1)/)
+!        END IF
+        nclasses   = NS 
+        classes(1:nclasses) = (/(i, i=1,nclasses)/)
+        agclasses(1:maxn_at) = (/(i, i=1,maxn_at)/)
+      ELSEIF(ilanduse.EQ.0) THEN !PCM original method of using SDGVM land use 
 *----------------------------------------------------------------------*
 * Read in the readme file 'readme.dat'.                                *
 *----------------------------------------------------------------------*
-      OPEN(99,FILE=fname1(1:blank(fname1))//'/readme.dat',status='old',
-     &iostat=kode)
-      IF (kode.NE.0) THEN
-        WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'Land use file does not exist.'
-        WRITE(*,'('' "'',A,''/readme.dat"'')') fname1(1:blank(fname1))
-        STOP
-      ENDIF
+        OPEN(99,FILE=fname1(1:blank(fname1))//'/readme.dat',
+     &   status='old',iostat=kode)
+        IF (kode.NE.0) THEN
+          WRITE(*,'('' PROGRAM TERMINATED'')')
+          WRITE(*,*) 'Land use file does not exist.'
+          WRITE(*,'('' "'',A,''/readme.dat"'')') fname1(1:blank(fname1))
+          STOP
+        ENDIF
 
-      READ(99,*) st1
-      st2='CONTINUOUS'
-      IF (stcmp(st1,st2).EQ.0) THEN
-        WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'landuse is not a continuous field ?'
-        WRITE(*,*) 'readme.dat should begin with CONTINUOUS'
-        STOP
-      ENDIF
-      READ(99,*)
-      READ(99,*) latf,lon0
-      READ(99,*)
-      READ(99,*) latr,lonr
-      READ(99,*)
-      READ(99,*) latn,lonn
-      READ(99,*)
-      READ(99,'(A)') st4
-      n = n_fields4000(st4)
-      CALL ST2ARR4000(st4,years,1000,n)
-      READ(99,*)
-      READ(99,'(A)') st1
-      CLOSE(99)
-      nclasses = n_fields(st1)
-      CALL ST2ARR(st1,classes,1000,nclasses)
+        READ(99,*) st1
+        st2='CONTINUOUS'
+        IF (stcmp(st1,st2).EQ.0) THEN
+          WRITE(*,'('' PROGRAM TERMINATED'')')
+          WRITE(*,*) 'landuse is not a continuous field ?'
+          WRITE(*,*) 'readme.dat should begin with CONTINUOUS'
+          STOP
+        ENDIF
+        READ(99,*)
+        READ(99,*) latf,lon0
+        READ(99,*)
+        READ(99,*) latr,lonr
+        READ(99,*)
+        READ(99,*) latn,lonn
+        READ(99,*)
+        READ(99,'(A)') st4
+        n = n_fields4000(st4)
+        CALL ST2ARR4000(st4,years,1000,n)
+        READ(99,*)
+        READ(99,'(A)') st1
+        CLOSE(99)
+        nclasses = n_fields(st1)
+        CALL ST2ARR(st1,classes,1000,nclasses)
 *----------------------------------------------------------------------*
 
-      IF (du.eq.1) THEN
-        nrecl = 3
-      ELSE
-        nrecl = 4
-      ENDIF
+        IF (du.eq.1) THEN
+          nrecl = 3
+        ELSE
+          nrecl = 4
+        ENDIF
+      ENDIF !PCM 
 
       yr_offset = 0 
       IF ((n.GT.1).AND.(yr0a.LT.years(1))) THEN
-        WRITE(*,*) 'Cannot start running in year',yr0a,
-     &' since landuse map begins in ',years(1)
-        WRITE(*,*) 'The first year of land use data
-     &will be used and the first year of CO2 data will be used in',yr0a,
-     &'. This has the potential to uncouple the land use year from the
-     &CO2 year if their datasets start in different years.' 
-        WRITE(*,*) 'If this message is telling you that
+          WRITE(*,*) 'Cannot start running in year',yr0a,
+     &      ' since landuse map begins in ',years(1)
+          WRITE(*,*) 'The first year of land use data
+     &will be used and the first year of CO2 data will be used in',
+     & yr0a,'. This has the potential to uncouple the land use year
+     &from the CO2 year if their datasets start in different years.' 
+          WRITE(*,*) 'If this message is telling you that
      &the simulation was requested to start in year 1, then
      &you have requested a spin only with co2const < 0.'
-        WRITE(*,*) 'Alternatively you have requested a spin and a run
+          WRITE(*,*) 'Alternatively you have requested a spin and a run
      &proper and land use and CO2 will be out of sync with climate.'  
-        yr_offset = years(1) - yr0a 
-        !STOP
+          yr_offset = years(1) - yr0a 
+          !STOP
       ENDIF
+
+
+      yr_offset_fire = 0 
+!      IF ((n_fire.GT.1).AND.(yr0a.LT.years_fire(1))) THEN
+!          WRITE(*,*) 'Cannot start running in year',yr0a,
+!     &      ' since prescribed fire map begins in ',years_fire(1)
+!          WRITE(*,*) 'The first year of prescribed fire data
+!     &will be used and the first year of CO2 data will be used in',
+!     & yr0a,'. This has the potential to uncouple the prescribed-fire
+!     & year from the CO2 year if their datasets start in different
+!     & years.' 
+!          WRITE(*,*) 'If this message is telling you that
+!     &the simulation was requested to start in year 1, then
+!     &you have requested a spin only with co2const < 0.'
+!          WRITE(*,*) 'Alternatively you have requested a spin and a run
+!     &proper and prescribed fire and CO2 will be out of sync
+!     &with climate.'  
+!          yr_offset_fire = years_fire(1) - yr0a 
+!          !STOP
+!      ENDIF
 
 c     look for the first year
       ! Currently this selects the starting landuse of the simulation to be the landuse specified in the 
@@ -1096,92 +1188,439 @@ c     look for the first year
       ! co2const > 0, that landuse data is taken only from the range of run proper years even if land use 
       ! data are available for the effective spin years. 
       ! This also applies to land-use specified in the input.dat file.
- 
+   
       j=1
- 10   CONTINUE
+
+   10 CONTINUE
       IF ((j.LT.n).AND.(years(j)-yr_offset.LT.yr0a)) THEN
          j = j + 1
          GOTO 10
       ENDIF
       j1 = j
 
-      !print*, 'start year:', years(j)
+      j_fire=1
+   20 CONTINUE
+      IF(prescr_fire .EQV. .TRUE.) THEN
+        IF ((j_fire.LT.n_fire)
+     & .AND.(years_fire(j_fire)-yr_offset_fire.LT.yr0a)) THEN
+         j_fire = j_fire + 1
+         GOTO 20 
+        ENDIF
+      END IF
+      j1_fire = j_fire
+
+!      print*, 'EX_CLU:before_loop'
+!      print*, 'j,n:', j,n
+!      print*, 'start year:', years(j)
+!      print*, 'year 2:', years(j+1)
+!      print*, 'year n:', years(n)
+!      print*, 'j_fire,n_fire:', j_fire,n_fire
+!      print*, 'fire start year:', years_fire(j_fire)
+!      print*, 'fire year 2:', years_fire(j_fire+1)
+!      print*, 'fire year n_fire:', years_fire(n_fire)
 *----------------------------------------------------------------------*
 * Find the real row col corresponding to lat and lon.                  *
+* PCM: offset this by 2 gridcells, since we have a box of 4 x 4        *
 *----------------------------------------------------------------------*
-      rrow = (latf - lat)/latr
-      rcol = (lon - lon0)/lonr
+      rrow = 1.0 + (latf - lat)/latr - 2.0
+      rcol = 1.0 + (lon - lon0)/lonr - 2.0
 
       ynorm = rrow - real(int(rrow))
       xnorm = rcol - real(int(rcol))
 *----------------------------------------------------------------------*
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT *,rrow,rcol,lat,lon
+      ENDIF
+
+      IF(ilanduse.GE.3 .and. ilanduse.LE.6 ) THEN
+CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
+CPCM get_transitions==.true. : compute transitions
+         IF(ilanduse.EQ.3 .or. ilanduse.EQ.5 ) THEN
+           compute_next_year = .false.
+           get_transitions = .true. !PCM for now
+         ELSE IF(ilanduse.EQ.4 .or. ilanduse.EQ.6 ) THEN
+           !compute_next_year = .true. !for testing: add transitions to states; PCM
+           compute_next_year = .false. 
+           get_transitions = .true.
+         ENDIF
+         ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
+         ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
+         !write(*,*)'BEFORE STATES, years(1)=',years(1)
+         CALL states_convertSDGVM_func(
+     &     years(1),years(n),years_NYR_FILE,
+     &     years_fire(1),years_fire(n_fire),
+     &     INT(rcol),INT(rrow),4, ! with the definition of rcol, rcol+2 starts at 1 for lon==lon0
+     &     get_transitions,compute_next_year,prescr_fire, 
+     &     pname,pname_t,pname_f,wdg,
+     &     SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST,SDGVM_LUC_FIRE,
+     &     debug)  
+        ! WRITE(*,*)'EX_CLU: after states_convertSDGVM_func'
+        ! write(*,FMT="(A)") "EX_CLU:SDGVM_LUC2_FIRE"
+        ! DO jj=1,n_fire
+        !   write(*,FMT="(12F7.4)") SDGVM_LUC_FIRE(jj,3,3,:)
+        ! END DO
+         IF(debug .EQV. .TRUE.) THEN
+           WRITE(*,*)
+     &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
+     &'Shrup    C3p      C4p      C3crop   C4crop   ',
+     &'Ev_Bs    Dc_Bs    Ev_Ns    Dc_Ns    Shrus    C3s    C4s'
+         ENDIF
+      ELSE
+         SDGVM_LUC=0.0
+         SDGVM_LUC2=0.0
+         SDGVM_LUC2_HARVEST=0.0
+         SDGVM_LUC_FIRE=0.0
+         IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,*)
+     &'    t   BARE     Ev_Bl    Dc_Bl    Ev_Nl    Dc_Nl    ',
+     &'Shrub    C3       C4       C3crop   C4crop   '
+         ENDIF
+      ENDIF
+      IF(debug .EQV. .TRUE.) THEN
+        write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,3,3)
+      ENDIF
+
+      l_lu = .TRUE.
+!      IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
+      IF (ALL(ABS(SDGVM_LUC(:,:,3:4,3:4)).GT.200.0)) THEN
+!        WRITE(*,*)'SDGVM_LUC: l_lu=.FALSE.'
+        l_lu = .FALSE.
+        RETURN
+      ENDIF
+
+!     check for all but the last year, since it may not be valid for the
+!     last year
+!      IF (ANY(ABS(SDGVM_LUC2(1:NYR-1,:,:,3,3)).GT.200.0)) THEN
+      IF (NYR.GT.1) THEN
+       IF (ALL(ABS(SDGVM_LUC2(1:NYR-1,:,:,3:4,3:4)).GT.200.0)) THEN 
+!        WRITE(*,*)'SDGVM_LUC2: l_lu=.FALSE.'
+        l_lu = .FALSE.
+        RETURN
+       ENDIF
+      ENDIF
+
+      IF ((prescr_fire .EQV. .TRUE.) .AND.
+     &   (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4,1:12)).GT.200.0)) ) THEN
+!        WRITE(*,*)'SDGVM_LUC_FIRE: l_lu=.FALSE.'
+        l_lu = .FALSE.
+        RETURN
+      ENDIF
+
+      IF (prescr_fire .EQV. .TRUE. ) THEN !PCM
+       DO i=1,yrfa-yr0a+1
+!       DO i=1,yrfa-yr0a+1
+!!        print*, yr0a,yrfa 
+!!        print*, j, years(j), i, years(j) - yr_offset,i+yr0a-1
+!        IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
+!          WRITE(*,*)'j_fire,n_fire',
+!     &                 j_fire,n_fire
+          IF(j_fire.LE.n_fire) THEN
+              j_fire=j_fire+1
+          ELSE
+              j_fire=2 !first time in loop j_fire-1 = 1
+          END IF
+
+!          WRITE(*,*)'EX_CLU:before_AVE4,j_fire=',j_fire
+          fprob_prescr(1:12) = 0.0d0
+          DO mm=1,12
+              DO ii=1,4
+                DO jj=1,4
+                  row = int(rrow)+jj-1
+                  col = int(rcol)+ii-1
+                  !PCM: currently, there is no wrapping at longitude of date-line
+                  !for the 4x4 interpolation
+                  IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
+     &               (col.LE.lonn)) THEN
+                    xf = SDGVM_LUC_FIRE(j_fire-1, ii, jj, mm) !for j_fire=1, years(j)=1901
+!                    xf = SDGVM_LUC_FIRE(j_fire-1, 3, 3, mm) !for j_fire=1, years(j)=1901
+                    xx(ii,jj) = xf 
+                    x = INT(xf) !need this for indx and mindx masking, below
+                    IF (x.LT.2 .AND. x.GE.0) THEN
+                      indx(ii,jj) = 1
+                      mindx(ii,jj) = .true. 
+                    ELSE
+                      indx(ii,jj) = 0
+                      mindx(ii,jj) = .false. 
+                    ENDIF
+                  ELSE
+                    indx(ii,jj) = -1
+                    mindx(ii,jj) = .false. 
+                  ENDIF
+                ENDDO
+              ENDDO
+
+              num_land = COUNT( mindx .EQV. .true.)
+              !print*, num_land,mm
+              
+              CALL AVE4(xx,indx,xnorm,ynorm,ans)
+
+              x = int(ans+0.5d0)
+
+              fprob_prescr(mm) = ans !should be between 0 & 1
+              !fprob_prescr(mm) = xf !should be between 0 & 1
+          END DO
+!          WRITE(*,'(A)')'EX_CLU:after_AVE4'
+!          WRITE(*,'(12F7.4)')fprob_prescr
+          fprob_prescrh(j_fire-1,1:12) = fprob_prescr(1:12)
+
+!        ENDIF ! finished reading
+       ENDDO !year loop #1
+
+      END IF ! end of prescr_fire 
+
 
       DO i=1,yrfa-yr0a+1
+!        print*, yr0a,yrfa 
+!        print*, j, years(j), i, years(j) - yr_offset,i+yr0a-1
         IF ((i.EQ.1).OR.((i+yr0a-1).EQ.years(j)-yr_offset)) THEN
-          !print*, j, years(j), i, years(j) - yr_offset
+
           st2=in2st(years(j))
           CALL STRIPB(st2)
           !print*, st2(1:4) 
           j=j+1
+          
+
+          IF((MOD(years(j-1)-years(1),20)==0).AND.
+     & (debug.EQV..TRUE.))THEN 
+            WRITE(*,FMT='(A1)', ADVANCE='no') 'D' 
+
+            IF(compute_next_year) THEN
+               WRITE(*,FMT='(I5)', ADVANCE='no') years(j-1)+1
+            ELSE
+               WRITE(*,FMT='(I5)', ADVANCE='no') years(j-1) 
+            END IF
+          ENDIF
+
 
           DO k=1,nclasses
             classprop(classes(k)) = 0
-
             st3=in2st(classes(k))
             CALL STRIPB(st3)
-            OPEN(99,FILE=fname1(1:blank(fname1))//'/cont_lu-'//st3(1:bla
-     &nk(st3))//'-'//st2(1:4)//'.dat',STATUS='old',FORM='formatted',
-     &ACCESS='direct',RECL=nrecl,iostat=kode)
-            IF (kode.NE.0) THEN
-              WRITE(*,'('' PROGRAM TERMINATED'')')
-              WRITE(*,*) 'Land Use data-base.'
-              WRITE(*,*) 'File does not exist:'
-              WRITE(*,*) fname1(1:blank(fname1)),
-     &'/cont_lu-',st3(1:blank(st3)),'-',st2(1:4),'.dat'
-              STOP
-            ENDIF
-
+            IF(ilanduse.EQ.0) THEN !PCM
+C PCM: st2 is the year st3 is the class, ranging from 1 to NS (NS=10)
+              OPEN(99,FILE=fname1(1:blank(fname1))//'/cont_lu-'//
+     &st3(1:blank(st3))//'-'//st2(1:4)//'.dat',STATUS='old',
+     &         FORM='formatted',ACCESS='direct',RECL=nrecl,iostat=kode)
+              IF (kode.NE.0) THEN
+                WRITE(*,'('' PROGRAM TERMINATED'')')
+                WRITE(*,*) 'Land Use data-base.'
+                WRITE(*,*) 'File does not exist:'
+                WRITE(*,*) fname1(1:blank(fname1)),
+     &          '/cont_lu-',st3(1:blank(st3)),'-',st2(1:4),'.dat'
+                STOP
+              ENDIF
+            ENDIF !PCM 
 
             DO ii=1,4
-              DO jj=1,4
-                row = int(rrow)+jj-1
-                col = int(rcol)+ii-1
-                IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
-     &(col.LE.lonn)) THEN
-                  recn = (row-1)*lonn + col
-                  READ(99,'(i3)',REC=recn) x
-                  xx(ii,jj) = real(x)
-                  IF (x.LT.200) THEN
-                    indx(ii,jj) = 1
+                DO jj=1,4
+                  row = int(rrow)+jj-1
+                  col = int(rcol)+ii-1
+                  !PCM: currently, there is no wrapping at longitude of date-line
+                  !for the 4x4 interpolation
+                  IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
+     &               (col.LE.lonn)) THEN
+                    recn = (row-1)*lonn + col
+                    IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
+                      xf = SDGVM_LUC(j-1, classes(k), ii, jj) !for j=1, years(j)=1700
+                      xx(ii,jj) = xf 
+                      x = INT(xf) !need this for indx and mindx masking, below
+                    ELSEIF(ilanduse.EQ.0) THEN !PCM
+                      READ(99,'(i3)',REC=recn) x
+                      xx(ii,jj) = real(x) !convert from integer
+                    ENDIF
+                    IF (x.LT.200) THEN
+                      indx(ii,jj) = 1
+                      mindx(ii,jj) = .true. 
+                    ELSE
+                      indx(ii,jj) = 0
+                      mindx(ii,jj) = .false. 
+                    ENDIF
                   ELSE
-                    indx(ii,jj) = 0
+                    indx(ii,jj) = -1
+                    mindx(ii,jj) = .false. 
                   ENDIF
-                ELSE
-                  indx(ii,jj) = -1
-                ENDIF
-              ENDDO
+                ENDDO
             ENDDO
 
-            CALL BI_LIN(xx,indx,xnorm,ynorm,ans)
+            num_land = COUNT( mindx .EQV. .true.)
+
+C            IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+C              if(num_land .GT. 0) THEN
+C                WRITE(*,FMT='(F9.4)',ADVANCE='no') 
+C     &                 SUM(xx,mindx)/100.0/num_land 
+CC                WRITE(*,FMT='(F9.4)',ADVANCE='no') xx(1,1)/100.0 
+C              ELSE
+CC                WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00 
+C              ENDIF
+C            ENDIF
+
+
+            CALL AVE4(xx,indx,xnorm,ynorm,ans)
 
             x = int(ans+0.5d0)
 
             classprop(classes(k)) = ans
-            CLOSE(99)
+
+            IF((MOD(years(j-1)-years(1),20)==0)
+     &           .AND.(debug.EQV..TRUE.))THEN 
+              if(num_land .GT. 0) THEN
+                WRITE(*,FMT='(F9.4)',ADVANCE='no') 
+     &                 ans 
+              ELSE
+                WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00 
+              ENDIF
+            ENDIF
+
+            IF(ilanduse.EQ.0) THEN !PCM
+              CLOSE(99)
+            ENDIF !PCM 
+
 
           ENDDO ! end of loop over the classes
+
+          IF((MOD(years(j-1)-years(1),20)==0)
+     &                   .AND.(debug.EQV..TRUE.))THEN 
+              WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+          ENDIF
+
+
+
+          IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
+           DO k3=1,maxn_at
+            DO k2=1,maxn_at
+              agclassprop2(agclasses(k3),agclasses(k2)) = 0
+            ENDDO
+
+            DO ii=1,4
+                DO jj=1,4
+                  row = int(rrow)+jj-1
+                  col = int(rcol)+ii-1
+                  !PCM: currently, there is no wrapping at longitude of date-line
+                  !for the 4x4 interpolation
+                  IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
+     &               (col.LE.lonn)) THEN
+                    DO k2=1,maxn_at
+                       xf2 = SDGVM_LUC2(j-1,
+     &                   agclasses(k3),agclasses(k2),ii, jj) !for j=1, years(j)=1700
+                       xx2(ii,jj,k2) = xf2 
+                       IF (xf2.LT.200) THEN
+                         indx2(ii,jj,k2) = 1
+                       ELSE
+                         indx2(ii,jj,k2) = 0
+                       ENDIF
+                       !IF(debug)THEN
+                       !  WRITE(*,*) 'LUC2',ii,jj,xf2,indx2(ii,jj,k2)
+                       !ENDIF
+                    ENDDO
+                  ELSE
+                    indx2(ii,jj,:) = -1
+                  ENDIF
+                ENDDO
+            ENDDO
+
+
+
+
+            DO k2=1,maxn_at
+
+C               IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+C
+C                 if(num_land .GT. 0) THEN
+C                   WRITE(*,FMT='(F9.4)',ADVANCE='no') 
+C     &                 SUM(xx2(:,:,k2),mindx)/100.0/num_land 
+C                 ELSE
+C                   WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00 
+C                 ENDIF
+C               ENDIF
+
+               CALL AVE4(xx2(:,:,k2),indx2(:,:,k2),xnorm,ynorm,ans)
+               x2 = int(ans+0.5d0)
+               agclassprop2(agclasses(k3),agclasses(k2)) = ans
+C               print *,'DD1',k3,k2,agclasses(k3),agclasses(k2),
+C     &agclassprop2(agclasses(k3),agclasses(k2))
+            ENDDO
+
+C            IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
+C              WRITE(*,*) ! Assumes default "ADVANCE='yes'".
+C            ENDIF
+           ENDDO ! end of k3 loop over the agclasses
+          END IF
+
+          IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
+            DO k3=1,maxn_at
+              agclassprop(agclasses(k3)) = 0
+
+              DO ii=1,4
+                DO jj=1,4
+                  row = int(rrow)+jj-1
+                  col = int(rcol)+ii-1
+                  !PCM: currently, there is no wrapping at longitude of date-line
+                  !for the 4x4 interpolation
+                  IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
+     &               (col.LE.lonn)) THEN
+                     xf = SDGVM_LUC2_HARVEST(j-1,
+     &                 agclasses(k3),ii, jj) !for j=1, years(j)=1700
+                     xx(ii,jj) = xf
+                     IF (xf.LT.200) THEN
+                       indx(ii,jj) = 1
+                     ELSE
+                       indx(ii,jj) = 0
+                     ENDIF
+                  ELSE
+                    indx(ii,jj) = -1
+                  ENDIF
+                ENDDO
+              ENDDO
+
+
+              CALL AVE4(xx(:,:),indx(:,:),xnorm,ynorm,ans)
+              x = int(ans+0.5d0)
+              agclassprop(agclasses(k3)) = ans
+
+           ENDDO ! end of k3 loop over the agclasses
+          END IF
+
 
 c
 c Now calculate the ftprop.
 c
+C PCM classprop is the percentage of each class in that gridcell, after
+C     interpolation in the BI_LIN step above 
+C PCM lutab(classes(k),ift) is the percentage of the SDGVM
+C     land-cover-class that is of the labelled SDGVM ift
+C PCM agclassprop2(cl3,cl2) is the percentage of each aggregated Hyde class transitioning
+C     from agclass cl3 to agclass cl2 in that gridcell, after
+C interpolation in the BI_LIN step above 
           DO ift=2,nft
             ftprop(ift)=0.0d0
             DO k=1,nclasses
               ftprop(ift)=ftprop(ift)+lutab(classes(k),ift)*
      &classprop(classes(k))/100.0d0
-*              print*,ift,k,x,lutab(classes(k),ift),classes(k)
+              !print*,'AA',ift,k,x,lutab(classes(k),ift),classes(k)
             ENDDO
           ENDDO
+
+          IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
+           atprop2(:,:) = agclassprop2(1:maxn_at,1:maxn_at) !PCM: kluge: assumes lutab2(iat3,iat3) = 100.0
+           atharvest(:) = agclassprop(1:maxn_at) !PCM: kluge: assumes lutab2(iat3,iat3) = 100.0
+!PCM: try simplified version above, first; comment out these lines
+!           DO iat3=1,maxn_at
+!           DO iat2=1,maxn_at
+!            atprop2(iat3,iat2)=0.0d0
+!            DO k3=1,maxn_at
+!             DO k2=1,maxn_at
+!              atprop2(iat3,iat2)=atprop2(iat3,iat2)+
+!     &lutab2(agclasses(k3),iat3)*
+!     &agclassprop2(agclasses(k3),agclasses(k2))/100.0d0
+!             print *,'DD2',iat3,iat2,k3,k2,lutab2(agclasses(k3),iat3),
+!     &agclasses(k3),
+!     &agclassprop2(agclasses(k3),agclasses(k2)),atprop2(iat3,iat2)
+!             ENDDO
+!            ENDDO
+!           ENDDO
+!           ENDDO
+          ENDIF
+
 c
 c Calculate the bare soil.
 c
@@ -1198,45 +1637,152 @@ c
         DO ift=1,nft
           cluse(ift,i) = ftprop(ift)
         ENDDO
-        !write(*,'(I4,12F8.2)') yr0a+i-1, cluse(1:12,i)  
-      ENDDO
+
+        IF(ilanduse.GE.3 .and. ilanduse.LE.6 ) THEN
+!         IF( MOD(yr0a+i-2,20) == 0 ) THEN 
+!          WRITE(*,*)
+!     &'   t    BARE    CITY     C3p     C4p  C3crop  C4crop',
+!     &'     C3s     C4s   Ev_Bp   Ev_Np   Dc_Bp   Dc_Np',
+!     &'   Ev_Bs   Ev_Ns   Dc_Bs   Dc_Ns'
+!         ENDIF
+!         write(*,'(I4,16F8.2)') yr0a+i-1, cluse(1:16,i)  
+        ELSE
+         IF(debug .EQV. .True.) THEN
+          IF( MOD(yr0a+i-2,20) == 0 ) THEN 
+           WRITE(*,*)
+     &'   t    BARE    CITY      C3      C4  C3crop  C4crop',
+     &'   Ev_Bl   Ev_Nl   Dc_Bl   Dc_Nl'
+          ENDIF
+          write(*,'(I4,10F8.2)') yr0a+i-1, cluse(1:10,i)  
+         ENDIF
+        ENDIF
+
+        IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
+         DO iat3=1,maxn_at
+          cluseh(iat3,i)       = atharvest(iat3)
+          DO iat2=1,maxn_at
+           cluse2(iat3,iat2,i) = atprop2(iat3,iat2)
+          ENDDO
+         ENDDO
+        ENDIF
+      ENDDO !year loop #2
+
+!      IF(prescr_fire .EQV. .TRUE.) THEN
+!          WRITE(*,'(A,I3)')'EX_CLU:After year loop, fprob_prescrh'
+!          DO jj=1,n_fire
+!            WRITE(*,'(12F7.4)')fprob_prescrh(jj,1:12)
+!          END DO
+!      END IF
 
 
       ! TRENDY SDGVM method 
       !- assumes linear interpolation of land-use between years
       !specified in input dataset
       IF ((n-j1+1).ne.1) THEN
-        print*, 'Linear interpolation of dynamic Land-Cover fractions'
-        print*, n,j1,n-j1+1
+        IF(debug .EQV. .True.) THEN
+          print*, 'Linear interpolation of dynamic Land-Cover fractions'
+          print*, n,j1,n-j1+1
+        ENDIF
         DO i=1,years(n)-yr0a-yr_offset
           IF ( (i.EQ.1).OR.((i+yr0a-1).EQ.(years(j1)-yr_offset)) ) THEN
-            !print*, j, years(j1), years(j1+1)
+!            print*, j, years(j1), years(j1+1)
             ij  = i
             ij1 = ij + years(j1+1) - years(j1)  
             j1  = j1 + 1
-            !print*, i,j1,ij,ij1
+!            print*, i,j1,ij,ij1
           ELSE
+!            print*, i,j1,ij,ij1,'INTERPOLATING in TIME'
+!       for S3 experiment, it never reaches here
             DO ift=1,nft
               cluse(ift,i) = cluse(ift,ij) + 
-     &( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
-     &(cluse(ift,ij1) - cluse(ift,ij)) )
+     &  ( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
+     &  (cluse(ift,ij1) - cluse(ift,ij)) )
       !       if(ift.eq.10) then
       !        print*, cluse(ift,ij), (cluse(ift,ij1) - cluse(ift,ij)),
       !&cluse(ift,i) 
       !      endif 
             ENDDO
-          ENDIF
           !write(*,'(I4,12F8.2)') yr0a+i-1, cluse(1:12,i)  
+
+            DO iat3=1,maxn_at
+             DO iat2=1,maxn_at
+              cluse2(iat3,iat2,i) = cluse2(iat3,iat2,ij) + 
+     &  ( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
+     &  (cluse2(iat3,iat2,ij1) - cluse2(iat3,iat2,ij)) )
+             ENDDO
+            ENDDO
+
+            DO iat3=1,maxn_at
+              cluseh(iat3,i) = cluseh(iat3,ij) + 
+     &  ( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
+     &  (cluseh(iat3,ij1) - cluseh(iat3,ij)) )
+            ENDDO
+
+          ENDIF
         ENDDO
       ENDIF
 
-
-      IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.
-     &(indx(3,3).EQ.1)) THEN
-        l_lu = .TRUE.
-      ELSE
-        l_lu = .FALSE.
+      do_fire_interp = .false. !this doesn't work now, so turn it off
+      IF (do_fire_interp .and. prescr_fire) THEN
+      ! TRENDY SDGVM method 
+      !- assumes linear interpolation of land-use between years
+      !specified in input dataset
+       IF ((n_fire-j1_fire+1).ne.1) THEN
+        IF(debug .EQV. .True.) THEN
+          print*, 'Linear interpolation of dynamic Land-Cover fractions'
+          print*, n_fire,j1_fire,n_fire-j1_fire+1
+        ENDIF
+        DO i=1,years_fire(n_fire)-yr0a-yr_offset
+          IF ( (i.EQ.1).OR.((i+yr0a-1).EQ.    
+     &          (years_fire(j1_fire)-yr_offset)) ) THEN
+!            print*, j_fire, years(j1_fire), years(j1_fire+1)
+            ij  = i
+            ij1 = ij + years_fire(j1_fire+1) - years_fire(j1_fire)  
+            j1_fire  = j1_fire + 1
+!            print*, i,j1_fire,ij,ij1
+          ELSE
+!              print*, i,j1_fire,ij,ij1,'INTERPOLATING in TIME'
+              fprob_prescrh(i,1:12) = fprob_prescrh(ij,1:12) + 
+     &  ( (real(i)-real(ij))/(real(ij1)-real(ij)) * 
+     &  (fprob_prescrh(ij1,1:12) - fprob_prescrh(ij,1:12)) )
+          ENDIF
+        ENDDO
+       ENDIF
       ENDIF
+
+!      IF(prescr_fire .EQV. .TRUE.) THEN
+!          WRITE(*,'(A,I3)')'EX_CLU:After TRENDY SDGVM method:fprob'
+!          DO jj=1,n_fire
+!            WRITE(*,'(12F7.4)')fprob_prescrh(jj,1:12)
+!          END DO
+!      END IF
+!      WRITE(*,'(A,I3)')'EX_CLU:After TRENDY SDGVM method:cluseh(1)'
+!      DO jj=1,n
+!        WRITE(*,'(F7.4)')cluseh(1,jj)
+!      END DO
+!      WRITE(*,'(A,I3)')'EX_CLU:After TRENDY SDGVM method:cluseh(2)'
+!      DO jj=1,n
+!        WRITE(*,'(F7.4)')cluseh(2,jj)
+!      END DO
+!      WRITE(*,'(A,I3)')'EX_CLU:After TRENDY SDGVM method:cluseh(3)'
+!      DO jj=1,n
+!        WRITE(*,'(F7.4)')cluseh(3,jj)
+!      END DO
+
+
+
+!!old method:
+!!PCM      IF ((indx(2,2).EQ.1).OR.(indx(2,3).EQ.1).OR.(indx(3,2).EQ.1).OR.
+!!PCM     &  (indx(3,3).EQ.1)) THEN
+!!PCM4     IF (indx(3,3).EQ.1) THEN
+!PCM new method:
+!comment this out, since this indx was computed for various time slices 
+!      IF ((indx(3,3).EQ.1).OR.(indx(3,4).EQ.1).OR.(indx(4,3).EQ.1).OR.
+!     &  (indx(4,4).EQ.1)) THEN
+!        l_lu = .TRUE.
+!      ELSE
+!        l_lu = .FALSE.
+!      ENDIF
 
 
       RETURN
@@ -1401,6 +1947,10 @@ c
 *----------------------------------------------------------------------*
       REAL*8 xx(4,4),xnorm,ynorm,ans,av
       INTEGER indx(4,4),iav,ii,jj
+      LOGICAL use_bilinear
+
+!      use_bilinear = .False. !use nearest-neighbor sampling instead
+      use_bilinear = .TRUE. !use nearest-neighbor sampling instead
 
 *----------------------------------------------------------------------*
 * Fill in averages if necessary.                                       *
@@ -1449,6 +1999,7 @@ c
         ENDDO
       ENDDO
 
+      IF( use_bilinear .EQV. .TRUE. ) THEN 
 *----------------------------------------------------------------------*
 * Bilinear interpolation.                                              *
 *----------------------------------------------------------------------*
@@ -1457,11 +2008,128 @@ c
      &        xx(2,3)*(1.0d0-xnorm)*ynorm + 
      &        xx(3,3)*xnorm*ynorm
 
+      ELSE
 *----------------------------------------------------------------------*
-* Nearest pixel.                                                       *
+* Nearest grid cell.                                                   *
 *----------------------------------------------------------------------*
-*        ans = xx(int(xnorm+2.5d0),int(ynorm+2.5d0))
+        !ans = xx(int(xnorm+2.5d0),int(ynorm+2.5d0))
+        ans = xx(3,3)
 *----------------------------------------------------------------------*
+      ENDIF
+
+
+      RETURN
+      END
+
+
+*----------------------------------------------------------------------*
+*                                                                      *
+*                          SUBROUTINE AVE4                             *
+*                          *****************                           *
+*                                                                      *
+* Performs averaging of up to four points,                             *
+* the normalised distances from the point (1,1) are given by 'xnorm'   *
+* and 'ynorm'.                                                         *
+*                                                                      *
+*----------------------------------------------------------------------*
+      SUBROUTINE AVE4(xx,indx,xnorm,ynorm,ans)
+*----------------------------------------------------------------------*
+      REAL*8 xx(4,4),xnorm,ynorm,ans,av,av4
+      INTEGER indx(4,4),iav,ii,jj,iav4
+      LOGICAL use_bilinear
+
+      use_bilinear = .False. !use nearest-neighbor sampling instead
+
+*----------------------------------------------------------------------*
+* Fill in averages if necessary.                                       *
+*----------------------------------------------------------------------*
+!      DO ii=2,3
+!        DO jj=2,3
+!          IF (indx(ii,jj).NE.1) THEN
+!            av = 0.0d0
+!            iav = 0
+!            IF (indx(ii+1,jj).EQ.1) THEN
+!              av = av + xx(ii+1,jj)
+!              iav = iav + 1
+!            ENDIF 
+!            IF (indx(ii-1,jj).EQ.1) THEN
+!              av = av + xx(ii-1,jj)
+!              iav = iav + 1
+!            ENDIF 
+!            IF (indx(ii,jj+1).EQ.1) THEN
+!              av = av + xx(ii,jj+1)
+!              iav = iav + 1
+!            ENDIF 
+!            IF (indx(ii,jj-1).EQ.1) THEN
+!              av = av + xx(ii,jj-1)
+!              iav = iav + 1
+!            ENDIF
+!            IF (indx(ii+1,jj+1).EQ.1) THEN
+!              av = av + xx(ii+1,jj+1)
+!              iav = iav + 1
+!            ENDIF
+!            IF (indx(ii-1,jj-1).EQ.1) THEN
+!              av = av + xx(ii-1,jj-1)
+!              iav = iav + 1
+!            ENDIF
+!            IF (indx(ii+1,jj-1).EQ.1) THEN
+!              av = av + xx(ii+1,jj-1)
+!              iav = iav + 1
+!            ENDIF
+!            IF (indx(ii-1,jj+1).EQ.1) THEN
+!              av = av + xx(ii-1,jj+1)
+!              iav = iav + 1
+!            ENDIF
+!            IF (iav.GT.0) THEN
+!              xx(ii,jj) = av/real(iav)
+!            ENDIF
+!          ENDIF
+!        ENDDO
+!      ENDDO
+!
+      IF( use_bilinear .EQV. .TRUE. ) THEN 
+*----------------------------------------------------------------------*
+* Bilinear interpolation.                                              *
+*----------------------------------------------------------------------*
+        ans = xx(2,2)*(1.0d0-xnorm)*(1.0d0-ynorm) + 
+     &        xx(3,2)*xnorm*(1.0d0-ynorm) + 
+     &        xx(2,3)*(1.0d0-xnorm)*ynorm + 
+     &        xx(3,3)*xnorm*ynorm
+
+      ELSE
+*----------------------------------------------------------------------*
+* Nearest grid cell.                                                   *
+*----------------------------------------------------------------------*
+        !ans = xx(int(xnorm+2.5d0),int(ynorm+2.5d0))
+        !ans = xx(3,3)
+*----------------------------------------------------------------------*
+*----------------------------------------------------------------------*
+* AVE of up to 4 grid cells                                            *
+*----------------------------------------------------------------------*
+         av4 = 0.0d0
+         iav4 = 0
+         IF(indx(3,3).EQ.1) THEN
+            av4 = av4 + xx(3,3)
+            iav4 = iav4 + 1
+         ENDIF
+         IF(indx(3,4).EQ.1) THEN
+            av4 = av4 + xx(3,4)
+            iav4 = iav4 + 1
+         ENDIF
+         IF(indx(4,3).EQ.1) THEN
+            av4 = av4 + xx(4,3)
+            iav4 = iav4 + 1
+         ENDIF
+         IF(indx(4,4).EQ.1) THEN
+            av4 = av4 + xx(4,4)
+            iav4 = iav4 + 1
+         ENDIF
+         IF (iav4.GT.0) THEN
+            ans = av4/real(iav4)
+         ELSE
+            ans = -999.0
+         ENDIF
+      ENDIF
 
 
       RETURN

@@ -27,10 +27,12 @@ date    <- '201128'
 dir     <- '/home/alp/models/SDGVM/'
 rdir    <- 'run'
 edir    <- 'eval_data'
-#date    <- '190816a'
-#dir     <- '/group_workspaces/jasmin2/nexcs/pmcguire/sdgvmR/'
-#rdir    <- 'TRENDY2019_v2'
-#tdir    <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/sdgvm/tools/'
+outputdir <- 'output/'
+#date    <- '230719'
+#dir     <- '/work/scratch-pw2/pmcguire'
+#rdir    <- 'sdgvmR'
+#tdir    <- '/work/scratch-pw2/pmcguire/TRENDYv12/sdgvm/tools'
+#edir    <- 'eval_data'
 
 # project directory
 #project <- 'vcmax'
@@ -166,14 +168,20 @@ vars <- c('npp','gpp','nbp','anlfn','antlfn',
           'evt','trn','scn','sresp','presp',
           'mgresp','lai','anvcmax','anjmax','biot',
           'kg_beta','swr','qtotal','tmp','prc',
-          'swc','field_capacity','wilting_point','cov_C3','cov_C4',
-          'cov_C3crop','cov_C4crop','cov_Dc_Bl','cov_Dc_Nl','cov_Ev_Bl',
-          'cov_Ev_Nl','cov_BARE','fcn','lulccc','fab',
-          'nppstore')
+          'swc','field_capacity','wilting_point','cov_C3p','cov_C4p',
+          'cov_C3s','cov_C4s','cov_Dc_Bs','cov_Dc_Ns','cov_Ev_Bs',
+          'cov_Ev_Ns','cov_C3crop','cov_C4crop','cov_Dc_Bp','cov_Dc_Np',
+          'cov_Ev_Bp','cov_Ev_Np','cov_BARE','fcn','lulccc',
+          'fab','nppstore',
+          'yield','yie_C3p','yie_C4p',
+          'yie_C3s','yie_C4s','yie_Dc_Bs','yie_Dc_Ns','yie_Ev_Bs',
+          'yie_Ev_Ns','yie_C3crop','yie_C4crop','yie_Dc_Bp','yie_Dc_Np',
+          'yie_Ev_Bp','yie_Ev_Np','yie_BARE','rof','nep','leafc')
 
 # land-cover is fixed and so has only a single column in the output file
 #cov_fixed  <- F
 cov_fixed  <- F
+yie_fixed  <- F
 
 # variable index array (which variables to plot, in the order they appear in the 'vars' vector)
 via <- 1:length(vars)
@@ -191,6 +199,7 @@ via <- c(1:3,12,17,19:32,34)
 
 print('',quote=F)
 print('Read command line arguments:',quote=F)
+#print(commandArgs(T),quote=F)
 if(length(commandArgs(T))>=1) {
   for( ca in 1:length(commandArgs(T)) ) {
     eval(parse(text=commandArgs(T)[ca]))
@@ -258,8 +267,8 @@ fnorm <- function(df,norm) {
 ###############################
 ### start program
 
-setwd(paste(dir,'src/sdgvm/tools/',sep='/'))
-#setwd(tdir)
+#setwd(paste(dir,'src/sdgvm/tools/',sep='/'))
+setwd(tdir)
 source('params_map_plot.R')
 source('functions_map_plot.R')
 
@@ -315,7 +324,7 @@ if(!is.null(mask)) {
   print('',quote=F)
   print(paste('read mask:',mask,mask_perc,'perc'),quote=F)
 
-  wdpath  <- paste(dir,rdir,project,sim[sia[1]],'output/',sep='/')
+  wdpath  <- paste(dir,rdir,project,sim[sia[1]],output_dir,sep='/')
 
   if(grepl('crop',mask)) {
     mydata1     <- open('cov_C3crop',c('lat','lon','cov'),wdpath)
@@ -376,7 +385,6 @@ print(length(vars),quote=F)
 for( v in 1:length(vars) ) {
   print('',quote=F)
   print(vars[v],quote=F)
-  
   lab <- get(vars[v])
 
   stripprint <- T 
@@ -386,11 +394,23 @@ for( v in 1:length(vars) ) {
   for(m in sia) {    
     
     #open data 
-    wdpath <- paste(dir,rdir,project,sim[m],'output/',sep='/')
+    wdpath <- paste(dir,rdir,project,sim[m],output_dir,sep='/')
     print(wdpath)
     if(substr(vars[v],1,3)=='cov'&cov_fixed) {
       index  <- 3
       mydata <- open(vars[v],c('lat','lon','cov'),wdpath)
+      rs     <- 1 
+      cs     <- 1
+      stripprint <- F
+    } else if(substr(vars[v],1,5)=='yield'&yie_fixed) {
+      index  <- 3
+      mydata <- open(vars[v],c('lat','lon','yield'),wdpath)
+      rs     <- 1 
+      cs     <- 1
+      stripprint <- F
+    } else if(substr(vars[v],1,3)=='yie'&yie_fixed) {
+      index  <- 3
+      mydata <- open(vars[v],c('lat','lon','yie'),wdpath)
       rs     <- 1 
       cs     <- 1
       stripprint <- F
@@ -419,7 +439,7 @@ for( v in 1:length(vars) ) {
     }
 
     # calculate mean across years
-    if( !(substr(vars[v],1,3)=='cov'&cov_fixed) ) {
+    if( (!(substr(vars[v],1,3)=='cov'&cov_fixed)) & (!(substr(vars[v],1,3)=='yie'&yie_fixed)) ) {
       ym             <- apply(as.matrix(mydata[,(yr_mean[1]-styr+3):(yr_mean[2]-styr+3)]),1,mean)
       ym             <- cbind(mydata[,1:2],ym,sim[m],mean(yr_mean))
       names(ym)[3:5] <- c('plotdata','run','year')
@@ -440,18 +460,22 @@ for( v in 1:length(vars) ) {
       # arrange zonal data
       # - area integrated annual mean values using the year range specified in yr_mean 
       #if(substr(vars[v],1,3)!='cov') {
-      if( !(substr(vars[v],1,3)=='cov'&cov_fixed) ) {
+      if( !(substr(vars[v],1,3)=='cov'&cov_fixed) & !(substr(vars[v],1,3)=='yie'&yie_fixed)  ) {
         print('Make zonal data')
 
         ymai  <- apply(as.matrix(areai[,(yr_mean[1]-styr+1):(yr_mean[2]-styr+1)]),1,mean)
         zmlat <- as.data.frame.table(tapply(ymai,mydata$lat,sum))
         zmlon <- as.data.frame.table(tapply(ymai,mydata$lon,sum))
+        print("zmlat")
+        print(zmlat)
       
         zmlat[,1] <- as.numeric(as.character(zmlat[,1]))
         zmlon[,1] <- as.numeric(as.character(zmlon[,1]))
 
         zonal_lat <- if(m==sia[1]) t(zmlat) else rbind(zonal_lat,zmlat[,2])
         zonal_lon <- if(m==sia[1]) t(zmlon) else rbind(zonal_lon,zmlon[,2])      
+        print("zonal_lat")
+        print(zonal_lat)
      
       } else { 
       
@@ -513,12 +537,13 @@ for( v in 1:length(vars) ) {
     # make dataframe with all simulations
     df      <- if(m==sia[1]) df1 else rbind(df,df1)
     #if(substr(vars[v],1,3)!='cov') mean_df <- if(m==sia[1])  ym else rbind(mean_df,ym)      
-    if( !(substr(vars[v],1,3)=='cov'&cov_fixed) )  mean_df <- if(m==sia[1])  ym else rbind(mean_df,ym)
+    if( !(substr(vars[v],1,3)=='cov'&cov_fixed) & !(substr(vars[v],1,3)=='yie'&yie_fixed) )  mean_df <- if(m==sia[1])  ym else rbind(mean_df,ym)
 
   # end simulations loop 
   }
 
   if(substr(vars[v],1,3)=='cov'&cov_fixed) mean_df <- df
+  if(substr(vars[v],1,3)=='yie'&yie_fixed) mean_df <- df
 
   # prevent global sums and zonal data being over-written when only a single simulation called with eval datasets  
   if(!evalonly) m <- sia[1] + 1  
@@ -827,6 +852,7 @@ for( v in 1:length(vars) ) {
 #    print(tglobsum)
 #    print(col_trend)
 #    print('')
+    if(vars[v]!='nbp') { 
     p2 <-
     xyplot(as.vector(tglobsum)
            ~rep(styr:endyr,nsims),
@@ -840,6 +866,21 @@ for( v in 1:length(vars) ) {
            strip=F,
            key=key.line
            )
+    } else {
+    p2 <-
+    xyplot(as.vector(tglobsum)
+           ~rep(styr:endyr,nsims),
+           groups=(rep(1:nsims,each=lt)),
+           ylim=c(-4.8,5.6),
+           xlab=list('year',cex=labcex*0.35),
+           ylab=list(axis_lab,cex=labcex*0.35),
+           #type='l',lwd=labcex*1.1,lty=lty[sia],col=col_trend[sia],
+           type='l',lwd=labcex*1.1,lty=lty,col=col_trend,
+           scales=list(alternating=F,tck=c(-0.5,0),cex=labcex*0.35),
+           strip=F,
+           key=key.line
+           )
+    }
 
     print('make zonal lat plot')
     p3 <-

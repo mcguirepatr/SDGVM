@@ -67,9 +67,18 @@ sed -i "s@#SIM#@$RUN@"                         submit*.${SDGVM_BATCHPROC}
 sed -i "s/#EMAIL#/$SDGVM_USER_EMAIL/"          submit*.${SDGVM_BATCHPROC}
 sed -i "s@#ACCOUNT#@$SDGVM_USER_ACCOUNT@"      submit*.${SDGVM_BATCHPROC}
 sed -i "s@#QUEUE#@$SDGVM_USER_QUEUE@"          submit*.${SDGVM_BATCHPROC}
-sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION@"  submit*.${SDGVM_BATCHPROC}
-sed -i "s@#NODES#@$SDGVM_NODES@"               submit*.${SDGVM_BATCHPROC}
-sed -i "s@#NP#@$SDGVM_NP@"                     submit*.${SDGVM_BATCHPROC}
+
+sed -i "s@#NODES#@$SDGVM_NODES@"               submit.${SDGVM_BATCHPROC}
+sed -i "s@#WALLTIME#@$SDGVM_WALLTIME@"         submit.${SDGVM_BATCHPROC}
+sed -i "s@#MEMORY#@$SDGVM_MEMORY@"             submit.${SDGVM_BATCHPROC}
+sed -i "s@#NP#@$SDGVM_NP@"                     submit.${SDGVM_BATCHPROC}
+sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION@"  submit.${SDGVM_BATCHPROC}
+
+sed -i "s@#NODES#@$SDGVM_NODES_PP@"            submit_pp.${SDGVM_BATCHPROC}
+sed -i "s@#WALLTIME#@$SDGVM_WALLTIME_PP@"      submit_pp.${SDGVM_BATCHPROC}
+sed -i "s@#MEMORY#@$SDGVM_MEMORY_PP@"          submit_pp.${SDGVM_BATCHPROC}
+sed -i "s@#NP#@$SDGVM_NP_PP@"                  submit_pp.${SDGVM_BATCHPROC}
+sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION_PP@"  submit_pp.${SDGVM_BATCHPROC}
 
 # SDGVM run script (called by submit script)
 sed -i "s@#SITES#@$SDGVM_SITES@"               run_SDGVM.bs
@@ -104,12 +113,15 @@ sed -i "s@#NAME#@$SDGVM_USER_NAME@"               run_postprocessing.bs
 sed -i "s/#EMAIL#/$SDGVM_USER_EMAIL/"             run_postprocessing.bs
 sed -i "s@#INSTITUTION#@$SDGVM_USER_INSTITUTION@" run_postprocessing.bs
 sed -i "s@#TSITES#@$SDGVM_SITES_TOTAL@"           run_postprocessing.bs
+sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION_PP@"  run_postprocessing.bs
 sed -i "s@#NP#@$SDGVM_NP@g"                       run_postprocessing.bs
 sed -i "s@#NY#@$SDGVM_NY@"                        run_postprocessing.bs
 sed -i "s@#OUTNY#@$SDGVM_OUTNY@"                  run_postprocessing.bs
 sed -i "s@#STY#@$SDGVM_SIMSTY@"                   run_postprocessing.bs
 sed -i "s@#OUTSTY#@$SDGVM_OUTSTY@"                run_postprocessing.bs
 sed -i "s@#SPINNY#@$SDGVM_SPINNY@"                run_postprocessing.bs
+sed -i "s@#WALLTIME#@$SDGVM_WALLTIME_PP@"         run_postprocessing.bs
+sed -i "s@#MEMORY#@$SDGVM_MEMORY_PP@"             run_postprocessing.bs
 
 
 

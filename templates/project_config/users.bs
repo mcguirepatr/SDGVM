@@ -26,27 +26,47 @@ if [ $SDGVM_USER == 'ORNL_APW' ]; then
   SDGVM_USER_ACCOUNT="ccsi"                  # user account on scheduling system
   SDGVM_USER_QUEUE=""                        # user queue on scheduling system
   SDGVM_USER_PARTITION="batch"               # user partition on scheduling system
+  SDGVM_WALLTIME="32:00:00"
+  SDGVM_MEMORY="0"
+  SDGVM_USER_PARTITION_PP="batch"
+  SDGVM_WALLTIME_PP="02:00:00"
+  SDGVM_MEMORY_PP="0"
+  SDGVM_NODES="1"
+  SDGVM_NODES_PP="1"
+  SDGVM_NP="32"
+  SDGVM_NP_PP="32"
     
 
 elif [ $SDGVM_USER == 'UR_PCM' ]; then
 
   # SDGVM directory - source code, run directories, input data are all subdirs of SDGVM_HOME
-  SDGVM_HOME="/group_workspaces/jasmin2/nexcs/pmcguire"
+  SDGVM_HOME="/gws/nopw/j04/nexcs/pmcguire"
+  #SDGVM_HOME="/work/scratch-pw3/pmcguire"
 
   # relative to SDGVM_HOME
-  SDGVM_PROJECTS_DIR="/sdgvmR/"
-  SDGVM_DATA="/sdgvmD/data/"
-  SDGVM_MOD="/TRENDYv8/sdgvm/"
+  SDGVM_PROJECTS_DIR="/sdgvmR2"
+  SDGVM_DATA="/TRENDYv12/db"
+  #SDGVM_MOD="/TRENDYv12/sdgvm"
+  SDGVM_MOD="/TRENDYv10/sdgvm_v6n_debug" #copy from v10
 
   # cluster scheduling variables
-  SDGVM_BATCHPROC="bsub"
-  SDGVM_BATCHPROCCOM="bsub < submit.bsub"
+  SDGVM_BATCHPROC="sbatch"
+  SDGVM_BATCHPROCCOM="sbatch submit.sbatch"
   SDGVM_USER_EMAIL="mcguirepatr@gmail.com"
   SDGVM_USER_NAME="Patrick C. McGuire"    
   SDGVM_USER_INSTITUTION="University of Reading"    
   SDGVM_USER_ACCOUNT=""
-  SDGVM_USER_QUEUE="par-multi"
-  SDGVM_USER_PARTITION=""
+  SDGVM_USER_QUEUE=""
+  SDGVM_USER_PARTITION="par-multi"
+  SDGVM_WALLTIME="48:00:00"
+  SDGVM_MEMORY="64000"
+  SDGVM_NODES="8"
+  SDGVM_NP="4"
+  SDGVM_USER_PARTITION_PP="par-single"
+  SDGVM_WALLTIME_PP="08:00:00"
+  SDGVM_MEMORY_PP="64000"
+  SDGVM_NODES_PP="1"
+  SDGVM_NP_PP="8"
 
 else
   echo ""
@@ -73,6 +93,15 @@ export SDGVM_USER_INSTITUTION
 export SDGVM_USER_ACCOUNT
 export SDGVM_USER_QUEUE
 export SDGVM_USER_PARTITION
+export SDGVM_USER_PARTITION_PP
+export SDGVM_WALLTIME
+export SDGVM_WALLTIME_PP
+export SDGVM_MEMORY
+export SDGVM_MEMORY_PP
+export SDGVM_NODES
+export SDGVM_NODES_PP
+export SDGVM_NP
+export SDGVM_NP_PP
 
 
 

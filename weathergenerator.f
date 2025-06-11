@@ -232,8 +232,8 @@ c
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLIM_WEATHER_GENERATOR(stinput,ststats,lat,lon,
      &xlatf,xlatres,xlatresn,xlon0,xlonres,xlonresn,yr0,yrf,tmpv,humv,
-     &prcv,mcldv,isite,year0,yearf,du,seed1,seed2,seed3,l_clim,l_stats,
-     &swrv,read_par)
+     &prcv,wndv,mcldv,isite,year0,yearf,du,seed1,seed2,seed3,
+     &l_clim,l_stats,swrv,read_par)
 
       IMPLICIT NONE
 
@@ -241,12 +241,14 @@ c
       REAL*8 lat,lon,xlon0,xlatf,xlatres,xlonres
 c daily data
       REAL*8 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31)
-      REAL*8 swrv(500,12,31),intercept,slope,swy(30),mswrvcheck(12)      
+      REAL*8 wndv(500,12,31)
+      REAL*8 swrv(500,12,31),intercept,slope,swy(30),mswrvcheck(12)     
 c monthly data m=monthly
       INTEGER*2 mtmpvv(4,4,500,12),mhumvv(4,4,500,12),mprcvv(4,4,500,12)
       INTEGER*2 mcldvv(4,4,500,12),row,col,cld_default,month
+      INTEGER*2 mwndvv(4,4,500,12)
       REAL*8 mtmpv(500,12),mhumv(500,12),mprcv(500,12),mcldv(500,12)
-      REAL*8 mswrvv(4,4,500,12),mswrv(500,12)
+      REAL*8 mswrvv(4,4,500,12),mswrv(500,12),mwndv(500,12)
 c monthly parameter for the weather generator
       REAL*8 mstdtmpv(12),mstdhumv(12),mraindays(12)
 cnthony@anthon function
@@ -268,11 +270,13 @@ c local variables
       INTEGER iter,loop
       INTEGER year,year0,yearf,recn,ans2(1000),siteno(4,4),i,du
       INTEGER nyears,yr0,mnth,day,isite,yrf,blank,recl1,recl2,recl3
+      INTEGER recl1b
       INTEGER xlatresn,xlonresn,fno,nbrain,indx(4,4),ii,jj	
       integer MMI(96),MMN,MMER,read_par
       CHARACTER fname1*1000,fname2*1000,fname3*1000,stinput*1000
       CHARACTER fname4*1000,fname5*1000,fname6*1000,fname7*1000
       CHARACTER fname8*1000                 !added by AntWalker
+      CHARACTER fname9*1000                 !added by PCM 
       CHARACTER ststats*1000, test_chars*100
       LOGICAL l_clim,l_stats
 
@@ -284,10 +288,12 @@ c local variables
 
       IF (du.eq.1) THEN
         recl1 = 4*12
+        recl1b = 6*12
         recl2 = 6*xlonresn
         recl3 = 7*12
       ELSE
         recl1 = 4*12 + 1
+        recl1b = 6*12 + 1
         recl2 = 6*xlonresn + 1
         recl3 = 7*12 + 1
       ENDIF
@@ -373,6 +379,8 @@ c	enddo
      &'/cld.dat'
         WRITE(fname8,'(100a)') (stinput(i:i),i=1,blank(stinput)),   !added by APW
      &'/swr.dat'
+        WRITE(fname9,'(100a)') (stinput(i:i),i=1,blank(stinput)),   !added by PCM 
+     &'/wnd.dat'
 
         WRITE(fname4,'(100a)') (ststats(i:i),i=1,blank(ststats)),
      &'/stdtmp.dat'
@@ -385,7 +393,7 @@ c	enddo
      &form='formatted',status='old',iostat=kode)
         IF (kode.NE.0) THEN
           WRITE(*,*) 'Climate data file does not exist.'
-          WRITE(*,*) 'or record mismatch.'
+          WRITE(*,*) 'or record mismatch, fname1'
           WRITE(*,'(''"'',A,''"'')') fname1(1:blank(fname1))
           STOP
         ENDIF
@@ -394,7 +402,7 @@ c	enddo
      &form='formatted',status='old',iostat=kode)
         IF (kode.NE.0) THEN
           WRITE(*,*) 'Climate data file does not exist.'
-          WRITE(*,*) 'or record mismatch.'
+          WRITE(*,*) 'or record mismatch, fname2'
           WRITE(*,'(''"'',A,''"'')') fname2(1:blank(fname2))
           STOP
         ENDIF
@@ -403,8 +411,17 @@ c	enddo
      &form='formatted',status='old',iostat=kode)
         IF (kode.NE.0) THEN
           WRITE(*,*) 'Climate data file does not exist.'
-          WRITE(*,*) 'or record mismatch.'
+          WRITE(*,*) 'or record mismatch, fname3'
           WRITE(*,'(''"'',A,''"'')') fname3(1:blank(fname3))
+          STOP
+        ENDIF
+
+        OPEN(fno+9,file=fname9,access='direct',recl=recl1b,  !added by PCM
+     &form='formatted',status='old',iostat=kode)
+        IF (kode.NE.0) THEN
+          WRITE(*,*) 'Climate data file does not exist.'
+          WRITE(*,*) 'or record mismatch, fname3'
+          WRITE(*,'(''"'',A,''"'')') fname9(1:blank(fname9))
           STOP
         ENDIF
 
@@ -421,9 +438,9 @@ c	enddo
          OPEN(fno+7,file=fname7,access='direct',recl=recl1,
      &form='formatted',status='old',iostat=kode)
         IF (kode.NE.0) THEN
-          WRITE(*,*) 'No cloud file found using default value'
-          WRITE(*,*) cld_default
-          WRITE(*,'(''"'',A,''"'')') fname7(1:blank(fname7))
+!PCM          WRITE(*,*) 'No cloud file found using default value'
+!PCM          WRITE(*,*) cld_default
+!PCM          WRITE(*,'(''"'',A,''"'')') fname7(1:blank(fname7))
         ENDIF
 
 
@@ -442,7 +459,11 @@ c	enddo
                   IF(read_par.eq.1) 
      &READ(8,'(12f7.2)',REC=(siteno(ii,jj)-1)*
      &nyears + year-year0+1) (mswrvv(ii,jj,year-yr0+1,mnth),mnth=1,12)
-           
+                  !Added by PCM to read windspeed 
+                  READ(fno+9,'(12i6)',REC=(siteno(ii,jj)-1)*nyears+year
+     &-year0+1) (mwndvv(ii,jj,year-yr0+1,mnth),mnth=1,12)
+C                  WRITE(*,*) ii,jj,year,
+C     &(mwndvv(ii,jj,year-yr0+1,mnth),mnth=1,12)
                   IF (kode.EQ.0) THEN
                   READ(fno+7,'(12i4)',REC=(siteno(ii,jj)-1)*nyears+year
      &-year0+1) (mcldvv(ii,jj,year-yr0+1,mnth),mnth=1,12)
@@ -463,6 +484,10 @@ c	enddo
                   IF(read_par.eq.1)
      &READ(8,'(12f7.2)',REC=(siteno(ii,jj)-1)*
      &nyears+year-year0+1) (mswrvv(ii,jj,year-yr0+1,mnth),mnth=1,12)
+                  READ(fno+9,'(12i6)',REC=(siteno(ii,jj)-1)*nyears+year
+     &-year0+1) (mwndvv(ii,jj,year-yr0+1,mnth),mnth=1,12)
+C                  WRITE(*,*) ii,jj,year,
+C     &(mwndvv(ii,jj,year-yr0+1,mnth),mnth=1,12)
                   IF (kode.EQ.0) THEN
                   READ(fno+7,'(12i4)',REC=(siteno(ii,jj)-1)*nyears+year
      &-year0+1) (mcldvv(ii,jj,year-yr0+1,mnth),mnth=1,12)
@@ -481,6 +506,7 @@ c	enddo
                   mprcvv(ii,jj,year-yr0+1,mnth) = 0
                   mcldvv(ii,jj,year-yr0+1,mnth) = 0
                   mswrvv(ii,jj,year-yr0+1,mnth) = 0
+                  mwndvv(ii,jj,year-yr0+1,mnth) = 0
                 ENDDO
               ENDDO
             ENDIF
@@ -524,6 +550,14 @@ c	enddo
             CALL bi_lin(xx,indx,xnorm,ynorm,ans)
             mcldv(year-yr0+1,mnth) = ans
 
+            DO ii=1,4
+              DO jj=1,4
+                xx(ii,jj) = real(mwndvv(ii,jj,year-yr0+1,mnth))
+              ENDDO
+            ENDDO
+            CALL bi_lin(xx,indx,xnorm,ynorm,ans)
+            mwndv(year-yr0+1,mnth) = ans
+
             IF(read_par.eq.1) THEN
               DO ii=1,4           
                 DO jj=1,4
@@ -563,6 +597,7 @@ c        ENDDO
         CLOSE(fno+2)
         CLOSE(fno+3)
         CLOSE(fno+7)
+        CLOSE(fno+9)
         CLOSE(8)
 
 c read WG calibration in files for stdtmp, stdhum and raindays
@@ -612,7 +647,7 @@ c copie into xprcv
                 IF (rain(day).GT.1.0E-3) nbrain=nbrain+1
              ENDDO
              
-c generate the temperaure
+c generate the temperature
              correction=0.0d0
 c             print *,'stdtmp=',mstdtmpv(mnth)
              DO day=1,30
@@ -660,9 +695,11 @@ c generate the humidity
      &correction
                 ans = ans + humv(year-yr0+1,mnth,day)
              ENDDO
-cset daily swr as mnthly mean value 
+cset daily swr and wnd as mnthly mean values 
            IF(read_par.eq.1) 
      &swrv(year-yr0+1,mnth,:) = mswrv(year-yr0+1,mnth)
+
+           wndv(year-yr0+1,mnth,:) = mwndv(year-yr0+1,mnth)
 
           ENDDO !month loop
 

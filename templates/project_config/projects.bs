@@ -6,7 +6,19 @@
 
 # to add a new project simply add an additional case to the below case statement 
 
-if [ $SDGVM_PROJECT == 'TRENDYv9' ]; then
+if [ $SDGVM_PROJECT == 'TRENDYv12' ]; then
+
+  # For TRENDYv9
+  SDGVM_CLIMSTY=1901
+  SDGVM_SIMSTY=1700
+  SDGVM_SIMENDY=2022
+  SDGVM_OUTSTY=1900
+
+  # data directories 
+  SDGVM_CLIMDIR="crujra_2023"           
+  SDGVM_LANDDIR="ESACCILCP2014_LUH2v2h_2023"           
+
+elif [ $SDGVM_PROJECT == 'TRENDYv9' ]; then
 
   # For TRENDYv9
   SDGVM_CLIMSTY=1901

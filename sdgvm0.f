@@ -11,10 +11,13 @@
 
       REAL*8 defaulttopsl
       PARAMETER(defaulttopsl = 5.0d0)
+      INTEGER, PARAMETER :: NX = 720, NY = 360
+      INTEGER, PARAMETER :: NE = 10, maxn_at = 7, NS = 16
 
       REAL*8 lat,lon,dep,ca(12,31),npp(maxnft),lai(maxnft),evp(maxnft)
       REAL*8 gpp(maxnft),sresp(maxnft),evt(maxnft),soilt,grassrc,resp
       REAL*8 tmp(12,31),prc(12,31),hum(12,31),cld(12),latdel,londel
+      REAL*8 wnd(12,31)
       REAL*8 leafper,stemper,rootper,avnpp,avgpp,avlai,avdof,co20,co2f
       REAL*8 avrof,infix,nppsold,avnppst,co2const,ic0(8),in0(8),iminn(3)
       REAL*8 avnleaf,avvcmax,avjmax,avleaf_nit,avsla,sl,hrs
@@ -38,7 +41,7 @@
       REAL*8 sumbio,ans1,ftstmx(maxnft),leaflit(maxnft),stemlit(maxnft)
       REAL*8 rootlit(maxnft),ftwd(maxnft),ftxyl(maxnft),ftpd(maxnft)
       REAL*8 ftsla(maxnft),ftcov(maxnft),lon0,lonf,ftrat(maxnft),kd,kx
-      REAL*8 input_ftsla(maxnft)
+      REAL*8 input_ftsla(maxnft),bioleafo(maxnft)
       REAL*8 ftvna(maxnft),ftvnb(maxnft),ftjva(maxnft),ftjvb(maxnft)
       REAL*8 ftg0(maxnft),ftg1(maxnft),amax(maxnft),vcmax_from_amax
       REAL*8 stembio,rootbio,sum,solcoo,biotoo,lutab(255,100),awl(4)
@@ -49,7 +52,8 @@
       REAL*8 nppstor2(maxnft),maxlai(maxnft),ftbb0(maxnft),wtfc,wtwp
       REAL*8 ftbbmax(maxnft),ftbblim(maxnft),ftsslim(maxnft),nleaf,cal
       REAL*8 flow1(maxnft),flow2(maxnft),h2o,adp(4),sfc(4),sw(4),sswc(4)
-      REAL*8 leafnpp(maxnft),stemnpp(maxnft),rootnpp(maxnft),srespm,lchm
+      REAL*8 leafnpp(maxnft),stemnpp(maxnft),rootnpp(maxnft)
+      REAL*8 srespm(maxnft),lchm(maxnft)
       REAL*8 evapm(12,maxnft),tranm(12,maxnft),roffm(12,maxnft),avyield
       REAL*8 photm(12,maxnft),avmnpet(maxnft),avmnt,avmnppt,tc,ts,tsi
       REAL*8 bulk,nupc,nfix,daygpp,evap,tran,roff,pet,yrtran,yrevap
@@ -68,15 +72,22 @@
       REAL*8 soilpr,soilp_init,kg(maxnft),kg_beta,ftcan_clump(maxnft)
       REAL*8 map_clump,w_scalar,t_scalar,leafv_sum,stemv_sum,rootv_sum
       REAL*8 aprc_dryqv(10),aprc_dryq,yearprcdryq,prc_week(52),prcq(52)
-      REAL*8 matvar,aprc_rel,a2,b2,flulccc
+      REAL*8 matvar,aprc_rel,a2,b2,avflulccc,flulccc(maxnft)
       REAL*8 jmax_int(maxnft),jmax_int_er(maxnft)
       REAL*8 jmax_ci_low,jmax_ci_high
+      REAL*8 fprob_prescr(12),fprob_prescrh(maxyrs,12)
       REAL*8 ftToptV(maxnft),ftHaV(maxnft),ftHdV(maxnft)
       REAL*8 ftToptJ(maxnft),ftHaJ(maxnft),ftHdJ(maxnft)
       REAL*8 jmax_slope(maxnft),jmax_slope_er(maxnft)
       REAL*8 sla_ci_low,sla_ci_high
       REAL*8 sla_int(maxnft),sla_int_er(maxnft)
       REAL*8 sla_slope(maxnft),sla_slope_er(maxnft)
+      REAL*8 atprop2(maxn_at,maxn_at)
+      REAL*8 atharvest(maxn_at)
+      REAL*8 cluse2(maxn_at,maxn_at,maxyrs)
+      REAL*8 cluseh(maxn_at,maxyrs)
+      REAL*8 sum_cov_test(maxnft)
+      REAL*8 ftprop_init(maxnft),yieldo(maxnft),ftprops(maxnft)
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
@@ -87,9 +98,10 @@
       INTEGER snp_year,ftlls(maxnft),ftsls(maxnft),ftrls(maxnft),day,d
       INTEGER isite,ntags,du,ii,otagsn(douts),otagsnft(douts),sit_grd
       INTEGER ftmor(maxnft),ftc3(maxnft),nft,site0,sitef,nat_map(8)
-      INTEGER ilanduse,siteno,iofn,iofnft,iofngft,recl1
+      INTEGER ilanduse,siteno,iofn,iofnft,iofngft,recl1,ifire
       INTEGER icontinuouslanduse,ftphen(maxnft),ftdth(maxnft),kode
       INTEGER i,j,k,l,m,ft,s,w,w1,f
+      INTEGER at2,at
       INTEGER blank,site,year,age,bioind,xyearf
       INTEGER mnth,no_days,fireres,xyear0,per,omav(douts),year_out
       INTEGER dolydo(maxnft),luse(maxyrs),fno,bb(maxnft),bbgs(maxnft)
@@ -97,19 +109,20 @@
       INTEGER stcmp,iargc,yearind(maxyrs),idum,outyears,thty_dys
       INTEGER xlatresn,xlonresn,day_mnth,yearv(maxyrs),nyears,narg
       INTEGER met_seqv(maxyrs),metyear,met_yearv(maxyrs)
-      INTEGER yr0ms,yrfms,yr0m,yrfm,iyear_adj,yr0a,yrfa
+      INTEGER yr0ms,yrfms,yr0m,yrfm,iyear_adj,yr0a,yrfa,iyear_fire
       INTEGER seed1,seed2,seed3,spinl,yr0s,yr0p,yrfp,xseed1,site_dat
       INTEGER ibox,jbox,last_blank,site_out,country_id,outyears1,fti
       INTEGER outyears2,budo(maxnft),seno(maxnft),ss(maxnft),clim_type
       INTEGER check_ft_grow,no_countries,n_param_0,n_param_f,n_param
       REAL*8 xtmpv(500,12,31),xprcv(500,12,31),xhumv(500,12,31)
       REAL*8 xcldv(500,12),xswrv(500,12,31),swr(12,31),mnthswr(12)
+      REAL*8 xwndv(500,12,31)
       REAL*8 yearswr,mapv(10),maswrv(30),maprc,maswr,maprcr,maswrr
       REAL*8 maprc_init,maswr_init,leafresp,rootresp,stemresp
       REAL*8 matmpv(10),matmp_maxv(10),yeartmp_max,gi,wi,covind
       REAL*8 matmp_minv(10),yeartmp_min,map_daysv(10),yearp_days
       REAL*8 mahumv(10),masoilcv(10),yearsoilc
-      REAL*8 masoilwv(10),yearsoilw,tabglitterc,tblgc,tbioleaf
+      REAL*8 masoilwv(10),yearsoilw,tabglitterc,tblgc,sumbioleaf
       REAL*8 matmp,matmp_max,matmp_min,map_days
       REAL*8 mahum,masoilc,masoilw,eco2
       REAL*8 matmp_init,matmp_max_init,matmp_min_init,map_days_init
@@ -130,6 +143,7 @@
       CHARACTER stinput*1000,stoutput*1000,stinit*1000,stco2*1000
       CHARACTER stmask*1000,country_name*1000,countries(100)*20
       CHARACTER sttxdp*1000,stlu*1000,ststats*1000,buff1*80
+      CHARACTER stpname*1000,stpname_t*1000,stwdg*1000,stpname_f*1000
       CHARACTER param_file*1000,date*8,time*10,fttags(maxnft)*1000
 
       LOGICAL initise,initiseo,speedc,crand,xspeedc,withcloudcover
@@ -138,6 +152,7 @@
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
       LOGICAL year0set
+      LOGICAL debug,out_yie,prescr_fire
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -155,11 +170,20 @@
       INTEGER zbb(maxnft),zbbgs(maxnft),zdsbb(maxnft)
       INTEGER hi,xi,gs_func
       INTEGER PHASE !PCM
+      INTEGER SYR,NYR,NYR_FILE !PCM
+      INTEGER SYR_FIRE,NYR_FIRE !PCM
+      INTEGER aggmap_SDGVM_to_aggHyde(NS) !PCM
+      REAL*8 lutab2(255,100) !PCM
+      LOGICAL closed_loop_ft !PCM
+      REAL*8 ftprop1(maxnft)
+
 
 *----------------------------------------------------------------------*
-* Read input filename.                                                 *
-*----------------------------------------------------------------------*
 
+      debug = .FALSE.
+      !debug = .TRUE.
+
+      WRITE(*,'('' PROGRAM STARTED'')')
       IF (IARGC().GT.0) THEN
         CALL GETARG(1,buff1)
         narg = 1
@@ -172,6 +196,7 @@
       no_countries = 0
       zlat = -1000.0d0
       zlon = -1000.0d0
+
 
 *----------------------------------------------------------------------*
 * Read input common parameters.                                        *
@@ -333,6 +358,7 @@ C        WRITE(*,*) 'bbbb'
       ENDIF
       READ(99,'(A)') st1
 
+
 *----------------------------------------------------------------------*
 * Determine whether climate is daily or monthly, from first line of    *
 * readme file.                                                         *
@@ -404,8 +430,23 @@ C        WRITE(*,*) 'bbbb'
       READ(98,'(A)') sttxdp  !soil data
       CALL STRIPB(sttxdp)
 
-      READ(98,'(A)') stlu
-      CALL STRIPB(stlu)
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stpname)
+      stpname = stpname // '/states2b.nc'
+
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stpname_t)
+      stpname_t = stpname_t // '/transitions2b.nc'
+
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stpname_f)
+
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stwdg)
+      !stwdg=stwdg(1:blank(stwdg))
+
+      READ(98,'(A)') st1
+      CALL STRIPBS(st1,stlu)
 
       READ(98,'(A)') stco2
       CALL STRIPB(stco2)
@@ -944,7 +985,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       ENDIF
 
       CALL SET_SUBPIXEL_OUT(st1,st2,outyears2,otagsnft,
-     &otags,oymdft,out_cov,out_bio,out_bud,out_sen)
+     &otags,oymdft,out_cov,out_bio,out_bud,out_sen,out_yie)
       outyears2 = min(outyears2,nyears)
 
 *----------------------------------------------------------------------*
@@ -1367,7 +1408,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
         DO k=1,nft
           lutab(j,k) = 0.0d0
         ENDDO
-      ENDDO
+      ENDDO 
 
       ii = 0
 96    CONTINUE
@@ -1678,7 +1719,6 @@ c CLOSE added by Ghislain 15/12/03
         sites = n_param_f - n_param_0 + 1
         n_param = n_param_0 - 1
         READ(98,*)
-        READ(98,'(1000a)') st1
 
       ELSE
         l_parameter = .false.
@@ -1689,23 +1729,97 @@ c CLOSE added by Ghislain 15/12/03
 * in the input file; 2 = natural vegetation based on average monthly   *
 * temperatures.                                                        *
 *----------------------------------------------------------------------*
-      READ(st1,*) ilanduse
+      READ(98,'(1000a)') st1
+
+      ii = n_fields(st1)
+      IF (ii.EQ.4) THEN
+        !read in ilanduse 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  ilanduse  = i
+        !read start year of extraction from LUC database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  SYR   = i
+        !read number of years of extraction from LUC database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  NYR   = i
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  NYR_FILE   = i
+!        IF (ilanduse.EQ.5. .OR. ilanduse.EQ.6) NYR = 1 !override number from input.dat if set that way accidently
+      ELSE IF (ii.EQ.1) THEN
+        READ(st1,*) ilanduse
+        SYR = -1 !SYR and NYR not used and not defined here
+        NYR = -1
+        NYR_FILE = -1
+      ELSE
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'ilanduse: either 1 or 4 arguments required'
+        STOP
+      ENDIF
+
       fire(:)    = .FALSE.
       harvest(:) = .FALSE.
       IF (ilanduse.EQ.1) THEN
 * Use landuse defined in input file.
         CALL LANDUSE1(luse,fire,harvest,yr0a,yrfa,year0set,spinl)
       ENDIF
-      IF ((ilanduse.LT.0).OR.(ilanduse.GT.2)) THEN
+      IF ((ilanduse.LT.0).OR.(ilanduse.GT.6)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,*) 'No landuse defined'
         WRITE(*,*) '0:= Defined from a map.'
         WRITE(*,*) '1:= Defined in the input file.'
         WRITE(*,*) '2:= Natural vegetation.'
+        WRITE(*,*) '3:= Defined from the maps in states2b.nc file.'
+        WRITE(*,*) '4:= Defined from the maps in transitions2b.nc file.'
+        WRITE(*,*)
+     & '5:= Defined from the 1st-yr maps in states2b.nc file.'
+        WRITE(*,*)
+     & '6:= Defined from the 1st-yr maps in transitions2b.nc file.'
         STOP
       ENDIF
-      CLOSE(98)
 
+*----------------------------------------------------------------------*
+* Read in type of prescribed fire: 1 = not prescribed;                 *
+* 2  = burned-area is prescribed, preindustrial cycling for all time   * 
+* 3  = burned-area is prescribed, preindustrial cycling before 1901    * 
+*----------------------------------------------------------------------*
+      READ(98,'(1000a)') st1
+
+      ii = n_fields(st1)
+      IF (ii.EQ.3) THEN
+        !read in ifire 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  ifire  = i
+        !read start year of extraction from fire database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  SYR_FIRE   = i
+        !read number of years of extraction from fire database 
+        CALL STRIPBN(st1,i)
+        IF (i.gt.-1)  NYR_FIRE   = i
+        IF (ifire.EQ.1) NYR_FIRE = 1 !override number from input.dat if set that way accidently
+        IF (ifire.EQ.2 .OR. ifire.EQ.3) prescr_fire = .TRUE.
+      ELSE IF (ii.EQ.1) THEN
+        READ(st1,*) ifire
+        ifire = 1
+        prescr_fire = .FALSE.
+        SYR_FIRE = -1 !SYR_FIRE and NYR_FIRE not used and not defined here
+        NYR_FIRE = -1
+      ELSE
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'ifire: either 1 or 3 arguments required'
+        STOP
+      ENDIF
+
+      IF ((ifire.LT.1).OR.(ifire.GT.3)) THEN
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'No ifire defined'
+        WRITE(*,*) '1:=Fire burned-area not prescribed.'
+        WRITE(*,*) '2:=Fire burned-area is prescribed (Pre-industrial).'
+        WRITE(*,*) '3:=Fire burned-area is prescribed (1901-2020).'
+        STOP
+      ENDIF
+
+
+      CLOSE(98)
 *----------------------------------------------------------------------*
 * End read of input file 
 *----------------------------------------------------------------------*
@@ -1739,11 +1853,11 @@ c CLOSE added by Ghislain 15/12/03
       tsumam(2) = 0.0d0
 
 *----------------------------------------------------------------------*
-      srespm = 0.0d0
 
       co2(1,:,:) = 0.0d0
 
       DO ft=1,nft
+        srespm(ft) = 0.0d0
         ftxyl(ft) =  ftxyl(ft)*1.0e-9
         ftpd(ft)  =  ftpd(ft)*1.0e+3
       ENDDO
@@ -1829,9 +1943,10 @@ c CLOSE added by Ghislain 15/12/03
       OPEN(604,FILE=st1(1:blank(st1))//'/blg_c.dat')
       OPEN(605,FILE=st1(1:blank(st1))//'/leafc.dat')
       OPEN(606,FILE=st1(1:blank(st1))//'/lulccc.dat')
+      OPEN(607,FILE=st1(1:blank(st1))//'/yield.dat')
 
 *----------------------------------------------------------------------*
-* Open optional yearly cover, biomass, budburst and senescence files.  *
+* Open opt. yearly cover, biomass, budburst, senescence & yield files. *
 *----------------------------------------------------------------------*
       iofn = 200
       iofngft = iofn
@@ -1856,6 +1971,12 @@ c CLOSE added by Ghislain 15/12/03
           iofn = iofn + 1
 
           OPEN(iofn,FILE=st1(1:blank(st1))//'/sen_'//
+     &fttags(ft)(1:blank(fttags(ft)))//'.dat')
+        ENDIF
+        IF (out_yie) THEN
+          iofn = iofn + 1
+
+          OPEN(iofn,FILE=st1(1:blank(st1))//'/yie_'//
      &fttags(ft)(1:blank(fttags(ft)))//'.dat')
         ENDIF
       ENDDO
@@ -1911,9 +2032,21 @@ c CLOSE added by Ghislain 15/12/03
       site_dat = 0
 
 *----------------------------------------------------------------------*
-*  Site loop                              
+*  site loop                              
 *----------------------------------------------------------------------*
+!PCM4 for running a single site in the main run from a gridded spinup;
+!PCM4 (other changes below)
+!      DO site=10,10
       DO site=1,sites
+*----------------------------------------------------------------------*
+* closed_loop_ft:                                                      *
+*    standard setting is .FALSE.                                       *
+*    But, this is set to .TRUE. after the first initialization of      * 
+*    ftprop with cluse, so that the gross transitions will update the  *
+*    ftprop(ft) values each year instead of using the values from the  *
+*    cluse table from the net land use transitions                     *
+*----------------------------------------------------------------------*
+        closed_loop_ft = .FALSE.
 
         speedc = xspeedc
         swcnew = 0.0d0
@@ -1924,6 +2057,10 @@ c CLOSE added by Ghislain 15/12/03
         ELSE
           lat = lat_lon(site,1)
           lon = lat_lon(site,2)
+        ENDIF
+
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,*)site,site0+site-1,lat,lon
         ENDIF
 
         IF (abs(xseed1).EQ.0) THEN
@@ -1985,7 +2122,7 @@ c CLOSE added by Ghislain 15/12/03
 * DAILY Gridded.                                                       *
 *----------------------------------------------------------------------*
         CALL EX_CLIM(st2,lat,lon,xlatf,xlatres,xlatresn,xlon0,xlonres,
-     &xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,isite,xyear0,xyearf,
+     &xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,xwndv,isite,xyear0,xyearf,
      &siteno,du,xswrv,read_par)
         if(siteno.NE.0) THEN !PCM
           l_clim = .TRUE.    !PCM
@@ -2007,25 +2144,25 @@ C PCM2        WRITE(*,*) 'bbbbbbbbb'
 *----------------------------------------------------------------------*
         CALL EX_CLIM_WEATHER_GENERATOR(st2,ststats,lat,lon,xlatf,
      &xlatres,xlatresn,xlon0,xlonres,xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,
-     &xcldv,isite,xyear0,xyearf,du,seed1,seed2,seed3,l_clim,l_stats,
-     &xswrv,read_par)
+     &xwndv,xcldv,isite,xyear0,xyearf,du,seed1,seed2,seed3,
+     &l_clim,l_stats,xswrv,read_par)
         withcloudcover=.TRUE.
       ELSEIF (clim_type.EQ.3) THEN
 *----------------------------------------------------------------------*
 * DAILY Site                                                           *
 *----------------------------------------------------------------------*
-        CALL EX_CLIM_SITE(st2,yr0,yrf,xtmpv,xhumv,xprcv,xyear0,xyearf,
-     &xswrv,read_par)
+        CALL EX_CLIM_SITE(st2,yr0,yrf,xtmpv,xhumv,xprcv,xwndv,
+     &xyear0,xyearf,xswrv,read_par)
         withcloudcover=.FALSE.
         siteno = 1
         l_clim = .TRUE.
         l_stats = .TRUE.
       ELSEIF (clim_type.EQ.4) THEN
 *----------------------------------------------------------------------*
-* MONTHLY Site                                                           *
+* MONTHLY Site                                                         *
 *----------------------------------------------------------------------*
-        CALL EX_CLIM_SITE_MONTH(st2,yr0,yrf,xtmpv,xhumv,xprcv,xcldv,
-     &xyear0,xyearf,xswrv,read_par)
+        CALL EX_CLIM_SITE_MONTH(st2,yr0,yrf,xtmpv,xhumv,xprcv,xwndv,
+     &xcldv,xyear0,xyearf,xswrv,read_par)
         withcloudcover=.FALSE.
         siteno = 1
         CALL GENERATE_MONTHLY(ststats,yr0,yrf,xtmpv,xhumv,xprcv,
@@ -2083,7 +2220,7 @@ C PCM2        WRITE(*,*) 'bbbbbbbbb'
 c     temporaire !
       icontinuouslanduse=1
       !print*, luse(:)
-      IF (ilanduse.EQ.0) THEN
+      IF (ilanduse.EQ.0 .OR. (ilanduse.GE.3 .AND. ilanduse.LE.6)) THEN
         IF (icontinuouslanduse.EQ.0) THEN
           CALL EX_LU(stlu,lat,lon,luse,yr0,yrf,du)
 c     create the continuous land use (cluse)
@@ -2097,9 +2234,95 @@ c     create the continuous land use (cluse)
             ENDDO
           ENDDO
         ELSE            
+C          IF(ilanduse.EQ.3 .OR. ilanduse.EQ.4) THEN
+C           SYR = 1700
+C            NYR = 322
+C         ELSE IF(ilanduse.EQ.5 .OR. ilanduse.EQ.6) THEN !preindustrial, constant
+C           SYR = 1700
+C           NYR = 1 
+C         ELSE IF(ilanduse.EQ.0) THEN !SYR and NYR not used and not defined here
+C           SYR = -1 
+C           NYR = -1 
+C         ENDIF
+          lutab2(:,:)                      =  0.0
+          IF(ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
+C The following order is order of land types in the input.dat file
+            !aggmap_SDGVM_to_aggHyde(1)     =  0 
+            !aggmap_SDGVM_to_aggHyde(2:6)   =  1 
+            !aggmap_SDGVM_to_aggHyde(7:8)   =  2 
+            !aggmap_SDGVM_to_aggHyde(9)     =  5 
+            !aggmap_SDGVM_to_aggHyde(10)    =  6 
+            !aggmap_SDGVM_to_aggHyde(11:15) =  3 
+            !aggmap_SDGVM_to_aggHyde(16:17) =  4 
+C The following ordering is the order of ft's in the input.dat file
+            aggmap_SDGVM_to_aggHyde(1)     =  0 
+            aggmap_SDGVM_to_aggHyde(2)     =  7 
+            aggmap_SDGVM_to_aggHyde(3:4)   =  2 
+            aggmap_SDGVM_to_aggHyde(5)     =  5 
+            aggmap_SDGVM_to_aggHyde(6)     =  6 
+            aggmap_SDGVM_to_aggHyde(7:8)   =  4 
+            aggmap_SDGVM_to_aggHyde(9:12)  =  1 
+            aggmap_SDGVM_to_aggHyde(13:16) =  3 
+            DO at=1,maxn_at
+               lutab2(at,at)               = 100.0 !PCM: Kluge: assumes 1<->1 mapping of 'at' to classes for now 
+            ENDDO
+          ELSE
+            aggmap_SDGVM_to_aggHyde(:)     =  0
+          END IF
+
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
-     &yr0a,yrfa,year0set,spinl)
-          !write(*,*) cluse(ft,:)
+     &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,NYR_FILE,
+     &SYR_FIRE,NYR_FIRE,prescr_fire,lutab2,
+     &stpname,stpname_t,stpname_f,stwdg,
+     &cluse2,cluseh,fprob_prescrh,debug)
+
+      !loop added for testing purposes
+          DO ft=1,nft
+            sum_cov_test(ft) = 0.0
+            DO age=1,ftmor(ft)
+              sum_cov_test(ft) = sum_cov_test(ft)
+     &                           + cluse(ft,age)/100.0d0/real(ftmor(ft))
+            ENDDO
+          ENDDO
+
+          IF(debug .EQV. .TRUE.) THEN
+           write(*,FMT="(A)") 'SS1'
+           IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
+             WRITE(*,*) 'BARE       CITY      C3p        C4p        ',
+     &    'C3crop     ','C4crop     C3s       C4s        Ev_Bp      ',
+     &    'Ev_Np      ','Dc_Bp      Dc_Np     Ev_Bs      Ev_Ns      ',
+     &    'Dc_Bs      ','Dc_Ns      '
+
+             write(*,FMT="(16F11.7)") cluse(1:nft,1)
+             !write(*,FMT="(16F7.3)") sum_cov_test(1:nft)
+             write(*,FMT="(A)") 'SS2'
+             write(*,FMT="(8A14)")
+     &              '     primf', '     primn', '     secdf',
+     &              '     secdn', '    c3crop', '    c4crop',
+     &              '     urban', '      harv' 
+
+             write(*,FMT="(A,8E14.7)") ' primf',cluse2(1,:,1),
+     &           cluseh(1,1)
+             write(*,FMT="(A,8E14.7)") ' primn',cluse2(2,:,1),
+     &           cluseh(2,1)
+             write(*,FMT="(A,8E14.7)") ' secdf',cluse2(3,:,1),
+     &           cluseh(3,1)
+             write(*,FMT="(A,8E14.7)") ' secdn',cluse2(4,:,1),
+     &           cluseh(4,1)
+             write(*,FMT="(A,8E14.7)") 'c3crop',cluse2(5,:,1),
+     &           cluseh(5,1)
+             write(*,FMT="(A,8E14.7)") 'c4crop',cluse2(6,:,1),
+     &           cluseh(6,1)
+             write(*,FMT="(A,8E14.7)") ' urban',cluse2(7,:,1),
+     &           cluseh(7,1)
+           ELSE
+             WRITE(*,*) ' BARE   CITY   C3     C4     C3crop ',
+     &'C4crop Ev_Bl  Ev_Nl  Dc_Bl ',
+     &'Dc_Nl '
+             write(*,FMT="(10F7.3)") cluse(1:nft,1)
+             write(*,FMT="(10F7.3)") sum_cov_test(1:nft)
+           ENDIF
+          ENDIF
         ENDIF
       ELSEIF (ilanduse.EQ.1) THEN
         l_lu = .TRUE.
@@ -2145,9 +2368,9 @@ c     create the continuous land use (cluse)
         ENDDO
         cluse(1,1) = 100.0d0
       ENDIF
-      !print*, 'end landuse, ', site
-      !print*, l_clim,l_stats,l_soil(1),l_soil(3),l_soil(8),l_lu, 
-      !&l_countries
+!      print*, 'end landuse, ', site
+!      print*, l_clim,l_stats,l_soil(1),l_soil(3),l_soil(8),l_lu, 
+!     &l_countries
 
 *----------------------------------------------------------------------*
       ENDIF
@@ -2175,7 +2398,7 @@ c     &site_dat,lat,lon,ca
         DO i=21,69
           WRITE(i,'(f7.3,f9.3,$)') lat,lon
         ENDDO
-        DO i=601,606
+        DO i=601,607
           WRITE(i,'(f7.3,f9.3,$)') lat,lon
         ENDDO
 
@@ -2198,6 +2421,10 @@ c     &site_dat,lat,lon,ca
             WRITE(iofn,'(f7.3,f9.3,$)') lat,lon
           ENDIF
           IF (out_sen) THEN
+            iofn = iofn + 1
+            WRITE(iofn,'(f7.3,f9.3,$)') lat,lon
+          ENDIF
+          IF (out_yie) THEN
             iofn = iofn + 1
             WRITE(iofn,'(f7.3,f9.3,$)') lat,lon
           ENDIF
@@ -2421,8 +2648,13 @@ c     &site_dat,lat,lon,ca
 
         ELSE
       
-          IF ((abs(lat-zlat).GT.0.001).OR.
+!PCM4 Comment this out for running a single site in the main run from a gridded spinup
+         IF ((abs(lat-zlat).GT.0.001).OR.
      &(abs(lon-zlon).GT.0.001)) THEN
+
+!PCM4 for running a single site in the main run from a gridded spinup
+!         DO WHILE ((abs(lat-zlat).GT.0.001).OR.
+!     &(abs(lon-zlon).GT.0.001))
 
           READ(70,*) zlat,zlon
           IF ((abs(lat-zlat).GT.0.001).OR.
@@ -2430,7 +2662,11 @@ c     &site_dat,lat,lon,ca
             WRITE(*,'("Error lat and lon dont match.")')
             WRITE(*,*) lat,lon
             WRITE(*,*) zlat,zlon
+!PCM4 comment the STOP out for running a single site in the main run from a gridded spinup
             STOP
+!PCM4 uncomment the following 2 lines (ELSE) for running a single site from a gridded spinup
+!          ELSE
+!            WRITE(*,'("Lat and lon matched.")')
           ENDIF
           READ(70,*) (zs1(ft),ft=1,nft)
           READ(70,*) (zs2(ft),ft=1,nft)
@@ -2501,7 +2737,10 @@ c     &site_dat,lat,lon,ca
             READ(79,*) (pnlc(i,ft),i=1,12)
             READ(79,*) (enzs(i,ft),i=1,12)
           ENDDO
+!PCM4 comment the ENDIF out for running a single site in the main run from a gridded spinup
           ENDIF
+!PCM4 uncomment the ENDDO for running a single site in the main run from a gridded spinup
+!          ENDDO !PCM4
 
           !print*, vcmax(1,:)
 
@@ -2668,7 +2907,37 @@ c     &site_dat,lat,lon,ca
 
         year    = yearv(iyear)
         metyear = met_yearv(iyear)
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT*, 'YEAR=',iyear,year,metyear
+          write(*,FMT="(A)") 'UU1'
+          WRITE(*,*) 'BARE       CITY      C3p        C4p        ',
+     &    'C3crop     ','C4crop     C3s       C4s        Ev_Bp      ',
+     &    'Ev_Np      ','Dc_Bp      Dc_Np     Ev_Bs      Ev_Ns      ',
+     &    'Dc_Bs      ','Dc_Ns      '
 
+          write(*,FMT="(16F11.7)") cluse(1:nft,iyear)
+          !write(*,FMT="(16F7.3)") sum_cov_test(1:nft)
+          write(*,FMT="(A)") 'UU2'
+          write(*,FMT="(8A14)")
+     &              '     primf', '     primn', '     secdf',
+     &              '     secdn', '    c3crop', '    c4crop',
+     &              '     urban', '      harv' 
+
+          write(*,FMT="(A,8E14.7)") ' primf',cluse2(1,:,iyear),
+     &           cluseh(1,iyear)
+          write(*,FMT="(A,8E14.7)") ' primn',cluse2(2,:,iyear),
+     &           cluseh(2,iyear)
+          write(*,FMT="(A,8E14.7)") ' secdf',cluse2(3,:,iyear),
+     &           cluseh(3,iyear)
+          write(*,FMT="(A,8E14.7)") ' secdn',cluse2(4,:,iyear),
+     &           cluseh(4,iyear)
+          write(*,FMT="(A,8E14.7)") 'c3crop',cluse2(5,:,iyear),
+     &           cluseh(5,iyear)
+          write(*,FMT="(A,8E14.7)") 'c4crop',cluse2(6,:,iyear),
+     &           cluseh(6,iyear)
+          write(*,FMT="(A,8E14.7)") ' urban',cluse2(7,:,iyear),
+     &           cluseh(7,iyear)
+        ENDIF
 
         !APW - not sure what this does
         DO ft=1,nft
@@ -2728,6 +2997,8 @@ c     &site_dat,lat,lon,ca
                if(read_par.eq.1) cld(mnth) = 1.0d0
                !print*, cld(1)
             ENDIF
+            wnd(mnth,day) = 
+     &real(xwndv(metyear-yr0m+1,mnth,day))/1000.0d0
           ENDDO
         ENDDO
 C PCM2        WRITE(*,*)'metyear,yr0m' 
@@ -3013,6 +3284,9 @@ c          tleaf_sla = tleaf_sla/1000
           env_jmax(3)    = - 269.21d0 - 0.197d0*maprc - 7.06d0*matvar
           ftsla(3)       = 20.44 + 0.59d0*matmp - 0.018*aprc_dryq +
      &30.76*aprc_rel - 0.089*maswr + 0.00043*maprc*matvar
+          env_vcmax(7)   = env_vcmax(3)
+          env_jmax(7)    = env_jmax(3)
+          ftsla(7)       = ftsla(3)
  
           !C4 grass/forb
           env_vcmax(4)   = 61.02d0 - 0.549d0*mahum
@@ -3020,35 +3294,53 @@ c          tleaf_sla = tleaf_sla/1000
           ftsla(4)       = - 66.94d0 + 1.19d0*mahum + 4.53d0*matmp -
      &5.10*matmp_min + 0.051*mahum*matvar + 0.16*mahum*matmp_min -
      &0.158*mahum*matmp
+          env_vcmax(8)   = env_vcmax(4)
+          env_jmax(8)    = env_jmax(4)
+          ftsla(8)       = ftsla(4)
  
           !Ev_Bl
-          env_vcmax(7)   = 54.90d0 + 2.76d0*matvar - 335.63d0*aprc_rel
-          env_jmax(7)    = 148.25d0 - 2.91d0*matmp_min
-          ftsla(7)    = 14.45d0 + 0.272d0*matmp + 0.0023*maprc -
+          env_vcmax(9)   = 54.90d0 + 2.76d0*matvar - 335.63d0*aprc_rel
+          env_jmax(9)    = 148.25d0 - 2.91d0*matmp_min
+          ftsla(9)    = 14.45d0 + 0.272d0*matmp + 0.0023*maprc -
      &0.0072*aprc_dryq - 0.063*maswr
+          env_vcmax(13)   = env_vcmax(9)
+          env_jmax(13)    = env_jmax(9)
+          ftsla(13)       = ftsla(9)
  
           !Ev_Nl
-          env_vcmax(8)   = -199.41d0 - 6.49d0*mahum - 371.52d0*aprc_rel 
+          env_vcmax(10)   = -199.41d0 - 6.49d0*mahum -
+     &371.52d0*aprc_rel 
      &+ 79.51d0*matmp_max + 48.59d0*matvar - 1.74d0*maswr - 
      &3.53*matmp_max*matvar
-          env_jmax(8)    = 795.67d0 - 0.22d0*maprc + 19.09d0*matmp_min -
+          env_jmax(10)    = 795.67d0 - 0.22d0*maprc +
+     &19.09d0*matmp_min -
      &0.78*aprc_dryq - 1.67*maswr
-          ftsla(8)       = -10.37 + 0.075d0*mahum - 28.57d0*aprc_rel +
+          ftsla(10)       = -10.37 + 0.075d0*mahum - 28.57d0*aprc_rel +
      &0.31d0*matvar - 1.05d0*matmp_max + 0.96d0*matmp - 0.0047*maprc +
      &0.021*aprc_dryq
+          env_vcmax(14)   = env_vcmax(10)
+          env_jmax(14)    = env_jmax(10)
+          ftsla(14)       = ftsla(10)
  
           !Dc_Bl
-          env_vcmax(9)   = - 31.55d0 + 287.41d0*aprc_rel + 3.51d0*matvar
+          env_vcmax(11)   = - 31.55d0 + 287.41d0*aprc_rel +
+     &3.51d0*matvar
      &- 30.11d0*aprc_rel*matvar
-          env_jmax(9)    = 74.22d0 + 2.05d0*matvar 
-          ftsla(9)       = 28.73d0 + 3.11d0*matmp - 1.62d0*matmp_max -
+          env_jmax(11)    = 74.22d0 + 2.05d0*matvar 
+          ftsla(11)       = 28.73d0 + 3.11d0*matmp - 1.62d0*matmp_max -
      &1.54*matmp_min - 0.067d0*maswr
+          env_vcmax(15)   = env_vcmax(11)
+          env_jmax(15)    = env_jmax(11)
+          ftsla(15)       = ftsla(11)
  
           !Dc_Nl - vcmax and jmax same as Ev_Nl
-          env_vcmax(10)  = env_vcmax(8)
-          env_jmax(10)   = env_jmax(8)
-          ftsla(10)      = -50.60d0 + 0.76d0*mahum + 409.75*aprc_rel -
+          env_vcmax(12)  = env_vcmax(11)
+          env_jmax(12)   = env_jmax(11)
+          ftsla(12)      = -50.60d0 + 0.76d0*mahum + 409.75*aprc_rel -
      &5.20d0*mahum*aprc_rel
+          env_vcmax(16)   = env_vcmax(12)
+          env_jmax(16)    = env_jmax(12)
+          ftsla(16)       = ftsla(12)
  
           ELSEIF(vcmax_type.eq.3) THEN
           ! Calculate Vcmax, Jmax and SLA for the TERRABITES sims
@@ -3058,31 +3350,49 @@ c          tleaf_sla = tleaf_sla/1000
           env_vcmax(3)   = 62.220d0
           env_jmax(3)    = 121.25d0
           ftsla(3)       = 20.15d0
+          env_vcmax(7)   = env_vcmax(3)
+          env_jmax(7)    = env_jmax(3)
+          ftsla(7)       = ftsla(3)
  
           !C4 grass/forb
           env_vcmax(4)   = 27.270d0
           env_jmax(4)    = 176.44d0
           ftsla(4)       = 18.50d0
+          env_vcmax(8)   = env_vcmax(4)
+          env_jmax(8)    = env_jmax(4)
+          ftsla(8)       = ftsla(4)
           
           !Ev_Bl
-          env_vcmax(7)   = 35.5d0 
-          env_jmax(7)    = 84.2d0
-          ftsla(7)       = 9.350d0 
+          env_vcmax(9)   = 35.5d0 
+          env_jmax(9)    = 84.2d0
+          ftsla(9)       = 9.350d0 
+          env_vcmax(13)   = env_vcmax(9)
+          env_jmax(13)    = env_jmax(9)
+          ftsla(13)       = ftsla(9)
  
           !Ev_Nl
-          env_vcmax(8)   = 71.0d0
-          env_jmax(8)    = 148.2d0
-          ftsla(8)       = 4.520d0
+          env_vcmax(10)   = 71.0d0
+          env_jmax(10)    = 148.2d0
+          ftsla(10)       = 4.520d0
+          env_vcmax(14)   = env_vcmax(10)
+          env_jmax(14)    = env_jmax(10)
+          ftsla(14)       = ftsla(10)
  
           !Dc_Bl
-          env_vcmax(9)   = 55.0d0
-          env_jmax(9)    = 92.870d0
-          ftsla(9)       = 14.48d0
+          env_vcmax(11)   = 55.0d0
+          env_jmax(11)    = 92.870d0
+          ftsla(11)       = 14.48d0
+          env_vcmax(15)   = env_vcmax(11)
+          env_jmax(15)    = env_jmax(11)
+          ftsla(15)       = ftsla(11)
  
           !Dc_Nl
-          env_vcmax(10)  = env_vcmax(8)
-          env_jmax(10)   = env_jmax(8)
-          ftsla(10)      = 9.46d0
+          env_vcmax(12)  = env_vcmax(11)
+          env_jmax(12)   = env_jmax(11)
+          ftsla(12)      = 9.46d0
+          env_vcmax(16)   = env_vcmax(12)
+          env_jmax(16)    = env_jmax(12)
+          ftsla(16)       = ftsla(12)
           ENDIF
        
 c        ELSE
@@ -3108,38 +3418,86 @@ c        ENDIF
           
           !print*, env_vcmax(:)
           !print*, env_jmax(:)
-          
+
+c     !nft=10          
+c          !bounds for TRY traits
+c          env_vcmax_min(1:nft) = (/ 0.0,0.0,25.34,21.72,25.34,21.72,
+c     &16.3,19.9,19.43,19.9 /)
+c          env_vcmax_max(1:nft) = (/ 0.0,0.0,116.08,46.33,116.08,46.33,
+c     &93.99,178.0,130.0,180.0 /)
+c          env_jmax_min(1:nft)  = (/ 0.0,0.0,44.87,92.3,44.87,92.3,
+c     &35.8,57.43,41.9,57.43 /)
+c          env_jmax_max(1:nft)  = (/ 0.0,0.0,230.79,465.4,230.79,465.4,
+c     &164.7,333.2,206.5,333.2 /)
+c          env_sla_min(1:nft)   = (/ 0.0,0.0,5.42,5.71,5.42,5.71,
+c     &4.37,2.4,7.51,4.52 /)
+c          env_sla_max(1:nft)   = (/ 0.0,0.0,43.34,34.34,43.34,34.34,
+c     &21.3,9.84,39.85,13.93 /) 
+c
+c          ! trait regression parameters
+c          jmax_int(1:nft)      = (/ 0.0,0.0,35.46,-236.96,35.46,-236.96,
+c     &29.34,30.62,25.54,30.62 /)
+c          jmax_int_er(1:nft)   = (/ 0.0,0.0,83.95,0.0062,83.95,0.0062,
+c     &16.03,35.61,15.55,35.61 /)
+c          jmax_slope(1:nft)     = (/ 0.0,0.0,1.51,15.15,1.51,15.15,
+c     &0.96,1.88,1.32,1.88 /)
+c          jmax_slope_er(1:nft)  = (/ 0.0,0.0,1.28,0.0002,1.28,0.0002,
+c     &0.23,0.467,0.27,0.467 /)
+c          sla_int(1:nft)        = (/ 0.0,0.0,0.0,45.26,0.0,45.26,
+c     &0.0,0.0,25.7,0.0 /)
+c          sla_int_er(1:nft)     = (/ 0.0,0.0,0.0,9.58,0.0,9.58,
+c     &0.0,0.0,3.84,0.0 /)
+c          sla_slope(1:nft)      = (/ 0.0,0.0,0.0,-0.97,0.0,-0.97,
+c     &0.0,0.0,-0.22,0.0 /)
+c          sla_slope_er(1:nft)   = (/ 0.0,0.0,0.0,0.30,0.0,0.30,
+c     &0.0,0.0,0.076,0.0 /)
+
+c     !nft=16          
           !bounds for TRY traits
           env_vcmax_min(1:nft) = (/ 0.0,0.0,25.34,21.72,25.34,21.72,
-     &16.3,19.9,19.43,19.9 /)
+     &25.34,21.72,
+     &16.3,19.9,19.43,19.9,16.3,19.9,19.43,19.9 /)
           env_vcmax_max(1:nft) = (/ 0.0,0.0,116.08,46.33,116.08,46.33,
-     &93.99,178.0,130.0,180.0 /)
+     &116.08,46.33,
+     &93.99,178.0,130.0,180.0,93.99,178.0,130.0,180.0 /)
           env_jmax_min(1:nft)  = (/ 0.0,0.0,44.87,92.3,44.87,92.3,
-     &35.8,57.43,41.9,57.43 /)
+     &44.87,92.3,
+     &35.8,57.43,41.9,57.43,35.8,57.43,41.9,57.43 /)
           env_jmax_max(1:nft)  = (/ 0.0,0.0,230.79,465.4,230.79,465.4,
-     &164.7,333.2,206.5,333.2 /)
+     &230.79,465.4,
+     &164.7,333.2,206.5,333.2,164.7,333.2,206.5,333.2 /)
           env_sla_min(1:nft)   = (/ 0.0,0.0,5.42,5.71,5.42,5.71,
-     &4.37,2.4,7.51,4.52 /)
+     &5.42,5.71,
+     &4.37,2.4,7.51,4.52,4.37,2.4,7.51,4.52 /)
           env_sla_max(1:nft)   = (/ 0.0,0.0,43.34,34.34,43.34,34.34,
-     &21.3,9.84,39.85,13.93 /) 
+     &43.34,34.34,
+     &21.3,9.84,39.85,13.93,21.3,9.84,39.85,13.93  /) 
 
           ! trait regression parameters
           jmax_int(1:nft)      = (/ 0.0,0.0,35.46,-236.96,35.46,-236.96,
-     &29.34,30.62,25.54,30.62 /)
+     &35.46,-236.96,
+     &29.34,30.62,25.54,30.62,29.34,30.62,25.54,30.62 /)
           jmax_int_er(1:nft)   = (/ 0.0,0.0,83.95,0.0062,83.95,0.0062,
-     &16.03,35.61,15.55,35.61 /)
+     &83.95,0.0062,
+     &16.03,35.61,15.55,35.61,16.03,35.61,15.55,35.61 /)
           jmax_slope(1:nft)     = (/ 0.0,0.0,1.51,15.15,1.51,15.15,
-     &0.96,1.88,1.32,1.88 /)
+     &1.51,15.15,
+     &0.96,1.88,1.32,1.88,0.96,1.88,1.32,1.88 /)
           jmax_slope_er(1:nft)  = (/ 0.0,0.0,1.28,0.0002,1.28,0.0002,
-     &0.23,0.467,0.27,0.467 /)
+     &1.28,0.0002,
+     &0.23,0.467,0.27,0.467,0.23,0.467,0.27,0.467 /)
           sla_int(1:nft)        = (/ 0.0,0.0,0.0,45.26,0.0,45.26,
-     &0.0,0.0,25.7,0.0 /)
+     &0.0,45.26,
+     &0.0,0.0,25.7,0.0,0.0,0.0,25.7,0.0 /)
           sla_int_er(1:nft)     = (/ 0.0,0.0,0.0,9.58,0.0,9.58,
-     &0.0,0.0,3.84,0.0 /)
+     &0.0,9.58,
+     &0.0,0.0,3.84,0.0,0.0,0.0,3.84,0.0 /)
           sla_slope(1:nft)      = (/ 0.0,0.0,0.0,-0.97,0.0,-0.97,
-     &0.0,0.0,-0.22,0.0 /)
+     &0.0,-0.97,
+     &0.0,0.0,-0.22,0.0,0.0,0.0,-0.22,0.0 /)
           sla_slope_er(1:nft)   = (/ 0.0,0.0,0.0,0.30,0.0,0.30,
-     &0.0,0.0,0.076,0.0 /)
+     &0.0,0.30,
+     &0.0,0.0,0.076,0.0,0.0,0.0,0.076,0.0 /)
 
           !zero bounds flag arrays
           env_vcmax_bounds(:) = 0
@@ -3185,8 +3543,8 @@ c        ENDIF
             if(env_jmax(ft).lt.jmax_ci_low) then
               !first determine slope and intercept for the perpendicular line:
               ! Jmax=a2*Vmax+b2
-              a2 = (-1/(jmax_slope(ft)-jmax_slope_er(ft))) !slope perpendiculair line
-              b2 = env_jmax(ft)-(a2*env_vcmax(ft))         ! intercept perpendiculair line
+              a2 = (-1/(jmax_slope(ft)-jmax_slope_er(ft))) !slope perpendicular line
+              b2 = env_jmax(ft)-(a2*env_vcmax(ft))         ! intercept perpendicular line
               !search values when slopes cross:
               !(a2*Vmax2)+b2=(a*Vmax)+intercept_lower
               !(a2-slope_lower)*Vmax=intercept_lower-b2
@@ -3219,7 +3577,9 @@ c        ENDIF
             endif
 
             !evaluate whether Vmax matches the trade-off with SLA and adjust SLA if necessary
-            if((ft.eq.4).or.(ft.eq.9))then
+            !only do this where sla_int_er(ft).ne.0.0
+            if((ft.eq.4).or.(ft.eq.6).or.
+     &(ft.eq.8).or.(ft.eq.11).or.(ft.eq.15))then 
               !Regression CI95 lower range:
               sla_ci_low  = sla_int(ft)-sla_int_er(ft) +
      &((sla_slope(ft)-sla_slope_er(ft))*env_vcmax(ft))
@@ -3263,16 +3623,20 @@ c        ENDIF
           ENDIF
       
           !trees
-          env_vcmax(7:10) = (-2.570d-4*eco2+1.090d0)/0.9990d0*
-     &env_vcmax(7:10)
-          env_jmax(7:10)  = (-3.430d-4*eco2+1.120d0)/0.99860d0*
-     &env_jmax(7:10)
+          env_vcmax(9:16) = (-2.570d-4*eco2+1.090d0)/0.9990d0*
+     &env_vcmax(9:16)
+          env_jmax(9:16)  = (-3.430d-4*eco2+1.120d0)/0.99860d0*
+     &env_jmax(9:16)
         
           !C3 grass/crop
           env_vcmax(3) = (-7.570d-4*eco2+1.274d0)/1.0060d0*
      &env_vcmax(3)
           env_jmax(3)  = (-3.80d-4*eco2+1.138d0)/1.00350d0*
      &env_jmax(3)
+          env_vcmax(7) = (-7.570d-4*eco2+1.274d0)/1.0060d0*
+     &env_vcmax(7)
+          env_jmax(7)  = (-3.80d-4*eco2+1.138d0)/1.00350d0*
+     &env_jmax(7)
           env_vcmax(5) = (-7.570d-4*eco2+1.274d0)/1.0060d0*
      &env_vcmax(5)
           env_jmax(5)  = (-3.80d-4*eco2+1.138d0)/1.12250d0*
@@ -3283,6 +3647,10 @@ c        ENDIF
      &  exp(-0.2510d0+8.0d-4*35.39- 2.90d-5*35.39**2 )   )  
 
           ftsla(4)     = ftsla(4) /
+     &( exp(-0.06510d0+3.380d-4*eco2 - 3.90d-5*(eco2/10)**2) / 
+     &  exp(-0.06510d0+3.380d-4*35.39- 3.90d-5*35.39**2 )   )   
+
+          ftsla(8)     = ftsla(8) /
      &( exp(-0.06510d0+3.380d-4*eco2 - 3.90d-5*(eco2/10)**2) / 
      &  exp(-0.06510d0+3.380d-4*35.39- 3.90d-5*35.39**2 )   )   
 
@@ -3311,6 +3679,7 @@ c        ENDIF
 *----------------------------------------------------------------------*
         DO ft=1,nft
           bioleaf(ft) = 0.0d0
+          yield(ft) = 0.0d0 !PCM3: moved here from after COVER( )
           if(s070607.eq.1) then
             DO day=1,ftlls(ft)
               bioleaf(ft) = bioleaf(ft) + 
@@ -3327,27 +3696,48 @@ c        ENDIF
         ans1 = 0.0d0
         DO ft=1,nft
           DO i=1,ftmor(ft)
+            ! adding stem_carbon=bio(i,1,ft) & root_carbon(i,2,ft) & leaf_carbon & nppstore
             ans1 = ans1 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(i,ft)
           ENDDO
-          ans1 = ans1 + slc(ft) + rlc(ft)
+          ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,'(''Icheck0'',3f13.6)') ccheck
+          WRITE(*,'(''Ians1'',3f12.6)') ans1 
+          WRITE(*,'(''Itc0(1)'',3f12.6)') ic0(1) 
+          WRITE(*,'(''Itc0(2)'',3f12.6)') ic0(2) 
+          WRITE(*,'(''Itc0(3)'',3f12.6)') ic0(3) 
+          WRITE(*,'(''Itc0(4)'',3f12.6)') ic0(4) 
+          WRITE(*,'(''Itc0(5)'',3f12.6)') ic0(5) 
+          WRITE(*,'(''Itc0(6)'',3f12.6)') ic0(6) 
+          WRITE(*,'(''Itc0(7)'',3f12.6)') ic0(7) 
+          WRITE(*,'(''Itc0(8)'',3f12.6)') ic0(8) 
+        ENDIF
+
         ccheck = ans1 + ic0(1) + 
      &ic0(2) + ic0(3) + ic0(4) + ic0(5) + ic0(6) + ic0(7) + ic0(8)
 
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,'(''Icheck1'',3f13.6)') ccheck
+
+          PRINT '(A)','SS3a ftprop (from states;from netTransitions) 
+     &(previous time step)'
+          PRINT '(16F11.7)',ftprop(1:nft)
+        ENDIF
 *----------------------------------------------------------------------*
 * Set land use through ftprop.                                         *
 *----------------------------------------------------------------------*
         IF (ilanduse.EQ.2) THEN
           CALL NATURAL_VEG(tmp,prc,ftprop,nat_map)
-        ELSE ! 0 and 1
+        ELSE ! 0 and 1 and 3 to 6
           ftprop(1) = 100.0d0
           DO ft=2,nft
-            IF (check_ft_grow(tmp,ftbbm(ft),ftbb0(ft),ftbbmax(ft),
+            IF (check_ft_grow(tmp,ftbbm(ft),ftbb0(ft),ftbbmax(ft), 
      &ftbblim(ft),chill(ft),dschill(ft)).EQ.1) THEN
               !ftprop(ft) = cluse(ft,year-yr0+1)
               !if((co2const.gt.0.0).and.(spinl.gt.0).and.
-      !&(iyear.le.spinl)) then
+            !&(iyear.le.spinl)) then
               !  ftprop(ft) = cluse(ft,1)
               !else
               !  ftprop(ft) = cluse(ft,iyear-iyear_adj)
@@ -3358,37 +3748,123 @@ c        ENDIF
                 ftprop(ft) = cluse(ft,iyear-iyear_adj)
               else
 C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
-                if(co2const.gt.0.0) then !For TRENDY S1-S3
+                if(co2const.gt.0.0) then !For TRENDY S0 and spinup
 C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
                   ftprop(ft) = cluse(ft,1)
-                else
-              !print*, ft, iyear, iyear_adj, cluse(ft,iyear-iyear_adj)
+                else !For TRENDY S1-S3
+            !print*, ft, iyear, iyear_adj, cluse(ft,iyear-iyear_adj)
                   ftprop(ft) = cluse(ft,iyear-iyear_adj)
                 endif  
               endif  
 
               ftprop(1)  = ftprop(1) - ftprop(ft)
-
             ELSE
               ftprop(ft) = 0.0d0
             ENDIF
+
+            IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
+            at = aggmap_SDGVM_to_aggHyde(ft)
+            DO at2=1,maxn_at
+              ! logic below is identical to the co2 logic
+              if((spinl.gt.0).and.(iyear.gt.spinl)) then
+                atprop2(at,at2) = cluse2(at,at2,iyear-iyear_adj)
+              else
+C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
+                if(co2const.gt.0.0) then !For TRENDY S0 and spinup
+C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
+                  atprop2(at,at2) = cluse2(at,at2,1)
+                else !For TRENDY S1-S3
+                  atprop2(at,at2) = cluse2(at,at2,iyear-iyear_adj)
+                endif  
+              endif  
+            ENDDO
+            ENDIF
+
+            IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
+            at = aggmap_SDGVM_to_aggHyde(ft)
+              ! logic below is identical to the co2 logic
+              if((spinl.gt.0).and.(iyear.gt.spinl)) then
+                atharvest(at) = cluseh(at,iyear-iyear_adj)
+              else
+C PCM temporarily changed the following line for S4v8-S6v8 TRENDY
+                if(co2const.gt.0.0) then !For TRENDY S0 and spinup
+C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
+                  atharvest(at) = cluseh(at,1)
+                else !For TRENDY S1-S3
+                  atharvest(at) = cluseh(at,iyear-iyear_adj)
+                endif  
+              endif  
+            ENDIF
+
+
           ENDDO
+
           IF (ftprop(1).LT.0.0d0) THEN
             DO ft=2,nft
               ftprop(ft) = ftprop(ft)*100.0d0/(100.0 - ftprop(1))
             ENDDO
             ftprop(1) = 0.0d0
           ENDIF
+
+          IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
+            IF(prescr_fire .EQV. .TRUE.) THEN
+!using the year variable, which accounts for recycling of fire data
+!before the main run
+                 IF(ifire .EQ. 2) THEN
+                   iyear_fire = MOD(year-yr0s,NYR_FIRE)+1
+                 ELSE IF (ifire .EQ. 3) THEN
+                   iyear_fire = year-yr0s+1 
+                 END IF
+!                 write(*,*)'FIRE PROBS: in SDGVM0.f,year,iyear_fire,',
+!     &                'yr0s=',year,iyear_fire,yr0s
+!                 write(*,'(12F7.4)')fprob_prescrh(iyear_fire,1:12)
+                 fprob_prescr(1:12) =                    
+     &                       fprob_prescrh(iyear_fire,1:12)
+            END IF
+          END IF
+
+        ENDIF
+
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT '(A)','SS3b ftprop (from states; from net transitions) '
+          PRINT '(16F11.7)',ftprop(1:nft)
+        ENDIF
+
+        IF (closed_loop_ft .EQV. .FALSE.) THEN
+          ftprop1 = ftprop !net transitions or 1st year of gross transitions 
+        ENDIF
+
+        ftprops = ftprop !net transitions (from states vector)
+
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT '(A)','SS3c ftprop1 (before COVER( ) routine) '
+          PRINT '(16F11.7)',ftprop1(1:nft)
         ENDIF
 
 *----------------------------------------------------------------------*
         CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
-     &fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
-     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen)
+     &fprob,fprob_prescr,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,
+     &ilanduse,prescr_fire,nat_map,ic0,fire(iyear),harvest(iyear),
+     &leafdp,flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
+     &ftprop_init,yield,lat,ftprops,debug)
+
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '
+          PRINT '(16F11.7)',ftprop1(1:nft)
+        ENDIF
 
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
+
+        IF(debug .EQV. .TRUE.) THEN
+          !PRINT *,'SS3',nppstore(1:nft)
+        ENDIF
+
+        !IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN !turn on after 1st year
+        IF (ilanduse.EQ.4) THEN !turn on after 1st year
+           closed_loop_ft = .TRUE.
+        ENDIF
 
         DO i=1,8
           tc0(i) = 0.0d0
@@ -3437,7 +3913,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 c initialisse for all the ft, even for those doly run is not required
         DO ft=1,nft
           leaflit(ft) = 0.0d0
-          yield(ft) = 0.0d0
+!          yield(ft) = 0.0d0 !PCM3: now computed previously in COVER( )
           stemlit(ft) = 0.0d0
           rootlit(ft) = 0.0d0
 
@@ -3515,8 +3991,9 @@ c            print*, ft, env_vcmax(ft)
           
 * Height (m)
 cccn           ht(ft) = 0.807d0*(laimax(ft)**2.13655d0)
-          ht(ft) = 0.807d0*(5.0d0**2.13655d0)
-          IF (ht(ft).GT.50.0d0)  ht(ft)=50.0d0
+cc PCM         ht(ft) = 0.807d0*(5.0d0**2.13655d0)
+cc PCM         IF (ht(ft).GT.50.0d0)  ht(ft)=50.0d0
+
           laimax(ft)=0.0d0   
 cThis is to do what doly did... but 
 cit's strange. Initialisation to 0.0d0 is ok, but the previous 
@@ -3556,6 +4033,23 @@ c     monthly initialisations
 
            laimnth(mnth,ft) = 0.0d0
            avmnpet(ft) = 0.0d0
+
+
+cc PCM added the following ten lines to compute ht(ft) for ET calculation
+           hi = 0
+           av_hgt(ft) = 0.0d0 
+           do i = 1,ftmor(ft)
+             av_hgt(ft) = av_hgt(ft) + hgt(i,ft)
+             if(hgt(i,ft).gt.0.0d0) hi = hi + 1 
+           enddo
+ 
+           IF (av_hgt(ft).GT.50.0d0) THEN
+             ht(ft)=50.0d0
+           ELSE IF (av_hgt(ft).LT.0.01d0) THEN
+             ht(ft)=0.01d0
+           ELSE
+             ht(ft)=av_hgt(ft)
+           ENDIF
 
            !traceability analysis soil pool outputs 
            ! are flows consistent due to the mixing of resources, probably not
@@ -3683,7 +4177,8 @@ C PCM2     &ft,soilc(ft),s1(ft),year,mnth,day
             CALL DOLYDAY(ftsla(ft),ftc3(ft),ftphen(ft),ftagh(ft),
      &ftdth(ft),ftlls(ft),ftsls(ft),ftrls(ft),ftbbm(ft),
      &ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),ftsslim(ft),
-     &ftrat(ft),lat,dep,tmp(mnth,day),prc(mnth,day),hum(mnth,day),
+     &ftrat(ft),lat,dep,tmp(mnth,day),prc(mnth,day),
+     &wnd(mnth,day),hum(mnth,day),
      &cld(mnth),ca(mnth,day),soilc(ft),soiln(ft),minnv,s1(ft),s2(ft),
      &s3(ft),s4(ft),sn(ft),lsn(ft),adp,sfc,sw,sswc,awl,kd,kx,daygpp,
      &dayra,lai(ft),nppstore(ft),nppstorx(ft),nppstor2(ft),evp(ft),
@@ -3769,9 +4264,13 @@ c      endif
      &rootnpp(ft) + nppstore(ft) - leafold - stemold - rootold - 
      &nppsold)*12.0d0
             daily_out(6,ft,mnth,day) = daygpp*12.0d0                  ! GPP
-            daily_out(7,ft,mnth,day) = srespm/                        ! heterotrophic respiration
+            !PRINT *,"daily_gpp",ft,mnth,day,daily_out(6,ft,mnth,day)
+            !PCM daily_out(7,ft,mnth,day) = srespm/                   ! heterotrophic respiration
+!PCM     &real(no_days(year,mnth,thty_dys))
+            daily_out(7,ft,mnth,day) = srespm(ft)/                    ! heterotrophic respiration, PCM
      &real(no_days(year,mnth,thty_dys))
-            if(srespm.lt.1e-6) daily_out(7,ft,mnth,day) = 0.000       ! heterotrophic respiration
+            !PCM if(srespm(ft).lt.1e-6) daily_out(7,ft,mnth,day) = 0.000       ! heterotrophic respiration
+            !PCM if(srespm(ft).lt.0.0) daily_out(7,ft,mnth,day) = 0.000    ! heterotrophic respiration
             daily_out(8,ft,mnth,day) = daily_out(5,ft,mnth,day) -     ! NEE
      &daily_out(7,ft,mnth,day)
             daily_out(9,ft,mnth,day) = tmp(mnth,day)
@@ -3903,12 +4402,12 @@ c      endif
 
 *          print*,avmnpet(ft),avmnppt,avmnt
           CALL DOLYMONTH(ts,tc,avmnpet(ft),avmnppt,avmnt,h2o,flow1(ft),
-     &flow2(ft),c0v,n0v,minnv,nfix,nci,dslc,drlc,dsln,srespm,lchm,ca,
-     &site,year,yr0,yrf,speedc,soilc(ft),soiln(ft),mnth,w_scalar,
-     &t_scalar,fl,cal)
+     &flow2(ft),c0v,n0v,minnv,nfix,nci,dslc,drlc,dsln,srespm(ft),
+     &lchm(ft),ca,site,year,yr0,yrf,speedc,soilc(ft),soiln(ft),mnth,
+     &w_scalar,t_scalar,fl,cal)
 
-          sresp(ft) = sresp(ft) + srespm
-          lch(ft) = lch(ft) + lchm
+          sresp(ft) = sresp(ft) + srespm(ft)
+          lch(ft) = lch(ft) + lchm(ft)
                
           DO i=1,8
             c0(i,ft)=c0v(i)
@@ -4050,7 +4549,7 @@ c     check water cycle closure
 
       CALL GROWTH(nft,ftmor,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
      &nppstore,npp,lai,nps,npr,evp,slc,rlc,sln,rln,stembio,rootbio,ppm,
-     &hgt,leaflit)
+     &hgt,leaflit,debug)
 
       CALL SWAP(ic0,in0,iminn,is1,is2,is3,is4,isn,ilsn,tc0,tn0,
      &tminn,ts1,ts2,ts3,ts4,tsn,tlsn)
@@ -4070,6 +4569,7 @@ c     check water cycle closure
         avgpp   = 0.0d0
         avlch   = 0.0d0
         avyield = 0.0d0
+        avflulccc = 0.0d0
         avnleaf = 0.0d0
         avleaf_nit = 0.0d0
         avvcmax = 0.0d0
@@ -4095,8 +4595,10 @@ c     check water cycle closure
           avpet   = avpet   + ftcov(ft)*fpet(ft)
           avgpp   = avgpp   + ftcov(ft)*gpp(ft)
           avlch   = avlch   + ftcov(ft)*lch(ft)
-          avyield = avyield + ftcov(ft)*yield(ft)
+          avyield = avyield + ftcov(ft)*yield(ft) 
+          avflulccc = avflulccc + ftcov(ft)*flulccc(ft) 
           hi = 0
+          av_hgt(ft) = 0.0d0 
           do i = 1,ftmor(ft)
             av_hgt(ft) = av_hgt(ft) + hgt(i,ft)
             if(hgt(i,ft).gt.0.0d0) hi = hi + 1 
@@ -4227,7 +4729,6 @@ c       kg_beta    = kg_beta/wi
         rootper = 0.0d0
         soilcn = tsoilc/tsoiln
 
-        tbioleaf = 0.0000
         DO ft=1,nft
           bioleaf(ft) = 0.0d0
           if(s070607.eq.1) then
@@ -4241,17 +4742,21 @@ c       kg_beta    = kg_beta/wi
      &leafdp(day,ft)/(ftsla(ft)/0.480d0)
             ENDDO
           endif
-          tbioleaf = bioleaf(ft) 
         ENDDO
 
         avppm = 0.0
+        sumbioleaf = 0.0000
         DO ft=1,nft
           bioo(ft) = 0.0d0
           covo(ft) = 0.0d0
+          yieldo(ft) = 0.0d0
+          bioleafo(ft) = 0.0d0
           DO i=1,ftmor(ft)
             bioo(ft) = bioo(ft) + (bio(i,1,ft) +
      &bio(i,2,ft) + bioleaf(ft) + nppstore(ft))*cov(i,ft)
+            bioleafo(ft) = bioleafo(ft) + bioleaf(ft)*cov(i,ft)
             covo(ft) = covo(ft) + cov(i,ft)
+            yieldo(ft) = yieldo(ft) + yield(ft)*cov(i,ft)
             leafper = leafper + npl(ft)*cov(i,ft)
             stemper = stemper + nps(ft)*cov(i,ft)
             rootper = rootper + npr(ft)*cov(i,ft)
@@ -4260,6 +4765,7 @@ c       kg_beta    = kg_beta/wi
             ENDIF
           ENDDO
           sumbio = sumbio + bioo(ft)
+          sumbioleaf = sumbioleaf + bioleafo(ft)
           IF (covo(ft).GT.maxcov) THEN
             maxcov = covo(ft)
             !covind = ft
@@ -4289,6 +4795,9 @@ c       kg_beta    = kg_beta/wi
         IF (iyear.GE.nyears-outyears+1) THEN
           WRITE(21,'('' '',f8.1,$)') avlai
           WRITE(22,'('' '',f8.1,$)') avnpp
+!          IF (MOD(iyear,20).EQ.0 .OR. iyear.GE.(nyears-20)) THEN
+!            WRITE(*,*) iyear,avnpp
+!          END IF
           WRITE(23,'('' '',f8.1,$)') tsoilc
           WRITE(24,'('' '',f8.1,$)') tsoiln
           WRITE(25,'('' '',f8.1,$)') avnpp-avsresp
@@ -4311,7 +4820,7 @@ c       kg_beta    = kg_beta/wi
           WRITE(42,'('' '',f8.3,$)') avlch
           WRITE(43,'('' '',f8.1,$)') yearprc
           WRITE(44,'('' '',f8.1,$)') avnpp-avsresp-firec-avlch-avyield-
-     &flulccc
+     &avflulccc
           WRITE(45,'('' '',f8.1,$)') avtrn
           WRITE(46,'('' '',f8.5,$)') fprob
           WRITE(47,'('' '',f8.2,$)') yeartmp
@@ -4347,13 +4856,14 @@ c       kg_beta    = kg_beta/wi
           WRITE(602,'('' '',f8.6,$)') wtwp
           WRITE(603,'('' '',f12.2,$)') tabglitterc
           WRITE(604,'('' '',f12.2,$)') tblgc
-          WRITE(605,'('' '',f10.2,$)') tbioleaf
-          WRITE(606,'('' '',f10.2,$)') flulccc 
+          WRITE(605,'('' '',f10.2,$)') sumbioleaf
+          WRITE(606,'('' '',f10.2,$)') avflulccc 
+          WRITE(607,'('' '',f10.2,$)') avyield 
         ENDIF
 
 
 *----------------------------------------------------------------------*
-* Write optional cov bio bud sen.                                      *
+* Write optional cov bio bud sen yie.                                  *
 *----------------------------------------------------------------------*
         iofn = iofngft
         IF (iyear.GE.nyears-outyears2+1) THEN
@@ -4373,6 +4883,10 @@ c       kg_beta    = kg_beta/wi
             IF (out_sen) THEN
               iofn = iofn + 1
               WRITE(iofn,'('' '',i8,$)') seno(ft)
+            ENDIF
+            IF (out_yie) THEN
+              iofn = iofn + 1
+              WRITE(iofn,'('' '',f12.6,$)') yieldo(ft)
             ENDIF
           ENDDO
         ENDIF
@@ -4400,6 +4914,9 @@ c       kg_beta    = kg_beta/wi
                       ans(mnth,1) = ans(mnth,1) + 
      &daily_out(i,ft,mnth,day)*ftcov(ft)*oscale
                     ENDDO
+                    IF(i.eq.6) THEN
+!                     PRINT *,"MOPIX GPP",mnth,i,ft,ftcov(ft),ans(mnth,1)
+                    ENDIF
                   ENDDO
                 ENDDO
                 iofn = iofn + 1
@@ -4537,17 +5054,40 @@ c       kg_beta    = kg_beta/wi
         ans1 = 0.0d0
         DO ft=1,nft
           DO i=1,ftmor(ft)
+            ! adding stem_carbon=bio(i,1,ft) & root_carbon(i,2,ft) & leaf_carbon & nppstore
             ans1 = ans1 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(i,ft)
           ENDDO
-          ans1 = ans1 + slc(ft) + rlc(ft)
+          ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,'(''check0'',3f13.6)') ccheck
+          WRITE(*,'(''avnpp'',3f12.6)') avnpp 
+          WRITE(*,'(''ans1'',3f12.6)') ans1 
+          WRITE(*,'(''tc0(1)'',3f12.6)') tc0(1) 
+          WRITE(*,'(''tc0(2)'',3f12.6)') tc0(2) 
+          WRITE(*,'(''tc0(3)'',3f12.6)') tc0(3) 
+          WRITE(*,'(''tc0(4)'',3f12.6)') tc0(4) 
+          WRITE(*,'(''tc0(5)'',3f12.6)') tc0(5) 
+          WRITE(*,'(''tc0(6)'',3f12.6)') tc0(6) 
+          WRITE(*,'(''tc0(7)'',3f12.6)') tc0(7) 
+          WRITE(*,'(''tc0(8)'',3f12.6)') tc0(8) 
+          WRITE(*,'(''avlch'',3f12.6)') avlch 
+          WRITE(*,'(''avsresp'',3f12.6)') avsresp 
+          WRITE(*,'(''firec'',3f12.6)') firec 
+          WRITE(*,'(''avyield'',3f12.6)') avyield 
+          WRITE(*,'(''avflulccc'',3f12.6)') avflulccc 
+        ENDIF
 !        ccheck = ccheck - (ans1 + tc0(1) + 
 !     &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) - 
 !     &(avnpp-avlch-avsresp-firec)) - avyield
+
         ccheck = ccheck + avnpp - (ans1 + tc0(1) + 
      &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) + 
-     &avlch + avsresp + firec +  avyield + flulccc)
+     &avlch + avsresp + firec + avflulccc + avyield ) 
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,'(''check'',3f13.6)') ccheck
+        ENDIF
 
 *----------------------------------------------------------------------*
 * Check carbon and water balance, write to 'DIAG' if any problems.     *
@@ -4572,7 +5112,7 @@ c       kg_beta    = kg_beta/wi
         DO i=21,69
           WRITE(i,*)
         ENDDO
-        DO i=601,606
+        DO i=601,607
           WRITE(i,*)
         ENDDO
 
@@ -4592,6 +5132,10 @@ c       kg_beta    = kg_beta/wi
               WRITE(iofn,*)
             ENDIF
             IF (out_sen) THEN
+              iofn = iofn + 1
+              WRITE(iofn,*)
+            ENDIF
+            IF (out_yie) THEN
               iofn = iofn + 1
               WRITE(iofn,*)
             ENDIF
@@ -4790,6 +5334,10 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
             CLOSE(iofn)
           ENDIF
           IF (out_sen) THEN
+            iofn = iofn + 1
+            CLOSE(iofn)
+          ENDIF
+          IF (out_yie) THEN
             iofn = iofn + 1
             CLOSE(iofn)
           ENDIF

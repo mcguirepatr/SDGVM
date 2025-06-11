@@ -1,0 +1,22 @@
+#!/bin/bash
+SDGVMinput='input_global_v5a10g7spinslow.dat'
+GRIDNUM='61'
+GRID='grid'${GRIDNUM}
+VERSION='sp40'
+GRIDLOG='g'${GRIDNUM}${VERSION}
+EXE_DIR='./src_debug'
+INPUT_DIR='/work/scratch-pw3/pmcguire/sdgvmR/TRENDYv12_v2/spin_accel/outputdebug/'
+OUTPUT_DIR='/work/scratch-pw3/pmcguire/sdgvmR/TRENDYv12_v2/spin_accel/outputdebug/'
+OUTPUTGRIDDIR=${OUTPUT_DIR}${GRID}${VERSION} #just running for one subgrid = GRIDNUM
+SITES='/gws/nopw/j04/nexcs/pmcguire/TRENDYv12/db/sites/global_1deg_CRUJRA2023.dat'
+#FIRSTSITE=10997
+#LASTSITE=11179
+FIRSTSITE=10997
+LASTSITE=11070
+mkdir -p ${OUTPUTGRIDDIR}
+echo 'mkdir '${OUTPUTGRIDDIR}
+cp -pr src_debug ${OUTPUTGRIDDIR}/.
+cp -p $(basename $0)  ${OUTPUTGRIDDIR}/.
+cp -p ${SDGVMinput} ${OUTPUTGRIDDIR}/.
+echo 'log '${OUTPUT_DIR}/${GRIDLOG}out.txt 
+${EXE_DIR}/sdgvm0 ${SDGVMinput} ${INPUT_DIR} ${OUTPUTGRIDDIR} ${SITES} ${FIRSTSITE} ${LASTSITE} > ${OUTPUT_DIR}/${GRIDLOG}out.txt 2> ${OUTPUT_DIR}/${GRIDLOG}err.txt

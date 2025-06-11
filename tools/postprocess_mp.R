@@ -9,6 +9,7 @@
 
 rm(list=ls())
 
+outputdir <- 'output/'
 
 
 # Set default argument values
@@ -70,8 +71,8 @@ ncfend <- '.nc'
 
 
 # netcdf files to create
-ncdf_avars <- c('cVeg','cLitter','cSoil','cRoot','burntArea')
-#ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea')
+#ncdf_avars <- c('cVeg','cLitter','cSoil','cRoot','burntArea')
+ncdf_avars <- c('cVeg','cLitter','cSoil','fFire','fLuc','cLeaf','cRoot','burntArea','cYield','nbpAnnual','nepAnnual','rhAnnual','nppAnnual')
 #ncdf_avars <- c('fFire','fLuc')
 #ncdf_avars <- 'cVegpft' 
 #ncdf_avars <- 'landCoverFrac' 
@@ -81,22 +82,24 @@ ncdf_avars <- c('cVeg','cLitter','cSoil','cRoot','burntArea')
 #ncdf_mvars <- c('tas','pr')
 #ncdf_mvars <- 'snow_depthpft' 
 #ncdf_mvars <- c('gpppft','tran','npppft')
-ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','lai','tran',
-                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft')
+ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','nep','lai','tran',
+                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft','soilr')
+
 #ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans')
 #ncdf_mvars <- c('gpp','ra','npp','rh','nbp','lai',
 #                'evapotranspft','transpft','snow_depthpft','gpppft','npppft','tran','landCoverFrac')
 #ncdf_mvars <- 'nbp' 
 #ncdf_mvars <- 'laipft' 
-ncdf_mvars <- c('evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft')
+#ncdf_mvars <- c('evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft')
 
 # nc file parameters
 mis_val   <- -99999
 nsites    <- 62220 
 lon       <- 0.5 
 lat       <- 0.5
-pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
+#pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
 #pftnames  <- c('BARE','CITY','C3')
+pftnames  <- c('BARE','CITY','C3p','C3s','C3crop','C4p','C4s','C4crop','Dc_Bp','Dc_Np','Ev_Bp','Ev_Np','Dc_Bs','Dc_Ns','Ev_Bs','Ev_Ns')
 
 # specifiy a variable to process, this should be the filename not including the extension
 # - used to test whether the outputting is working correctly 
@@ -109,7 +112,8 @@ email       <- 'walkerap@ornl.gov'
 institution <- 'Oak Ridge National Laboratory'
 
 # project name
-project   <- 'TRENDYv9, 2020'
+#project   <- 'TRENDYv13, 2024' #We can't put this in the command-line, maybe due to the comma
+project   <- 'TRENDYv13(2024)'
 
 
 ### Parse command line arguments   
@@ -151,7 +155,7 @@ if(netcdf) source('functions_netcdf.R')
 
 ### Start Program
 ##########################
-wd_list <- paste(wd,sim,'output/',sep='/')
+wd_list <- paste(wd,sim,outputdir,sep='/')
 print(wd_list)
 
 # if single variable specified process that and nothing else

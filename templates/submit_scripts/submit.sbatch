@@ -3,14 +3,14 @@
 
 #===============================================================================
 
-#SBATCH -A #ACCOUNT#                      ### account to run job under
+##SBATCH -A #ACCOUNT#                      ### account to run job under #comment out if no ACCOUNT
 #SBATCH -J #SIM#_#PROJECT#_SDGVM          ### jobname 
 #SBATCH -p #PARTITION#                    ### partition to run job in (sinfo)
-#SBATCH --mem=0                           ### <number>[unit], when 0, all available memory requested
+#SBATCH --mem=#MEMORY#                    ### <number>[unit], when 0, all available memory requested
 #SBATCH -N #NODES#                        ### nodes requested for job
 #SBATCH -n #NP#                           ### tasks job will run per node
 #SBATCH -c 1                              ### cpu cores each task requires
-#SBATCH -t 32:00:00                       ### requested walltime
+#SBATCH -t #WALLTIME#                       ### requested walltime
 #SBATCH --no-requeue
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=#EMAIL#
@@ -25,7 +25,7 @@ echo "`date` -- SDGVM EXECUTION HAS STARTED"
 ./run_SDGVM.bs
 echo "`date` -- SDGVM EXECUTION HAS FINISHED" 
 
-./run_postprocessing.bs
+#./run_postprocessing.bs #comment out if not done on this partition
 echo "`date` -- PP EXECUTION HAS FINISHED" 
 
 

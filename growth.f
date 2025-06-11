@@ -5,21 +5,49 @@
 *----------------------------------------------------------------------*
       SUBROUTINE COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
-     &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
-     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen)
+     &fireres,fprob,fprob_prescr,ftprop,ftstmx,stemdp,rootdp,ftsls,
+     &ftrls,ilanduse,prescr_fire,nat_map,ic0,burn,harvest,leafdp,
+     &flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
+     &ftprop_init,yield,lat,ftprops,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
+      INTEGER, PARAMETER :: n_at = 7 !number of aggregated (Hyde, functional) types
+      INTEGER, PARAMETER :: NS = 16 !number of SDGVM functional types
+      LOGICAL :: debug !used to print out more debugging info
       REAL*8 cov(maxage,maxnft),bio(maxage,2,maxnft),bioleaf(maxnft)
       REAL*8 nppstore(maxnft),npp(maxnft),nps(maxnft),tmp(12),prc(12)
       REAL*8 slc(maxnft),rlc(maxnft),firec
       REAL*8 ppm(maxage,maxnft),hgt(maxage,maxnft),ftppm0(maxnft),told
       REAL*8 ftstmx(maxnft),stemdp(1000,maxnft),rootdp(1000,maxnft)
-      REAL*8 fprob,ftprop(maxnft),ngcov,gold,c3old,c4old,fri,norm
+      REAL*8 fprob,ftprop(maxnft),tot_ngcov,ngcov(maxnft)
+      REAL*8 gold,c3old,c4old,fri,norm
       REAL*8 grassrc,ic0(8),sumc,leafdp(3600,maxnft)
-      REAL*8 ftloss_prop(maxnft),sum_cov(maxnft),flulccc
+      REAL*8 loss,sum_cov(maxnft),flulccc(maxnft)
+      REAL*8 lossfrac,lossfrac_nowoodh
+      REAL*8 cneed, cneed_leaf, cneed_store
+      REAL*8 ftpropnew,ftprop3(maxnft)
+      REAL*8 sum_cov_test(maxnft)
+      REAL*8 atprop2(n_at,n_at),THRESH
+      REAL*8 atharvest(n_at),fprob_prescr(12)
+      REAL*8 ft2frac(maxnft),at2prop,woodh,totft,loss_nowoodh
+      REAL*8 ftprop_init(maxnft),yield(maxnft),lat
+      REAL*8 tot_secdn,barefrac_secdn,nonbarefrac,ftprops(maxnft)
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
-      LOGICAL burn,harvest
+      INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
+      INTEGER ft3,at3,mm
+      LOGICAL burn,harvest,prescr_fire,fprob_allok
+      LOGICAL compute_covchange,change_cover,corrct_ft,corrct_ft2
+
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GG4a ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(A)','GC4a cov '
+        DO j=1,6 !show first six years of cover
+          PRINT '(16F11.6)',cov(j,1:nft)
+        ENDDO
+      ENDIF
+
 
       IF (ilanduse.eq.2) THEN
 *----------------------------------------------------------------------*
@@ -53,49 +81,299 @@
 * Reduce ft area due to change in the LULCC database                   *
 * and put this as bare ground ready for new growth 'ngrowth'.          *
 *----------------------------------------------------------------------*
-      ngcov = 0d0
-      flulccc = 0d0
+      flulccc(:) = 0d0
+      tot_ngcov = 0.0d0
+      ngcov(:) = 0.0d0
 
-      IF (ilanduse.lt.2) THEN
+      ! HYDE aggregated land cover: 1 primf, 2 primn, 3 secdf, 4 secdn, 5 C3 crop, 6 C4 crop, 7 urban
+C The following ordering is the order of ft's in the input.dat file
+      !                                    ft       at
+      !            aggmap_SDGVM_to_aggHyde(1)     =  0 !BARE 
+      !            aggmap_SDGVM_to_aggHyde(2)     =  7 !urban 
+      !            aggmap_SDGVM_to_aggHyde(3:4)   =  2 !C3p, C4p 
+      !            aggmap_SDGVM_to_aggHyde(5)     =  5 !C3crop 
+      !            aggmap_SDGVM_to_aggHyde(6)     =  6 !C4crop 
+      !            aggmap_SDGVM_to_aggHyde(7:8)   =  4 !C3s, C4s
+      !            aggmap_SDGVM_to_aggHyde(9:12)  =  1 !Ev_Bp, Dc_Bp, Ev_Np, Dc_Np 
+      !            aggmap_SDGVM_to_aggHyde(13:16) =  3 !Ev_Bs, Dc_Bs, Ev_Ns, Dc_Ns  
+      IF (ilanduse.ne.2 ) THEN
       sum_cov(:)     = 0.0d0
-      ftloss_prop(:) = 0.0d0
-      DO ft=3,nft
+      loss           = 0.0d0
+      ftprop_init    = ftprop
+      DO ft=2,nft
+        !print*, 'G2',ft,ftphen(ft)
+        !PRINT*, 'G2a',ft,ftprop(ft) 
+        CALL CALC_CORRCT_FT(ft,lat,corrct_ft)
+
         DO age=1,ftmor(ft)
           sum_cov(ft) = sum_cov(ft) + cov(age,ft)
         ENDDO
-        !print*, sum_cov(ft)
+        IF(debug .EQV. .TRUE.) THEN
+          print*, 'ft SUM_COV(ft):',ft, sum_cov(ft)
+        ENDIF
+       
 
-        ! need to make this tree speciifc
+        IF ( (ilanduse.GE.4) .AND. (ilanduse.LE.6) ) THEN 
+          ! do for both ftphen(ft) == 1 and 2
+          compute_covchange = .TRUE. !compute cover change 
+        ELSE
+          !IF ( ftphen(ft).EQ.2 ) THEN
+          !! need to make this tree specific 
+          !  compute_covchange = .TRUE.
+          !ELSE
+            compute_covchange = .FALSE.
+          !ENDIF
+        ENDIF
+           
+!        if((sum_cov(ft).le.0d0)) then !PCM
+!          sum_cov(ft) = ftprop(ft)
+!        endif
+!        if((compute_covchange.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then!PCM Site=11 has troubles here
+!       we need to handle the sum_cov(ft).eq.0d0 case as well
+        if((compute_covchange.EQV..FALSE.)) then
+          loss = sum_cov(ft) - ftprop(ft)*1d-2
+          woodh = 0.0d0
+          loss_nowoodh = sum_cov(ft) - (ftprop(ft)+woodh)*1d-2
+        else 
+          at = aggmap_SDGVM_to_aggHyde(ft)
+          CALL CALC_FT2FRAC(ftprop_init,aggmap_SDGVM_to_aggHyde,nft,
+     &ft2frac,debug)
 
-        if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
-        if( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) then
-        !if( ftprop(ft)*1d-2 .lt. sum_cov(ft) ) then
-          
-          if( ftprop(ft) .gt. 1d-1 ) then
-            ftloss_prop(ft) = 1d0 - (ftprop(ft)*1d-2)/sum_cov(ft)
+          if(at.EQ.4) then
+            !use ftprops = states vector from net transitions; this allows for transitions from bare secondary non-forest to non-bare secondary non-forest 
+            tot_secdn = ftprops(1)+ftprops(7)+ftprops(8)
+            if(tot_secdn.GT.0.0d0)then
+              barefrac_secdn = ftprops(1)/tot_secdn
+            else
+              barefrac_secdn = 0.0d0
+            endif
+            nonbarefrac = 1.0d0-barefrac_secdn
           else
-            ftloss_prop = 1d0 
+            nonbarefrac = 1.0d0 
           endif
 
-          !print*, 'ftprop is less than sum_cov:',
-      !&ft, ftprop(ft)*1d-2, sum_cov(ft), ftloss_prop(ft) 
-          !print*, (ftprop(ft)*1d-2) - sum_cov(ft)
+          !if(at.EQ.1 .OR. at.EQ.2) then
+          if(at.EQ.1) then
+          ! losses to ft from wood harvest in ft 
+            woodh = ft2frac(ft)*atharvest(at)
+            ftprop(ft) = ftprop(ft) - woodh
+          else
+            woodh = 0.0d0
+          endif
 
-          CALL LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &ftloss_prop,npp,nps,ngcov,slc,rlc,fireres,flulccc,harvest,leafdp,
-     &ft)
+          ! losses to ft from conversion to urban cover (at2.EQ.7)
+          ftprop(ft) = ftprop(ft)-ft2frac(ft)*atprop2(at,7)
 
-          ngcov = ngcov + ftloss_prop(ft) * sum_cov(ft)
-        endif
-        endif
+          ! gains to ft from conversion from urban cover (at2.EQ.7)
+          ftprop(ft) = ftprop(ft)+ft2frac(ft)*atprop2(7,at)
+
+          DO ft2=2,nft
+            at2 = aggmap_SDGVM_to_aggHyde(ft2)
+            CALL CALC_CORRCT_FT(ft2,lat,corrct_ft2)
+
+           
+            if(at2.EQ.4 .AND. at.EQ.2 ) then
+            ! gains to ft2 from wood harvest in ft 
+            !   for at2.EQ.4 (secdn) from at.EQ.2 (primn)
+              !ftprop(ft2) = ftprop(ft2)+ft2frac(ft2)*woodh
+              ftprop(ft2) = ftprop(ft2)+ft2frac(ft2-4)*woodh !assumes primary cover fraction
+            endif
+
+            if(at2.EQ.3 .AND. at.EQ.1 ) then
+            ! gains to ft2 from wood harvest in ft 
+            !   for at2.EQ.3 (secdf) from at.EQ.1 (primf)
+              !ftprop(ft2) = ftprop(ft2)+ft2frac(ft2)*woodh
+              ftprop(ft2) = ftprop(ft2)+ft2frac(ft2-4)*woodh !assumes primary cover fractions
+            endif
+
+            ! losses from ft to ft2: !atprop2 additive in %/year
+            IF(ft2frac(ft2).GT.0.0d0) THEN !check for pre-existing cover in the ft2
+            ! split the losses from each ft by a fraction ft2frac(ft)
+            ! split the losses to each ft to each ft2 by a fraction ft2frac(ft2)
+              ftprop(ft) = ftprop(ft) -
+     &  ft2frac(ft)*ft2frac(ft2)*atprop2(at,at2)
+            ELSE IF(corrct_ft2) THEN !check if tropical or temperate
+            ! split the losses from each ft by a fraction ft2frac(ft)
+              ftprop(ft) = ftprop(ft) -
+     &  ft2frac(ft)*             atprop2(at,at2)
+            ENDIF
+
+            ! gains to ft from ft2:
+            IF(ft2frac(ft).GT.0.0d0) THEN ! check for pre-existing cover in the ft !also check if tropical or temperate 
+            ! split the gains from each at2 from each ft2 by a fraction ft2frac(ft2)
+            ! split the gains to each at to each ft by a fraction ft2frac(ft)
+               ftprop(ft) = ftprop(ft) +
+     &  ft2frac(ft)*ft2frac(ft2)*atprop2(at2,at)
+            ELSE IF((corrct_ft.EQV..TRUE.).AND.
+     &(nonbarefrac.GT.0.0d0)) THEN ! check if tropical or temperate !also, only do this if there is non-bare secdn ground or if it's not secdn
+               ftprop(ft) = ftprop(ft) +
+     &             ft2frac(ft2)*atprop2(at2,at)
+            ENDIF
+
+            IF ((debug.EQV..TRUE.).AND.((at.eq.5).OR.(at2.eq.5))) THEN
+                PRINT
+     &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
+     &              'GHG1',
+     &              at2,at,ft2,ft,
+     &              ft2frac(ft),ft2frac(ft2),atprop2(at2,at),
+     &              ftprop(ft),woodh,sum_cov(ft),atharvest(at)
+                PRINT
+     &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
+     &              'GHL1',
+     &              at,at2,ft,ft2,
+     &              ft2frac(ft),ft2frac(ft2),atprop2(at,at2),
+     &              ftprop(ft),woodh,sum_cov(ft),atharvest(at)
+            ENDIF
+          ENDDO
+!         totft = ftprop(ft) + woodh 
+!
+!         IF( totft .GT. 1d-1 ) THEN
+!            loss = 1d0 - totft*1d-2/sum_cov(ft)
+!            loss_nowoodh = 1d0 - (totft-woodh)*1d-2/sum_cov(ft)
+
+         !IF( ftprop(ft) .GT. 1d-1 ) THEN !this discretization leads to carbon imbalances
+         !IF( ftprop(ft) .GT. 1d-2 ) THEN !this prevents cov<0
+         !IF(sum_cov(ft).GT.0.0d0) THEN
+         !IF(ftprop(ft) .GT. 0.0d0) THEN
+         ! loss = 1.0d0 - ftprop(ft)*1d-2/sum_cov(ft) 
+         ! loss > 0 if there is a loss in cover; loss < 0 if there is a gain in cover
+         ! loss_nowoodh = 1.0d0 - (ftprop(ft)+woodh)*1d-2/sum_cov(ft)
+         !ELSE
+         !   !ftloss_prop = 1d0   !PCM why isn't this ftloss_prop(ft) = 1d0 ??
+         !   loss = 1d0   !PCM 
+         !   loss_nowoodh = 1d0
+         !ENDIF
+         !ELSE
+         !   loss = 0d0   
+         !   loss_nowoodh = 0d0
+         !ENDIF
+
+
+!         print*, 'ftprop is less than sum_cov:',
+!     &ft, ftprop(ft)*1d-2, sum_cov(ft), loss 
+!         print*, (ftprop(ft)*1d-2) - sum_cov(ft)
+
+!         change_cover = .False. 
+!         change_cover = .True. 
+!!         IF(sum_cov(ft).GT.0.0d0) THEN
+!         IF( ilanduse .LT. 3 ) THEN
+!!           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+!           IF( ( ftprop(ft)*1d-2 - sum_cov(ft)) .ne. 0.0  ) THEN
+!             change_cover = .True. !settings for net transitions
+!           ENDIF
+!         ELSE IF( ilanduse .GE. 3 .AND. ilanduse .LE. 6 ) THEN
+!           IF( ftprop(ft)*1d-2 .NE. sum_cov(ft) ) THEN 
+!             change_cover = .True. !settings for gross transitions
+!           ENDIF
+!         ENDIF
+!!         ENDIF
+
+!         IF( change_cover ) THEN 
+         ! NET transitions: IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+         ! GROSS transitions IF( ftprop(ft)*1d-2 .LT. sum_cov(ft) ) THEN 
+
+         !IF(ftprop(ft).GE.0.0d0) THEN
+         ! loss > 0 if there is a loss in cover; loss < 0 if there is a gain in cover
+         loss = sum_cov(ft) - ftprop(ft)*1d-2
+         loss_nowoodh = sum_cov(ft) - (ftprop(ft)+woodh)*1d-2
+         !ELSE !lose all cover if ftprop(ft).LT.0.0d0
+         !  loss = sum_cov(ft)
+         !  loss_nowoodh = sum_cov(ft) 
+         !  !ftprop(ft) = 0.0d0
+         !ENDIF
+        endif !compute_covchange !PCM move this endif here, so that ngcov gets calculated right 
+
+        IF((loss.GT.0.0d0) .and. (sum_cov(ft).GT.0.0d0)) THEN
+            lossfrac         = MIN(loss/sum_cov(ft),1.0d0)
+            lossfrac_nowoodh = MIN(loss_nowoodh/sum_cov(ft),1.0d0)
+            CALL LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
+     &lossfrac,lossfrac_nowoodh,npp,nps,slc,rlc,fireres,flulccc,harvest,
+     &leafdp,sum_cov,ft,debug)
+        ENDIF
+
+         !ngcov(ft) = MAX(-loss_nowoodh,0.d0) * sum_cov(ft) !new growth only for -loss>0
+        IF(loss.LT.0.0d0) THEN
+           !ngcov(ft) = MAX(-loss,0.d0) * sum_cov(ft) !new growth only for -loss>0
+           ngcov(ft) = -loss !new growth only for -loss>0
+           tot_ngcov = tot_ngcov + ngcov(ft) 
+        ENDIF
+        IF (debug .EQV. .TRUE.) THEN
+! ft SUM_COV(ft):           5   9.6228569383682772E-011
+!GG0 5 9.990000 0.000000   -9.990000   -9.990000 0.000000 9.990000 0.000000 0.000000
+           PRINT '(A I2 F9.6 F9.6 F12.6 F12.6 F9.6 F9.6 F9.6 F9.6)',
+     &              'GG0',ft,
+     &              ftprop(ft)*1d-2, woodh*1d-2,
+     &              loss,loss_nowoodh,
+     &              sum_cov(ft), ngcov(ft),
+     &              cov(1,ft),cov(2,ft)
+        ENDIF
+!         ENDIF
+!PCM        endif !compute_covchange !PCM move this endif, so that ngcov gets calculated right 
 
       ENDDO
       ENDIF
+
+      WHERE(ftprop(:).GT.100.0d0)
+         ftprop = 100.0
+      ENDWHERE
+
+      WHERE(ftprop(:).LT.0.0d0)
+         ftprop = 0.0
+      ENDWHERE
+
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GG4b ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(A)','GS4b sum_cov '
+        PRINT '(16F11.6)',sum_cov(1:nft)
+        PRINT '(A)','GN4b tot_ngcov '
+        PRINT '(1F11.6)',tot_ngcov
+        PRINT '(A)','GN4b ngcov '
+        PRINT '(16F11.6)',ngcov(1:nft)
+      ENDIF
+
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GF4b prc '
+        PRINT '(12F11.6)',prc
+        PRINT '(A)','GF4b tmp '
+        PRINT '(12F11.6)',tmp
+      ENDIF
+
+      IF(prescr_fire .EQV. .TRUE.) THEN
+        fprob_allok = .TRUE.
+        DO mm=1,12
+         IF( fprob_prescr(mm).GT.1.0d0
+     & .OR.  fprob_prescr(mm).LT.0.0d0 ) THEN
+          fprob_allok = .FALSE.
+          PRINT '(A)',
+     & 'fprob_prescr is not in bounds. For the month:'
+          PRINT '(I4,12F11.6)',mm,fprob_prescr(mm)
+          CONTINUE
+!          PRINT '(A)','Stopping.'
+!          STOP
+         ENDIF
+        END DO
+!PCM: for now, use equal-weighted average of all months 
+        IF(fprob_allok) THEN
+           fprob = SUM(fprob_prescr(1:12)/12.0d0)
+        ELSE
+           RETURN
+        END IF
+        fri   = -1.0d0
+      ELSE
 *----------------------------------------------------------------------*
-* Compute the likelyhood of fire in the current year 'fprob'.          *
+* Compute the likelihood of fire in the current year 'fprob'.          *
 * 'find' is the fire index                                             *
 *----------------------------------------------------------------------*
-      CALL FIRE(prc,tmp,fri,fprob,burn)
+        CALL FIRE(prc,tmp,fri,fprob,burn)
+      ENDIF
+
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GF4b fri fprob'
+        PRINT '(F11.6 F11.6)',fri,fprob
+        PRINT '(A)','GF4b burn '
+        PRINT *,burn
+      END IF
 
 *----------------------------------------------------------------------*
 * Take off area burnt by fire together with plants past there sell by  *
@@ -103,7 +381,9 @@
 * Also shift cover and biomass arrays one to the right.                *
 *----------------------------------------------------------------------*
       CALL NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
-     &npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc)
+     &npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,leafdp,
+     &flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,yield,ft2frac,
+     &sum_cov,debug)
 
 *----------------------------------------------------------------------*
 
@@ -117,7 +397,8 @@
 *----------------------------------------------------------------------*
 * Restrict the rate of trees taking over grassland.                    *
 *----------------------------------------------------------------------*
-       CALL GRASSREC(nft,ftprop,gold,ngcov,grassrc,nat_map)
+       CALL GRASSREC(nft,ftprop,gold,tot_ngcov,ngcov,grassrc,nat_map,
+     &ilanduse)
 
 *----------------------------------------------------------------------*
 * Restrict the rate of bare ground reclimation 0.2, means 20% can be   *
@@ -130,39 +411,79 @@
 *----------------------------------------------------------------------*
 *       CALL c3c4(ftprop,c3old,c4old,npp,nps)
       ENDIF
+
 *----------------------------------------------------------------------*
 * Set cover arrays to adjust to ftprop as best they can.               *
 * ftprop contains the total proportion of that cover, not the          *
-* proportion of bare land to assign. Calculate the new ftprop.         *
+* proportion of bare land to assign. Calculate ftprop3.                *
+* ftprop3 contains the proportion of the new growth ngcov to assign to *
+* each ft.                                                             *
 *----------------------------------------------------------------------*
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GN4c tot_ngcov '
+        PRINT '(1F11.6)',tot_ngcov
+        PRINT '(A)','GN4c ngcov '
+        PRINT '(16F11.6)',ngcov(1:nft)
+        PRINT '(A)','GC4c cov '
+        DO j=1,6 !show first six years of cover
+          PRINT '(16F11.6)',cov(j,1:nft)
+        ENDDO
+
+        PRINT '(A)','GG4c ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+      ENDIF
       norm = 0.0d0
       DO ft=1,nft           
+        !PRINT*, 'G7',ft,ftprop(ft) 
         IF (ftprop(ft).GT.0.0d0) THEN
-          ftprop(ft) = ftprop(ft)/100.0d0
-          DO j=1,ftmor(ft)
-            ftprop(ft)=ftprop(ft) - cov(j,ft)
+          sum_cov(ft) = 0.0d0
+*Start at age=2, since cov array has already been shifted in time by one year. *PCM
+*Ignoring age=1 means that we aren't including crop ft's in this normalization, as before.
+          DO age=2,ftmor(ft)
+            sum_cov(ft) = sum_cov(ft) + cov(age,ft)
           ENDDO
-          IF (ftprop(ft).LT.0.0d0) ftprop(ft)=0.0d0 !can't remove cov
-          norm = norm + ftprop(ft)
+*the variable ftprop3(ft) will contain the proportion of new growth land to assign 
+* for each ft 
+          ftprop3(ft)=ftprop(ft)/100.0d0 - sum_cov(ft)
+          IF (ftprop3(ft).LT.0.0d0) ftprop3(ft)=0.0d0 !can't remove cov
+          norm = norm + ftprop3(ft)
+        ELSE
+          ftprop3(ft)=0.0d0
         ENDIF
       ENDDO
       DO ft=1,nft
-        ftprop(ft) = 100.0d0*ftprop(ft)/norm
+        ftprop3(ft) = 100.0d0*ftprop3(ft)/norm
       ENDDO
 
-      cov(1,1) = ngcov*ftprop(1)/100.0d0
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GG4d ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(A)','GS4d sum_cov '
+        PRINT '(16F11.6)',sum_cov(1:nft)
+      ENDIF
+
+      IF(ilanduse .LT. 3) THEN
+         cov(1,1) = tot_ngcov*ftprop3(1)/100.0d0
+      ELSE
+         !cov(1,1) = ngcov(1)
+         ftprop(1) = MIN(MAX(100.0d0-SUM(ftprop(2:nft)),0.0d0),100.0d0) 
+         cov(1,1) = ftprop(1)/100.0d0
+      ENDIF
+      !PRINT*, 'G8' 
 
 *----------------------------------------------------------------------*
 * Set cover arrays for this years ft proportions, take carbon from     *
 * litter to provide nppstore and canopy.                               *
 *----------------------------------------------------------------------*
       DO ft=2,nft
-        IF (ftprop(ft).GT.0.0d0) THEN
+        !PRINT*, 'G9',ft,ftprop3(ft) 
+        IF (ftprop3(ft).GT.0.0d0) THEN
 
 *----------------------------------------------------------------------*
 * If no veg exists then set nppstore to initial value and reinitialise.*
 *----------------------------------------------------------------------*
           year = 1
+          !PRINT*, 'G10' 
 10        CONTINUE
             IF (cov(year,ft).GT.0.0d0) THEN
               goto 20
@@ -183,23 +504,78 @@
 20        CONTINUE
 *----------------------------------------------------------------------*
 
-          cov(1,ft) = ftprop(ft)*ngcov/100.0d0
-          ppm(1,ft) = ftppm0(ft)
-          hgt(1,ft) = 0.004d0
-          slc(ft) = slc(ft) - (nppstore(ft) + bioleaf(ft))*cov(1,ft)
-          IF (slc(ft).LT.0.0d0) THEN
-            sumc = 0.0d0
-            DO i=1,8
-               sumc = sumc + ic0(i)
-            ENDDO
-            DO i=1,8
-              ic0(i) = ic0(i)*(1.0d0+slc(ft)/sumc)
-            ENDDO
-            slc(ft) = 0.0d0
+          IF(ilanduse .LT. 3) THEN
+            cov(1,ft) = ftprop3(ft)*tot_ngcov/100.0d0
+          ELSE
+            cov(1,ft) = ngcov(ft)
           ENDIF
 
+          IF(cov(1,ft).GT.0.0d0) THEN !only when new growth
+            ppm(1,ft) = ftppm0(ft)
+            hgt(1,ft) = 0.004d0
+
+            ! take new cohort carbon from stem litter (slc), then soil C
+            cneed_leaf   = bioleaf(ft)*cov(1,ft)
+            cneed_store  = nppstore(ft)*cov(1,ft)
+            cneed        = cneed_leaf + cneed_store
+            slc(ft) = slc(ft) - cneed 
+            !slc(ft) = slc(ft) - (nppstore(ft) + bioleaf(ft))*cov(1,ft)
+            IF (slc(ft).LT.0.0d0) THEN
+              sumc = 0.0d0
+              DO i=1,8
+                 sumc = sumc + ic0(i)
+              ENDDO
+
+              ! if soil C is insufficient to support required C do not use 
+              IF ((slc(ft)+sumc) .LT. 0.0d0 ) THEN
+                nppstore(ft) = nppstore(ft) + slc(ft)*cneed_store/cneed 
+                bioleaf(ft)  = bioleaf(ft)  + slc(ft)*cneed_leaf/cneed 
+                cov(1,ft)    = cov(1,ft) * (1.0d0 + slc(ft)/cneed)  
+              ELSE
+                DO i=1,8
+                  ic0(i) = ic0(i)*(1.0d0+slc(ft)/sumc)
+                ENDDO
+              ENDIF
+
+              slc(ft) = 0.0d0
+            ENDIF
+          ENDIF
         ENDIF
       ENDDO
+      !loop added for testing purposes
+      DO ft=1,nft
+        sum_cov_test(ft) = 0.0
+        DO age=1,ftmor(ft)
+          sum_cov_test(ft) = sum_cov_test(ft) + cov(age,ft)
+        ENDDO
+      ENDDO
+
+!      IF (ilanduse.ge.3 .and. ilanduse.le.6) THEN
+!       WRITE(*,*) ' BARE       CITY       C3p        C4p        ',
+!     &'C3crop     C4crop      C3s        C4s        Ev_Bp       ', 
+!     &'Ev_Np      Dc_Bp        Dc_Np      Ev_Bs      Ev_Ns      ', 
+!     &'Dc_Bs      Dc_Ns'
+!      ELSE
+!       WRITE(*,*) ' BARE       CITY       C3         C4         ',
+!     &'C3crop     C4crop       Ev_Bl       ', 
+!     &'Ev_Nl      Dc_Bl        Dc_Nl       ' 
+!      ENDIF
+!
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GG3 COV AGE=1 '
+        PRINT '(16F11.6)',cov(1,1:nft)
+        PRINT '(A)','GG4 COV '
+        PRINT '(16F11.6)',sum_cov_test(1:nft)
+!return ftprop for using in gross transitions for next year 
+        PRINT '(A)','GG4e ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(A)','GH4e ftprop3 '
+        PRINT '(16F11.6)',ftprop3(1:nft)
+        !PRINT '(A)','GG5 BIOL'
+        !PRINT '(16F11.6)',bioleaf(1:nft)
+        !PRINT '(A)','GG6 NPPS'
+        !PRINT '(16F11.6)',nppstore(1:nft)
+      ENDIF
 
 
       RETURN
@@ -212,7 +588,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE GROWTH(nft,ftmor,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
      &nppstore,npp,lai,nps,npr,evp,slc,rlc,sln,rln,stembio,rootbio,ppm,
-     &hgt,leaflit)
+     &hgt,leaflit,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 ftwd(maxnft),ftxyl(maxnft),ftpd(maxnft),cov(maxage,maxnft)
@@ -222,6 +598,7 @@
       REAL*8 stembio,ppm(maxage,maxnft),hgt(maxage,maxnft),ftgrf(maxnft)
       REAL*8 leaflit(maxnft),ftmat(maxnft)
       INTEGER nft,ftmor(maxnft),age,ft,i
+      LOGICAL debug
 
 *----------------------------------------------------------------------*
 * Initialise litter arrays, and add on leaf litter computed in DOLY.   *
@@ -253,7 +630,7 @@
 * growth rate.                                                         *
 *----------------------------------------------------------------------*
       CALL THIN(nft,ftmor,ftmat,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
-     &nppstore,npp,lai,nps,evp,slc,ppm,hgt)
+     &nppstore,npp,lai,nps,evp,slc,ppm,hgt,debug)
 
 *----------------------------------------------------------------------*
 * Add on biomasses for the year.                                       *
@@ -288,7 +665,7 @@
 *                          ***************                             *
 *----------------------------------------------------------------------*
       SUBROUTINE THIN(nft,ftmor,ftmat,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,
-     &bio,nppstore,npp,lai,nps,evp,slc,ppm,hgt)
+     &bio,nppstore,npp,lai,nps,evp,slc,ppm,hgt,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 ftwd(maxnft),ftmat(maxnft),ftxyl(maxnft),ftpd(maxnft)
@@ -302,6 +679,7 @@
       REAL*8 gm,grate(maxage),stlit,hgtnew(maxage),dimnew,maxhgt,minhgt
       REAL*8 hc1,hc2,tcov1,tcov2,sum,xxx
       INTEGER nft,ftmor(maxnft),ft,i,year,age
+      LOGICAL debug
 
       pi = 3.1415926d0
 
@@ -321,6 +699,11 @@
 * FT loop for thinning and height competition.                         *
 *----------------------------------------------------------------------*
       DO ft=1,nft
+!        IF(debug)THEN
+!          DO year=1,ftmor(ft)
+!                PRINT *,'GT0A',ft,year,cov(year,ft),ppm(year,ft)
+!          ENDDO
+!        ENDIF
         IF (ftgr0(ft).GT.0.0d0) THEN
 
         IF (npp(ft)*nps(ft).GT.0.0d0) THEN
@@ -354,6 +737,10 @@
             ENDDO
 
             DO year=1,ftmor(ft)
+!              IF(debug)THEN
+!                PRINT *,'GT0B',
+!     &ft,year,cov(year,ft),covnew(year,ft),ppm(year,ft)
+!              ENDIF
               IF (covnew(year,ft).GT.0.0d0) THEN
               covnew(year,ft) = covnew(year,ft)*tcov1/tcov2
               DO i=1,2
@@ -365,6 +752,10 @@
               ppm(year,ft) = ppm(year,ft)*cov(year,ft)/covnew(year,ft)
               cov(year,ft) = covnew(year,ft)
               ENDIF
+!              IF(debug)THEN
+!                PRINT *,'GT1A',
+!     &ft,year,cov(year,ft),covnew(year,ft),ppm(year,ft)
+!              ENDIF
             ENDDO
 
           ENDIF
@@ -410,6 +801,10 @@
               ppm(year,ft) = ppm(year,ft)*cov(year,ft)/covnew(year,ft)
               cov(year,ft) = covnew(year,ft)
               ENDIF
+!              IF(debug)THEN
+!                PRINT *,'GT1B',
+!     &ft,year,cov(year,ft),covnew(year,ft),ppm(year,ft)
+!              ENDIF
             ENDDO
 
           ENDIF
@@ -523,6 +918,10 @@
 * Correct biomass array, and adjust litter for any thinned trees.      *
 *----------------------------------------------------------------------*
           DO year=1,ftmor(ft)
+            !IF(debug)THEN
+            !  PRINT *,'GT2',
+!     &ft,year,cov(year,ft),covnew(year,ft),ppm(year,ft)
+            !ENDIF
             IF ((ppm(year,ft).GT.0.0d0).AND.(cov(year,ft).GT.0.0d0))
      &THEN
                 no = ppm(year,ft)*cov(year,ft) - 
@@ -540,13 +939,19 @@
                 ENDIF
               ENDDO
               storelit(ft) = storelit(ft) + nppstore(ft)/ppm(year,ft)*no
+!              IF(debug)THEN
+!                PRINT *,'GT3',ft,year,cov(year,ft), covnew(year,ft)
+!              ENDIF
               cov(year,ft) = covnew(year,ft)
               ppm(year,ft) = ppmnew(year,ft)
               hgt(year,ft) = hgtnew(year)
-            ELSE
-              cov(year,ft) = 0.0d0
-              ppm(year,ft) = 0.0d0
-              hgt(year,ft) = 0.0d0
+            !PCM3 ELSE
+              !PCM3 cov(year,ft) = 0.0d0
+              !IF(debug)THEN
+              !  PRINT *,'GT4',ft,year,cov(year,ft), covnew(year,ft)
+              !ENDIF
+              !PCM3 ppm(year,ft) = 0.0d0
+              !PCM3 hgt(year,ft) = 0.0d0
             ENDIF
 
           ENDDO
@@ -691,29 +1096,43 @@
 *                             SUBROUTINE GRASSREC                      *
 *                             *******************                      *
 *----------------------------------------------------------------------*
-      SUBROUTINE GRASSREC(nft,ftprop,gold,ngcov,x,nat_map)
+      SUBROUTINE GRASSREC(nft,ftprop,gold,tot_ngcov,ngcov,x,nat_map,
+     &ilanduse)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
-      REAL*8 ftprop(maxnft),gold,ngcov,x,ntcov,ftt,ftpropo(maxnft)
-      INTEGER nft,ft,nat_map(8)
+      REAL*8 ftprop(maxnft),gold,ngcov(maxnft),tot_ngcov
+      REAL*8 x,ntcov,ftt,ftpropo(maxnft)
+      INTEGER nft,ft,nat_map(8),ilanduse
 
       ntcov = 0.0d0
       ftt = 0.0d0
       DO ft=5,8
-        ntcov = ntcov + ftprop(nat_map(ft))*ngcov/100.0d0
+        IF(ilanduse .LT. 3) THEN
+          ntcov = ntcov + ftprop(nat_map(ft))*tot_ngcov/100.0d0
+        ELSE
+          ntcov = ntcov + ftprop(nat_map(ft))*ngcov(ft)/100.0d0
+        ENDIF
         ftt = ftt + ftprop(nat_map(ft))
       ENDDO
 
       IF (ntcov.GT.gold*x) THEN
         DO ft=4,nft
           ftpropo(ft) = ftprop(ft)
-          ftprop(ft) = 100.0d0*gold*x*ftprop(ft)/(ftt*ngcov)
+          IF(ilanduse .LT. 3) THEN
+            ftprop(ft) = 100.0d0*gold*x*ftprop(ft)/(ftt*tot_ngcov)
+          ELSE
+            ftprop(ft) = 100.0d0*gold*x*ftprop(ft)/(ftt*ngcov(ft))
+          ENDIF
           ftprop(2) = ftprop(2) + ftpropo(ft) - ftprop(ft)
         ENDDO
 
         ntcov = 0.0d0
         DO ft=4,nft
-          ntcov = ntcov + ftprop(ft)*ngcov/100.0d0
+          IF(ilanduse .LT. 3) THEN
+            ntcov = ntcov + ftprop(ft)*tot_ngcov/100.0d0
+          ELSE
+            ntcov = ntcov + ftprop(ft)*ngcov(ft)/100.0d0
+          ENDIF
         ENDDO
         IF (abs(ntcov-gold*x).GT.0.000001d0) WRITE(11,
      &'(''Treerec subroutine error'')')
@@ -739,11 +1158,11 @@
       nbp = ngcov*ftprop(1)/100.0d0
 
       IF (nbp.LT.bpaold*(1.0d0-x)) THEN
-	ngcov = 1.0d0 - bpaold*(1.0d0 - x) - cgcov
-	cov(1,1) = bpaold*(1.0d0 - x)
+        ngcov = 1.0d0 - bpaold*(1.0d0 - x) - cgcov
+        cov(1,1) = bpaold*(1.0d0 - x)
       ELSE
-	cov(1,1) = ngcov*ftprop(1)/100.0d0
-	ngcov = ngcov*(1.0d0 - ftprop(1)/100.0d0)
+        cov(1,1) = ngcov*ftprop(1)/100.0d0
+        ngcov = ngcov*(1.0d0 - ftprop(1)/100.0d0)
       ENDIF
 
 
@@ -1019,7 +1438,7 @@
       pow = 3.0d0
 
 *----------------------------------------------------------------------*
-* Adjust for temperature.                                             *
+* Adjust for temperature.                                              *
 *----------------------------------------------------------------------*
       DO i=1,12
         IF (tmp(i).GT.tlim1) THEN
@@ -1033,7 +1452,7 @@
       ENDDO
 
 *----------------------------------------------------------------------*
-* Calculate yearly componet of index.                                  *
+* Calculate yearly component of index.                                 *
 *----------------------------------------------------------------------*
       totp = 0.0d0
       DO k=1,12
@@ -1075,15 +1494,24 @@
 * Compute newgrowth and alter cover array accordingly.                 *
 *----------------------------------------------------------------------*
       SUBROUTINE NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &fprob,npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc)
+     &fprob,npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,
+     &leafdp,flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,yield,
+     &ft2frac,sum_cov,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
       REAL*8 hgt(maxage,maxnft),fprob,npp(maxnft),nppstore(maxnft)
-      REAL*8 nps(maxnft),ngcov,slc(maxnft),rlc(maxnft),bioleaf(maxnft)
-      REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
-      INTEGER nft,ftmor(maxnft),ft,age,fireres
+      REAL*8 nps(maxnft),ngcov(maxnft),tot_ngcov
+      REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
+      REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft)
+      REAL*8 flulccc(maxnft)
+      REAL*8 atharvest(n_at),loss_frac,remain_frac
+      REAL*8 fprbtm,yield(maxnft),ft2frac(maxnft),dflulccc
+      REAL*8 sum_cov(maxnft)
+      INTEGER at,aggmap_SDGVM_to_aggHyde(NS)
+      INTEGER nft,ftmor(maxnft),ft,age,fireres,n_at,NS
       LOGICAL harvest
+      LOGICAL debug !used to print out more debugging info
 
       xfprob = fprob
 
@@ -1092,12 +1520,18 @@
 * Take away veg that has died of old age ie > than ftmor(ft), and      *
 * shift cover array on one year.                                       *
 *----------------------------------------------------------------------*
-      !ngcov = 0.0d0
-      DO ft=1,nft
-        ngcov = ngcov + cov(ftmor(ft),ft)
+      !tot_ngcov = 0.0d0
+      DO ft=2,nft
+        tot_ngcov = tot_ngcov + cov(ftmor(ft),ft)
+        ngcov(ft) = ngcov(ft) + cov(ftmor(ft),ft)
+      
         slc(ft) = slc(ft)  + (bio(ftmor(ft),1,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(ftmor(ft),ft)
         rlc(ft) = rlc(ft)  + bio(ftmor(ft),2,ft)*cov(ftmor(ft),ft)
+        IF (debug .EQV. .TRUE.) THEN
+                PRINT '(A I3 F9.6 F9.6 I6 F9.6)','GG1B',
+     &              ft, tot_ngcov,ngcov(ft),ftmor(ft),cov(ftmor(ft),ft)
+        ENDIF
       ENDDO
       CALL SHIFT(ftmor,cov,ppm,bio,hgt,1,nft)
 
@@ -1106,9 +1540,19 @@
 * LAI.                                                                 *
 *----------------------------------------------------------------------*
       DO ft=2,nft
-
 *----------------------------------------------------------------------*
-* 'tmor' is the mortality rate of the forrest based on 'npp'.          *
+* Compute harvest losses for each aggregated type (at)                 *
+*----------------------------------------------------------------------*
+        at = aggmap_SDGVM_to_aggHyde(ft)
+        IF ((atharvest(at).GT.0.0d0).AND.((at.EQ.1).OR.(at.EQ.3))) THEN !only for primf&secdf
+            loss_frac  = ft2frac(ft)*atharvest(at)*1.0d-2
+            remain_frac = 1.0d0 - loss_frac  
+        ELSE
+            loss_frac = 0.0d0
+            remain_frac = 1.0d0
+        ENDIF
+*----------------------------------------------------------------------*
+* 'tmor' is the mortality rate of the forest based on 'npp'.           *
 *----------------------------------------------------------------------*
         npp0 = 0.2d0
         tmor0 = 6.0d0
@@ -1141,24 +1585,35 @@
 *     &nppstore(ft)
         ENDIF
 *----------------------------------------------------------------------*
+        !tmor = 0.0d0 !PCM turn tmor mortality off 
 
-        DO age=2,ftmor(ft)
+        sum_cov(ft) = 0.d0 
+        DO age=2,ftmor(ft) 
           IF (age.LT.fireres) THEN
             fprob = xfprob
           ELSE
             fprob = 0.0d0
           ENDIF
           IF (fireres.LT.0) fprob = real(-fireres)/1000.0d0
+          !fprob = 0.0d0 !PCM turn fire off
+
+          fprbtm = fprob-fprob*tmor+tmor
           
           !calculate litter from cover loss  
-          ngcov   = ngcov + cov(age,ft)*(fprob - fprob*tmor + tmor)
+          tot_ngcov = tot_ngcov + cov(age,ft)*fprbtm
+          ngcov(ft) = ngcov(ft) + cov(age,ft)*fprbtm
           
+!          IF (debug .EQV. .TRUE.) THEN
+!                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
+!     &         ft,tot_ngcov,ngcov(ft),
+!     &         cov(age,ft),fprbtm,
+!     &         fprob,tmor
+!          ENDIF
           slc(ft) = slc(ft) + 
      &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) * 
      &(tmor - 0.2d0*fprob*tmor + 0.2d0*fprob) * cov(age,ft)
 
-          rlc(ft) = rlc(ft) + bio(age,2,ft)*(tmor - fprob*tmor + fprob)
-     &*cov(age,ft)
+          rlc(ft) = rlc(ft) + bio(age,2,ft)*fprbtm*cov(age,ft)
 
           firec   = firec + 
      &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *
@@ -1166,28 +1621,72 @@
 
           !update cover array
           cov(age,ft) = cov(age,ft)*(1.0d0 - fprob)*(1.0d0 - tmor)
+          !update sum_cov for next time
+          sum_cov(ft) = sum_cov(ft) + cov(age,ft)
           
+        ENDDO
+
+        !split the loop into two, since we have a new cov array with a
+        !different sum_cov
+        DO age=2,ftmor(ft) 
           ! calculate litter loss and biomass loss from harvest
           ! for a harvest (copice style) the cov array remains unchanged
           IF (harvest) THEN
             !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact
             if(age.EQ.2) print*, 'harvest'
-            !add harvested/removed wood biomass (including 50% nppstore) to firec losses
-            flulccc = flulccc + bio(age,1,ft)*cov(age,ft)
             !add harvested/removed leaf biomass to surface soil litter
             slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)
+            !add harvested/removed wood biomass (including 50% nppstore) to firec losses
+            IF(sum_cov(ft).GT.0.0d0)THEN
+              flulccc(ft) = flulccc(ft) +
+     &bio(age,1,ft)*cov(age,ft)/sum_cov(ft)
+            ELSE
+              flulccc(ft) = 0.0d0
+            ENDIF 
             firec   = firec   + nppstore(ft) * 0.50d0 * cov(age,ft) 
             bio(age,1,ft) =  0.0d0
           ENDIF
           
+          ! calculate litter loss and biomass loss from harvest
+          ! the cover array has already been adjusted in the COVER
+          ! routine for harvest
+          IF ((loss_frac.GT.0.0d0).AND.((at.EQ.1).OR.(at.EQ.3))) THEN
+            !add harvested/removed leaf biomass to surface soil litter
+            slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)*loss_frac
+            !add harvested/removed wood biomass (including 50% nppstore) to lulccc losses
+            IF(sum_cov(ft).GT.0.0d0)THEN
+              dflulccc = (bio(age,1,ft) + nppstore(ft) * 0.50d0) *
+     &cov(age,ft)*loss_frac/sum_cov(ft)
+            ELSE
+              dflulccc = 0.0d0
+            ENDIF 
+            !flulccc(ft) = flulccc(ft) + dflulccc !no double counting
+            !add harvested/removed wood biomass (including 50% nppstore) to yield
+            yield(ft) = yield(ft) + dflulccc
+            bio(age,1,ft) = bio(age,1,ft)*remain_frac
+          ENDIF
+
         ENDDO
+
+        IF(debug) THEN
+           PRINT *,
+     &'harvest',ft,at,loss_frac,dflulccc,flulccc(ft),yield(ft)
+        ENDIF
 
         IF (harvest) THEN
           !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact
-          !remove mass - this leaves root mass and 50% nppstore untouched 
+          !remove leaf mass - this leaves root mass and 50% nppstore untouched 
           bioleaf(ft)   = 0.0d0
           leafdp(:,ft)  = 0.0d0 
           nppstore(ft)  = nppstore(ft) * 0.50d0
+        ENDIF
+
+        IF ((loss_frac.GT.0.0d0).AND.((at.EQ.1).OR.(at.EQ.3))) THEN !only for primf&secdf
+          !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact
+          !remove leaf mass - this leaves root mass and 50% nppstore untouched 
+          bioleaf(ft)   = bioleaf(ft)*remain_frac 
+          leafdp(:,ft)  = leafdp(:,ft)*remain_frac  
+          nppstore(ft)  = nppstore(ft) * (1.0d0 - loss_frac*0.50d0)
         ENDIF
 
       ENDDO
@@ -1198,45 +1697,65 @@
       END
 
 *----------------------------------------------------------------------*
-*                            SUBROUTINE LULCCCHANGE                    *
+*                            SUBROUTINE LULCC_LOSS                     *
 *                            ********************                      *
 * Compute newgrowth area and alter cover array according to land-use   *
 * and land-cover change database                                       *
 *----------------------------------------------------------------------*
-      SUBROUTINE LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &ftloss_prop,npp,nps,ngcov,slc,rlc,fireres,flulccc,harvest,leafdp,
-     &ft)
+      SUBROUTINE LULCC_LOSS(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
+     &loss,loss_nowoodh,npp,nps,slc,rlc,fireres,flulccc,harvest,leafdp,
+     &sum_cov,ft,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
       REAL*8 hgt(maxage,maxnft),npp(maxnft),nppstore(maxnft)
-      REAL*8 ftloss_prop(maxnft)
-      REAL*8 nps(maxnft),ngcov,slc(maxnft),rlc(maxnft),bioleaf(maxnft)
-      REAL*8 tmor,tmor0,npp0,flulccc,xfprob,leafdp(3600,maxnft)
+      REAL*8 loss,loss_nowoodh
+      REAL*8 nps(maxnft),dflulccc,sum_cov(maxnft),orig_sum_cov
+      REAL*8 slc(maxnft),rlc(maxnft),bioleaf(maxnft)
+      REAL*8 tmor,tmor0,npp0,flulccc(maxnft),xfprob,leafdp(3600,maxnft)
       INTEGER nft,ftmor(maxnft),ft,age,fireres
       LOGICAL harvest
+      LOGICAL debug !used to print out more debugging info
 
 
 *----------------------------------------------------------------------*
 * kill off pfts that have lost cover according to the landuse database * 
 *----------------------------------------------------------------------*
 
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT '(A)','GG7 LULCC_LOSS'
+        ENDIF
+        orig_sum_cov = sum_cov(ft)
+        sum_cov(ft) = 0.0d0 
         DO age=1,ftmor(ft)
+           rlc(ft) = rlc(ft) + bio(age,2,ft) * 
+     &loss * cov(age,ft)
 
-          rlc(ft) = rlc(ft) + bio(age,2,ft) * 
-     &ftloss_prop(ft) * cov(age,ft)
+           IF(orig_sum_cov.GT.0.0d0) THEN
+             dflulccc = 
+     &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *    
+     &loss * cov(age,ft)/orig_sum_cov
+           ELSE
+             dflulccc = 0.0d0
+           ENDIF
 
-          flulccc = flulccc + 
-     &( bio(age,1,ft) + bioleaf(ft) + nppstore(ft) ) *
-     &ftloss_prop(ft) * cov(age,ft)
+           flulccc(ft) = flulccc(ft) + dflulccc 
 
-          !update cover array
-          cov(age,ft) = cov(age,ft)*( 1.0d0 - ftloss_prop(ft) )
-          
+           !update cover array
+           cov(age,ft) = cov(age,ft)*( 1.0d0 - loss )
+           !update sum_cov for next time
+           sum_cov(ft) = sum_cov(ft) + cov(age,ft)
+           IF(debug .EQV. .TRUE.) THEN
+             PRINT '(2I5,7F12.7)',age,ft,loss,loss_nowoodh,
+     &flulccc(ft),bio(age,1,ft),
+     &bioleaf(ft),nppstore(ft),cov(age,ft)
+           ENDIF
         ENDDO
+        
 
       RETURN
       END
+
 *----------------------------------------------------------------------*
 *                            SUBROUTINE SHIFT                          *
 *                            ****************                          *
@@ -1403,3 +1922,76 @@
 
       RETURN
       END
+
+*----------------------------------------------------------------------*
+*                                                                      *
+*                     SUBROUTINE CALC_FT2FRAC                          *
+*                     ***********************                          *
+*----------------------------------------------------------------------*
+      SUBROUTINE CALC_FT2FRAC(ftprop_init,aggmap_SDGVM_to_aggHyde,nft,
+     &ft2frac,debug)
+      INCLUDE 'array_dims.inc'
+      INTEGER, PARAMETER :: NS = 16 !number of SDGVM functional types
+      REAL*8 ftprop_init(maxnft)
+      INTEGER ft2,at,at2,at3,ft3,nft,aggmap_SDGVM_to_aggHyde(NS)
+      REAL*8 ft2frac(maxnft),at2prop
+      LOGICAL debug
+
+!compute fractions of cover (ft2frac(ft2)) of each ft2 in each aggregated class at2 
+      DO ft2=2,nft
+        at2 = aggmap_SDGVM_to_aggHyde(ft2)
+        at2prop = 0.0d0
+        ft2frac(ft2) = 0.0d0 
+        DO ft3=2,nft
+          at3 = aggmap_SDGVM_to_aggHyde(ft3)
+          if(at2.eq.at3) then
+            at2prop = at2prop + ftprop_init(ft3)  
+          endif
+        ENDDO
+        if(at2prop.GT.0.0d0) then
+          ft2frac(ft2) = ftprop_init(ft2)/at2prop
+        endif
+        !IF (debug .EQV. .TRUE. ) THEN
+        !     PRINT '(A I2 I2 F11.6)', 'GH0',at2,ft2,ft2frac(ft2)
+        !ENDIF
+      ENDDO
+
+      RETURN
+      END
+
+*----------------------------------------------------------------------*
+*                                                                      *
+*                     SUBROUTINE CALC_CORRCT_FT                        *
+*                     ***********************                          *
+*----------------------------------------------------------------------*
+      SUBROUTINE CALC_CORRCT_FT(ft,lat,corrct_ft)
+      INTEGER ft
+      REAL*8 lat
+      LOGICAL corrct_ft
+
+      corrct_ft = .FALSE.
+      IF(ABS(lat).LE.24.5)THEN
+       IF((ft.EQ.4).OR.(ft.EQ.8).OR.(ft.EQ.9).OR.(ft.EQ.13))THEN !Tropical
+           corrct_ft = .TRUE.
+       ELSE IF((ft.EQ.2).OR.(ft.EQ.5).OR.(ft.EQ.6))THEN !URBAN or crop
+           corrct_ft = .TRUE.
+       ELSE
+           corrct_ft = .FALSE.
+      ENDIF
+       ELSE
+         IF((ft.EQ.3).OR.(ft.EQ.7))THEN !C3 grasses
+           corrct_ft = .TRUE.
+         ELSE IF((ft.GT.9).AND.(ft.LE.12))THEN !Temperate trees (primary)
+           corrct_ft = .TRUE.
+         ELSE IF((ft.GT.13).AND.(ft.LE.16))THEN !Temperate trees (secondary)
+           corrct_ft = .TRUE.
+         ELSE IF((ft.EQ.2).OR.(ft.EQ.5).OR.(ft.EQ.6))THEN !URBAN or crop
+           corrct_ft = .TRUE.
+         ELSE
+           corrct_ft = .FALSE.
+         ENDIF
+       ENDIF
+      
+      RETURN
+      END
+

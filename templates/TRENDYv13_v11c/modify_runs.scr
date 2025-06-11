@@ -1,0 +1,20 @@
+#!/bin/bash
+
+exps="spin_accel spin_accelFS S0 S1 S2 S3 S5 FS4 FS5"
+
+for exp in $exps; do
+  sed -i -e 's/sdgvm_v8._debug/sdgvm_v8y_debug/g' $exp'/start_v10c.scr'
+  sed -i -e 's/sdgvm_v8._debug/sdgvm_v8y_debug/g' $exp'/submit_v10c.sbatch'
+  if [[ "$exp" == "spin_accel" ]]; then
+     exp2="spin"
+  elif [[ "$exp" == "spin_accelFS" ]]; then
+     exp2="spinFS"
+  else
+     exp2=$exp
+  fi
+  sed -i -e 's/324 324/324 325/g' $exp'/input_global_v5a10g10c'$exp2'.dat'
+  sed -i -e 's/v2h_2023/v2h_2024/g' $exp'/input_global_v5a10g10c'$exp2'.dat'
+  sed -i -e 's/1700 1 324/1700 1 325/g' $exp'/input_global_v5a10g10c'$exp2'.dat'
+  sed -i -e 's/1700 324 324/1700 324 325/g' $exp'/input_global_v5a10g10c'$exp2'.dat'
+  sed -i -e 's/1700 321 324/1700 321 325/g' $exp'/input_global_v5a10g10c'$exp2'.dat'
+done

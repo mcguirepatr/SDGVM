@@ -80,7 +80,7 @@ SDGVM_MAIN_SIMS_STR_R=`echo \'${TEMPINT// /\',\'}\'`
 echo ""
 echo "Runtype specific variables"
 echo "======================================"
-echo "Copy directory (SDGVM_CPDIR):"
+echo "Copy directory (SDGVM_CPRUN):"
 echo "  ${SDGVM_CPRUN}"
 echo "Spin runs (SDGVM_SPIN):"
 echo "  ${SDGVM_SPIN[*]}"
@@ -146,6 +146,10 @@ echo "Number of nodes (SDGVM_NODES):"
 echo "  $SDGVM_NODES "
 echo "Number of processors, per node or total depending on submit script (SDGVM_NP):"
 echo "  $SDGVM_NP "
+echo "Number of nodes (SDGVM_NODES_PP):"
+echo "  $SDGVM_NODES_PP "
+echo "Number of processors, per node or total depending on submit script (SDGVM_NP):"
+echo "  $SDGVM_NP_PP "
 echo "Number of sites to run on each processor (SDGVM_N_SITES):"
 echo "  ${SDGVM_N_SITES[*]} "
 echo "Number of sites in output files (SDGVM_SITES_TOTAL):"
@@ -174,9 +178,9 @@ sed -i "s@#PROJDIR#@${SDGVM_PDIR}${SDGVM_PROJECT}@" $SDGVM_PDIR/$SDGVM_PROJECT/t
 sed -i "s/#EMAIL#/$SDGVM_USER_EMAIL/"               $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.* 
 sed -i "s@#ACCOUNT#@$SDGVM_USER_ACCOUNT@"           $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
 sed -i "s@#QUEUE#@$SDGVM_USER_QUEUE@"               $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
-sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION@"       $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
-sed -i "s@#NODES#@$SDGVM_NODES@"                    $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
-sed -i "s@#NP#@$SDGVM_NP@"                          $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#PARTITION#@$SDGVM_USER_PARTITION_PP@"    $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#NODES#@$SDGVM_NODES_PP@"                 $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
+sed -i "s@#NP#@$SDGVM_NP_PP@"                       $SDGVM_PDIR/$SDGVM_PROJECT/tools/*.*
 
 
 cd ${SDGVM_HOME}${SDGVM_MOD}/tools 
