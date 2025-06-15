@@ -433,10 +433,7 @@ C        WRITE(*,*) 'bbbb'
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname)
       stpname = stpname // '/states2b.nc'
-
-      READ(98,'(A)') st1 
-      CALL STRIPBS(st1,stpname_t)
-      stpname_t = stpname_t // '/transitions2b.nc'
+      stpname_t = stpname // '/transitions2b.nc'
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname_f)
@@ -460,7 +457,7 @@ C        WRITE(*,*) 'bbbb'
 * read input switches                                                  *
 *----------------------------------------------------------------------*
 
-      !line 9 in <input.dat> determines SDVGM version
+      !line 11 in <input.dat> determines SDVGM version
       !0 is current version 1 is old 070607 version
       READ(98,'(1000a)') st1 !      
       ii = n_fields(st1) !
@@ -468,7 +465,7 @@ C        WRITE(*,*) 'bbbb'
         CALL STRIPBN(st1,i) !
         if((i.lt.0).or.(i.gt.2)) then
           WRITE(*,'('' PROGRAM TERMINATED'')') !
-          WRITE(*,*) 'Line 9 must be 2/1/0' !
+          WRITE(*,*) 'Line 11 must be 2/1/0' !
           WRITE(*,'('' "'',A,''"'')') st1(1:30) !
           STOP !        
         else
@@ -485,12 +482,12 @@ C        WRITE(*,*) 'bbbb'
         endif        
       ELSE !
         WRITE(*,'('' PROGRAM TERMINATED'')') !
-        WRITE(*,*) 'Line 9 must contain 1 field' !
+        WRITE(*,*) 'Line 11 must contain 1 field' !
         WRITE(*,'('' "'',A,''"'')') st1(1:30) !
         STOP !        
       ENDIF !
 
-      !read next line of input switches. ln 10 in input.dat
+      !read next line of input switches. ln 12 in input.dat
       READ(98,'(1000a)') st1 
       ii = n_fields(st1) 
       IF (ii.EQ.6) THEN 
@@ -514,7 +511,7 @@ C        WRITE(*,*) 'bbbb'
         IF (i.gt.-1)  no_slw_lim = i 
       ELSE !
         WRITE(*,'('' PROGRAM TERMINATED'')') !
-        WRITE(*,*) 'Line 10 must contain 6 fields' !
+        WRITE(*,*) 'Line 12 must contain 6 fields' !
         WRITE(*,'('' "'',A,''"'')') st1(1:30) !
         STOP !       
       ENDIF !
@@ -531,7 +528,7 @@ C        WRITE(*,*) 'bbbb'
         print*, ''
       endif
 
-      !read next line of input switches. ln 11 in input.dat
+      !read next line of input switches. ln 13 in input.dat
       READ(98,'(1000a)') st1 
       ii = n_fields(st1) 
       IF (ii.EQ.5) THEN 
@@ -566,7 +563,7 @@ C        WRITE(*,*) 'bbbb'
         !IF (i.gt.-1)  hw_j = i 
       ELSE !
         WRITE(*,'('' PROGRAM TERMINATED'')') !
-        WRITE(*,*) 'Line 11 must contain 5 fields' !
+        WRITE(*,*) 'Line 13 must contain 5 fields' !
         WRITE(*,'('' "'',A,''"'')') st1(1:30) !
         STOP !
       ENDIF !
@@ -1727,7 +1724,7 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 * Read in type of landuse: 0 = defined by map; 1 = defined explicitly  *
 * in the input file; 2 = natural vegetation based on average monthly   *
-* temperatures.                                                        *
+* temperatures; 3-6: defined by maps in states2b.nc or transitions2b.nc. *
 *----------------------------------------------------------------------*
       READ(98,'(1000a)') st1
 
