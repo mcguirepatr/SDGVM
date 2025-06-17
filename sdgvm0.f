@@ -145,6 +145,7 @@
       CHARACTER sttxdp*1000,stlu*1000,ststats*1000,buff1*80
       CHARACTER stpname*1000,stpname_t*1000,stwdg*1000,stpname_f*1000
       CHARACTER param_file*1000,date*8,time*10,fttags(maxnft)*1000
+      CHARACTER stpname_s*1000
 
       LOGICAL initise,initiseo,speedc,crand,xspeedc,withcloudcover
       LOGICAL l_clim,l_lu,l_soil(20),l_stats,l_regional,l_countries
@@ -430,10 +431,11 @@ C        WRITE(*,*) 'bbbb'
       READ(98,'(A)') sttxdp  !soil data
       CALL STRIPB(sttxdp)
 
+      stpname = ' '
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname)
-      stpname = stpname // '/states2b.nc'
-      stpname_t = stpname // '/transitions2b.nc'
+      stpname_s = TRIM(stpname) // TRIM('/states2b.nc')
+      stpname_t = TRIM(stpname) // TRIM('/transitions2b.nc')
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname_f)
@@ -2270,7 +2272,7 @@ C The following ordering is the order of ft's in the input.dat file
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,NYR_FILE,
      &SYR_FIRE,NYR_FIRE,prescr_fire,lutab2,
-     &stpname,stpname_t,stpname_f,stwdg,
+     &stpname_s,stpname_t,stpname_f,stwdg,
      &cluse2,cluseh,fprob_prescrh,debug)
 
       !loop added for testing purposes
