@@ -5,7 +5,7 @@ UNIX
 /work/scratch-pw2/pmcguire/TRENDYv13/db/landcover/hyde/LUH2/v2h_2024
 /work/scratch-pw2/pmcguire/TRENDYv13/db/burned_area/global_monthly_burned_area_fraction_05deg_
 /work/scratch-pw2/pmcguire/TRENDYv13/db/land_use/global/ESACCILCP2014/30min
-/work/scratch-pw2/pmcguire/TRENDYv13/db/land_use/global/ESACCILCP2014_LUH2v2h_2024/30min
+/work/scratch-pw2/pmcguire/TRENDYv13/db/land_use/global/ESACCILCP2014_LUH2v2h_2023/30min
 /work/scratch-pw2/pmcguire/TRENDYv13/db/co2/global_co2_ann_1700_2023_TRENDY.dat
 -1.0
 /work/scratch-pw2/pmcguire/TRENDYv13/db
@@ -64,7 +64,6 @@ ARGUMENT
 
 0 0 0 0 0 0 0 100.0 
 
-1901 1
+
 4 1700 324 325 
 1 1901 1 
-

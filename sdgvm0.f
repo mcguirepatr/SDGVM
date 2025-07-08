@@ -145,6 +145,7 @@
       CHARACTER sttxdp*1000,stlu*1000,ststats*1000,buff1*80
       CHARACTER stpname*1000,stpname_t*1000,stwdg*1000,stpname_f*1000
       CHARACTER param_file*1000,date*8,time*10,fttags(maxnft)*1000
+      CHARACTER stpname_s*1000
 
       LOGICAL initise,initiseo,speedc,crand,xspeedc,withcloudcover
       LOGICAL l_clim,l_lu,l_soil(20),l_stats,l_regional,l_countries
@@ -430,13 +431,11 @@ C        WRITE(*,*) 'bbbb'
       READ(98,'(A)') sttxdp  !soil data
       CALL STRIPB(sttxdp)
 
+      stpname = ' '
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname)
-      stpname = stpname // '/states2b.nc'
-
-      READ(98,'(A)') st1 
-      CALL STRIPBS(st1,stpname_t)
-      stpname_t = stpname_t // '/transitions2b.nc'
+      stpname_s = TRIM(stpname) // TRIM('/states2b.nc')
+      stpname_t = TRIM(stpname) // TRIM('/transitions2b.nc')
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname_f)
@@ -460,7 +459,7 @@ C        WRITE(*,*) 'bbbb'
 * read input switches                                                  *
 *----------------------------------------------------------------------*
 
-      !line 9 in <input.dat> determines SDVGM version
+      !line 11 in <input.dat> determines SDVGM version
       !0 is current version 1 is old 070607 version
       READ(98,'(1000a)') st1 !      
       ii = n_fields(st1) !
@@ -468,7 +467,7 @@ C        WRITE(*,*) 'bbbb'
         CALL STRIPBN(st1,i) !
         if((i.lt.0).or.(i.gt.2)) then
           WRITE(*,'('' PROGRAM TERMINATED'')') !
-          WRITE(*,*) 'Line 9 must be 2/1/0' !
+          WRITE(*,*) 'Line 11 must be 2/1/0' !
           WRITE(*,'('' "'',A,''"'')') st1(1:30) !
           STOP !        
         else
@@ -485,12 +484,12 @@ C        WRITE(*,*) 'bbbb'
         endif        
       ELSE !
         WRITE(*,'('' PROGRAM TERMINATED'')') !
-        WRITE(*,*) 'Line 9 must contain 1 field' !
+        WRITE(*,*) 'Line 11 must contain 1 field' !
         WRITE(*,'('' "'',A,''"'')') st1(1:30) !
         STOP !        
       ENDIF !
 
-      !read next line of input switches. ln 10 in input.dat
+      !read next line of input switches. ln 12 in input.dat
       READ(98,'(1000a)') st1 
       ii = n_fields(st1) 
       IF (ii.EQ.6) THEN 
@@ -514,7 +513,7 @@ C        WRITE(*,*) 'bbbb'
         IF (i.gt.-1)  no_slw_lim = i 
       ELSE !
         WRITE(*,'('' PROGRAM TERMINATED'')') !
-        WRITE(*,*) 'Line 10 must contain 6 fields' !
+        WRITE(*,*) 'Line 12 must contain 6 fields' !
         WRITE(*,'('' "'',A,''"'')') st1(1:30) !
         STOP !       
       ENDIF !
@@ -531,7 +530,7 @@ C        WRITE(*,*) 'bbbb'
         print*, ''
       endif
 
-      !read next line of input switches. ln 11 in input.dat
+      !read next line of input switches. ln 13 in input.dat
       READ(98,'(1000a)') st1 
       ii = n_fields(st1) 
       IF (ii.EQ.5) THEN 
@@ -566,7 +565,7 @@ C        WRITE(*,*) 'bbbb'
         !IF (i.gt.-1)  hw_j = i 
       ELSE !
         WRITE(*,'('' PROGRAM TERMINATED'')') !
-        WRITE(*,*) 'Line 11 must contain 5 fields' !
+        WRITE(*,*) 'Line 13 must contain 5 fields' !
         WRITE(*,'('' "'',A,''"'')') st1(1:30) !
         STOP !
       ENDIF !
@@ -1727,7 +1726,7 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 * Read in type of landuse: 0 = defined by map; 1 = defined explicitly  *
 * in the input file; 2 = natural vegetation based on average monthly   *
-* temperatures.                                                        *
+* temperatures; 3-6: defined by maps in states2b.nc or transitions2b.nc. *
 *----------------------------------------------------------------------*
       READ(98,'(1000a)') st1
 
@@ -2273,7 +2272,7 @@ C The following ordering is the order of ft's in the input.dat file
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,NYR_FILE,
      &SYR_FIRE,NYR_FIRE,prescr_fire,lutab2,
-     &stpname,stpname_t,stpname_f,stwdg,
+     &stpname_s,stpname_t,stpname_f,stwdg,
      &cluse2,cluseh,fprob_prescrh,debug)
 
       !loop added for testing purposes
