@@ -7,13 +7,13 @@
 # $1 - SDGVM_USER (required) -- options: ORNL_APW, UR_PCM
 # $2 - SDGVM_RUNTYPE (required) -- use a predefined 'runtype' 
 # $3 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PROJECTS_DIR, houses a collection of runs (i.e. a project)
-# $4 - SDGVM_SITESCORES (required) -- use a predefined set of sites, resolution, and cores  
+# $4 - SDGVM_SITESCORES (optional, default: CRUJRA_1deg_128cores) use a predefined set of sites, resolution, and cores  
 # $5 - SUBPROJECT name (optional) -- a label for a subgroup of simulations within a SDGVM_PROJECT 
 
 SDGVM_USER="$1"
 SDGVM_RUNTYPE="$2"
 SDGVM_PROJECT="$3"
-if [ ! -z $4 ]; then SDGVM_SITESCORES="$4"; else SDGVM_SITESCORES="CRUJRA_1deg_32cores"; fi
+if [ ! -z $4 ]; then SDGVM_SITESCORES="$4"; else SDGVM_SITESCORES="CRUJRA_1deg_128cores"; fi
 if [ ! -z $5 ]; then SUBPROJECT="_$5"; else SUBPROJECT=""; fi
 
 

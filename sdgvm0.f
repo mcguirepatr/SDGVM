@@ -138,11 +138,11 @@
       INTEGER env_sla_bounds(maxnft),daily_co2,par_loops,s070607
       REAL*8 can2g,tslc,trlc,active_cov
 
-      CHARACTER st1*1000,st2*1000,st3*1000,st4*1000
+      CHARACTER st1*1000,st2*1000,st3*1000,st4*1000,st11*1100
       CHARACTER st5*1000,otags(douts)*1000,ofmt(200)*100,in2st*10000
       CHARACTER stinput*1000,stoutput*1000,stinit*1000,stco2*1000
       CHARACTER stmask*1000,country_name*1000,countries(100)*20
-      CHARACTER sttxdp*1000,stlu*1000,ststats*1000,buff1*80
+      CHARACTER sttxdp*1000,stlu*1000,ststats*1000,buff1*100
       CHARACTER stpname*1000,stpname_t*1000,stwdg*1000,stpname_f*1000
       CHARACTER param_file*1000,date*8,time*10,fttags(maxnft)*1000
       CHARACTER stpname_s*1000
@@ -299,7 +299,7 @@
 *----------------------------------------------------------------------*
       OPEN(98,FILE=buff1,STATUS='OLD',iostat=kode)
       IF (kode.NE.0) THEN
-        DO i=1,80
+        DO i=1,100
           st1(i:i) = buff1(i:i)
         ENDDO
         WRITE(*,'('' PROGRAM TERMINATED'')')
@@ -434,8 +434,13 @@ C        WRITE(*,*) 'bbbb'
       stpname = ' '
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname)
-      stpname_s = TRIM(stpname) // TRIM('/states2b.nc')
-      stpname_t = TRIM(stpname) // TRIM('/transitions2b.nc')
+      stpname_s = TRIM(stpname) // 
+     &TRIM('/states4sdgvm.nc')
+      stpname_t = TRIM(stpname) // 
+     &TRIM('/transitions4sdgvm.nc')
+      !WRITE(*,*) 'In sdgvm0, LUH2 path/file.'
+      !WRITE(*,*) stpname_s(1:blank(stpname_s))
+      !WRITE(*,*) stpname_t(1:blank(stpname_t))
 
       READ(98,'(A)') st1 
       CALL STRIPBS(st1,stpname_f)
@@ -670,7 +675,7 @@ C        WRITE(*,*) 'bbbb'
       IF (stcmp(stinit,st2).EQ.1) THEN
         narg = narg + 1
         CALL GETARG(narg,buff1)
-        DO i=1,80
+        DO i=1,100
           stinit(i:i) = buff1(i:i)
         ENDDO
       ENDIF
@@ -681,7 +686,7 @@ C        WRITE(*,*) 'bbbb'
       IF (stcmp(stoutput,st2).EQ.1) THEN
         narg = narg + 1
         CALL GETARG(narg,buff1)
-        DO i=1,80
+        DO i=1,100
           stoutput(i:i) = buff1(i:i)
         ENDDO
       ENDIF
@@ -1143,7 +1148,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
 *----------------------------------------------------------------------*
           narg = narg + 1
           CALL GETARG(narg,buff1)
-          DO i=1,80
+          DO i=1,100
             st1(i:i) = buff1(i:i)
           ENDDO
         ENDIF
@@ -1489,20 +1494,20 @@ c     read table of conversion from class to ft's proportion
 
             narg = narg + 1
             CALL GETARG(narg,buff1)
-            DO i=1,80
+            DO i=1,100
               st1(i:i) = buff1(i:i)
             ENDDO
 
             narg = narg + 1
             CALL GETARG(narg,buff1)
-            DO i=1,80
+            DO i=1,100
               st2(i:i) = buff1(i:i)
             ENDDO
             CALL STRIPBN(st2,site0)
 
             narg = narg + 1
             CALL GETARG(narg,buff1)
-            DO i=1,80
+            DO i=1,100
               st2(i:i) = buff1(i:i)
             ENDDO
             CALL STRIPBN(st2,sitef)
@@ -1522,8 +1527,6 @@ c     read table of conversion from class to ft's proportion
      &lat_lon(site-site0+1,1),lat_lon(site-site0+1,2)
             ENDDO
             sites = sitef - site0 + 1
-
-c CLOSE added by Ghislain 15/12/03
             CLOSE(99)
 
             READ(98,*)
@@ -1555,7 +1558,6 @@ c CLOSE added by Ghislain 15/12/03
             GOTO 50
 60          CONTINUE
 
-c CLOSE added by Ghislain 15/12/03
             CLOSE(99)
           ENDIF
 
@@ -1697,20 +1699,20 @@ c CLOSE added by Ghislain 15/12/03
 
         narg = narg + 1
         CALL GETARG(narg,buff1)
-        DO i=1,80
+        DO i=1,100
           param_file(i:i) = buff1(i:i)
         ENDDO
 
         narg = narg + 1
         CALL GETARG(narg,buff1)
-        DO i=1,80
+        DO i=1,100
           st2(i:i) = buff1(i:i)
         ENDDO
         CALL STRIPBN(st2,n_param_0)
 
         narg = narg + 1
         CALL GETARG(narg,buff1)
-        DO i=1,80
+        DO i=1,100
           st2(i:i) = buff1(i:i)
         ENDDO
         CALL STRIPBN(st2,n_param_f)
@@ -5258,7 +5260,7 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
       st1 = stoutput
       OPEN(13,FILE=st1(1:blank(st1))//'/simulation.dat')
       CALL GETARG(0,buff1)
-      DO j=1,80
+      DO j=1,100
         st1(j:j) = buff1(j:j)
       ENDDO
       st4 = stver
@@ -5273,7 +5275,7 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
 
       DO i=0,narg
         CALL GETARG(i,buff1)
-        DO j=1,80
+        DO j=1,100
           st1(j:j) = buff1(j:j)
         ENDDO
         WRITE(13,'(A)') st1(1:blank(st1))
@@ -5297,7 +5299,6 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
       WRITE(13,'(''************************************************'')')
 
       CALL GETARG(1,buff1)
-*      buff1='..\..\lindsay2\lind1.dat'
 
       OPEN(98,file=buff1,STATUS='OLD')
 65    READ(98,'(A)',end=70) st1
