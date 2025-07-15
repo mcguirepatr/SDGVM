@@ -283,7 +283,6 @@
       ENDIF
 
       ! Open ESA CCILCP 2014 dataset 
-      !setwd(wdg)
       DO i=1,NE 
         esaarray(i,:,:) = 255.0
         esaarray_global(i,:,:) = 255

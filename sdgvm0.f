@@ -425,38 +425,52 @@ C        WRITE(*,*) 'bbbb'
       !APW - not sure what this does
       st1 = stinput
 
+      ! climate stats path
       READ(98,'(A)') ststats
       CALL STRIPB(ststats)
 
-      READ(98,'(A)') sttxdp  !soil data
+      ! soil data path
+      READ(98,'(A)') sttxdp 
       CALL STRIPB(sttxdp)
 
-      stpname = ' '
-      READ(98,'(A)') st1 
-      CALL STRIPBS(st1,stpname)
-      stpname_s = TRIM(stpname) // 
+c      stpname = ' '
+c      READ(98,'(A)') st1 
+c      CALL STRIPBS(st1,stpname)
+c      stpname_s = TRIM(stpname) // 
+c     &TRIM('/states4sdgvm.nc')
+c      stpname_t = TRIM(stpname) // 
+c     &TRIM('/transitions4sdgvm.nc')
+c      !WRITE(*,*) 'In sdgvm0, LUH2 path/file.'
+c      !WRITE(*,*) stpname_s(1:blank(stpname_s))
+c      !WRITE(*,*) stpname_t(1:blank(stpname_t))
+c
+c      READ(98,'(A)') st1 
+c      CALL STRIPBS(st1,stpname_f)
+c
+c      READ(98,'(A)') st1 
+c      CALL STRIPBS(st1,stwdg)
+c      !stwdg=stwdg(1:blank(stwdg))
+
+      ! landcover data path
+      READ(98,'(A)') st1
+      CALL STRIPBS(st1,stlu)
+      ! LUH2 files required for land cover types 3-6
+      stpname_s = TRIM(stlu) // 
      &TRIM('/states4sdgvm.nc')
-      stpname_t = TRIM(stpname) // 
+      stpname_t = TRIM(stlu) // 
      &TRIM('/transitions4sdgvm.nc')
       !WRITE(*,*) 'In sdgvm0, LUH2 path/file.'
       !WRITE(*,*) stpname_s(1:blank(stpname_s))
       !WRITE(*,*) stpname_t(1:blank(stpname_t))
 
-      READ(98,'(A)') st1 
-      CALL STRIPBS(st1,stpname_f)
-
-      READ(98,'(A)') st1 
-      CALL STRIPBS(st1,stwdg)
-      !stwdg=stwdg(1:blank(stwdg))
-
-      READ(98,'(A)') st1
-      CALL STRIPBS(st1,stlu)
-
+      ! co2 data path & filename
       READ(98,'(A)') stco2
       CALL STRIPB(stco2)
 
+      ! constant co2 value
       READ(98,*) co2const
 
+      ! land_mask path
       READ(98,'(A)') stmask
       CALL STRIPB(stmask)
 
@@ -1728,7 +1742,8 @@ c     read table of conversion from class to ft's proportion
 *----------------------------------------------------------------------*
 * Read in type of landuse: 0 = defined by map; 1 = defined explicitly  *
 * in the input file; 2 = natural vegetation based on average monthly   *
-* temperatures; 3-6: defined by maps in states2b.nc or transitions2b.nc. *
+* temperatures; 3-6: defined by maps from landcover input file combined*
+* with LUH2 data in states4sdgvm.nc or transitions4sdgvm.nc.           *
 *----------------------------------------------------------------------*
       READ(98,'(1000a)') st1
 
@@ -1748,7 +1763,7 @@ c     read table of conversion from class to ft's proportion
 !        IF (ilanduse.EQ.5. .OR. ilanduse.EQ.6) NYR = 1 !override number from input.dat if set that way accidently
       ELSE IF (ii.EQ.1) THEN
         READ(st1,*) ilanduse
-        SYR = -1 !SYR and NYR not used and not defined here
+        SYR = -1 !SYR and NYR not used and given arbitrary values
         NYR = -1
         NYR_FILE = -1
       ELSE
@@ -2274,7 +2289,8 @@ C The following ordering is the order of ft's in the input.dat file
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,NYR_FILE,
      &SYR_FIRE,NYR_FIRE,prescr_fire,lutab2,
-     &stpname_s,stpname_t,stpname_f,stwdg,
+c     &stpname_s,stpname_t,stpname_f,stwdg,
+     &stpname_s,stpname_t,stpname_f,stlu,
      &cluse2,cluseh,fprob_prescrh,debug)
 
       !loop added for testing purposes
