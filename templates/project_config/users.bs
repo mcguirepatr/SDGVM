@@ -35,6 +35,9 @@ if [ $SDGVM_USER == 'ORNL_APW' ]; then
   SDGVM_NODES_PP="1"
   SDGVM_NP="32"
   SDGVM_NP_PP="32"
+  SDGVM_OUTPUT_DIR=""
+  SDGVM_OUTPUT_SIM="./output"
+  SDGVM_OUTPUT_SPIN="../#SPIN#/output"
     
 
 elif [ $SDGVM_USER == 'ORNL_Base_APW' ]; then
@@ -65,7 +68,9 @@ elif [ $SDGVM_USER == 'ORNL_Base_APW' ]; then
   SDGVM_NODES_PP="1"
   SDGVM_NP="128"
   SDGVM_NP_PP="128"
-    
+  SDGVM_OUTPUT_DIR="/gpfs/wolf2/cades/cli185/scratch/alp/#PROJECT#/output"  
+  SDGVM_OUTPUT_SIM="$SDGVM_OUTPUT_DIR/#SIM#"
+  SDGVM_OUTPUT_SPIN="$SDGVM_OUTPUT_DIR/#SPIN#"
 
 elif [ $SDGVM_USER == 'UR_PCM' ]; then
 
@@ -97,6 +102,9 @@ elif [ $SDGVM_USER == 'UR_PCM' ]; then
   SDGVM_MEMORY_PP="64000"
   SDGVM_NODES_PP="1"
   SDGVM_NP_PP="8"
+  SDGVM_OUTPUT_DIR=""
+  SDGVM_OUTPUT_SIM="./output"
+  SDGVM_OUTPUT_SPIN="../#SPIN#/output"
 
 else
   echo ""
@@ -132,7 +140,9 @@ export SDGVM_NODES
 export SDGVM_NODES_PP
 export SDGVM_NP
 export SDGVM_NP_PP
-
+export SDGVM_OUTPUT_DIR
+export SDGVM_OUTPUT_SIM
+export SDGVM_OUTPUT_SPIN
 
 
 ### END ###

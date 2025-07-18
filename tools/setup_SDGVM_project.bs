@@ -62,6 +62,12 @@ echo "User queue (SDGVM_USER_QUEUE):"
 echo "  $SDGVM_USER_QUEUE"
 echo "User partition (SDGVM_USER_PARTITION):"
 echo "  $SDGVM_USER_PARTITION"
+echo "Main directory for SDGVM output (SDGVM_OUTPUT_DIR):"
+echo "  $SDGVM_OUTPUT_DIR"
+echo "Sub-directory for SDGVM output (SDGVM_OUTPUT_SIM):"
+echo "  $SDGVM_OUTPUT_SIM"
+echo "Sub-directory for SDGVM spin-up output (SDGVM_OUTPUT_SPIN):"
+echo "  $SDGVM_OUTPUT_SPIN"
 
 
 # set runtype-specific environment variables
@@ -199,14 +205,14 @@ sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run
 # setup project plotting scripts
 cd $SDGVM_PDIR/$SDGVM_PROJECT/results/ 
 cp ${SDGVM_HOME}${SDGVM_MOD}/templates/plotting_scripts/plot*${SDGVM_RUNTYPE}.bs .
-sed -i "s@#HOME#@$SDGVM_HOME@"         plot*${SDGVM_RUNTYPE}.bs 
-sed -i "s@#MOD#@$SDGVM_MOD@"           plot*${SDGVM_RUNTYPE}.bs 
-sed -i "s@#S#@${SDGVM_SPIN_STR}@"      plot_spin_${SDGVM_RUNTYPE}.bs 
-sed -i "s@#S#@${SDGVM_MAIN_SIMS_STR}@" plot_${SDGVM_RUNTYPE}.bs 
-sed -i "s@#PROJECT#@$SDGVM_PROJECT@g"  plot*${SDGVM_RUNTYPE}.bs   
-sed -i "s@#SPINNY#@$SDGVM_SPINNY@g"    plot*${SDGVM_RUNTYPE}.bs   
-sed -i "s@#STY#@$SDGVM_SIMSTY@g"       plot*${SDGVM_RUNTYPE}.bs   
-sed -i "s@#ENDY#@$SDGVM_SIMENDY@g"     plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#HOME#@$SDGVM_HOME@"           plot*${SDGVM_RUNTYPE}.bs 
+sed -i "s@#MOD#@$SDGVM_MOD@"             plot*${SDGVM_RUNTYPE}.bs 
+sed -i "s@#S#@${SDGVM_SPIN_STR_R}@"      plot_spin_${SDGVM_RUNTYPE}.bs 
+sed -i "s@#S#@${SDGVM_MAIN_SIMS_STR_R}@" plot_${SDGVM_RUNTYPE}.bs 
+sed -i "s@#PROJECT#@$SDGVM_PROJECT@g"    plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#SPINNY#@$SDGVM_SPINNY@g"      plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#STY#@$SDGVM_SIMSTY@g"         plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#ENDY#@$SDGVM_SIMENDY@g"       plot*${SDGVM_RUNTYPE}.bs   
 
 
 

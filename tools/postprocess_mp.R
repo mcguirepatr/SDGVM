@@ -97,9 +97,9 @@ mis_val   <- -99999
 nsites    <- 62220 
 lon       <- 0.5 
 lat       <- 0.5
-#pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
+pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
 #pftnames  <- c('BARE','CITY','C3')
-pftnames  <- c('BARE','CITY','C3p','C3s','C3crop','C4p','C4s','C4crop','Dc_Bp','Dc_Np','Ev_Bp','Ev_Np','Dc_Bs','Dc_Ns','Ev_Bs','Ev_Ns')
+#pftnames  <- c('BARE','CITY','C3p','C3s','C3crop','C4p','C4s','C4crop','Dc_Bp','Dc_Np','Ev_Bp','Ev_Np','Dc_Bs','Dc_Ns','Ev_Bs','Ev_Ns')
 
 # specifiy a variable to process, this should be the filename not including the extension
 # - used to test whether the outputting is working correctly 

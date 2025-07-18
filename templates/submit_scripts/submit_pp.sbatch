@@ -14,7 +14,7 @@
 #SBATCH --no-requeue
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=#EMAIL#
-#SBATCH -o #RUNDIR#/logs/#PROJECT#_#SIM#.o%j
+#SBATCH -o #RUNDIR#/logs/#PROJECT#_#SIM#_pp.o%j
 
 #===============================================================================
 

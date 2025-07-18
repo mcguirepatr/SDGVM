@@ -15,19 +15,20 @@ library(plyr)
 #library(dplyr)
 library(viridis)
 library(latticeExtra)
-library(rworldmap)
-library(rworldxtra)
+#library(rworldmap)
+#library(rworldxtra)
 
 
 ##################################
 ###user defined inputs
 
 #directory paths
-date    <- '201128'
-dir     <- '/home/alp/models/SDGVM/'
+date    <- '250717'
+dir     <- '/ccsopen/home/alp/models/SDGVM/'
 rdir    <- 'run'
 edir    <- 'eval_data'
-outputdir <- 'output/'
+tdir    <- paste0(dir,'sdgvm/tools')
+output_dir <- 'output/'
 #date    <- '230719'
 #dir     <- '/work/scratch-pw2/pmcguire'
 #rdir    <- 'sdgvmR'
@@ -177,6 +178,14 @@ vars <- c('npp','gpp','nbp','anlfn','antlfn',
           'yie_C3s','yie_C4s','yie_Dc_Bs','yie_Dc_Ns','yie_Ev_Bs',
           'yie_Ev_Ns','yie_C3crop','yie_C4crop','yie_Dc_Bp','yie_Dc_Np',
           'yie_Ev_Bp','yie_Ev_Np','yie_BARE','rof','nep','leafc')
+vars <- c('npp','gpp','nbp','anlfn','antlfn',        
+          'evt','trn','scn','sresp','presp',
+          'mgresp','lai','anvcmax','anjmax','biot',
+          'kg_beta','swr','qtotal','tmp','prc',
+          'swc','field_capacity','wilting_point','cov_C3','cov_C4',
+          'cov_C3crop','cov_C4crop','cov_Dc_Bl','cov_Dc_Nl',
+          'cov_Ev_Bl','cov_Ev_Nl','cov_BARE','fcn','lulccc',
+          'fab','nppstore','rof','nep','leafc')
 
 # land-cover is fixed and so has only a single column in the output file
 #cov_fixed  <- F
@@ -871,7 +880,7 @@ for( v in 1:length(vars) ) {
     xyplot(as.vector(tglobsum)
            ~rep(styr:endyr,nsims),
            groups=(rep(1:nsims,each=lt)),
-           ylim=c(-4.8,5.6),
+           #ylim=c(-4.8,5.6),
            xlab=list('year',cex=labcex*0.35),
            ylab=list(axis_lab,cex=labcex*0.35),
            #type='l',lwd=labcex*1.1,lty=lty[sia],col=col_trend[sia],

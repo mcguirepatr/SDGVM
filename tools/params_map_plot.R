@@ -325,6 +325,39 @@ wilting_point<- list(
   at    = c(0.01,0.025,0.05,0.075,0.1,0.125,0.15,0.175,0.2,0.225,0.25,0.3),
   cols  = col.inc
 )
+
+# standard cover/PFT variables
+cov_C3 <- list(
+  name  = 'C3Grass_Cover',
+  nsub  = '',
+  unit  = 'proportion',
+  sunit = 'proportion',
+  gsum  = F,
+  gmean = T,
+  printsum = F,
+  at    = c(0,0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1),
+  cols  = col.inc
+)
+cov_C4 <- cov_C3
+cov_C4$name <- 'C4Grass_Cover'
+cov_C3crop <- cov_C3
+cov_C3crop$name <- 'C3Crop_Cover'
+cov_C4crop <- cov_C3
+cov_C4crop$name <- 'C4_Crop_Cover'
+cov_Dc_Bl <- cov_C3
+cov_Dc_Bl$name <- 'Deciduous_Broadleaf_Cover'
+cov_Dc_Nl <- cov_C3
+cov_Dc_Nl$name <- 'Deciduous_Needleleaf_Cover'
+cov_Ev_Bl <- cov_C3
+cov_Ev_Bl$name <- 'Evergreen_Broadleaf_Cover'
+cov_Ev_Nl <- cov_C3
+cov_Ev_Nl$name <- 'Evergreen_Needleleaf_Cover'
+cov_BARE <- cov_C3
+cov_BARE$name <- 'Bareground'
+fab <- cov_C3
+fab$name <- 'Fire_Burnt_Area'
+
+# LUH2 transitions cover/PFT variables
 cov_C3p <- list(
   name  = 'Primary_C3Grass_Cover',
   nsub  = '',
@@ -432,7 +465,11 @@ fcn <- list(
   printsum = T,
   at    = c(0,100,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3500,4000) /10 ,
   cols  = col.inc.gpp
-)  
+)
+
+lch <- fcn
+lch$name <- 'Leached_C_losses'
+  
 lulccc <- list(
   name  = 'Land-use_Change_C_losses',
   nsub  = '',

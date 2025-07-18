@@ -1544,12 +1544,16 @@ C The following ordering is the order of ft's in the input.dat file
 * Compute harvest losses for each aggregated type (at)                 *
 *----------------------------------------------------------------------*
         at = aggmap_SDGVM_to_aggHyde(ft)
-        IF ((atharvest(at).GT.0.0d0).AND.((at.EQ.1).OR.(at.EQ.3))) THEN !only for primf&secdf
+        loss_frac = 0.0d0
+        remain_frac = 1.0d0
+        IF (at.NE.0) THEN
+          IF ((atharvest(at).GT.0.d0).AND.((at.EQ.1).OR.(at.EQ.3))) THEN !only for primf&secdf
             loss_frac  = ft2frac(ft)*atharvest(at)*1.0d-2
             remain_frac = 1.0d0 - loss_frac  
-        ELSE
-            loss_frac = 0.0d0
-            remain_frac = 1.0d0
+          !ELSE
+          !  loss_frac = 0.0d0
+          !  remain_frac = 1.0d0
+          ENDIF
         ENDIF
 *----------------------------------------------------------------------*
 * 'tmor' is the mortality rate of the forest based on 'npp'.           *

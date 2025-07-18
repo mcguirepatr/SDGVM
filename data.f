@@ -1074,6 +1074,7 @@ C PCM2      WRITE(*,*) '111111111'
       LOGICAL :: debug !used to print out more debugging info
 
 
+      l_lu = .TRUE.
       IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM Use states2b.nc or transitions2b.nc file: half-res
         !PCM hardwire these numbers for now
         ! APW: need to add a readmeLUH2.dat here
@@ -1237,18 +1238,18 @@ c     look for the first year
       IF(ilanduse.GE.3 .and. ilanduse.LE.6 ) THEN
 CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
 CPCM get_transitions==.true. : compute transitions
-         IF(ilanduse.EQ.3 .or. ilanduse.EQ.5 ) THEN
-           compute_next_year = .false.
-           get_transitions = .true. !PCM for now
-         ELSE IF(ilanduse.EQ.4 .or. ilanduse.EQ.6 ) THEN
-           !compute_next_year = .true. !for testing: add transitions to states; PCM
-           compute_next_year = .false. 
-           get_transitions = .true.
-         ENDIF
-         ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
-         ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
-         !write(*,*)'BEFORE STATES, years(1)=',years(1)
-         CALL states_convertSDGVM_func(
+        IF(ilanduse.EQ.3 .or. ilanduse.EQ.5 ) THEN
+          compute_next_year = .false.
+          get_transitions = .true. !PCM for now
+        ELSE IF(ilanduse.EQ.4 .or. ilanduse.EQ.6 ) THEN
+          !compute_next_year = .true. !for testing: add transitions to states; PCM
+          compute_next_year = .false. 
+          get_transitions = .true.
+        ENDIF
+        ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
+        ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
+        !write(*,*)'BEFORE STATES, years(1)=',years(1)
+        CALL states_convertSDGVM_func(
      &     years(1),years(n),years_NYR_FILE,
      &     years_fire(1),years_fire(n_fire),
      &     INT(rcol),INT(rrow),4, ! with the definition of rcol, rcol+2 starts at 1 for lon==lon0
@@ -1256,56 +1257,57 @@ CPCM get_transitions==.true. : compute transitions
      &     pname,pname_t,pname_f,wdg,
      &     SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST,SDGVM_LUC_FIRE,
      &     debug)  
-        ! WRITE(*,*)'EX_CLU: after states_convertSDGVM_func'
-        ! write(*,FMT="(A)") "EX_CLU:SDGVM_LUC2_FIRE"
-        ! DO jj=1,n_fire
-        !   write(*,FMT="(12F7.4)") SDGVM_LUC_FIRE(jj,3,3,:)
-        ! END DO
-         IF(debug .EQV. .TRUE.) THEN
-           WRITE(*,*)
+       ! WRITE(*,*)'EX_CLU: after states_convertSDGVM_func'
+       ! write(*,FMT="(A)") "EX_CLU:SDGVM_LUC2_FIRE"
+       ! DO jj=1,n_fire
+       !   write(*,FMT="(12F7.4)") SDGVM_LUC_FIRE(jj,3,3,:)
+       ! END DO
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,*)
      &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
      &'Shrup    C3p      C4p      C3crop   C4crop   ',
      &'Ev_Bs    Dc_Bs    Ev_Ns    Dc_Ns    Shrus    C3s    C4s'
+        ENDIF
+  
+!        IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
+        IF (ALL(ABS(SDGVM_LUC(:,:,3:4,3:4)).GT.200.0)) THEN
+!          WRITE(*,*)'SDGVM_LUC: l_lu=.FALSE.'
+          l_lu = .FALSE.
+          RETURN
+        ENDIF
+  
+!       check for all but the last year, since it may not be valid for the
+!       last year
+!        IF (ANY(ABS(SDGVM_LUC2(1:NYR-1,:,:,3,3)).GT.200.0)) THEN
+        IF (NYR.GT.1) THEN
+         IF (ALL(ABS(SDGVM_LUC2(1:NYR-1,:,:,3:4,3:4)).GT.200.0)) THEN 
+!          WRITE(*,*)'SDGVM_LUC2: l_lu=.FALSE.'
+          l_lu = .FALSE.
+          RETURN
          ENDIF
+        ENDIF
+  
+        IF ((prescr_fire .EQV. .TRUE.) .AND.
+     &    (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4,1:12)).GT.200.0)) ) THEN
+!          WRITE(*,*)'SDGVM_LUC_FIRE: l_lu=.FALSE.'
+          l_lu = .FALSE.
+          RETURN
+        ENDIF
+  
       ELSE
-         SDGVM_LUC=0.0
-         SDGVM_LUC2=0.0
-         SDGVM_LUC2_HARVEST=0.0
-         SDGVM_LUC_FIRE=0.0
-         IF(debug .EQV. .TRUE.) THEN
-          WRITE(*,*)
+        SDGVM_LUC=0.0
+        SDGVM_LUC2=0.0
+        SDGVM_LUC2_HARVEST=0.0
+        SDGVM_LUC_FIRE=0.0
+        IF(debug .EQV. .TRUE.) THEN
+         WRITE(*,*)
      &'    t   BARE     Ev_Bl    Dc_Bl    Ev_Nl    Dc_Nl    ',
      &'Shrub    C3       C4       C3crop   C4crop   '
          ENDIF
       ENDIF
+
       IF(debug .EQV. .TRUE.) THEN
         write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,3,3)
-      ENDIF
-
-      l_lu = .TRUE.
-!      IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
-      IF (ALL(ABS(SDGVM_LUC(:,:,3:4,3:4)).GT.200.0)) THEN
-!        WRITE(*,*)'SDGVM_LUC: l_lu=.FALSE.'
-        l_lu = .FALSE.
-        RETURN
-      ENDIF
-
-!     check for all but the last year, since it may not be valid for the
-!     last year
-!      IF (ANY(ABS(SDGVM_LUC2(1:NYR-1,:,:,3,3)).GT.200.0)) THEN
-      IF (NYR.GT.1) THEN
-       IF (ALL(ABS(SDGVM_LUC2(1:NYR-1,:,:,3:4,3:4)).GT.200.0)) THEN 
-!        WRITE(*,*)'SDGVM_LUC2: l_lu=.FALSE.'
-        l_lu = .FALSE.
-        RETURN
-       ENDIF
-      ENDIF
-
-      IF ((prescr_fire .EQV. .TRUE.) .AND.
-     &   (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4,1:12)).GT.200.0)) ) THEN
-!        WRITE(*,*)'SDGVM_LUC_FIRE: l_lu=.FALSE.'
-        l_lu = .FALSE.
-        RETURN
       ENDIF
 
       IF (prescr_fire .EQV. .TRUE.) THEN !PCM

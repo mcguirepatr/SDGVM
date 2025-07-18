@@ -577,7 +577,7 @@ c space and tabulation
       blank = 0
 10    CONTINUE
       blank = blank + 1
-      IF ((blank.LE.100).AND.(ichar(st1(blank:blank)).NE.32)
+      IF ((blank.LE.1000).AND.(ichar(st1(blank:blank)).NE.32)
      &     .AND.(ichar(st1(blank:blank)).NE.9))  GOTO 10
 c space and tabulation
       blank = blank - 1

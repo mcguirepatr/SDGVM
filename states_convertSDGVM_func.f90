@@ -326,6 +326,7 @@
         CALL check( nf90_inq_varid(ncid, varname(v), varid(v)) )
       END DO
 
+      !WRITE(*,*) pname_t(1:blank(pname_t))
       CALL CHECK( NF90_OPEN(pname_t(1:blank(pname_t)), NF90_NOWRITE, &
           ncid_t) )
 
@@ -349,6 +350,7 @@
 !      pname_f = 
 !      /gws/nopw/j04/nexcs/pmcguire/TRENDYv13/db/burned_area/&
 !      &global_monthly_burned_area_fraction_05deg_
+          !WRITE(*,*) pname_f(1:blank(pname_f))
           CALL CHECK( NF90_OPEN(pname_f(1:blank(pname_f))//   &
                       trim(year_string)//'.nc',NF90_NOWRITE, ncid_f) )
 

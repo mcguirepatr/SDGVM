@@ -1,6 +1,6 @@
 #!/bin/bash
 
-module load jasr
+#module load jasr
 
 SRCDIR=#HOME##MOD#/tools
 ARGS="of<-'#PROJECT#' sim<-c(#S#) styr<-#STY# endyr<-#ENDY# yr_mean<-c(#ENDY#-9,#ENDY#) project<-'#PROJECT#' date<-'230719' dir<-'/work/scratch-pw3/pmcguire' rdir<-'sdgvmR2' edir<-'eval_data' tdir<-'${SRCDIR}'"
@@ -31,9 +31,6 @@ ALLARGS="${ARGS} via<-c(3,8,15) of<-'#PROJECT#_nbp#STY#' yr_mean<-c(#STY#,#STY#+
 Rscript plot_maps_lattice.R ${ALLARGS} 
 
 
-module unload jasr
+#module unload jasr
 
 ### END ###
-
-
-

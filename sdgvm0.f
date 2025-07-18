@@ -455,10 +455,10 @@ c      !stwdg=stwdg(1:blank(stwdg))
       READ(98,'(A)') st1
       CALL STRIPBS(st1,stlu)
       ! LUH2 files required for land cover types 3-6
-      stpname_s = TRIM(stlu) // 
-     &TRIM('/states4sdgvm.nc')
-      stpname_t = TRIM(stlu) // 
-     &TRIM('/transitions4sdgvm.nc')
+      !stpname_s = TRIM(stlu)//TRIM("/states4sdgvm.nc")
+      !stpname_t = TRIM(stlu)//TRIM("/transitions4sdgvm.nc")
+      stpname_s =  stlu(1:blank(stlu))//'/states4sdgvm.nc'
+      stpname_t =  stlu(1:blank(stlu))//'/transitions4sdgvm.nc'
       !WRITE(*,*) 'In sdgvm0, LUH2 path/file.'
       !WRITE(*,*) stpname_s(1:blank(stpname_s))
       !WRITE(*,*) stpname_t(1:blank(stpname_t))
@@ -1817,8 +1817,13 @@ c     read table of conversion from class to ft's proportion
         READ(st1,*) ifire
         ifire = 1
         prescr_fire = .FALSE.
-        SYR_FIRE = -1 !SYR_FIRE and NYR_FIRE not used and not defined here
-        NYR_FIRE = -1
+        ! APW: set these as 1 to work with vector indexing in call to
+        !      states_..._netcdf in data.f, hopefully this will not
+        !      trigger types 2 or 3
+        !SYR_FIRE = -1 !SYR_FIRE and NYR_FIRE not used and not defined here
+        !NYR_FIRE = -1
+        SYR_FIRE = 1 !SYR_FIRE and NYR_FIRE not used and not defined here
+        NYR_FIRE = 1
       ELSE
         WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,*) 'ifire: either 1 or 3 arguments required'
@@ -4354,8 +4359,8 @@ c      endif
             evapm(mnth,ft) = evapm(mnth,ft) + evap
             tranm(mnth,ft) = tranm(mnth,ft) + tran
             roffm(mnth,ft) = roffm(mnth,ft) + roff
-            petm(mnth,ft) = petm(mnth,ft) + pet
-            avmnpet(ft) = avmnpet(ft) + pet
+            petm(mnth,ft)  = petm(mnth,ft) + pet
+            avmnpet(ft)    = avmnpet(ft) + pet
 
 *----------------------------------------------------------------------*
 * Sumation of GPP and NPP.                                             *
@@ -4424,7 +4429,7 @@ c      endif
      &w_scalar,t_scalar,fl,cal)
 
           sresp(ft) = sresp(ft) + srespm(ft)
-          lch(ft) = lch(ft) + lchm(ft)
+          lch(ft)   = lch(ft) + lchm(ft)
                
           DO i=1,8
             c0(i,ft)=c0v(i)
@@ -4647,27 +4652,26 @@ c             print*, active_cov
 
              fti=1 
              DO ft=1,nft
-             ! sums the below variables when lai>1 (because weird things happen to leaf N when LAI<1)
-             ! weighted by pft cover as a proportion of 'active' PFT cover, defined here as LAI > 1  
-             !if(daily_out(1,ft,mnth,day).gt.1.0d0) then
-             if((daily_out(1,ft,mnth,day).gt.1.0d0).and.
+               ! sums the below variables when lai>1 (because weird things happen to leaf N when LAI<1)
+               ! weighted by pft cover as a proportion of 'active' PFT cover, defined here as LAI > 1  
+               if((daily_out(1,ft,mnth,day).gt.1.0d0).and.
      &(active_cov.gt.1.d-3)) then
-               avnleaf   = avnleaf    + (ftcov(ft)/active_cov) * 
+                 avnleaf   = avnleaf    + (ftcov(ft)/active_cov) * 
      &daily_out(26,ft,mnth,day)
-               avleaf_nit= avleaf_nit + (ftcov(ft)/active_cov) * 
+                 avleaf_nit= avleaf_nit + (ftcov(ft)/active_cov) * 
      &daily_out(27,ft,mnth,day)
-               avvcmax   = avvcmax    + (ftcov(ft)/active_cov) * 
+                 avvcmax   = avvcmax    + (ftcov(ft)/active_cov) * 
      &daily_out(28,ft,mnth,day)
-               avjmax    = avjmax     + (ftcov(ft)/active_cov) * 
+                 avjmax    = avjmax     + (ftcov(ft)/active_cov) * 
      &daily_out(29,ft,mnth,day)
-               kg_beta   = kg_beta    + (ftcov(ft)/active_cov) *
+                 kg_beta   = kg_beta    + (ftcov(ft)/active_cov) *
      &daily_out(30,ft,mnth,day)
-               avsla     = avsla      + (ftcov(ft)/active_cov) * 
+                 avsla     = avsla      + (ftcov(ft)/active_cov) * 
      &ftsla(ft)
-
-               if(fti.eq.1) gi=gi+1.d0
-               fti=fti+1
-             endif
+  
+                 if(fti.eq.1) gi=gi+1.d0
+                 fti=fti+1
+               endif
              ENDDO
 
              fti=1 
@@ -4821,7 +4825,7 @@ c       kg_beta    = kg_beta/wi
           WRITE(26,'('' '',f8.1,$)') min(swcnew,9999.0d0)
           WRITE(27,'('' '',f8.1,$)') sumbio
           WRITE(28,'('' '',i2,$)')   bioind
-          WRITE(29,'('' '',f6.2,$)')  covind
+          WRITE(29,'('' '',f6.2,$)') covind
           WRITE(30,'('' '',f8.1,$)') avdof
           WRITE(31,'('' '',f8.1,$)') avrof
           WRITE(32,'('' '',f8.2,$)') firec
