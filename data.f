@@ -1265,6 +1265,32 @@ CPCM get_transitions==.true. : compute transitions
      &'Shrup    C3p      C4p      C3crop   C4crop   ',
      &'Ev_Bs    Dc_Bs    Ev_Ns    Dc_Ns    Shrus    C3s    C4s'
          ENDIF
+
+         l_lu = .TRUE.
+!         IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
+         IF (ALL(ABS(SDGVM_LUC(:,:,3:4,3:4)).GT.200.0)) THEN
+!           WRITE(*,*)'SDGVM_LUC: l_lu=.FALSE.'
+           l_lu = .FALSE.
+           RETURN
+         ENDIF
+
+!     check for all but the last year, since it may not be valid for the
+!     last year
+!          IF (ANY(ABS(SDGVM_LUC2(1:NYR-1,:,:,3,3)).GT.200.0)) THEN
+         IF (NYR.GT.1) THEN
+           IF (ALL(ABS(SDGVM_LUC2(1:NYR-1,:,:,3:4,3:4)).GT.200.0)) THEN 
+!              WRITE(*,*)'SDGVM_LUC2: l_lu=.FALSE.'
+               l_lu = .FALSE.
+               RETURN
+           ENDIF
+         ENDIF
+
+         IF ((prescr_fire .EQV. .TRUE.) .AND.
+     &        (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4,1:12)).GT.200.0)) ) THEN
+!              WRITE(*,*)'SDGVM_LUC_FIRE: l_lu=.FALSE.'
+               l_lu = .FALSE.
+               RETURN
+         ENDIF
       ELSE
          SDGVM_LUC=0.0
          SDGVM_LUC2=0.0
@@ -1280,31 +1306,6 @@ CPCM get_transitions==.true. : compute transitions
         write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,3,3)
       ENDIF
 
-      l_lu = .TRUE.
-!      IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
-      IF (ALL(ABS(SDGVM_LUC(:,:,3:4,3:4)).GT.200.0)) THEN
-!        WRITE(*,*)'SDGVM_LUC: l_lu=.FALSE.'
-        l_lu = .FALSE.
-        RETURN
-      ENDIF
-
-!     check for all but the last year, since it may not be valid for the
-!     last year
-!      IF (ANY(ABS(SDGVM_LUC2(1:NYR-1,:,:,3,3)).GT.200.0)) THEN
-      IF (NYR.GT.1) THEN
-       IF (ALL(ABS(SDGVM_LUC2(1:NYR-1,:,:,3:4,3:4)).GT.200.0)) THEN 
-!        WRITE(*,*)'SDGVM_LUC2: l_lu=.FALSE.'
-        l_lu = .FALSE.
-        RETURN
-       ENDIF
-      ENDIF
-
-      IF ((prescr_fire .EQV. .TRUE.) .AND.
-     &   (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4,1:12)).GT.200.0)) ) THEN
-!        WRITE(*,*)'SDGVM_LUC_FIRE: l_lu=.FALSE.'
-        l_lu = .FALSE.
-        RETURN
-      ENDIF
 
       IF (prescr_fire .EQV. .TRUE. ) THEN !PCM
        DO i=1,yrfa-yr0a+1
