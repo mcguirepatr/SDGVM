@@ -1074,6 +1074,7 @@ C PCM2      WRITE(*,*) '111111111'
       LOGICAL :: debug !used to print out more debugging info
 
 
+      l_lu = .TRUE.
       IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM Use states2b.nc or transitions2b.nc file: half-res
        !PCM hardwire these numbers for now
         latf = 89.75
@@ -1266,7 +1267,6 @@ CPCM get_transitions==.true. : compute transitions
      &'Ev_Bs    Dc_Bs    Ev_Ns    Dc_Ns    Shrus    C3s    C4s'
          ENDIF
 
-         l_lu = .TRUE.
 !         IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
          IF (ALL(ABS(SDGVM_LUC(:,:,3:4,3:4)).GT.200.0)) THEN
 !           WRITE(*,*)'SDGVM_LUC: l_lu=.FALSE.'
@@ -1291,6 +1291,11 @@ CPCM get_transitions==.true. : compute transitions
                l_lu = .FALSE.
                RETURN
          ENDIF
+
+         IF(debug .EQV. .TRUE.) THEN
+           write(*,FMT="(A,7E10.3)") 'D harv',
+     &              SDGVM_LUC2_HARVEST(1,:,3,3)
+         ENDIF
       ELSE
          SDGVM_LUC=0.0
          SDGVM_LUC2=0.0
@@ -1301,9 +1306,6 @@ CPCM get_transitions==.true. : compute transitions
      &'    t   BARE     Ev_Bl    Dc_Bl    Ev_Nl    Dc_Nl    ',
      &'Shrub    C3       C4       C3crop   C4crop   '
          ENDIF
-      ENDIF
-      IF(debug .EQV. .TRUE.) THEN
-        write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,3,3)
       ENDIF
 
 
