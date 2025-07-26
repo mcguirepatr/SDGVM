@@ -53,27 +53,27 @@
 *----------------------------------------------------------------------*
 * Add up grass coverage.                                               *
 *----------------------------------------------------------------------*
-      gold = 0.0d0
-      DO ft=3,4
-        DO age=1,ftmor(nat_map(ft))
-          gold = gold + cov(age,nat_map(ft))
+        gold = 0.0d0
+        DO ft=3,4
+          DO age=1,ftmor(nat_map(ft))
+            gold = gold + cov(age,nat_map(ft))
+          ENDDO
         ENDDO
-      ENDDO
 
 *----------------------------------------------------------------------*
 * Add up tree coverage.                                                *
 *----------------------------------------------------------------------*
-      told = 0.0d0
-      DO ft=5,8
-        DO age=1,ftmor(nat_map(ft))
-          told = told + cov(age,nat_map(ft))
+        told = 0.0d0
+        DO ft=5,8
+          DO age=1,ftmor(nat_map(ft))
+            told = told + cov(age,nat_map(ft))
+          ENDDO
         ENDDO
-      ENDDO
 
-*      IF (gold.GT.0.0d0) THEN
-*        c3old = cov(1,2) + cov(2,2)
-*        c4old = cov(1,3) + cov(2,3)
-*      ENDIF
+*        IF (gold.GT.0.0d0) THEN
+*          c3old = cov(1,2) + cov(2,2)
+*          c4old = cov(1,3) + cov(2,3)
+*        ENDIF
 
       ENDIF
 
@@ -432,6 +432,7 @@ C The following ordering is the order of ft's in the input.dat file
         PRINT '(A)','GG4c ftprop '
         PRINT '(16F11.6)',ftprop(1:nft)
       ENDIF
+      
       norm = 0.0d0
       DO ft=1,nft           
         !PRINT*, 'G7',ft,ftprop(ft) 
@@ -451,6 +452,7 @@ C The following ordering is the order of ft's in the input.dat file
           ftprop3(ft)=0.0d0
         ENDIF
       ENDDO
+
       DO ft=1,nft
         ftprop3(ft) = 100.0d0*ftprop3(ft)/norm
       ENDDO
@@ -609,6 +611,7 @@ C The following ordering is the order of ft's in the input.dat file
         sln(ft) = 0.0d0
         rln(ft) = 0.0d0
       ENDDO
+
       DO ft=1,nft
         DO age=1,ftmor(ft)
           slc(ft) = slc(ft) + leaflit(ft)*cov(age,ft)
@@ -1763,7 +1766,7 @@ C The following ordering is the order of ft's in the input.dat file
 *----------------------------------------------------------------------*
 *                            SUBROUTINE SHIFT                          *
 *                            ****************                          *
-* Shift shifts elements of an array to the right and leavs the first   *
+* Shift shifts elements of an array to the right and leaves the first  *
 * element equal to zero.                                               *
 *----------------------------------------------------------------------*
       SUBROUTINE SHIFT(ftmor,cov,ppm,bio,hgt,ft1,ft2)
