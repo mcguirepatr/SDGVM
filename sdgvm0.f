@@ -53,7 +53,8 @@
       REAL*8 ftbbmax(maxnft),ftbblim(maxnft),ftsslim(maxnft),nleaf,cal
       REAL*8 flow1(maxnft),flow2(maxnft),h2o,adp(4),sfc(4),sw(4),sswc(4)
       REAL*8 leafnpp(maxnft),stemnpp(maxnft),rootnpp(maxnft)
-      REAL*8 srespm(maxnft),lchm(maxnft)
+!PCM      REAL*8 srespm(maxnft),lchm(maxnft)
+      REAL*8 srespm,lchm(maxnft)
       REAL*8 evapm(12,maxnft),tranm(12,maxnft),roffm(12,maxnft),avyield
       REAL*8 photm(12,maxnft),avmnpet(maxnft),avmnt,avmnppt,tc,ts,tsi
       REAL*8 bulk,nupc,nfix,daygpp,evap,tran,roff,pet,yrtran,yrevap
@@ -1856,7 +1857,8 @@ c CLOSE added by Ghislain 15/12/03
       co2(1,:,:) = 0.0d0
 
       DO ft=1,nft
-        srespm(ft) = 0.0d0
+!PCM        srespm(ft) = 0.0d0
+        srespm = 0.0d0
         ftxyl(ft) =  ftxyl(ft)*1.0e-9
         ftpd(ft)  =  ftpd(ft)*1.0e+3
       ENDDO
@@ -3841,23 +3843,49 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
         IF(debug .EQV. .TRUE.) THEN
           PRINT '(A)','SS3c ftprop1 (before COVER( ) routine) '
           PRINT '(16F11.7)',ftprop1(1:nft)
+!          IF(year.EQ.yr0s) THEN !PCM just for debugging for Patagonia
+!            cov(1,3) = ftprop1(3)*1d-2/2 
+!            cov(2,3) = ftprop1(3)*1d-2/2
+!          ENDIF
+          PRINT '(A)','SS3d cov '
+          DO j=1,6 !show first six years of cover
+            PRINT '(16F11.6)',cov(j,1:nft)
+          ENDDO
         ENDIF
 
 *----------------------------------------------------------------------*
-        CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
+        IF(ilanduse.LT.3) THEN
+          CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
+     &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
+     &fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
+     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen)
+        ELSE
+          CALL COVER2(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,fprob_prescr,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,
      &ilanduse,prescr_fire,nat_map,ic0,fire(iyear),harvest(iyear),
      &leafdp,flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
      &ftprop_init,yield,lat,ftprops,debug)
+        ENDIF
 
         IF(debug .EQV. .TRUE.) THEN
-          PRINT '(A)','SS3d ftprop1 (after  COVER( ) routine) '
+          PRINT '(A)','SS3e ftprop1 (after  COVER( ) routine) '
           PRINT '(16F11.7)',ftprop1(1:nft)
         ENDIF
+        DO ft=1,nft
+          IF(debug .EQV. .TRUE.) THEN
+           print*,'AFTER COVER, BEFORE MKDLIT: ft,slc,rlc: ',
+     &ft,slc(ft),rlc(ft)
+          ENDIF
+        ENDDO
 
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
+        DO ft=1,nft
+          IF(debug .EQV. .TRUE.) THEN
+           print*,'AFTER MKDLIT: ft,slc,rlc: ',ft,slc(ft),rlc(ft)
+          ENDIF
+        ENDDO
 
         IF(debug .EQV. .TRUE.) THEN
           !PRINT *,'SS3',nppstore(1:nft)
@@ -4267,10 +4295,10 @@ c      endif
      &nppsold)*12.0d0
             daily_out(6,ft,mnth,day) = daygpp*12.0d0                  ! GPP
             !PRINT *,"daily_gpp",ft,mnth,day,daily_out(6,ft,mnth,day)
-            !PCM daily_out(7,ft,mnth,day) = srespm/                   ! heterotrophic respiration
-!PCM     &real(no_days(year,mnth,thty_dys))
-            daily_out(7,ft,mnth,day) = srespm(ft)/                    ! heterotrophic respiration, PCM
+            daily_out(7,ft,mnth,day) = srespm/                   ! heterotrophic respiration
      &real(no_days(year,mnth,thty_dys))
+!            daily_out(7,ft,mnth,day) = srespm(ft)/                    ! heterotrophic respiration, PCM
+!     &real(no_days(year,mnth,thty_dys))
             !PCM if(srespm(ft).lt.1e-6) daily_out(7,ft,mnth,day) = 0.000       ! heterotrophic respiration
             !PCM if(srespm(ft).lt.0.0) daily_out(7,ft,mnth,day) = 0.000    ! heterotrophic respiration
             daily_out(8,ft,mnth,day) = daily_out(5,ft,mnth,day) -     ! NEE
@@ -4404,11 +4432,13 @@ c      endif
 
 *          print*,avmnpet(ft),avmnppt,avmnt
           CALL DOLYMONTH(ts,tc,avmnpet(ft),avmnppt,avmnt,h2o,flow1(ft),
-     &flow2(ft),c0v,n0v,minnv,nfix,nci,dslc,drlc,dsln,srespm(ft),
+!PCM     &flow2(ft),c0v,n0v,minnv,nfix,nci,dslc,drlc,dsln,srespm(ft),
+     &flow2(ft),c0v,n0v,minnv,nfix,nci,dslc,drlc,dsln,srespm,
      &lchm(ft),ca,site,year,yr0,yrf,speedc,soilc(ft),soiln(ft),mnth,
      &w_scalar,t_scalar,fl,cal)
 
-          sresp(ft) = sresp(ft) + srespm(ft)
+!PCM          sresp(ft) = sresp(ft) + srespm(ft)
+          sresp(ft) = sresp(ft) + srespm
           lch(ft) = lch(ft) + lchm(ft)
                
           DO i=1,8
@@ -4548,11 +4578,30 @@ c     check water cycle closure
       !from here below is indented 2 columns more
       npp(1) = 0.0d0
       lai(1) = 0.0d0
+      IF(debug .EQV. .TRUE.) THEN
+        DO ft=1,nft
+           print*,'BEFORE GROWTH: ft,slc,rlc: ',ft,slc(ft),rlc(ft)
+        ENDDO
+        DO ft=1,nft
+           print*,'BEFORE MKLIT: ft,ftgr0,ftmor',ft,ftgr0(ft),ftmor(ft)
+        ENDDO
+      ENDIF
 
-      CALL GROWTH(nft,ftmor,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
+      IF(ilanduse.LT.3) THEN
+        CALL GROWTH(nft,ftmor,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
+     &nppstore,npp,lai,nps,npr,evp,slc,rlc,sln,rln,stembio,rootbio,ppm,
+     &hgt,leaflit)
+      ELSE
+        CALL GROWTH2(nft,ftmor,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
      &nppstore,npp,lai,nps,npr,evp,slc,rlc,sln,rln,stembio,rootbio,ppm,
      &hgt,leaflit,debug)
+      ENDIF
 
+      DO ft=1,nft
+        IF(debug .EQV. .TRUE.) THEN
+           print*,'AFTER GROWTH: ft,slc,rlc: ',ft,slc(ft),rlc(ft)
+        ENDIF
+      ENDDO
       CALL SWAP(ic0,in0,iminn,is1,is2,is3,is4,isn,ilsn,tc0,tn0,
      &tminn,ts1,ts2,ts3,ts4,tsn,tlsn)
 
@@ -4707,12 +4756,17 @@ c       kg_beta    = kg_beta/wi
         ENDDO
         tsoiln = tsoiln + iminn(3)
         DO ft=1,nft
-          !print*,tslc,trlc
+          IF(debug .EQV. .TRUE.) THEN
+             print*,'ft,slc,rlc: ',ft,slc(ft),rlc(ft)
+          ENDIF
           !tslc = tslc + ftcov(ft) * slc(ft)
           !trlc = trlc + ftcov(ft) * rlc(ft)
           tslc = tslc + slc(ft)
           trlc = trlc + rlc(ft)
         ENDDO
+        IF(debug .EQV. .TRUE.) THEN
+             print*,'tslc,trlc: ',tslc,trlc
+        ENDIF
         tsoilc      = tsoilc + tslc + trlc
         !print*, tslc , ic0(1) , ic0(5)
         !print*, tslc + ic0(1) + ic0(5)

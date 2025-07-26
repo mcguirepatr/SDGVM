@@ -400,27 +400,27 @@
           data_out_fire(year_index,:,:,1:12) = data_in_fire(:,:,1:12) 
         END DO
       END IF
-      IF(debug) THEN
-       PRINT *, 'num_fire=',num_fire,'num_tot=',2*2
-       WRITE(*,*)'in states_*; data_out_fire'
-!      DO jj=1,FYR_FIRE-SYR_FIRE+1
-       WRITE(*,*)'3,3'
-       DO jj=1,4
-         WRITE(*,'(12F11.4)')data_out_fire(jj,3,3,1:12)
-       END DO
-       WRITE(*,*)'3,4'
-       DO jj=1,4
-         WRITE(*,'(12F11.4)')data_out_fire(jj,3,4,1:12)
-       END DO
-       WRITE(*,*)'4,3'
-       DO jj=1,4
-         WRITE(*,'(12F11.4)')data_out_fire(jj,4,3,1:12)
-       END DO
-       WRITE(*,*)'4,4'
-       DO jj=1,4
-         WRITE(*,'(12F11.4)')data_out_fire(jj,4,4,1:12)
-       END DO
-      ENDIF
+!      IF(debug) THEN
+!       PRINT *, 'num_fire=',num_fire,'num_tot=',2*2
+!       WRITE(*,*)'in states_*; data_out_fire'
+!!      DO jj=1,FYR_FIRE-SYR_FIRE+1
+!       WRITE(*,*)'3,3'
+!       DO jj=1,4
+!         WRITE(*,'(12F11.4)')data_out_fire(jj,3,3,1:12)
+!       END DO
+!       WRITE(*,*)'3,4'
+!       DO jj=1,4
+!         WRITE(*,'(12F11.4)')data_out_fire(jj,3,4,1:12)
+!       END DO
+!       WRITE(*,*)'4,3'
+!       DO jj=1,4
+!         WRITE(*,'(12F11.4)')data_out_fire(jj,4,3,1:12)
+!       END DO
+!       WRITE(*,*)'4,4'
+!       DO jj=1,4
+!         WRITE(*,'(12F11.4)')data_out_fire(jj,4,4,1:12)
+!       END DO
+!      ENDIF
 
       !DO t=ST,NT,1 
       SINDEX = SYR - SYR0 + 1 + shift_year

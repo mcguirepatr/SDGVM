@@ -1,11 +1,11 @@
-FFLAGS= -fbounds-check -O3 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace 
+#FFLAGS= -fbounds-check -O3 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace 
 #For debugging:
-#FFLAGS= -g -fbounds-check -O0 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace -fcheck=all
+FFLAGS= -g -fbounds-check -O0 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace -fcheck=all
 NETCDFFLAGS= `nf-config --fflags`
 NETCDFLIBS= `nf-config --flibs`
 FF = gfortran
 
-OBJ = states_convertSDGVM_func.o sdgvm0.o sdgvm1.o data.o growth.o parameter_adjustment.o hydrology.o phenology.o func.o doly.o soil.o nppcalc.o light.o sunshade.o weathergenerator.o metdos.o luna.o
+OBJ = states_convertSDGVM_func.o sdgvm0.o sdgvm1.o data.o growth.o growth2.o parameter_adjustment.o hydrology.o phenology.o func.o doly.o soil.o nppcalc.o light.o sunshade.o weathergenerator.o metdos.o luna.o
 #OBJ = tmp.o
 
 sdgvm0:	$(OBJ)
