@@ -38,10 +38,11 @@
       REAL*8 ftgr0(maxnft),ftgrf(maxnft),mnthhum(12),ccheck,iadj,jadj
       REAL*8 bioo(maxnft),covo(maxnft),avevt,avsresp,ftppm0(maxnft)
       REAL*8 tsoilc,tsoiln,soilc(maxnft),soiln(maxnft),isoilc,isoiln
-      REAL*8 sumbio,ans1,ftstmx(maxnft),leaflit(maxnft),stemlit(maxnft)
+      REAL*8 sumbio,ftstmx(maxnft),leaflit(maxnft),stemlit(maxnft)
       REAL*8 rootlit(maxnft),ftwd(maxnft),ftxyl(maxnft),ftpd(maxnft)
       REAL*8 ftsla(maxnft),ftcov(maxnft),lon0,lonf,ftrat(maxnft),kd,kx
-      REAL*8 input_ftsla(maxnft),bioleafo(maxnft)
+      REAL*8 input_ftsla(maxnft),bioleafo(maxnft),ccheck_biomass_cov
+      REAL*8 ans1,ans2,ans3,ans4,ans5,ccheck_soil,ccheck_biomass
       REAL*8 ftvna(maxnft),ftvnb(maxnft),ftjva(maxnft),ftjvb(maxnft)
       REAL*8 ftg0(maxnft),ftg1(maxnft),amax(maxnft),vcmax_from_amax
       REAL*8 stembio,rootbio,sum,solcoo,biotoo,lutab(255,100),awl(4)
@@ -2035,7 +2036,7 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 !PCM4 for running a single site in the main run from a gridded spinup;
 !PCM4 (other changes below)
-!      DO site=10,10
+!      DO site=111,111
       DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
@@ -2115,14 +2116,17 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 * Read in climate.                                                     *
 *----------------------------------------------------------------------*
-      !print*, 'start clim'
+      IF(debug) THEN
+        print*, 'start clim; clim_type = ',clim_type
+      ENDIF
+
       IF (clim_type.EQ.1) THEN
 *----------------------------------------------------------------------*
 * DAILY Gridded.                                                       *
 *----------------------------------------------------------------------*
         CALL EX_CLIM(st2,lat,lon,xlatf,xlatres,xlatresn,xlon0,xlonres,
      &xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,xwndv,isite,xyear0,xyearf,
-     &siteno,du,xswrv,read_par)
+     &siteno,du,xswrv,read_par,debug)
         if(siteno.NE.0) THEN !PCM
           l_clim = .TRUE.    !PCM
           l_stats = .TRUE.   !PCM: we don't have or need this stats data,
@@ -2131,12 +2135,6 @@ c CLOSE added by Ghislain 15/12/03
           l_clim = .FALSE.   !PCM
           l_stats = .FALSE.   !PCM
          ENDIF
-C PCM2        WRITE(*,*) 'aaaaaaaaa 1st year temperature'
-C PCM2        DO mnth=1,12
-C PCM2          WRITE(*,'(30f5.0)') xtmpv(1,mnth,1:30) 
-C PCM2        ENDDO
-C PCM2        WRITE(*,*) 'bbbbbbbbb'
-        withcloudcover=.FALSE.
       ELSEIF (clim_type.EQ.2) THEN
 *----------------------------------------------------------------------*
 * MONTHLY Gridded.                                                     *
@@ -2146,6 +2144,30 @@ C PCM2        WRITE(*,*) 'bbbbbbbbb'
      &xwndv,xcldv,isite,xyear0,xyearf,du,seed1,seed2,seed3,
      &l_clim,l_stats,xswrv,read_par)
         withcloudcover=.TRUE.
+
+
+        IF(debug) THEN
+          WRITE(*,*) 'aaaaaaaaa'
+          WRITE(*,*) '1st year temperature'
+          DO mnth=1,12
+            WRITE(*,'(30f5.0)') xtmpv(1,mnth,1:30) 
+          ENDDO
+          WRITE(*,*) '1st year humidity'
+          DO mnth=1,12
+            WRITE(*,'(30f5.0)') xhumv(1,mnth,1:30) 
+          ENDDO
+          WRITE(*,*) '1st year precip'
+          DO mnth=1,12
+            WRITE(*,'(30f5.0)') xprcv(1,mnth,1:30) 
+          ENDDO
+          WRITE(*,*) '1st year wind'
+          DO mnth=1,12
+            WRITE(*,'(30f5.0)') xwndv(1,mnth,1:30) 
+          ENDDO
+          WRITE(*,*) 'bbbbbbbbb'
+        ENDIF
+
+        withcloudcover=.FALSE.
       ELSEIF (clim_type.EQ.3) THEN
 *----------------------------------------------------------------------*
 * DAILY Site                                                           *
@@ -3696,17 +3718,24 @@ c        ENDIF
         ENDDO
 
         ans1 = 0.0d0
+        ans2 = 0.0d0
+        ans3 = 0.0d0
         DO ft=1,nft
           DO i=1,ftmor(ft)
             ! adding stem_carbon=bio(i,1,ft) & root_carbon(i,2,ft) & leaf_carbon & nppstore
-            ans1 = ans1 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
+            ans2 = ans2 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(i,ft)
           ENDDO
-          ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
+          ans3 = ans3 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
+
+        ans1 = ans2 + ans3
+
         IF(debug .EQV. .TRUE.) THEN
-          WRITE(*,'(''Icheck0'',3f13.6)') ccheck
-          WRITE(*,'(''Ians1'',3f12.6)') ans1 
+          WRITE(*,'(''Icheck0'',3f13.6)')  ccheck
+          WRITE(*,'(''Ibiomass'',3f12.6)') ans2
+          WRITE(*,'(''Ilitter'',3f12.6)')  ans3
+          WRITE(*,'(''Ians1'',3f12.6)')    ans1
           WRITE(*,'(''Itc0(1)'',3f12.6)') ic0(1) 
           WRITE(*,'(''Itc0(2)'',3f12.6)') ic0(2) 
           WRITE(*,'(''Itc0(3)'',3f12.6)') ic0(3) 
@@ -3719,6 +3748,9 @@ c        ENDIF
 
         ccheck = ans1 + ic0(1) + 
      &ic0(2) + ic0(3) + ic0(4) + ic0(5) + ic0(6) + ic0(7) + ic0(8)
+        ccheck_soil = ic0(1) + 
+     &ic0(2) + ic0(3) + ic0(4) + ic0(5) + ic0(6) + ic0(7) + ic0(8)
+        ccheck_biomass = ans2
 
         IF(debug .EQV. .TRUE.) THEN
           WRITE(*,'(''Icheck1'',3f13.6)') ccheck
@@ -3761,6 +3793,7 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 
               ftprop(1)  = ftprop(1) - ftprop(ft)
             ELSE
+            !  print *, 'Check_ft_grow=0, ft=',ft
               ftprop(ft) = 0.0d0
             ENDIF
 
@@ -3879,6 +3912,36 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
+
+        ! APW : add litter together for carbon balance check, needed
+        ! here as COVER makes litter and adds to end of year litter
+        ! calculated in GROWTH, which also zeros litter arrays first, so
+        ! full annual litter is now calculated
+        ccheck_soil = ccheck_soil + dslc + drlc
+        ! APW : calculate litter from COVER
+        ans4 = dslc + drlc - ans3
+        ans2 = 0.0d0
+        avflulccc = 0.0d0
+        avyield = 0.0d0
+        DO ft=1,nft
+          DO i=1,ftmor(ft)
+            ! adding stem_carbon=bio(i,1,ft) & root_carbon(i,2,ft) & leaf_carbon & nppstore
+            ans2 = ans2 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
+     &nppstore(ft))*cov(i,ft)
+          ENDDO
+          avflulccc = avflulccc + ftcov(ft)*flulccc(ft)
+          avyield = avyield + ftcov(ft)*yield(ft) 
+        ENDDO
+
+        ccheck_biomass_cov = ans2
+        ans5 = ccheck_biomass - ans2 - ans4 - firec - avflulccc -
+     &avyield
+
+        IF(debug .EQV. .TRUE.) THEN
+          !PRINT *,'SS3',nppstore(1:nft)
+          PRINT *,'Biomass check after COVER call: ', ans5
+        ENDIF
+
         DO ft=1,nft
           IF(debug .EQV. .TRUE.) THEN
            print*,'AFTER MKDLIT: ft,slc,rlc: ',ft,slc(ft),rlc(ft)
@@ -5104,18 +5167,28 @@ c       kg_beta    = kg_beta/wi
 *----------------------------------------------------------------------*
 
         ans1 = 0.0d0
+        ans2 = 0.0d0
+        ans3 = 0.0d0
         DO ft=1,nft
           DO i=1,ftmor(ft)
             ! adding stem_carbon=bio(i,1,ft) & root_carbon(i,2,ft) & leaf_carbon & nppstore
-            ans1 = ans1 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
+            ans2 = ans2 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(i,ft)
           ENDDO
-          ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
+          ans3 = ans3 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
+
+        ans1 = ans2 + ans3
+
         IF(debug .EQV. .TRUE.) THEN
-          WRITE(*,'(''check0'',3f13.6)') ccheck
-          WRITE(*,'(''avnpp'',3f12.6)') avnpp 
-          WRITE(*,'(''ans1'',3f12.6)') ans1 
+          ans5 = ccheck_biomass_cov + avnpp - ans2 - ans3
+          PRINT *,'Biomass check after GROWTH call: ', ans5
+          WRITE(*,'(''check0 '',3f14.6)') ccheck
+          WRITE(*,'(''check0_soil '',3f14.6)') ccheck_soil
+          WRITE(*,'(''avnpp '',3f12.6)') avnpp
+          WRITE(*,'(''biomass '',3f14.6)') ans2
+          WRITE(*,'(''litter '',3f14.6)')  ans3
+          WRITE(*,'(''ans1 '',3f14.6)') ans1
           WRITE(*,'(''tc0(1)'',3f12.6)') tc0(1) 
           WRITE(*,'(''tc0(2)'',3f12.6)') tc0(2) 
           WRITE(*,'(''tc0(3)'',3f12.6)') tc0(3) 
@@ -5137,9 +5210,22 @@ c       kg_beta    = kg_beta/wi
         ccheck = ccheck + avnpp - (ans1 + tc0(1) + 
      &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) + 
      &avlch + avsresp + firec + avflulccc + avyield ) 
-        IF(debug .EQV. .TRUE.) THEN
-          WRITE(*,'(''check'',3f13.6)') ccheck
-        ENDIF
+
+        ! APW: I'm not sure this will balance with land use change as I
+        ! haven't looked at how flulcc or firec are calculated and if
+        ! those include soil carbon
+        ccheck_soil = ccheck_soil - (tc0(1) +
+     &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) +
+     &avlch + avsresp )
+
+        ccheck_biomass = ccheck_biomass + avnpp - (ans2 + ans3 + ans4 +
+     &avyield + firec + avflulccc )
+
+         IF(debug .EQV. .TRUE.) THEN
+           WRITE(*,'(''check'',3f13.6)') ccheck
+           WRITE(*,'(''check soil'',3f13.6)') ccheck_soil
+           WRITE(*,'(''check biomass'',3f13.6)') ccheck_biomass
+         ENDIF
 
 *----------------------------------------------------------------------*
 * Check carbon and water balance, write to 'DIAG' if any problems.     *

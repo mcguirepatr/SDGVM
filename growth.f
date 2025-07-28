@@ -25,27 +25,27 @@
 *----------------------------------------------------------------------*
 * Add up grass coverage.                                               *
 *----------------------------------------------------------------------*
-      gold = 0.0d0
-      DO ft=3,4
-        DO age=1,ftmor(nat_map(ft))
-          gold = gold + cov(age,nat_map(ft))
+        gold = 0.0d0
+        DO ft=3,4
+          DO age=1,ftmor(nat_map(ft))
+            gold = gold + cov(age,nat_map(ft))
+          ENDDO
         ENDDO
-      ENDDO
 
 *----------------------------------------------------------------------*
 * Add up tree coverage.                                                *
 *----------------------------------------------------------------------*
-      told = 0.0d0
-      DO ft=5,8
-        DO age=1,ftmor(nat_map(ft))
-          told = told + cov(age,nat_map(ft))
+        told = 0.0d0
+        DO ft=5,8
+          DO age=1,ftmor(nat_map(ft))
+            told = told + cov(age,nat_map(ft))
+          ENDDO
         ENDDO
-      ENDDO
 
-*      IF (gold.GT.0.0d0) THEN
-*        c3old = cov(1,2) + cov(2,2)
-*        c4old = cov(1,3) + cov(2,3)
-*      ENDIF
+*        IF (gold.GT.0.0d0) THEN
+*          c3old = cov(1,2) + cov(2,2)
+*          c4old = cov(1,3) + cov(2,3)
+*        ENDIF
 
       ENDIF
 
@@ -1240,7 +1240,7 @@
 *----------------------------------------------------------------------*
 *                            SUBROUTINE SHIFT                          *
 *                            ****************                          *
-* Shift shifts elements of an array to the right and leavs the first   *
+* Shift shifts elements of an array to the right and leaves the first  *
 * element equal to zero.                                               *
 *----------------------------------------------------------------------*
       SUBROUTINE SHIFT(ftmor,cov,ppm,bio,hgt,ft1,ft2)

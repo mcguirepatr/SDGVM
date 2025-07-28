@@ -31,7 +31,7 @@
       REAL*8 atharvest(n_at),fprob_prescr(12)
       REAL*8 ft2frac(maxnft),at2prop,woodh,totft,loss_nowoodh
       REAL*8 ftprop_init(maxnft),yield(maxnft),lat
-      REAL*8 tot_secdn,barefrac_secdn,nonbarefrac,ftprops(maxnft)
+      REAL*8 ftprops(maxnft)
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
@@ -53,27 +53,27 @@
 *----------------------------------------------------------------------*
 * Add up grass coverage.                                               *
 *----------------------------------------------------------------------*
-      gold = 0.0d0
-      DO ft=3,4
-        DO age=1,ftmor(nat_map(ft))
-          gold = gold + cov(age,nat_map(ft))
+        gold = 0.0d0
+        DO ft=3,4
+          DO age=1,ftmor(nat_map(ft))
+            gold = gold + cov(age,nat_map(ft))
+          ENDDO
         ENDDO
-      ENDDO
 
 *----------------------------------------------------------------------*
 * Add up tree coverage.                                                *
 *----------------------------------------------------------------------*
-      told = 0.0d0
-      DO ft=5,8
-        DO age=1,ftmor(nat_map(ft))
-          told = told + cov(age,nat_map(ft))
+        told = 0.0d0
+        DO ft=5,8
+          DO age=1,ftmor(nat_map(ft))
+            told = told + cov(age,nat_map(ft))
+          ENDDO
         ENDDO
-      ENDDO
 
-*      IF (gold.GT.0.0d0) THEN
-*        c3old = cov(1,2) + cov(2,2)
-*        c4old = cov(1,3) + cov(2,3)
-*      ENDIF
+*        IF (gold.GT.0.0d0) THEN
+*          c3old = cov(1,2) + cov(2,2)
+*          c4old = cov(1,3) + cov(2,3)
+*        ENDIF
 
       ENDIF
 
@@ -122,167 +122,39 @@ C The following ordering is the order of ft's in the input.dat file
           !! need to make this tree specific 
           !  compute_covchange = .TRUE.
           !ELSE
-            compute_covchange = .FALSE.
+          compute_covchange = .FALSE.
           !ENDIF
         ENDIF
+
            
 !        if((sum_cov(ft).le.0d0)) then !PCM
 !          sum_cov(ft) = ftprop(ft)
 !        endif
 !        if((compute_covchange.EQV..TRUE.).AND.(sum_cov(ft).gt.0d0)) then!PCM Site=11 has troubles here
 !       we need to handle the sum_cov(ft).eq.0d0 case as well
+
         if((compute_covchange.EQV..FALSE.)) then
-          loss = sum_cov(ft) - ftprop(ft)*1d-2
           woodh = 0.0d0
-          loss_nowoodh = sum_cov(ft) - (ftprop(ft)+woodh)*1d-2
         else 
-          at = aggmap_SDGVM_to_aggHyde(ft)
-          CALL CALC_FT2FRAC2(ftprop_init,aggmap_SDGVM_to_aggHyde,nft,
-     &ft2frac,debug)
-
-          if(at.EQ.4) then
-            !use ftprops = states vector from net transitions; this allows for transitions from bare secondary non-forest to non-bare secondary non-forest 
-            tot_secdn = ftprops(1)+ftprops(7)+ftprops(8)
-            if(tot_secdn.GT.0.0d0)then
-              barefrac_secdn = ftprops(1)/tot_secdn
-            else
-              barefrac_secdn = 0.0d0
-            endif
-            nonbarefrac = 1.0d0-barefrac_secdn
-          else
-            nonbarefrac = 1.0d0 
-          endif
-
-          !if(at.EQ.1 .OR. at.EQ.2) then
-          if(at.EQ.1) then
-          ! losses to ft from wood harvest in ft 
-            woodh = ft2frac(ft)*atharvest(at)
-            ftprop(ft) = ftprop(ft) - woodh
-          else
-            woodh = 0.0d0
-          endif
-
-          ! losses to ft from conversion to urban cover (at2.EQ.7)
-          ftprop(ft) = ftprop(ft)-ft2frac(ft)*atprop2(at,7)
-
-          ! gains to ft from conversion from urban cover (at2.EQ.7)
-          ftprop(ft) = ftprop(ft)+ft2frac(ft)*atprop2(7,at)
-
-          DO ft2=2,nft
-            at2 = aggmap_SDGVM_to_aggHyde(ft2)
-            CALL CALC_CORRCT_FT2(ft2,lat,corrct_ft2)
-
-           
-            if(at2.EQ.4 .AND. at.EQ.2 ) then
-            ! gains to ft2 from wood harvest in ft 
-            !   for at2.EQ.4 (secdn) from at.EQ.2 (primn)
-              !ftprop(ft2) = ftprop(ft2)+ft2frac(ft2)*woodh
-              ftprop(ft2) = ftprop(ft2)+ft2frac(ft2-4)*woodh !assumes primary cover fraction
-            endif
-
-            if(at2.EQ.3 .AND. at.EQ.1 ) then
-            ! gains to ft2 from wood harvest in ft 
-            !   for at2.EQ.3 (secdf) from at.EQ.1 (primf)
-              !ftprop(ft2) = ftprop(ft2)+ft2frac(ft2)*woodh
-              ftprop(ft2) = ftprop(ft2)+ft2frac(ft2-4)*woodh !assumes primary cover fractions
-            endif
-
-            ! losses from ft to ft2: !atprop2 additive in %/year
-            IF(ft2frac(ft2).GT.0.0d0) THEN !check for pre-existing cover in the ft2
-            ! split the losses from each ft by a fraction ft2frac(ft)
-            ! split the losses to each ft to each ft2 by a fraction ft2frac(ft2)
-              ftprop(ft) = ftprop(ft) -
-     &  ft2frac(ft)*ft2frac(ft2)*atprop2(at,at2)
-            ELSE IF(corrct_ft2) THEN !check if tropical or temperate
-            ! split the losses from each ft by a fraction ft2frac(ft)
-              ftprop(ft) = ftprop(ft) -
-     &  ft2frac(ft)*             atprop2(at,at2)
-            ENDIF
-
-            ! gains to ft from ft2:
-            IF(ft2frac(ft).GT.0.0d0) THEN ! check for pre-existing cover in the ft !also check if tropical or temperate 
-            ! split the gains from each at2 from each ft2 by a fraction ft2frac(ft2)
-            ! split the gains to each at to each ft by a fraction ft2frac(ft)
-               ftprop(ft) = ftprop(ft) +
-     &  ft2frac(ft)*ft2frac(ft2)*atprop2(at2,at)
-            ELSE IF((corrct_ft.EQV..TRUE.).AND.
-     &(nonbarefrac.GT.0.0d0)) THEN ! check if tropical or temperate !also, only do this if there is non-bare secdn ground or if it's not secdn
-               ftprop(ft) = ftprop(ft) +
-     &             ft2frac(ft2)*atprop2(at2,at)
-            ENDIF
-
-            IF ((debug.EQV..TRUE.).AND.((at.eq.5).OR.(at2.eq.5))) THEN
-                PRINT
-     &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
-     &              'GHG1',
-     &              at2,at,ft2,ft,
-     &              ft2frac(ft),ft2frac(ft2),atprop2(at2,at),
-     &              ftprop(ft),woodh,sum_cov(ft),atharvest(at)
-                PRINT
-     &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
-     &              'GHL1',
-     &              at,at2,ft,ft2,
-     &              ft2frac(ft),ft2frac(ft2),atprop2(at,at2),
-     &              ftprop(ft),woodh,sum_cov(ft),atharvest(at)
-            ENDIF
-          ENDDO
-!         totft = ftprop(ft) + woodh 
-!
-!         IF( totft .GT. 1d-1 ) THEN
-!            loss = 1d0 - totft*1d-2/sum_cov(ft)
-!            loss_nowoodh = 1d0 - (totft-woodh)*1d-2/sum_cov(ft)
-
-         !IF( ftprop(ft) .GT. 1d-1 ) THEN !this discretization leads to carbon imbalances
-         !IF( ftprop(ft) .GT. 1d-2 ) THEN !this prevents cov<0
-         !IF(sum_cov(ft).GT.0.0d0) THEN
-         !IF(ftprop(ft) .GT. 0.0d0) THEN
-         ! loss = 1.0d0 - ftprop(ft)*1d-2/sum_cov(ft) 
-         ! loss > 0 if there is a loss in cover; loss < 0 if there is a gain in cover
-         ! loss_nowoodh = 1.0d0 - (ftprop(ft)+woodh)*1d-2/sum_cov(ft)
-         !ELSE
-         !   !ftloss_prop = 1d0   !PCM why isn't this ftloss_prop(ft) = 1d0 ??
-         !   loss = 1d0   !PCM 
-         !   loss_nowoodh = 1d0
-         !ENDIF
-         !ELSE
-         !   loss = 0d0   
-         !   loss_nowoodh = 0d0
-         !ENDIF
-
-
-!         print*, 'ftprop is less than sum_cov:',
-!     &ft, ftprop(ft)*1d-2, sum_cov(ft), loss 
-!         print*, (ftprop(ft)*1d-2) - sum_cov(ft)
-
-!         change_cover = .False. 
-!         change_cover = .True. 
-!!         IF(sum_cov(ft).GT.0.0d0) THEN
-!         IF( ilanduse .LT. 3 ) THEN
-!!           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
-!           IF( ( ftprop(ft)*1d-2 - sum_cov(ft)) .ne. 0.0  ) THEN
-!             change_cover = .True. !settings for net transitions
-!           ENDIF
-!         ELSE IF( ilanduse .GE. 3 .AND. ilanduse .LE. 6 ) THEN
-!           IF( ftprop(ft)*1d-2 .NE. sum_cov(ft) ) THEN 
-!             change_cover = .True. !settings for gross transitions
-!           ENDIF
-!         ENDIF
-!!         ENDIF
-
-!         IF( change_cover ) THEN 
-         ! NET transitions: IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
-         ! GROSS transitions IF( ftprop(ft)*1d-2 .LT. sum_cov(ft) ) THEN 
-
-         !IF(ftprop(ft).GE.0.0d0) THEN
-         ! loss > 0 if there is a loss in cover; loss < 0 if there is a gain in cover
-         loss = sum_cov(ft) - ftprop(ft)*1d-2
-         loss_nowoodh = sum_cov(ft) - (ftprop(ft)+woodh)*1d-2
-         !ELSE !lose all cover if ftprop(ft).LT.0.0d0
-         !  loss = sum_cov(ft)
-         !  loss_nowoodh = sum_cov(ft) 
-         !  !ftprop(ft) = 0.0d0
-         !ENDIF
+          if(ftprop(ft).GT.0) then
+             CALL ADJUST_FTPROP(nft,n_at,NS,ft,
+     &            sum_cov,ftprop,ftprop_init,ftprops,
+     &            aggmap_SDGVM_to_aggHyde,ft2frac,
+     &            atprop2,corrct_ft,corrct_ft2,lat,woodh,debug)
+          end if
         endif !compute_covchange !PCM move this endif here, so that ngcov gets calculated right 
+
+        !IF(ftprop(ft).GE.0.0d0) THEN
+        ! loss > 0 if there is a loss in cover; loss < 0 if there is a gain in cover
+
+        loss = sum_cov(ft) - ftprop(ft)*1d-2
+        loss_nowoodh = sum_cov(ft) - (ftprop(ft)+woodh)*1d-2
+
+        !ELSE !lose all cover if ftprop(ft).LT.0.0d0
+        !  loss = sum_cov(ft)
+        !  loss_nowoodh = sum_cov(ft) 
+        !  !ftprop(ft) = 0.0d0
+        !ENDIF
 
         IF((loss.GT.0.0d0) .and. (sum_cov(ft).GT.0.0d0)) THEN
             lossfrac         = MIN(loss/sum_cov(ft),1.0d0)
@@ -453,7 +325,8 @@ C The following ordering is the order of ft's in the input.dat file
         ELSE
           ftprop3(ft)=0.0d0
         ENDIF
-      ENDDO
+      END DO
+
       DO ft=1,nft
         ftprop3(ft) = 100.0d0*ftprop3(ft)/norm
       ENDDO
@@ -586,6 +459,170 @@ C The following ordering is the order of ft's in the input.dat file
 
 *----------------------------------------------------------------------*
 *                                                                      *
+*                          SUBROUTINE ADJUST_FTPROP                    *
+*                          *****************                           *
+*----------------------------------------------------------------------*
+      SUBROUTINE ADJUST_FTPROP(nft,n_at,NS,ft,
+     &  sum_cov,ftprop,ftprop_init,ftprops,
+     &  aggmap_SDGVM_to_aggHyde,ft2frac,atprop2,corrct_ft,
+     &  corrct_ft2,lat,woodh,debug)
+
+      INCLUDE 'array_dims.inc'
+      LOGICAL :: debug !used to print out more debugging info
+      INTEGER nft,ft,n_at,NS
+      INTEGER aggmap_SDGVM_to_aggHyde(NS)
+      LOGICAL corrct_ft,corrct_ft2
+      REAL*8 sum_cov(maxnft)
+      REAL*8 ftprop(maxnft),ftprop_init(maxnft),lat,ftprops(maxnft)
+      REAL*8 atprop2(n_at,n_at)
+      REAL*8 atharvest(n_at)
+      REAL*8 ft2frac(maxnft),woodh
+
+      INTEGER at,at2,ft2
+      REAL*8 tot_secdn,barefrac_secdn,nonbarefrac
+
+      at = aggmap_SDGVM_to_aggHyde(ft)
+      CALL CALC_FT2FRAC2(ftprop_init,aggmap_SDGVM_to_aggHyde,nft,
+     &ft2frac,debug)
+
+      if(at.EQ.4) then
+        !use ftprops = states vector from net transitions; this allows for transitions from bare secondary non-forest to non-bare secondary non-forest 
+        tot_secdn = ftprops(1)+ftprops(7)+ftprops(8)
+        if(tot_secdn.GT.0.0d0)then
+          barefrac_secdn = ftprops(1)/tot_secdn
+        else
+          barefrac_secdn = 0.0d0
+        endif
+        nonbarefrac = 1.0d0-barefrac_secdn
+      else
+        nonbarefrac = 1.0d0 
+      endif
+
+      !if(at.EQ.1 .OR. at.EQ.2) then
+      if(at.EQ.1) then
+      ! losses to ft from wood harvest in ft 
+        woodh = ft2frac(ft)*atharvest(at)
+        ftprop(ft) = ftprop(ft) - woodh
+      else
+        woodh = 0.0d0
+      endif
+
+      ! losses to ft from conversion to urban cover (at2.EQ.7)
+      ftprop(ft) = ftprop(ft)-ft2frac(ft)*atprop2(at,7)
+
+      ! gains to ft from conversion from urban cover (at2.EQ.7)
+      ftprop(ft) = ftprop(ft)+ft2frac(ft)*atprop2(7,at)
+
+      DO ft2=2,nft
+        at2 = aggmap_SDGVM_to_aggHyde(ft2)
+        CALL CALC_CORRCT_FT2(ft2,lat,corrct_ft2)
+
+         
+        if(at2.EQ.4 .AND. at.EQ.2 ) then
+        ! gains to ft2 from wood harvest in ft 
+        !   for at2.EQ.4 (secdn) from at.EQ.2 (primn)
+          !ftprop(ft2) = ftprop(ft2)+ft2frac(ft2)*woodh
+          ftprop(ft2) = ftprop(ft2)+ft2frac(ft2-4)*woodh !assumes primary cover fraction
+        endif
+
+        if(at2.EQ.3 .AND. at.EQ.1 ) then
+        ! gains to ft2 from wood harvest in ft 
+        !   for at2.EQ.3 (secdf) from at.EQ.1 (primf)
+          !ftprop(ft2) = ftprop(ft2)+ft2frac(ft2)*woodh
+          ftprop(ft2) = ftprop(ft2)+ft2frac(ft2-4)*woodh !assumes primary cover fractions
+        endif
+
+        ! losses from ft to ft2: !atprop2 additive in %/year
+        IF(ft2frac(ft2).GT.0.0d0) THEN !check for pre-existing cover in the ft2
+        ! split the losses from each ft by a fraction ft2frac(ft)
+        ! split the losses to each ft to each ft2 by a fraction ft2frac(ft2)
+          ftprop(ft) = ftprop(ft) -
+     &  ft2frac(ft)*ft2frac(ft2)*atprop2(at,at2)
+        ELSE IF(corrct_ft2) THEN !check if tropical or temperate
+          ! split the losses from each ft by a fraction ft2frac(ft)
+          ftprop(ft) = ftprop(ft) -
+     &  ft2frac(ft)*             atprop2(at,at2)
+        ENDIF
+
+        ! gains to ft from ft2:
+        IF(ft2frac(ft).GT.0.0d0) THEN ! check for pre-existing cover in the ft !also check if tropical or temperate 
+        ! split the gains from each at2 from each ft2 by a fraction ft2frac(ft2)
+        ! split the gains to each at to each ft by a fraction ft2frac(ft)
+           ftprop(ft) = ftprop(ft) +
+     &  ft2frac(ft)*ft2frac(ft2)*atprop2(at2,at)
+        ELSE IF((corrct_ft.EQV..TRUE.).AND.
+     &(nonbarefrac.GT.0.0d0)) THEN ! check if tropical or temperate !also, only do this if there is non-bare secdn ground or if it's not secdn
+           ftprop(ft) = ftprop(ft) +
+     &             ft2frac(ft2)*atprop2(at2,at)
+        ENDIF
+
+        IF ((debug.EQV..TRUE.).AND.((at.eq.1).OR.(at2.eq.1))) THEN
+            PRINT
+     &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
+     &              'GHG1',
+     &              at2,at,ft2,ft,
+     &              ft2frac(ft),ft2frac(ft2),atprop2(at2,at),
+     &              ftprop(ft),woodh,sum_cov(ft),atharvest(at)
+            PRINT
+     &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
+     &              'GHL1',
+     &              at,at2,ft,ft2,
+     &              ft2frac(ft),ft2frac(ft2),atprop2(at,at2),
+     &              ftprop(ft),woodh,sum_cov(ft),atharvest(at)
+        ENDIF
+      ENDDO
+!         totft = ftprop(ft) + woodh 
+!
+!         IF( totft .GT. 1d-1 ) THEN
+!            loss = 1d0 - totft*1d-2/sum_cov(ft)
+!            loss_nowoodh = 1d0 - (totft-woodh)*1d-2/sum_cov(ft)
+
+         !IF( ftprop(ft) .GT. 1d-1 ) THEN !this discretization leads to carbon imbalances
+         !IF( ftprop(ft) .GT. 1d-2 ) THEN !this prevents cov<0
+         !IF(sum_cov(ft).GT.0.0d0) THEN
+         !IF(ftprop(ft) .GT. 0.0d0) THEN
+         ! loss = 1.0d0 - ftprop(ft)*1d-2/sum_cov(ft) 
+         ! loss > 0 if there is a loss in cover; loss < 0 if there is a gain in cover
+         ! loss_nowoodh = 1.0d0 - (ftprop(ft)+woodh)*1d-2/sum_cov(ft)
+         !ELSE
+         !   !ftloss_prop = 1d0   !PCM why isn't this ftloss_prop(ft) = 1d0 ??
+         !   loss = 1d0   !PCM 
+         !   loss_nowoodh = 1d0
+         !ENDIF
+         !ELSE
+         !   loss = 0d0   
+         !   loss_nowoodh = 0d0
+         !ENDIF
+
+
+!         print*, 'ftprop is less than sum_cov:',
+!     &ft, ftprop(ft)*1d-2, sum_cov(ft), loss 
+!         print*, (ftprop(ft)*1d-2) - sum_cov(ft)
+
+!         change_cover = .False. 
+!         change_cover = .True. 
+!!         IF(sum_cov(ft).GT.0.0d0) THEN
+!         IF( ilanduse .LT. 3 ) THEN
+!!           IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+!           IF( ( ftprop(ft)*1d-2 - sum_cov(ft)) .ne. 0.0  ) THEN
+!             change_cover = .True. !settings for net transitions
+!           ENDIF
+!         ELSE IF( ilanduse .GE. 3 .AND. ilanduse .LE. 6 ) THEN
+!           IF( ftprop(ft)*1d-2 .NE. sum_cov(ft) ) THEN 
+!             change_cover = .True. !settings for gross transitions
+!           ENDIF
+!         ENDIF
+!!         ENDIF
+
+!         IF( change_cover ) THEN 
+         ! NET transitions: IF( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) THEN
+         ! GROSS transitions IF( ftprop(ft)*1d-2 .LT. sum_cov(ft) ) THEN 
+
+      RETURN
+      END
+
+*----------------------------------------------------------------------*
+*                                                                      *
 *                          SUBROUTINE GROWTH2
 *                          *****************                           *
 *----------------------------------------------------------------------*
@@ -612,6 +649,7 @@ C The following ordering is the order of ft's in the input.dat file
         sln(ft) = 0.0d0
         rln(ft) = 0.0d0
       ENDDO
+
       DO ft=1,nft
         DO age=1,ftmor(ft)
           slc(ft) = slc(ft) + leaflit(ft)*cov(age,ft)
@@ -961,13 +999,13 @@ C The following ordering is the order of ft's in the input.dat file
               cov(year,ft) = covnew(year,ft)
               ppm(year,ft) = ppmnew(year,ft)
               hgt(year,ft) = hgtnew(year)
-            !PCM3 ELSE
-              !PCM3 cov(year,ft) = 0.0d0
-              !IF(debug)THEN
-              !  PRINT *,'GT4',ft,year,cov(year,ft), covnew(year,ft)
-              !ENDIF
-              !PCM3 ppm(year,ft) = 0.0d0
-              !PCM3 hgt(year,ft) = 0.0d0
+            ELSE
+              cov(year,ft) = 0.0d0
+              IF(debug)THEN
+                PRINT *,'GT4',ft,year,cov(year,ft), covnew(year,ft)
+              ENDIF
+              ppm(year,ft) = 0.0d0
+              hgt(year,ft) = 0.0d0
             ENDIF
 
           ENDDO
@@ -1798,7 +1836,7 @@ C The following ordering is the order of ft's in the input.dat file
 *----------------------------------------------------------------------*
 *                            SUBROUTINE SHIFT2                         *
 *                            ****************                          *
-* Shift shifts elements of an array to the right and leavs the first   *
+* Shift shifts elements of an array to the right and leaves the first  *
 * element equal to zero.                                               *
 *----------------------------------------------------------------------*
       SUBROUTINE SHIFT2(ftmor,cov,ppm,bio,hgt,ft1,ft2)

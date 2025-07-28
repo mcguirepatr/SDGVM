@@ -186,7 +186,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE EX_CLIM(stinput,lat,lon,xlatf,xlatres,xlatresn,xlon0,
      &xlonres,xlonresn,yr0,yrf,xtmpv,xhumv,xprcv,xwndv,isite,
-     &year0,yearf,siteno,du,swrv,read_par)
+     &year0,yearf,siteno,du,swrv,read_par,debug)
 *----------------------------------------------------------------------*
       REAL*8 lat,lon,xlon0,xlatf,xlatres,xlonres,ans(12)
       REAL*8  xtmpv(500,12,31),xhumv(500,12,31),xprcv(500,12,31) !PCM
@@ -203,6 +203,7 @@
       INTEGER*2 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31) !PCM
       INTEGER*2 wndv(500,12,31) !PCM
       REAL*8 TMP_MULT,PRC_MULT,HUM_MULT,PRC_MULT1,WND_MULT
+      logical debug
 
       IF (du.eq.1) THEN
         !recl1 = 730  !PCM
@@ -373,26 +374,36 @@ C     The following scalars convert from read units to sdgvm0 expected units
           xtmpv(year-yr0+1,mnth,day)= tmpv(year-yr0+1,mnth,day)*TMP_MULT
           xprcv(year-yr0+1,mnth,day)= prcv(year-yr0+1,mnth,day)*PRC_MULT
           xhumv(year-yr0+1,mnth,day)= humv(year-yr0+1,mnth,day)*HUM_MULT
-          xwndv(year-yr0+1,mnth,day)= wndv(year-yr0+1,mnth,day)*HUM_MULT
+          xwndv(year-yr0+1,mnth,day)= wndv(year-yr0+1,mnth,day)*WND_MULT
          ENDIF
         ENDDO
       ENDDO
       ENDDO
 
-C PCM2      WRITE(*,*) '00000000'
-C PCM2      WRITE(*,*) 'TEMPERATURE (deg C)'
-C PCM2      DO mnth=1,12
-C PCM2        WRITE(*,'(30F5.1)') xtmpv(1,mnth,1:30)/TMP_MULT/TMP_MULT
-C PCM2      ENDDO
-C PCM2      WRITE(*,*) 'PRECIP/DAY'
-C PCM2      DO mnth=1,12
-C PCM2        WRITE(*,'(30F5.2)') xprcv(1,mnth,1:30)/PRC_MULT
-C PCM2      ENDDO
-C PCM2      WRITE(*,*) 'HUMIDITY (%)'
-C PCM2      DO mnth=1,12
-C PCM2        WRITE(*,'(30F5.1)') xhumv(1,mnth,1:30)/HUM_MULT/HUM_MULT 
-C PCM2      ENDDO
-C PCM2      WRITE(*,*) '111111111'
+      IF(debug) THEN
+        WRITE(*,*) '00000000'
+        WRITE(*,*) 'TEMPERATURE (deg C)'
+        DO mnth=1,12
+C PCM2          WRITE(*,'(30F5.1)') xtmpv(1,mnth,1:30)/TMP_MULT/TMP_MULT
+          WRITE(*,'(30F5.1)') xtmpv(1,mnth,1:30)
+        ENDDO
+        WRITE(*,*) 'PRECIP/DAY'
+        DO mnth=1,12
+C PCM2          WRITE(*,'(30F5.2)') xprcv(1,mnth,1:30)/PRC_MULT
+          WRITE(*,'(30F5.2)') xprcv(1,mnth,1:30)
+        ENDDO
+        WRITE(*,*) 'HUMIDITY (%)'
+        DO mnth=1,12
+C PCM2          WRITE(*,'(30F5.1)') xhumv(1,mnth,1:30)/HUM_MULT/HUM_MULT 
+          WRITE(*,'(30F5.1)') xhumv(1,mnth,1:30)
+        ENDDO
+        WRITE(*,*) 'WIND (m/s)'
+        DO mnth=1,12
+C PCM2          WRITE(*,'(30F5.1)') xwndv(1,mnth,1:30)/WND_MULT/WND_MULT 
+          WRITE(*,'(30F5.1)') xwndv(1,mnth,1:30)
+        ENDDO
+        WRITE(*,*) '111111111'
+      ENDIF
 
       RETURN
       END
