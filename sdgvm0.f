@@ -3888,8 +3888,8 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
         IF(ilanduse.LT.3) THEN
           CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
-     &fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
-     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen)
+     &fprob,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
+     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,debug)
         ELSE
           CALL COVER2(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,

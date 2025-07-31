@@ -6,7 +6,7 @@
       SUBROUTINE COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
      &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
-     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen)
+     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 cov(maxage,maxnft),bio(maxage,2,maxnft),bioleaf(maxnft)
@@ -20,6 +20,16 @@
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       LOGICAL burn,harvest
+      LOGICAL debug !used to print out more debugging info
+
+      IF(debug .EQV. .TRUE.) THEN
+        PRINT '(A)','GG4a ftprop '
+        PRINT '(16F11.6)',ftprop(1:nft)
+        PRINT '(A)','GC4a cov '
+        DO j=1,6 !show first six years of cover
+          PRINT '(16F11.6)',cov(j,1:nft)
+        ENDDO
+      ENDIF
 
       IF (ilanduse.eq.2) THEN
 *----------------------------------------------------------------------*
@@ -78,12 +88,12 @@
           endif
 
           !print*, 'ftprop is less than sum_cov:',
-      !&ft, ftprop(ft)*1d-2, sum_cov(ft), ftloss_prop(ft) 
+!     &ft, ftprop(ft)*1d-2, sum_cov(ft), ftloss_prop(ft) 
           !print*, (ftprop(ft)*1d-2) - sum_cov(ft)
 
           CALL LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &ftloss_prop,npp,nps,ngcov,slc,rlc,fireres,flulccc,harvest,leafdp,
-     &ft)
+     &ft,debug)
 
           ngcov = ngcov + ftloss_prop(ft) * sum_cov(ft)
         endif
@@ -1108,7 +1118,7 @@
       DO ft=2,nft
 
 *----------------------------------------------------------------------*
-* 'tmor' is the mortality rate of the forrest based on 'npp'.          *
+* 'tmor' is the mortality rate of the ft based on 'npp'.               *
 *----------------------------------------------------------------------*
         npp0 = 0.2d0
         tmor0 = 6.0d0
@@ -1125,10 +1135,10 @@
         IF (tmor.LT.0.01d0)  tmor = 0.01d0
 
 *        IF (npp(ft)*nps(ft)/100.0d0.GT.10.0d0) THEN
-          tmor = 0.002d0
+         tmor = 0.002d0
 *        ELSE
 *          tmor = 1.0d0 - npp(ft)*nps(ft)/1000.0d0
-*          if (ft.eq.6) print*,'hello ',tmor
+*          print*,'ft,tmor= ',ft,tmor
 *        ENDIF
 
 *----------------------------------------------------------------------*
@@ -1149,6 +1159,7 @@
             fprob = 0.0d0
           ENDIF
           IF (fireres.LT.0) fprob = real(-fireres)/1000.0d0
+!          fprob = 0.0d0 !PCM turn fire off
           
           !calculate litter from cover loss  
           ngcov   = ngcov + cov(age,ft)*(fprob - fprob*tmor + tmor)
@@ -1205,7 +1216,7 @@
 *----------------------------------------------------------------------*
       SUBROUTINE LULCCCHANGE(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &ftloss_prop,npp,nps,ngcov,slc,rlc,fireres,flulccc,harvest,leafdp,
-     &ft)
+     &ft,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
@@ -1215,7 +1226,11 @@
       REAL*8 tmor,tmor0,npp0,flulccc,xfprob,leafdp(3600,maxnft)
       INTEGER nft,ftmor(maxnft),ft,age,fireres
       LOGICAL harvest
+      LOGICAL debug !used to print out more debugging info
 
+        IF(debug .EQV. .TRUE.) THEN
+          PRINT '(A)','GG7 LULCC_LOSS'
+        ENDIF
 
 *----------------------------------------------------------------------*
 * kill off pfts that have lost cover according to the landuse database * 
@@ -1233,7 +1248,13 @@
           !update cover array
           cov(age,ft) = cov(age,ft)*( 1.0d0 - ftloss_prop(ft) )
           
+!          IF(debug .EQV. .TRUE. .AND. age.LT.7) THEN
+!             PRINT '(2I5,6F12.7)',age,ft,ftloss_prop(ft),
+!     &flulccc,bio(age,1,ft),
+!     &bioleaf(ft),nppstore(ft),cov(age,ft)
+!          ENDIF
         ENDDO
+
 
       RETURN
       END
