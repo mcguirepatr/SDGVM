@@ -135,32 +135,34 @@ C The following ordering is the order of ft's in the input.dat file
      &            aggmap_SDGVM_to_aggHyde,ft2frac,
      &            atprop2,corrct_ft,corrct_ft2,lat,woodh,debug)
           end if
-        endif !compute_covchange !PCM move this endif here, so that ngcov gets calculated right 
+        endif
 
         loss = sum_cov(ft) - ftprop(ft)*1d-2
         loss_nowoodh = sum_cov(ft) - (ftprop(ft)+woodh)*1d-2
 
         IF((loss.GT.0.0d0) .and. (sum_cov(ft).GT.0.0d0)) THEN
-            lossfrac         = MIN(loss/sum_cov(ft),1.0d0)
-            lossfrac_nowoodh = MIN(loss_nowoodh/sum_cov(ft),1.0d0)
+          lossfrac         = MIN(loss/sum_cov(ft),1.0d0)
+          lossfrac_nowoodh = MIN(loss_nowoodh/sum_cov(ft),1.0d0)
 
-            CALL LULCC_LOSS2(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
+          CALL LULCC_LOSS2(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &lossfrac,lossfrac_nowoodh,npp,nps,slc,rlc,fireres,flulccc,harvest,
      &leafdp,sum_cov,ft,debug)
+        ENDIF
 
-            ngcov(ft) = loss
-            tot_ngcov = tot_ngcov + ngcov(ft) 
+        IF(loss.LT.0.0d0) THEN
+          ngcov(ft) = -loss !new growth only for -loss>0
+          tot_ngcov = tot_ngcov + ngcov(ft) 
         ENDIF
 
         IF (debug .EQV. .TRUE.) THEN
-           PRINT '(A I2 F9.6 F9.6 F12.6 F12.6 F9.6 F9.6 F9.6 F9.6)',
+         PRINT
+     & '(A, I2, F9.6, F9.6, F12.6, F12.6, F9.6, F9.6, F9.6, F9.6)',
      &              'GG0',ft,
      &              ftprop(ft)*1d-2, woodh*1d-2,
      &              loss,loss_nowoodh,
      &              sum_cov(ft), ngcov(ft),
      &              cov(1,ft),cov(2,ft)
         ENDIF
-!PCM        endif !compute_covchange !PCM move this endif, so that ngcov gets calculated right 
 
       ENDDO
       ENDIF
@@ -222,7 +224,7 @@ C The following ordering is the order of ft's in the input.dat file
 
       IF(debug .EQV. .TRUE.) THEN
         PRINT '(A)','GF4b fri fprob'
-        PRINT '(F11.6 F11.6)',fri,fprob
+        PRINT '(F11.6,F11.6)',fri,fprob
         PRINT '(A)','GF4b burn '
         PRINT *,burn
       END IF
@@ -535,13 +537,13 @@ C The following ordering is the order of ft's in the input.dat file
 
         IF ((debug.EQV..TRUE.).AND.((at.eq.1).OR.(at2.eq.1))) THEN
             PRINT
-     &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
+     &     '(A,I2,I2,I3,I3,F11.6,F11.6,F11.6,F11.6,F11.6,F11.6,F11.6)',
      &              'GHG1',
      &              at2,at,ft2,ft,
      &              ft2frac(ft),ft2frac(ft2),atprop2(at2,at),
      &              ftprop(ft),woodh,sum_cov(ft),atharvest(at)
             PRINT
-     &     '(A I2 I2 I3 I3 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6 F11.6)',
+     &     '(A,I2,I2,I3,I3,F11.6,F11.6,F11.6,F11.6,F11.6,F11.6,F11.6)',
      &              'GHL1',
      &              at,at2,ft,ft2,
      &              ft2frac(ft),ft2frac(ft2),atprop2(at,at2),
@@ -1569,7 +1571,7 @@ C The following ordering is the order of ft's in the input.dat file
      &nppstore(ft))*cov(ftmor(ft),ft)
         rlc(ft) = rlc(ft)  + bio(ftmor(ft),2,ft)*cov(ftmor(ft),ft)
         IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I3 F9.6 F9.6 I6 F9.6)','GG1B',
+                PRINT '(A,I3,F9.6,F9.6,I6,F9.6)','GG1B',
      &              ft, tot_ngcov,ngcov(ft),ftmor(ft),cov(ftmor(ft),ft)
         ENDIF
       ENDDO
@@ -1653,7 +1655,7 @@ C The following ordering is the order of ft's in the input.dat file
           ngcov(ft) = ngcov(ft) + cov(age,ft)*fprbtm
           
           IF (debug .EQV. .TRUE.) THEN
-                PRINT '(A I3 F9.6 F9.6 F9.6 F9.6 F9.6 F9.6)','GG1C',
+                PRINT '(A,I3,F9.6,F9.6,F9.6,F9.6,F9.6,F9.6)','GG1C',
      &         ft,tot_ngcov,ngcov(ft),
      &         cov(age,ft),fprbtm,
      &         fprob,tmor
