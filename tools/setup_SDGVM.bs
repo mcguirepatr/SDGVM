@@ -87,7 +87,11 @@ sed -i "s@#HOME#@$SDGVM_HOME@"                 run_SDGVM.bs
 sed -i "s@#MOD#@$SDGVM_MOD@"                   run_SDGVM.bs
 sed -i "s@#DATA#@$SDGVM_DATA@"                 run_SDGVM.bs
 sed -i "s@#INPUT#@$INPUT@"                     run_SDGVM.bs
+sed -i "s@#OUTPUT#@$SDGVM_OUTPUT_SIM@"         run_SDGVM.bs
+sed -i "s@#OUTPUT_SPIN#@$SDGVM_OUTPUT_SPIN@"   run_SDGVM.bs
+sed -i "s@#PROJECT#@$SDGVM_PROJECT@"           run_SDGVM.bs
 sed -i "s@#SPIN#@$SPIN@"                       run_SDGVM.bs
+sed -i "s@#SIM#@$RUN@"                         run_SDGVM.bs
 
 # SDGVM input file (commandline argument to SDGVM in run file, configures model run)
 sed -i "s@#DATA#@$SDGVM_DATA@"                  $INPUT

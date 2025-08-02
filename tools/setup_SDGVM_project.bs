@@ -7,13 +7,13 @@
 # $1 - SDGVM_USER (required) -- options: ORNL_APW, UR_PCM
 # $2 - SDGVM_RUNTYPE (required) -- use a predefined 'runtype' 
 # $3 - SDGVM_PROJECT name (required) -- directory relative to SDGVM_PROJECTS_DIR, houses a collection of runs (i.e. a project)
-# $4 - SDGVM_SITESCORES (required) -- use a predefined set of sites, resolution, and cores  
+# $4 - SDGVM_SITESCORES (optional, default: CRUJRA_1deg_128cores) use a predefined set of sites, resolution, and cores  
 # $5 - SUBPROJECT name (optional) -- a label for a subgroup of simulations within a SDGVM_PROJECT 
 
 SDGVM_USER="$1"
 SDGVM_RUNTYPE="$2"
 SDGVM_PROJECT="$3"
-if [ ! -z $4 ]; then SDGVM_SITESCORES="$4"; else SDGVM_SITESCORES="CRUJRA_1deg_32cores"; fi
+if [ ! -z $4 ]; then SDGVM_SITESCORES="$4"; else SDGVM_SITESCORES="CRUJRA_1deg_128cores"; fi
 if [ ! -z $5 ]; then SUBPROJECT="_$5"; else SUBPROJECT=""; fi
 
 
@@ -62,6 +62,12 @@ echo "User queue (SDGVM_USER_QUEUE):"
 echo "  $SDGVM_USER_QUEUE"
 echo "User partition (SDGVM_USER_PARTITION):"
 echo "  $SDGVM_USER_PARTITION"
+echo "Main directory for SDGVM output (SDGVM_OUTPUT_DIR):"
+echo "  $SDGVM_OUTPUT_DIR"
+echo "Sub-directory for SDGVM output (SDGVM_OUTPUT_SIM):"
+echo "  $SDGVM_OUTPUT_SIM"
+echo "Sub-directory for SDGVM spin-up output (SDGVM_OUTPUT_SPIN):"
+echo "  $SDGVM_OUTPUT_SPIN"
 
 
 # set runtype-specific environment variables
@@ -199,14 +205,14 @@ sed -i "s@#BATCHPROCCOM#@${SDGVM_BATCHPROCCOM}@"  $SDGVM_PDIR/$SDGVM_PROJECT/run
 # setup project plotting scripts
 cd $SDGVM_PDIR/$SDGVM_PROJECT/results/ 
 cp ${SDGVM_HOME}${SDGVM_MOD}/templates/plotting_scripts/plot*${SDGVM_RUNTYPE}.bs .
-sed -i "s@#HOME#@$SDGVM_HOME@"         plot*${SDGVM_RUNTYPE}.bs 
-sed -i "s@#MOD#@$SDGVM_MOD@"           plot*${SDGVM_RUNTYPE}.bs 
-sed -i "s@#S#@${SDGVM_SPIN_STR}@"      plot_spin_${SDGVM_RUNTYPE}.bs 
-sed -i "s@#S#@${SDGVM_MAIN_SIMS_STR}@" plot_${SDGVM_RUNTYPE}.bs 
-sed -i "s@#PROJECT#@$SDGVM_PROJECT@g"  plot*${SDGVM_RUNTYPE}.bs   
-sed -i "s@#SPINNY#@$SDGVM_SPINNY@g"    plot*${SDGVM_RUNTYPE}.bs   
-sed -i "s@#STY#@$SDGVM_SIMSTY@g"       plot*${SDGVM_RUNTYPE}.bs   
-sed -i "s@#ENDY#@$SDGVM_SIMENDY@g"     plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#HOME#@$SDGVM_HOME@"           plot*${SDGVM_RUNTYPE}.bs 
+sed -i "s@#MOD#@$SDGVM_MOD@"             plot*${SDGVM_RUNTYPE}.bs 
+sed -i "s@#S#@${SDGVM_SPIN_STR_R}@"      plot_spin_${SDGVM_RUNTYPE}.bs 
+sed -i "s@#S#@${SDGVM_MAIN_SIMS_STR_R}@" plot_${SDGVM_RUNTYPE}.bs 
+sed -i "s@#PROJECT#@$SDGVM_PROJECT@g"    plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#SPINNY#@$SDGVM_SPINNY@g"      plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#STY#@$SDGVM_SIMSTY@g"         plot*${SDGVM_RUNTYPE}.bs   
+sed -i "s@#ENDY#@$SDGVM_SIMENDY@g"       plot*${SDGVM_RUNTYPE}.bs   
 
 
 

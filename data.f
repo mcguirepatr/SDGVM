@@ -1087,7 +1087,8 @@ C PCM2          WRITE(*,'(30F5.1)') xwndv(1,mnth,1:30)/WND_MULT/WND_MULT
 
       l_lu = .TRUE.
       IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM Use states2b.nc or transitions2b.nc file: half-res
-       !PCM hardwire these numbers for now
+        !PCM hardwire these numbers for now
+        ! APW: need to add a readmeLUH2.dat here
         latf = 89.75
         lon0 = -179.75
         latr = 0.5
@@ -1106,6 +1107,7 @@ C PCM2          WRITE(*,'(30F5.1)') xwndv(1,mnth,1:30)/WND_MULT/WND_MULT
         nclasses   = NS 
         classes(1:nclasses) = (/(i, i=1,nclasses)/)
         agclasses(1:maxn_at) = (/(i, i=1,maxn_at)/)
+
       ELSEIF(ilanduse.EQ.0) THEN !PCM original method of using SDGVM land use 
 *----------------------------------------------------------------------*
 * Read in the readme file 'readme.dat'.                                *
@@ -1247,18 +1249,18 @@ c     look for the first year
       IF(ilanduse.GE.3 .and. ilanduse.LE.6 ) THEN
 CPCM Use states2b.nc (compute_next_year==.false.) or transitions2b.nc file (compute_next_year==.true.) 
 CPCM get_transitions==.true. : compute transitions
-         IF(ilanduse.EQ.3 .or. ilanduse.EQ.5 ) THEN
-           compute_next_year = .false.
-           get_transitions = .true. !PCM for now
-         ELSE IF(ilanduse.EQ.4 .or. ilanduse.EQ.6 ) THEN
-           !compute_next_year = .true. !for testing: add transitions to states; PCM
-           compute_next_year = .false. 
-           get_transitions = .true.
-         ENDIF
-         ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
-         ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
-         !write(*,*)'BEFORE STATES, years(1)=',years(1)
-         CALL states_convertSDGVM_func(
+        IF(ilanduse.EQ.3 .or. ilanduse.EQ.5 ) THEN
+          compute_next_year = .false.
+          get_transitions = .true. !PCM for now
+        ELSE IF(ilanduse.EQ.4 .or. ilanduse.EQ.6 ) THEN
+          !compute_next_year = .true. !for testing: add transitions to states; PCM
+          compute_next_year = .false. 
+          get_transitions = .true.
+        ENDIF
+        ! get the 4 neighboring grid cells for all nclasses for the years range from states2b.nc in the SDGVM_LUC variable
+        ! get the 4 neighboring grid cells for all maxn_at*maxn_at for the years range from transitions2b.nc in the SDGVM_LUC2 variable
+        !write(*,*)'BEFORE STATES, years(1)=',years(1)
+        CALL states_convertSDGVM_func(
      &     years(1),years(n),years_NYR_FILE,
      &     years_fire(1),years_fire(n_fire),
      &     INT(rcol),INT(rrow),4, ! with the definition of rcol, rcol+2 starts at 1 for lon==lon0
@@ -1266,62 +1268,61 @@ CPCM get_transitions==.true. : compute transitions
      &     pname,pname_t,pname_f,wdg,
      &     SDGVM_LUC, SDGVM_LUC2, SDGVM_LUC2_HARVEST,SDGVM_LUC_FIRE,
      &     debug)  
-        ! WRITE(*,*)'EX_CLU: after states_convertSDGVM_func'
-        ! write(*,FMT="(A)") "EX_CLU:SDGVM_LUC2_FIRE"
-        ! DO jj=1,n_fire
-        !   write(*,FMT="(12F7.4)") SDGVM_LUC_FIRE(jj,3,3,:)
-        ! END DO
-         IF(debug .EQV. .TRUE.) THEN
-           WRITE(*,*)
+       ! WRITE(*,*)'EX_CLU: after states_convertSDGVM_func'
+       ! write(*,FMT="(A)") "EX_CLU:SDGVM_LUC2_FIRE"
+       ! DO jj=1,n_fire
+       !   write(*,FMT="(12F7.4)") SDGVM_LUC_FIRE(jj,3,3,:)
+       ! END DO
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,*)
      &'    t   BARE     Ev_Bp    Dc_Bp    Ev_Np    Dc_Np    ',
      &'Shrup    C3p      C4p      C3crop   C4crop   ',
      &'Ev_Bs    Dc_Bs    Ev_Ns    Dc_Ns    Shrus    C3s    C4s'
+        ENDIF
+  
+!        IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
+        IF (ALL(ABS(SDGVM_LUC(:,:,3:4,3:4)).GT.200.0)) THEN
+!          WRITE(*,*)'SDGVM_LUC: l_lu=.FALSE.'
+          l_lu = .FALSE.
+          RETURN
+        ENDIF
+  
+!       check for all but the last year, since it may not be valid for the
+!       last year
+!        IF (ANY(ABS(SDGVM_LUC2(1:NYR-1,:,:,3,3)).GT.200.0)) THEN
+        IF (NYR.GT.1) THEN
+         IF (ALL(ABS(SDGVM_LUC2(1:NYR-1,:,:,3:4,3:4)).GT.200.0)) THEN 
+!          WRITE(*,*)'SDGVM_LUC2: l_lu=.FALSE.'
+          l_lu = .FALSE.
+          RETURN
          ENDIF
-
-!         IF (ANY(ABS(SDGVM_LUC(:,:,3,3)).GT.200.0)) THEN
-         IF (ALL(ABS(SDGVM_LUC(:,:,3:4,3:4)).GT.200.0)) THEN
-!           WRITE(*,*)'SDGVM_LUC: l_lu=.FALSE.'
-           l_lu = .FALSE.
-           RETURN
-         ENDIF
-
-!     check for all but the last year, since it may not be valid for the
-!     last year
-!          IF (ANY(ABS(SDGVM_LUC2(1:NYR-1,:,:,3,3)).GT.200.0)) THEN
-         IF (NYR.GT.1) THEN
-           IF (ALL(ABS(SDGVM_LUC2(1:NYR-1,:,:,3:4,3:4)).GT.200.0)) THEN 
-!              WRITE(*,*)'SDGVM_LUC2: l_lu=.FALSE.'
-               l_lu = .FALSE.
-               RETURN
-           ENDIF
-         ENDIF
-
-         IF ((prescr_fire .EQV. .TRUE.) .AND.
-     &        (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4,1:12)).GT.200.0)) ) THEN
-!              WRITE(*,*)'SDGVM_LUC_FIRE: l_lu=.FALSE.'
-               l_lu = .FALSE.
-               RETURN
-         ENDIF
-
-         IF(debug .EQV. .TRUE.) THEN
-           write(*,FMT="(A,7E10.3)") 'D harv',
-     &              SDGVM_LUC2_HARVEST(1,:,3,3)
-         ENDIF
+        ENDIF
+  
+        IF ((prescr_fire .EQV. .TRUE.) .AND.
+     &    (ALL(ABS(SDGVM_LUC_FIRE(:,3:4,3:4,1:12)).GT.200.0)) ) THEN
+!          WRITE(*,*)'SDGVM_LUC_FIRE: l_lu=.FALSE.'
+          l_lu = .FALSE.
+          RETURN
+        ENDIF
+  
       ELSE
-         SDGVM_LUC=0.0
-         SDGVM_LUC2=0.0
-         SDGVM_LUC2_HARVEST=0.0
-         SDGVM_LUC_FIRE=0.0
-         IF(debug .EQV. .TRUE.) THEN
-          WRITE(*,*)
+        SDGVM_LUC=0.0
+        SDGVM_LUC2=0.0
+        SDGVM_LUC2_HARVEST=0.0
+        SDGVM_LUC_FIRE=0.0
+        IF(debug .EQV. .TRUE.) THEN
+         WRITE(*,*)
      &'    t   BARE     Ev_Bl    Dc_Bl    Ev_Nl    Dc_Nl    ',
      &'Shrub    C3       C4       C3crop   C4crop   '
          ENDIF
       ENDIF
 
+      IF(debug .EQV. .TRUE.) THEN
+        write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,3,3)
+      ENDIF
 
-      IF (prescr_fire .EQV. .TRUE. ) THEN !PCM
-       DO i=1,yrfa-yr0a+1
+      IF (prescr_fire .EQV. .TRUE.) THEN !PCM
+        DO i=1,yrfa-yr0a+1
 !       DO i=1,yrfa-yr0a+1
 !!        print*, yr0a,yrfa 
 !!        print*, j, years(j), i, years(j) - yr_offset,i+yr0a-1
@@ -1378,11 +1379,12 @@ CPCM get_transitions==.true. : compute transitions
           fprob_prescrh(j_fire-1,1:12) = fprob_prescr(1:12)
 
 !        ENDIF ! finished reading
-       ENDDO !year loop #1
+        ENDDO !year loop #1
 
       END IF ! end of prescr_fire 
 
 
+      ! read landcover dataset
       DO i=1,yrfa-yr0a+1
 !        print*, yr0a,yrfa 
 !        print*, j, years(j), i, years(j) - yr_offset,i+yr0a-1
@@ -1395,7 +1397,7 @@ CPCM get_transitions==.true. : compute transitions
           
 
           IF((MOD(years(j-1)-years(1),20)==0).AND.
-     & (debug.EQV..TRUE.))THEN 
+     &(debug.EQV..TRUE.))THEN 
             WRITE(*,FMT='(A1)', ADVANCE='no') 'D' 
 
             IF(compute_next_year) THEN
@@ -1414,13 +1416,13 @@ CPCM get_transitions==.true. : compute transitions
 C PCM: st2 is the year st3 is the class, ranging from 1 to NS (NS=10)
               OPEN(99,FILE=fname1(1:blank(fname1))//'/cont_lu-'//
      &st3(1:blank(st3))//'-'//st2(1:4)//'.dat',STATUS='old',
-     &         FORM='formatted',ACCESS='direct',RECL=nrecl,iostat=kode)
+     &FORM='formatted',ACCESS='direct',RECL=nrecl,iostat=kode)
               IF (kode.NE.0) THEN
                 WRITE(*,'('' PROGRAM TERMINATED'')')
                 WRITE(*,*) 'Land Use data-base.'
                 WRITE(*,*) 'File does not exist:'
                 WRITE(*,*) fname1(1:blank(fname1)),
-     &          '/cont_lu-',st3(1:blank(st3)),'-',st2(1:4),'.dat'
+     &'/cont_lu-',st3(1:blank(st3)),'-',st2(1:4),'.dat'
                 STOP
               ENDIF
             ENDIF !PCM 
@@ -1432,7 +1434,7 @@ C PCM: st2 is the year st3 is the class, ranging from 1 to NS (NS=10)
                   !PCM: currently, there is no wrapping at longitude of date-line
                   !for the 4x4 interpolation
                   IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
-     &               (col.LE.lonn)) THEN
+     &(col.LE.lonn)) THEN
                     recn = (row-1)*lonn + col
                     IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
                       xf = SDGVM_LUC(j-1, classes(k), ii, jj) !for j=1, years(j)=1700
@@ -1476,10 +1478,10 @@ C            ENDIF
             classprop(classes(k)) = ans
 
             IF((MOD(years(j-1)-years(1),20)==0)
-     &           .AND.(debug.EQV..TRUE.))THEN 
+     &.AND.(debug.EQV..TRUE.)) THEN 
               if(num_land .GT. 0) THEN
-                WRITE(*,FMT='(F9.4)',ADVANCE='no') 
-     &                 ans 
+                WRITE(*,FMT='(F9.4)',ADVANCE='no')  
+     &ans 
               ELSE
                 WRITE(*,FMT='(F9.4)', ADVANCE='no') -1.00 
               ENDIF
@@ -1493,29 +1495,28 @@ C            ENDIF
           ENDDO ! end of loop over the classes
 
           IF((MOD(years(j-1)-years(1),20)==0)
-     &                   .AND.(debug.EQV..TRUE.))THEN 
+     &.AND.(debug.EQV..TRUE.))THEN 
               WRITE(*,*) ! Assumes default "ADVANCE='yes'".
           ENDIF
 
 
-
           IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
-           DO k3=1,maxn_at
-            DO k2=1,maxn_at
-              agclassprop2(agclasses(k3),agclasses(k2)) = 0
-            ENDDO
+            DO k3=1,maxn_at
+              DO k2=1,maxn_at
+                agclassprop2(agclasses(k3),agclasses(k2)) = 0
+              ENDDO
 
-            DO ii=1,4
+              DO ii=1,4
                 DO jj=1,4
                   row = int(rrow)+jj-1
                   col = int(rcol)+ii-1
                   !PCM: currently, there is no wrapping at longitude of date-line
                   !for the 4x4 interpolation
                   IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
-     &               (col.LE.lonn)) THEN
+     &(col.LE.lonn)) THEN
                     DO k2=1,maxn_at
                        xf2 = SDGVM_LUC2(j-1,
-     &                   agclasses(k3),agclasses(k2),ii, jj) !for j=1, years(j)=1700
+     &agclasses(k3),agclasses(k2),ii, jj) !for j=1, years(j)=1700
                        xx2(ii,jj,k2) = xf2 
                        IF (xf2.LT.200) THEN
                          indx2(ii,jj,k2) = 1
@@ -1530,12 +1531,10 @@ C            ENDIF
                     indx2(ii,jj,:) = -1
                   ENDIF
                 ENDDO
-            ENDDO
+              ENDDO
 
 
-
-
-            DO k2=1,maxn_at
+              DO k2=1,maxn_at
 
 C               IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
 C
@@ -1552,12 +1551,12 @@ C               ENDIF
                agclassprop2(agclasses(k3),agclasses(k2)) = ans
 C               print *,'DD1',k3,k2,agclasses(k3),agclasses(k2),
 C     &agclassprop2(agclasses(k3),agclasses(k2))
-            ENDDO
+              ENDDO
 
 C            IF( MOD(years(j-1)-years(1),20) == 0 ) THEN 
 C              WRITE(*,*) ! Assumes default "ADVANCE='yes'".
 C            ENDIF
-           ENDDO ! end of k3 loop over the agclasses
+            ENDDO ! end of k3 loop over the agclasses
           END IF
 
           IF(ilanduse.GE.3 .AND. ilanduse.LE.6 ) THEN !PCM
@@ -1591,7 +1590,7 @@ C            ENDIF
               x = int(ans+0.5d0)
               agclassprop(agclasses(k3)) = ans
 
-           ENDDO ! end of k3 loop over the agclasses
+            ENDDO ! end of k3 loop over the agclasses
           END IF
 
 

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# CRUJRA sites
+# 1 degree resolution
+# 128 cores, 1 node -- cades baseline 
+
+
+SDGVM_SITES=#HOME##DATA#/sites/global_1deg_CRUJRA2023.dat
+SDGVM_NODES=1
+SDGVM_NP=128   # processors per node; if nodes empty total processors  
+SDGVM_N_SITES=( 495 495 495 495 156 156 156 156 155 155 155 155 152 152 152 152 154 154
+                154 154 129 129 129 129 129 129 129 129 129 129 129 129 125 125 125 125
+                128 128 128 128 144 144 144 144 144 144 144 144 140 140 140 140 108 108
+                108 108 125 125 125 125 125 125 125 125 130 130 130 130 131 131 131 131
+                138 138 138 138 144 144 144 144 132 132 132 132 158 158 158 158 135 135
+                135 135 135 135 135 135 114 114 114 114 111 111 111 111 122 122 122 122
+                128 128 128 128 100 100 100 100  99  99  99  99 137 137 137 137 127 127
+                127 127 )
+
+SDGVM_SITES_TOTAL=15789 # this is not sum(N_SITES) but is a combination of that and the SDGVM landmask, needs to be determined after a first run of SDGVM with a new sites list
+
+export SDGVM_SITES
+export SDGVM_NODES
+export SDGVM_NP
+export SDGVM_N_SITES
+export SDGVM_SITES_TOTAL
+
+
+
+### END ###

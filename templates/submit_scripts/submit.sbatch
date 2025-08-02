@@ -3,7 +3,7 @@
 
 #===============================================================================
 
-##SBATCH -A #ACCOUNT#                      ### account to run job under #comment out if no ACCOUNT
+#SBATCH -A #ACCOUNT#                      ### account to run job under 
 #SBATCH -J #SIM#_#PROJECT#_SDGVM          ### jobname 
 #SBATCH -p #PARTITION#                    ### partition to run job in (sinfo)
 #SBATCH --mem=#MEMORY#                    ### <number>[unit], when 0, all available memory requested

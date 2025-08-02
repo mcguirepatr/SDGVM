@@ -7,7 +7,7 @@
 #
 ###################################
 
-.libPaths('~/bin/Rlibs')
+#.libPaths('~/bin/Rlibs')
 #library(lattice)
 #library(latticeExtra)
 #library(rworldmap)
@@ -133,7 +133,7 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,
   # 'gs' is a vector or matrix of globally area integrated values for the data in 'x$plotdata'
 
   #initialise
-  world <- getMap()    
+  #world <- getMap()    
   
   if(!is.null(gs)){
     if(lab$gsum) {
@@ -245,8 +245,8 @@ plot_map_lattice <- function(x,lab,pregion='global',gs=NULL,norm=norm,diff=diff,
               panel.polygon(x=c(60,50,50,60),y=c(-10,-10,-20,-20),col='white',border=F)
               # Indus valley 
               if(!is.null(mask)) panel.polygon(x=c(70,55,55,70),y=c(22,22,30,30),col='white',border=F)
-              # add world map
-              lapply(1:length(world@polygons),plotmap,map=world)
+#              # add world map
+#              lapply(1:length(world@polygons),plotmap,map=world)
               panel.abline(h=c(0,-23.3,23.3,66.5,-66.5),lty=c(2,3,3,3,3,3),lwd=0.5)
               if(is.null(diff)&is.null(norm)&lab$printsum) {
                 panel.text(x=lims[7],y=lims[8],pos=4,labels=ifelse(lab$gsum|lab$gmean,t(global_sum)[panel.number()],''),cex=labcex*0.35)      

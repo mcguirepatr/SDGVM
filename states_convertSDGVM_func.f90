@@ -62,14 +62,14 @@
       !CHARACTER (LEN = *), PARAMETER :: print_type='sdgvm'
 
       INTEGER, PARAMETER :: NV = 14
-      REAL*8, PARAMETER    :: misval = 1e19
+      REAL*8, PARAMETER  :: misval = 1e19
       INTEGER, PARAMETER :: NE = 10, NE2 = 16
       INTEGER, PARAMETER :: NVT = 118 
       INTEGER, PARAMETER :: DT = 20 !number of years to skip between prints
       !INTEGER, PARAMETER :: SINDEX = 21 !starting year for prints
       !INTEGER, PARAMETER :: SINDEX = 1001 !starting year for prints ! for 1851
       !INTEGER, PARAMETER :: SINDEX = 850 !starting year for prints ! for 1700
-      INTEGER, PARAMETER :: SYR0 = 850 !starting year for NETCDF data 
+      INTEGER, PARAMETER :: SYR0 = 1700 !starting year for NETCDF data 
       INTEGER, PARAMETER :: SYR0_FIRE = 1901 !starting year for NETCDF data for fire
       INTEGER SINDEX,FINDEX
       REAL*8 :: data_in(NV, DXY, DXY), dummya(DXY, DXY)
@@ -283,7 +283,6 @@
       ENDIF
 
       ! Open ESA CCILCP 2014 dataset 
-      !setwd(wdg)
       DO i=1,NE 
         esaarray(i,:,:) = 255.0
         esaarray_global(i,:,:) = 255
@@ -292,6 +291,7 @@
         !esav          <- scan(fname_s2)
         !! esamat <- if(i==1) esav else cbind(esamat,esav)
         !esaarray(,,i) <- as.matrix(esav,nrow=lon_ress)
+       
         OPEN(15,FILE=fname_s2,STATUS='old')
         READ(15,*) esaarray_global(i,:,:)
         esaarray(i,minii:maxii,minjj:maxjj) =  &
@@ -316,13 +316,17 @@
 
       ! Open the file. NF90_NOWRITE tells netCDF we want read-only access to
       ! the file.
+      !WRITE(*,*) 'In states read, just before state dataset read.'
+      !WRITE(*,*) pname(1:blank(pname))
       CALL CHECK( NF90_OPEN(pname(1:blank(pname)), NF90_NOWRITE, ncid) )
 
       DO v=1,NV
+      !WRITE(*,*) 'In states read, just before transition dataset read.'
       ! Get the varid of the data variable, based on its name.
         CALL check( nf90_inq_varid(ncid, varname(v), varid(v)) )
       END DO
 
+      !WRITE(*,*) pname_t(1:blank(pname_t))
       CALL CHECK( NF90_OPEN(pname_t(1:blank(pname_t)), NF90_NOWRITE, &
           ncid_t) )
 
@@ -346,6 +350,7 @@
 !      pname_f = 
 !      /gws/nopw/j04/nexcs/pmcguire/TRENDYv13/db/burned_area/&
 !      &global_monthly_burned_area_fraction_05deg_
+          !WRITE(*,*) pname_f(1:blank(pname_f))
           CALL CHECK( NF90_OPEN(pname_f(1:blank(pname_f))//   &
                       trim(year_string)//'.nc',NF90_NOWRITE, ncid_f) )
 

@@ -13,7 +13,6 @@ if [ $SDGVM_RUNTYPE == 'TRENDY' ]; then
 
   # directory where template simulations are to be copied from 
   # - relative to "template" directory in model source code directory 
-  #SDGVM_CPRUN="master_mp"
   SDGVM_CPRUN="main_mp"
 
   # Spinup 
@@ -27,12 +26,12 @@ if [ $SDGVM_RUNTYPE == 'TRENDY' ]; then
   # Default specific time variables that can be over-written when projects.bs is run
   SDGVM_CLIMSTY=1901
   SDGVM_SIMSTY=1700
-  SDGVM_SIMENDY=2022
+  SDGVM_SIMENDY=2024
   SDGVM_OUTSTY=1900
 
   # Default data directories 
-  SDGVM_CLIMDIR="crujra_2023"           
-  SDGVM_LANDDIR="ESACCILCP2014_LUH2v2h.1"           
+  SDGVM_CLIMDIR="crujra_2025"           
+  SDGVM_LANDDIR="ESACCILCP2014_LUH2-GCB2025"           
 
 
 elif [ $SDGVM_RUNTYPE == 'scratch' ]; then

@@ -139,11 +139,11 @@
       INTEGER env_sla_bounds(maxnft),daily_co2,par_loops,s070607
       REAL*8 can2g,tslc,trlc,active_cov
 
-      CHARACTER st1*1000,st2*1000,st3*1000,st4*1000
+      CHARACTER st1*1000,st2*1000,st3*1000,st4*1000,st11*1100
       CHARACTER st5*1000,otags(douts)*1000,ofmt(200)*100,in2st*10000
       CHARACTER stinput*1000,stoutput*1000,stinit*1000,stco2*1000
       CHARACTER stmask*1000,country_name*1000,countries(100)*20
-      CHARACTER sttxdp*1000,stlu*1000,ststats*1000,buff1*80
+      CHARACTER sttxdp*1000,stlu*1000,ststats*1000,buff1*100
       CHARACTER stpname*1000,stpname_t*1000,stwdg*1000,stpname_f*1000
       CHARACTER param_file*1000,date*8,time*10,fttags(maxnft)*1000
       CHARACTER stpname_s*1000
@@ -183,7 +183,7 @@
 *----------------------------------------------------------------------*
 
       debug = .FALSE.
-      !debug = .TRUE.
+      debug = .TRUE.
 
       WRITE(*,'('' PROGRAM STARTED'')')
       IF (IARGC().GT.0) THEN
@@ -300,7 +300,7 @@
 *----------------------------------------------------------------------*
       OPEN(98,FILE=buff1,STATUS='OLD',iostat=kode)
       IF (kode.NE.0) THEN
-        DO i=1,80
+        DO i=1,100
           st1(i:i) = buff1(i:i)
         ENDDO
         WRITE(*,'('' PROGRAM TERMINATED'')')
@@ -426,33 +426,52 @@ C        WRITE(*,*) 'bbbb'
       !APW - not sure what this does
       st1 = stinput
 
+      ! climate stats path
       READ(98,'(A)') ststats
       CALL STRIPB(ststats)
 
-      READ(98,'(A)') sttxdp  !soil data
+      ! soil data path
+      READ(98,'(A)') sttxdp 
       CALL STRIPB(sttxdp)
 
-      stpname = ' '
-      READ(98,'(A)') st1 
-      CALL STRIPBS(st1,stpname)
-      stpname_s = TRIM(stpname) // TRIM('/states2b.nc')
-      stpname_t = TRIM(stpname) // TRIM('/transitions2b.nc')
+c      stpname = ' '
+c      READ(98,'(A)') st1 
+c      CALL STRIPBS(st1,stpname)
+c      stpname_s = TRIM(stpname) // 
+c     &TRIM('/states4sdgvm.nc')
+c      stpname_t = TRIM(stpname) // 
+c     &TRIM('/transitions4sdgvm.nc')
+c      !WRITE(*,*) 'In sdgvm0, LUH2 path/file.'
+c      !WRITE(*,*) stpname_s(1:blank(stpname_s))
+c      !WRITE(*,*) stpname_t(1:blank(stpname_t))
+c
+c      READ(98,'(A)') st1 
+c      CALL STRIPBS(st1,stpname_f)
+c
+c      READ(98,'(A)') st1 
+c      CALL STRIPBS(st1,stwdg)
+c      !stwdg=stwdg(1:blank(stwdg))
 
-      READ(98,'(A)') st1 
-      CALL STRIPBS(st1,stpname_f)
-
-      READ(98,'(A)') st1 
-      CALL STRIPBS(st1,stwdg)
-      !stwdg=stwdg(1:blank(stwdg))
-
+      ! landcover data path
       READ(98,'(A)') st1
       CALL STRIPBS(st1,stlu)
+      ! LUH2 files required for land cover types 3-6
+      !stpname_s = TRIM(stlu)//TRIM("/states4sdgvm.nc")
+      !stpname_t = TRIM(stlu)//TRIM("/transitions4sdgvm.nc")
+      stpname_s =  stlu(1:blank(stlu))//'/states4sdgvm.nc'
+      stpname_t =  stlu(1:blank(stlu))//'/transitions4sdgvm.nc'
+      !WRITE(*,*) 'In sdgvm0, LUH2 path/file.'
+      !WRITE(*,*) stpname_s(1:blank(stpname_s))
+      !WRITE(*,*) stpname_t(1:blank(stpname_t))
 
+      ! co2 data path & filename
       READ(98,'(A)') stco2
       CALL STRIPB(stco2)
 
+      ! constant co2 value
       READ(98,*) co2const
 
+      ! land_mask path
       READ(98,'(A)') stmask
       CALL STRIPB(stmask)
 
@@ -671,7 +690,7 @@ C        WRITE(*,*) 'bbbb'
       IF (stcmp(stinit,st2).EQ.1) THEN
         narg = narg + 1
         CALL GETARG(narg,buff1)
-        DO i=1,80
+        DO i=1,100
           stinit(i:i) = buff1(i:i)
         ENDDO
       ENDIF
@@ -682,7 +701,7 @@ C        WRITE(*,*) 'bbbb'
       IF (stcmp(stoutput,st2).EQ.1) THEN
         narg = narg + 1
         CALL GETARG(narg,buff1)
-        DO i=1,80
+        DO i=1,100
           stoutput(i:i) = buff1(i:i)
         ENDDO
       ENDIF
@@ -1144,7 +1163,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
 *----------------------------------------------------------------------*
           narg = narg + 1
           CALL GETARG(narg,buff1)
-          DO i=1,80
+          DO i=1,100
             st1(i:i) = buff1(i:i)
           ENDDO
         ENDIF
@@ -1490,20 +1509,20 @@ c     read table of conversion from class to ft's proportion
 
             narg = narg + 1
             CALL GETARG(narg,buff1)
-            DO i=1,80
+            DO i=1,100
               st1(i:i) = buff1(i:i)
             ENDDO
 
             narg = narg + 1
             CALL GETARG(narg,buff1)
-            DO i=1,80
+            DO i=1,100
               st2(i:i) = buff1(i:i)
             ENDDO
             CALL STRIPBN(st2,site0)
 
             narg = narg + 1
             CALL GETARG(narg,buff1)
-            DO i=1,80
+            DO i=1,100
               st2(i:i) = buff1(i:i)
             ENDDO
             CALL STRIPBN(st2,sitef)
@@ -1523,8 +1542,6 @@ c     read table of conversion from class to ft's proportion
      &lat_lon(site-site0+1,1),lat_lon(site-site0+1,2)
             ENDDO
             sites = sitef - site0 + 1
-
-c CLOSE added by Ghislain 15/12/03
             CLOSE(99)
 
             READ(98,*)
@@ -1556,7 +1573,6 @@ c CLOSE added by Ghislain 15/12/03
             GOTO 50
 60          CONTINUE
 
-c CLOSE added by Ghislain 15/12/03
             CLOSE(99)
           ENDIF
 
@@ -1698,20 +1714,20 @@ c CLOSE added by Ghislain 15/12/03
 
         narg = narg + 1
         CALL GETARG(narg,buff1)
-        DO i=1,80
+        DO i=1,100
           param_file(i:i) = buff1(i:i)
         ENDDO
 
         narg = narg + 1
         CALL GETARG(narg,buff1)
-        DO i=1,80
+        DO i=1,100
           st2(i:i) = buff1(i:i)
         ENDDO
         CALL STRIPBN(st2,n_param_0)
 
         narg = narg + 1
         CALL GETARG(narg,buff1)
-        DO i=1,80
+        DO i=1,100
           st2(i:i) = buff1(i:i)
         ENDDO
         CALL STRIPBN(st2,n_param_f)
@@ -1727,7 +1743,8 @@ c CLOSE added by Ghislain 15/12/03
 *----------------------------------------------------------------------*
 * Read in type of landuse: 0 = defined by map; 1 = defined explicitly  *
 * in the input file; 2 = natural vegetation based on average monthly   *
-* temperatures; 3-6: defined by maps in states2b.nc or transitions2b.nc. *
+* temperatures; 3-6: defined by maps from landcover input file combined*
+* with LUH2 data in states4sdgvm.nc or transitions4sdgvm.nc.           *
 *----------------------------------------------------------------------*
       READ(98,'(1000a)') st1
 
@@ -1747,7 +1764,7 @@ c CLOSE added by Ghislain 15/12/03
 !        IF (ilanduse.EQ.5. .OR. ilanduse.EQ.6) NYR = 1 !override number from input.dat if set that way accidently
       ELSE IF (ii.EQ.1) THEN
         READ(st1,*) ilanduse
-        SYR = -1 !SYR and NYR not used and not defined here
+        SYR = -1 !SYR and NYR not used and given arbitrary values
         NYR = -1
         NYR_FILE = -1
       ELSE
@@ -1801,8 +1818,13 @@ c CLOSE added by Ghislain 15/12/03
         READ(st1,*) ifire
         ifire = 1
         prescr_fire = .FALSE.
-        SYR_FIRE = -1 !SYR_FIRE and NYR_FIRE not used and not defined here
-        NYR_FIRE = -1
+        ! APW: set these as 1 to work with vector indexing in call to
+        !      states_..._netcdf in data.f, hopefully this will not
+        !      trigger types 2 or 3
+        !SYR_FIRE = -1 !SYR_FIRE and NYR_FIRE not used and not defined here
+        !NYR_FIRE = -1
+        SYR_FIRE = 1 !SYR_FIRE and NYR_FIRE not used and not defined here
+        NYR_FIRE = 1
       ELSE
         WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,*) 'ifire: either 1 or 3 arguments required'
@@ -2294,7 +2316,8 @@ C The following ordering is the order of ft's in the input.dat file
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,NYR_FILE,
      &SYR_FIRE,NYR_FIRE,prescr_fire,lutab2,
-     &stpname_s,stpname_t,stpname_f,stwdg,
+c     &stpname_s,stpname_t,stpname_f,stwdg,
+     &stpname_s,stpname_t,stpname_f,stlu,
      &cluse2,cluseh,fprob_prescrh,debug)
 
       !loop added for testing purposes
@@ -3727,15 +3750,14 @@ c        ENDIF
      &nppstore(ft))*cov(i,ft)
           ENDDO
           ans3 = ans3 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
+          !ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
-
-        ans1 = ans2 + ans3
-
+        ans1 = ans2 + ans3 
         IF(debug .EQV. .TRUE.) THEN
           WRITE(*,'(''Icheck0'',3f13.6)')  ccheck
-          WRITE(*,'(''Ibiomass'',3f12.6)') ans2
-          WRITE(*,'(''Ilitter'',3f12.6)')  ans3
-          WRITE(*,'(''Ians1'',3f12.6)')    ans1
+          WRITE(*,'(''Ibiomass'',3f12.6)') ans2 
+          WRITE(*,'(''Ilitter'',3f12.6)')  ans3 
+          WRITE(*,'(''Ians1'',3f12.6)')    ans1 
           WRITE(*,'(''Itc0(1)'',3f12.6)') ic0(1) 
           WRITE(*,'(''Itc0(2)'',3f12.6)') ic0(2) 
           WRITE(*,'(''Itc0(3)'',3f12.6)') ic0(3) 
@@ -3920,14 +3942,14 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
 
         CALL MKDLIT(nft,ftmor,ftcov,dslc,drlc,dsln,drln,cov,slc,rlc,sln,
      &rln)
-
+        
         ! APW : add litter together for carbon balance check, needed
         ! here as COVER makes litter and adds to end of year litter
         ! calculated in GROWTH, which also zeros litter arrays first, so
         ! full annual litter is now calculated
-        ccheck_soil = ccheck_soil + dslc + drlc
-        ! APW : calculate litter from COVER
-        ans4 = dslc + drlc - ans3
+        ccheck_soil = ccheck_soil + dslc + drlc 
+        ! APW : calculate litter from COVER 
+        ans4 = dslc + drlc - ans3 
         ans2 = 0.0d0
         avflulccc = 0.0d0
         avyield = 0.0d0
@@ -3937,27 +3959,15 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
             ans2 = ans2 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(i,ft)
           ENDDO
-          avflulccc = avflulccc + ftcov(ft)*flulccc(ft)
+          avflulccc = avflulccc + ftcov(ft)*flulccc(ft) 
           avyield = avyield + ftcov(ft)*yield(ft) 
         ENDDO
-
         ccheck_biomass_cov = ans2
-        ans5 = ccheck_biomass - ans2 - ans4 - firec - avflulccc -
-     &avyield
-
+        ans5 = ccheck_biomass - ans2 - ans4 - firec - avflulccc
+ 
         IF(debug .EQV. .TRUE.) THEN
           !PRINT *,'SS3',nppstore(1:nft)
-          PRINT *,'Biomass check after COVER call: ', ans5
-        ENDIF
-
-        DO ft=1,nft
-          IF(debug .EQV. .TRUE.) THEN
-           print*,'AFTER MKDLIT: ft,slc,rlc: ',ft,slc(ft),rlc(ft)
-          ENDIF
-        ENDDO
-
-        IF(debug .EQV. .TRUE.) THEN
-          !PRINT *,'SS3',nppstore(1:nft)
+          PRINT *,'Biomass check after COVER call: ', ans5 
         ENDIF
 
         !IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN !turn on after 1st year
@@ -4436,8 +4446,8 @@ c      endif
             evapm(mnth,ft) = evapm(mnth,ft) + evap
             tranm(mnth,ft) = tranm(mnth,ft) + tran
             roffm(mnth,ft) = roffm(mnth,ft) + roff
-            petm(mnth,ft) = petm(mnth,ft) + pet
-            avmnpet(ft) = avmnpet(ft) + pet
+            petm(mnth,ft)  = petm(mnth,ft) + pet
+            avmnpet(ft)    = avmnpet(ft) + pet
 
 *----------------------------------------------------------------------*
 * Sumation of GPP and NPP.                                             *
@@ -4506,7 +4516,7 @@ c      endif
      &w_scalar,t_scalar,fl,cal)
 
           sresp(ft) = sresp(ft) + srespm(ft)
-          lch(ft) = lch(ft) + lchm(ft)
+          lch(ft)   = lch(ft) + lchm(ft)
                
           DO i=1,8
             c0(i,ft)=c0v(i)
@@ -4589,16 +4599,6 @@ c     check water cycle closure
           ENDDO
 
           trn(ft) = yrtran
-          evt(ft) = yrtran + yrevap
-          rof(ft) = yrroff
-          fpet(ft) = yrpet
-
-          lai(ft) = laimax(ft)
-
-*     Convert nppstore back to grams
-          nppstore(ft) = nppstore(ft)*12.0d0
-          nppstorx(ft) = nppstorx(ft)*12.0d0
-          nppstor2(ft) = nppstor2(ft)*12.0d0
 
         ELSE ! not dolydo
             DO i=1,10
@@ -4748,27 +4748,26 @@ c             print*, active_cov
 
              fti=1 
              DO ft=1,nft
-             ! sums the below variables when lai>1 (because weird things happen to leaf N when LAI<1)
-             ! weighted by pft cover as a proportion of 'active' PFT cover, defined here as LAI > 1  
-             !if(daily_out(1,ft,mnth,day).gt.1.0d0) then
-             if((daily_out(1,ft,mnth,day).gt.1.0d0).and.
+               ! sums the below variables when lai>1 (because weird things happen to leaf N when LAI<1)
+               ! weighted by pft cover as a proportion of 'active' PFT cover, defined here as LAI > 1  
+               if((daily_out(1,ft,mnth,day).gt.1.0d0).and.
      &(active_cov.gt.1.d-3)) then
-               avnleaf   = avnleaf    + (ftcov(ft)/active_cov) * 
+                 avnleaf   = avnleaf    + (ftcov(ft)/active_cov) * 
      &daily_out(26,ft,mnth,day)
-               avleaf_nit= avleaf_nit + (ftcov(ft)/active_cov) * 
+                 avleaf_nit= avleaf_nit + (ftcov(ft)/active_cov) * 
      &daily_out(27,ft,mnth,day)
-               avvcmax   = avvcmax    + (ftcov(ft)/active_cov) * 
+                 avvcmax   = avvcmax    + (ftcov(ft)/active_cov) * 
      &daily_out(28,ft,mnth,day)
-               avjmax    = avjmax     + (ftcov(ft)/active_cov) * 
+                 avjmax    = avjmax     + (ftcov(ft)/active_cov) * 
      &daily_out(29,ft,mnth,day)
-               kg_beta   = kg_beta    + (ftcov(ft)/active_cov) *
+                 kg_beta   = kg_beta    + (ftcov(ft)/active_cov) *
      &daily_out(30,ft,mnth,day)
-               avsla     = avsla      + (ftcov(ft)/active_cov) * 
+                 avsla     = avsla      + (ftcov(ft)/active_cov) * 
      &ftsla(ft)
-
-               if(fti.eq.1) gi=gi+1.d0
-               fti=fti+1
-             endif
+  
+                 if(fti.eq.1) gi=gi+1.d0
+                 fti=fti+1
+               endif
              ENDDO
 
              fti=1 
@@ -4927,7 +4926,7 @@ c       kg_beta    = kg_beta/wi
           WRITE(26,'('' '',f8.1,$)') min(swcnew,9999.0d0)
           WRITE(27,'('' '',f8.1,$)') sumbio
           WRITE(28,'('' '',i2,$)')   bioind
-          WRITE(29,'('' '',f6.2,$)')  covind
+          WRITE(29,'('' '',f6.2,$)') covind
           WRITE(30,'('' '',f8.1,$)') avdof
           WRITE(31,'('' '',f8.1,$)') avrof
           WRITE(32,'('' '',f8.2,$)') firec
@@ -5184,19 +5183,18 @@ c       kg_beta    = kg_beta/wi
      &nppstore(ft))*cov(i,ft)
           ENDDO
           ans3 = ans3 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
+          !ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
-
-        ans1 = ans2 + ans3
-
+        ans1 = ans2 + ans3 
         IF(debug .EQV. .TRUE.) THEN
           ans5 = ccheck_biomass_cov + avnpp - ans2 - ans3
           PRINT *,'Biomass check after GROWTH call: ', ans5
           WRITE(*,'(''check0 '',3f14.6)') ccheck
           WRITE(*,'(''check0_soil '',3f14.6)') ccheck_soil
-          WRITE(*,'(''avnpp '',3f12.6)') avnpp
-          WRITE(*,'(''biomass '',3f14.6)') ans2
-          WRITE(*,'(''litter '',3f14.6)')  ans3
-          WRITE(*,'(''ans1 '',3f14.6)') ans1
+          WRITE(*,'(''avnpp '',3f12.6)') avnpp 
+          WRITE(*,'(''biomass '',3f14.6)') ans2 
+          WRITE(*,'(''litter '',3f14.6)')  ans3 
+          WRITE(*,'(''ans1 '',3f14.6)') ans1 
           WRITE(*,'(''tc0(1)'',3f12.6)') tc0(1) 
           WRITE(*,'(''tc0(2)'',3f12.6)') tc0(2) 
           WRITE(*,'(''tc0(3)'',3f12.6)') tc0(3) 
@@ -5218,22 +5216,19 @@ c       kg_beta    = kg_beta/wi
         ccheck = ccheck + avnpp - (ans1 + tc0(1) + 
      &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) + 
      &avlch + avsresp + firec + avflulccc + avyield ) 
-
         ! APW: I'm not sure this will balance with land use change as I
         ! haven't looked at how flulcc or firec are calculated and if
         ! those include soil carbon
-        ccheck_soil = ccheck_soil - (tc0(1) +
-     &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) +
+        ccheck_soil = ccheck_soil - (tc0(1) + 
+     &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) + 
      &avlch + avsresp )
-
         ccheck_biomass = ccheck_biomass + avnpp - (ans2 + ans3 + ans4 +
-     &avyield + firec + avflulccc )
-
-         IF(debug .EQV. .TRUE.) THEN
-           WRITE(*,'(''check'',3f13.6)') ccheck
-           WRITE(*,'(''check soil'',3f13.6)') ccheck_soil
-           WRITE(*,'(''check biomass'',3f13.6)') ccheck_biomass
-         ENDIF
+     &avyield + firec + avflulccc ) 
+        IF(debug .EQV. .TRUE.) THEN
+          WRITE(*,'(''check'',3f13.6)') ccheck
+          WRITE(*,'(''check soil'',3f13.6)') ccheck_soil
+          WRITE(*,'(''check biomass'',3f13.6)') ccheck_biomass
+        ENDIF
 
 *----------------------------------------------------------------------*
 * Check carbon and water balance, write to 'DIAG' if any problems.     *
@@ -5405,7 +5400,7 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
       st1 = stoutput
       OPEN(13,FILE=st1(1:blank(st1))//'/simulation.dat')
       CALL GETARG(0,buff1)
-      DO j=1,80
+      DO j=1,100
         st1(j:j) = buff1(j:j)
       ENDDO
       st4 = stver
@@ -5420,7 +5415,7 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
 
       DO i=0,narg
         CALL GETARG(i,buff1)
-        DO j=1,80
+        DO j=1,100
           st1(j:j) = buff1(j:j)
         ENDDO
         WRITE(13,'(A)') st1(1:blank(st1))
@@ -5444,7 +5439,6 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
       WRITE(13,'(''************************************************'')')
 
       CALL GETARG(1,buff1)
-*      buff1='..\..\lindsay2\lind1.dat'
 
       OPEN(98,file=buff1,STATUS='OLD')
 65    READ(98,'(A)',end=70) st1
@@ -5520,30 +5514,6 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
 *----------------------------------------------------------------------*
 *  1:
 *  2:
-*  3:
-*  4:
-*  5:
-*  6:
-*  7:
-*  8:
-*  9:
-* 10:
-* 11: diag: Diagnostics file
-* 12: site: Site information
-* 13: simulation.dat: Record of the command, version number, input file
-* and parameter file.
-* 14: sites: List of land sites from the land sea mask.
-* 15:
-* 16:
-* 17:
-* 18:
-* 19:
-* 20: leafc: leaf Carbon (g C m-2)
-* 21: lai: LAI
-* 22: npp: Net Primary Productivity (g C /m^2/yr)
-* 23: scn: Soil carbon (g/m^2)
-* 24: snn: Soil nitrogen (g/m^2)
-* 25: nep: Net Ecosystem Productivity (g C /m^2/yr)
 * 26: swc: Average soil water content (mm)
 * 27: biot: Total biomass (g C /m^2)
 * 28: bioind: Dominant ft in terms of biomass
