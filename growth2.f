@@ -6,8 +6,8 @@
       SUBROUTINE COVER2(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
      &fireres,fprob,fprob_prescr,ftprop,ftstmx,stemdp,rootdp,ftsls,
-     &ftrls,ilanduse,prescr_fire,nat_map,ic0,burn,harvest,leafdp,
-     &flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
+     &ftrls,ilanduse,prescr_fire,nat_map,ic0,burn,harvest,no_grow,
+     &leafdp,flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
      &ftprop_init,yield,lat,ftprops,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
@@ -36,7 +36,7 @@
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
       INTEGER ft2,at,at2,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER ft3,at3,mm
-      LOGICAL burn,harvest,prescr_fire,fprob_allok
+      LOGICAL burn,harvest,prescr_fire,fprob_allok,no_grow(maxnft)
       LOGICAL compute_covchange,change_cover,corrct_ft,corrct_ft2
 
       IF(debug .EQV. .TRUE.) THEN
@@ -235,9 +235,9 @@ C The following ordering is the order of ft's in the input.dat file
 * Also shift cover and biomass arrays one to the right.                *
 *----------------------------------------------------------------------*
       CALL NEWGROWTH2(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
-     &npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,leafdp,
-     &flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,yield,ft2frac,
-     &sum_cov,debug)
+     &npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,no_grow,
+     &leafdp,flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,yield,
+     &ft2frac,sum_cov,debug)
 
 *----------------------------------------------------------------------*
 
@@ -1536,8 +1536,8 @@ C The following ordering is the order of ft's in the input.dat file
 *----------------------------------------------------------------------*
       SUBROUTINE NEWGROWTH2(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
      &fprob,npp,nps,tot_ngcov,ngcov,slc,rlc,fireres,firec,harvest,
-     &leafdp,flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,yield,
-     &ft2frac,sum_cov,debug)
+     &no_grow,leafdp,flulccc,atharvest,n_at,aggmap_SDGVM_to_aggHyde,NS,
+     &yield,ft2frac,sum_cov,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
@@ -1551,7 +1551,7 @@ C The following ordering is the order of ft's in the input.dat file
       REAL*8 sum_cov(maxnft)
       INTEGER at,aggmap_SDGVM_to_aggHyde(NS)
       INTEGER nft,ftmor(maxnft),ft,age,fireres,n_at,NS
-      LOGICAL harvest
+      LOGICAL harvest,no_grow(maxnft)
       LOGICAL debug !used to print out more debugging info
 
       xfprob = fprob
@@ -1680,6 +1680,15 @@ C The following ordering is the order of ft's in the input.dat file
         !split the loop into two, since we have a new cov array with a
         !different sum_cov
         DO age=2,ftmor(ft) 
+          ! calculate litter gain and biomass loss from a no-growth year
+          ! the cov array remains unchanged
+          IF (no_grow(ft)) THEN
+            !this leaves the wood mass intact, root mass intact, and cover intact
+            if(age.EQ.2) print*, 'no_grow,ft=',ft
+            !add leaf biomass to surface soil litter
+            slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)
+          ENDIF
+
           ! calculate litter loss and biomass loss from harvest
           ! for a harvest (copice style) the cov array remains unchanged
           IF (harvest) THEN
@@ -1723,6 +1732,13 @@ C The following ordering is the order of ft's in the input.dat file
            PRINT *,
      &'harvest',ft,at,loss_frac,dflulccc,flulccc(ft),yield(ft)
         ENDIF
+
+        IF (no_grow(ft)) THEN
+          !this leaves the wood mass intact, root mass intact, and cover intact
+          bioleaf(ft)   = 0.0d0
+          leafdp(:,ft)  = 0.0d0 
+        ENDIF
+
 
         IF (harvest) THEN
           !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact

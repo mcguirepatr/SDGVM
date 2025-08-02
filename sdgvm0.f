@@ -153,7 +153,7 @@
       LOGICAL out_cov,out_bio,out_bud,out_sen,l_b_and_c,check_c
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
-      LOGICAL year0set
+      LOGICAL year0set,no_grow(maxnft)
       LOGICAL debug,out_yie,prescr_fire
 
 *----------------------------------------------------------------------*
@@ -3764,9 +3764,12 @@ c        ENDIF
 *----------------------------------------------------------------------*
         IF (ilanduse.EQ.2) THEN
           CALL NATURAL_VEG(tmp,prc,ftprop,nat_map)
+          no_grow(:) = .FALSE.  !PCM
         ELSE ! 0 and 1 and 3 to 6
           ftprop(1) = 100.0d0
+          no_grow(1) = .FALSE. 
           DO ft=2,nft
+            no_grow(ft) = .FALSE. !PCM
             IF (check_ft_grow(tmp,ftbbm(ft),ftbb0(ft),ftbbmax(ft), 
      &ftbblim(ft),chill(ft),dschill(ft)).EQ.1) THEN
               !ftprop(ft) = cluse(ft,year-yr0+1)
@@ -3794,7 +3797,11 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
               ftprop(1)  = ftprop(1) - ftprop(ft)
             ELSE
             !  print *, 'Check_ft_grow=0, ft=',ft
-              ftprop(ft) = 0.0d0
+            !PCM Previously, ftprop(ft) was set to zero here.
+            !PCM Now, we don't set it to zero here, but instead
+            !    we set no_grow(ft) to .TRUE. here.
+            !PCM  ftprop(ft) = 0.0d0
+              no_grow(ft) = .TRUE.  !PCM
             ENDIF
 
             IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN
@@ -3889,14 +3896,15 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
           CALL COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,nat_map,
-     &ic0,fire(iyear),harvest(iyear),leafdp,flulccc,ftphen,debug)
+     &ic0,fire(iyear),harvest(iyear),no_grow,leafdp,flulccc,ftphen,
+     &debug)
         ELSE
           CALL COVER2(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,mnthtmp,mnthprc,slc,rlc,c3old,c4old,firec,ppm,hgt,fireres,
      &fprob,fprob_prescr,ftprop1,ftstmx,stemdp,rootdp,ftsls,ftrls,
      &ilanduse,prescr_fire,nat_map,ic0,fire(iyear),harvest(iyear),
-     &leafdp,flulccc,ftphen,atprop2,atharvest,aggmap_SDGVM_to_aggHyde,
-     &ftprop_init,yield,lat,ftprops,debug)
+     &no_grow,leafdp,flulccc,ftphen,atprop2,atharvest,
+     &aggmap_SDGVM_to_aggHyde,ftprop_init,yield,lat,ftprops,debug)
         ENDIF
 
         IF(debug .EQV. .TRUE.) THEN

@@ -6,7 +6,7 @@
       SUBROUTINE COVER(nft,ftmor,ftppm0,cov,bio,bioleaf,nppstore,
      &npp,nps,tmp,prc,slc,rlc,c3old,c4old,firec,ppm,hgt,
      &fireres,fprob,ftprop,ftstmx,stemdp,rootdp,ftsls,ftrls,ilanduse,
-     &nat_map,ic0,burn,harvest,leafdp,flulccc,ftphen,debug)
+     &nat_map,ic0,burn,harvest,no_grow,leafdp,flulccc,ftphen,debug)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 cov(maxage,maxnft),bio(maxage,2,maxnft),bioleaf(maxnft)
@@ -19,7 +19,7 @@
       REAL*8 ftloss_prop(maxnft),sum_cov(maxnft),flulccc
       INTEGER ftsls(maxnft),ftrls(maxnft),nft,ftmor(maxnft),year,i,j
       INTEGER ft,fireres,ilanduse,nat_map(8),age,ftphen(maxnft)
-      LOGICAL burn,harvest
+      LOGICAL burn,harvest,no_grow(maxnft)
       LOGICAL debug !used to print out more debugging info
 
       IF(debug .EQV. .TRUE.) THEN
@@ -75,7 +75,7 @@
         ENDDO
         !print*, sum_cov(ft)
 
-        ! need to make this tree speciifc
+        ! need to make this tree specific
 
         if( (sum_cov(ft).gt.0d0) .and. (ftphen(ft).eq.2) ) then
         if( ( (ftprop(ft)*1d-2) - sum_cov(ft)) .lt. -5d-3  ) then
@@ -102,7 +102,7 @@
       ENDDO
       ENDIF
 *----------------------------------------------------------------------*
-* Compute the likelyhood of fire in the current year 'fprob'.          *
+* Compute the likelihood of fire in the current year 'fprob'.          *
 * 'find' is the fire index                                             *
 *----------------------------------------------------------------------*
       CALL FIRE(prc,tmp,fri,fprob,burn)
@@ -113,7 +113,8 @@
 * Also shift cover and biomass arrays one to the right.                *
 *----------------------------------------------------------------------*
       CALL NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,fprob,
-     &npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc)
+     &npp,nps,ngcov,slc,rlc,fireres,firec,harvest,no_grow,
+     &leafdp,flulccc)
 
 *----------------------------------------------------------------------*
 
@@ -1085,7 +1086,8 @@
 * Compute newgrowth and alter cover array accordingly.                 *
 *----------------------------------------------------------------------*
       SUBROUTINE NEWGROWTH(nft,ftmor,cov,ppm,bio,bioleaf,nppstore,hgt,
-     &fprob,npp,nps,ngcov,slc,rlc,fireres,firec,harvest,leafdp,flulccc)
+     &fprob,npp,nps,ngcov,slc,rlc,fireres,firec,harvest,no_grow,
+     &leafdp,flulccc)
 *----------------------------------------------------------------------*
       INCLUDE 'array_dims.inc'
       REAL*8 bio(maxage,2,maxnft),cov(maxage,maxnft),ppm(maxage,maxnft)
@@ -1093,7 +1095,7 @@
       REAL*8 nps(maxnft),ngcov,slc(maxnft),rlc(maxnft),bioleaf(maxnft)
       REAL*8 tmor,tmor0,npp0,firec,xfprob,leafdp(3600,maxnft),flulccc
       INTEGER nft,ftmor(maxnft),ft,age,fireres
-      LOGICAL harvest
+      LOGICAL harvest,no_grow(maxnft)
 
       xfprob = fprob
 
@@ -1178,8 +1180,17 @@
           !update cover array
           cov(age,ft) = cov(age,ft)*(1.0d0 - fprob)*(1.0d0 - tmor)
           
+          ! calculate litter gain and biomass loss from a no-growth year
+          ! the cov array remains unchanged
+          IF (no_grow(ft)) THEN
+            !this leaves the wood mass intact, root mass intact, and cover intact
+            if(age.EQ.2) print*, 'no_grow,ft=',ft
+            !add leaf biomass to surface soil litter
+            slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)
+          ENDIF
+
           ! calculate litter loss and biomass loss from harvest
-          ! for a harvest (copice style) the cov array remains unchanged
+          ! for a harvest (coppice style) the cov array remains unchanged
           IF (harvest) THEN
             !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact
             if(age.EQ.2) print*, 'harvest'
@@ -1190,8 +1201,15 @@
             firec   = firec   + nppstore(ft) * 0.50d0 * cov(age,ft) 
             bio(age,1,ft) =  0.0d0
           ENDIF
+
           
         ENDDO
+
+        IF (no_grow(ft)) THEN
+          !this leaves the wood mass intact, root mass intact, and cover intact
+          bioleaf(ft)   = 0.0d0
+          leafdp(:,ft)  = 0.0d0 
+        ENDIF
 
         IF (harvest) THEN
           !this can act as a coppice type harvest or a fire that leaves the root mass intact and cover intact
