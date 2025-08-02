@@ -146,19 +146,6 @@
 * ftprop contains the total proportion of that cover, not the          *
 * proportion of bare land to assign. Calculate the new ftprop.         *
 *----------------------------------------------------------------------*
-      IF(debug .EQV. .TRUE.) THEN
-        PRINT '(A)','GN4c tot_ngcov '
-        PRINT '(1F11.6)',tot_ngcov
-        PRINT '(A)','GN4c ngcov '
-        PRINT '(16F11.6)',ngcov(1:nft)
-        PRINT '(A)','GC4c cov '
-        DO j=1,6 !show first six years of cover
-          PRINT '(16F11.6)',cov(j,1:nft)
-        ENDDO
-
-        PRINT '(A)','GG4c ftprop '
-        PRINT '(16F11.6)',ftprop(1:nft)
-      ENDIF
       
       norm = 0.0d0
       DO ft=1,nft           
@@ -1134,24 +1121,8 @@
 * LAI.                                                                 *
 *----------------------------------------------------------------------*
       DO ft=2,nft
-
 *----------------------------------------------------------------------*
-* Compute harvest losses for each aggregated type (at)                 *
-*----------------------------------------------------------------------*
-        at = aggmap_SDGVM_to_aggHyde(ft)
-        loss_frac = 0.0d0
-        remain_frac = 1.0d0
-        IF (at.NE.0) THEN
-          IF ((atharvest(at).GT.0.d0).AND.((at.EQ.1).OR.(at.EQ.3))) THEN !only for primf&secdf
-            loss_frac  = ft2frac(ft)*atharvest(at)*1.0d-2
-            remain_frac = 1.0d0 - loss_frac  
-          !ELSE
-          !  loss_frac = 0.0d0
-          !  remain_frac = 1.0d0
-          ENDIF
-        ENDIF
-*----------------------------------------------------------------------*
-* 'tmor' is the mortality rate of the forest based on 'npp'.           *
+* 'tmor' is the mortality rate of the ft based on 'npp'.           *
 *----------------------------------------------------------------------*
         npp0 = 0.2d0
         tmor0 = 6.0d0
