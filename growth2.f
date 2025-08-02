@@ -1684,7 +1684,7 @@ C The following ordering is the order of ft's in the input.dat file
           ! the cov array remains unchanged
           IF (no_grow(ft)) THEN
             !this leaves the wood mass intact, root mass intact, and cover intact
-            if(age.EQ.2) print*, 'no_grow,ft=',ft
+            !if(age.EQ.2) print*, 'no_grow,ft=',ft
             !add leaf biomass to surface soil litter
             slc(ft) = slc(ft) + bioleaf(ft)*cov(age,ft)
           ENDIF
