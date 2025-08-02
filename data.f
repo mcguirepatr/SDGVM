@@ -1305,6 +1305,9 @@ CPCM get_transitions==.true. : compute transitions
           RETURN
         ENDIF
   
+        IF(debug .EQV. .TRUE.) THEN
+          write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,3,3)
+        ENDIF
       ELSE
         SDGVM_LUC=0.0
         SDGVM_LUC2=0.0
@@ -1317,9 +1320,6 @@ CPCM get_transitions==.true. : compute transitions
          ENDIF
       ENDIF
 
-      IF(debug .EQV. .TRUE.) THEN
-        write(*,FMT="(A,7E10.3)") 'D harv',SDGVM_LUC2_HARVEST(1,:,3,3)
-      ENDIF
 
       IF (prescr_fire .EQV. .TRUE.) THEN !PCM
         DO i=1,yrfa-yr0a+1

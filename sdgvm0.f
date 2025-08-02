@@ -183,7 +183,7 @@
 *----------------------------------------------------------------------*
 
       debug = .FALSE.
-      debug = .TRUE.
+      !debug = .TRUE.
 
       WRITE(*,'('' PROGRAM STARTED'')')
       IF (IARGC().GT.0) THEN
@@ -2058,8 +2058,8 @@ c     read table of conversion from class to ft's proportion
 *----------------------------------------------------------------------*
 !PCM4 for running a single site in the main run from a gridded spinup;
 !PCM4 (other changes below)
-!      DO site=111,111
-      DO site=1,sites
+      DO site=111,111
+!      DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
 *    standard setting is .FALSE.                                       *
@@ -3752,11 +3752,11 @@ c        ENDIF
           ans3 = ans3 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
           !ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
-        ans1 = ans2 + ans3 
+        ans1 = ans2 + ans3
         IF(debug .EQV. .TRUE.) THEN
           WRITE(*,'(''Icheck0'',3f13.6)')  ccheck
-          WRITE(*,'(''Ibiomass'',3f12.6)') ans2 
-          WRITE(*,'(''Ilitter'',3f12.6)')  ans3 
+          WRITE(*,'(''Ibiomass'',3f12.6)') ans2
+          WRITE(*,'(''Ilitter'',3f12.6)')  ans3
           WRITE(*,'(''Ians1'',3f12.6)')    ans1 
           WRITE(*,'(''Itc0(1)'',3f12.6)') ic0(1) 
           WRITE(*,'(''Itc0(2)'',3f12.6)') ic0(2) 
@@ -3770,7 +3770,7 @@ c        ENDIF
 
         ccheck = ans1 + ic0(1) + 
      &ic0(2) + ic0(3) + ic0(4) + ic0(5) + ic0(6) + ic0(7) + ic0(8)
-        ccheck_soil = ic0(1) + 
+        ccheck_soil = ic0(1) +
      &ic0(2) + ic0(3) + ic0(4) + ic0(5) + ic0(6) + ic0(7) + ic0(8)
         ccheck_biomass = ans2
 
@@ -3947,9 +3947,9 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
         ! here as COVER makes litter and adds to end of year litter
         ! calculated in GROWTH, which also zeros litter arrays first, so
         ! full annual litter is now calculated
-        ccheck_soil = ccheck_soil + dslc + drlc 
-        ! APW : calculate litter from COVER 
-        ans4 = dslc + drlc - ans3 
+        ccheck_soil = ccheck_soil + dslc + drlc
+        ! APW : calculate litter from COVER
+        ans4 = dslc + drlc - ans3
         ans2 = 0.0d0
         avflulccc = 0.0d0
         avyield = 0.0d0
@@ -3959,15 +3959,16 @@ C    if((co2const.gt.0.0).and.(spinl.lt.nyears)) then !For TRENDY S4-S6
             ans2 = ans2 + (bio(i,1,ft) + bio(i,2,ft) + bioleaf(ft) +
      &nppstore(ft))*cov(i,ft)
           ENDDO
-          avflulccc = avflulccc + ftcov(ft)*flulccc(ft) 
+          avflulccc = avflulccc + ftcov(ft)*flulccc(ft)
           avyield = avyield + ftcov(ft)*yield(ft) 
         ENDDO
         ccheck_biomass_cov = ans2
-        ans5 = ccheck_biomass - ans2 - ans4 - firec - avflulccc
+        ans5 = ccheck_biomass - ans2 - ans4 - firec - avflulccc -
+     &avyield
  
         IF(debug .EQV. .TRUE.) THEN
           !PRINT *,'SS3',nppstore(1:nft)
-          PRINT *,'Biomass check after COVER call: ', ans5 
+          PRINT *,'Biomass check after COVER call: ', ans5
         ENDIF
 
         !IF (ilanduse.GE.3 .AND. ilanduse.LE.6) THEN !turn on after 1st year
@@ -4446,8 +4447,8 @@ c      endif
             evapm(mnth,ft) = evapm(mnth,ft) + evap
             tranm(mnth,ft) = tranm(mnth,ft) + tran
             roffm(mnth,ft) = roffm(mnth,ft) + roff
-            petm(mnth,ft)  = petm(mnth,ft) + pet
-            avmnpet(ft)    = avmnpet(ft) + pet
+            petm(mnth,ft) = petm(mnth,ft) + pet
+            avmnpet(ft) = avmnpet(ft) + pet
 
 *----------------------------------------------------------------------*
 * Sumation of GPP and NPP.                                             *
@@ -4516,7 +4517,7 @@ c      endif
      &w_scalar,t_scalar,fl,cal)
 
           sresp(ft) = sresp(ft) + srespm(ft)
-          lch(ft)   = lch(ft) + lchm(ft)
+          lch(ft) = lch(ft) + lchm(ft)
                
           DO i=1,8
             c0(i,ft)=c0v(i)
@@ -4599,6 +4600,16 @@ c     check water cycle closure
           ENDDO
 
           trn(ft) = yrtran
+          evt(ft) = yrtran + yrevap
+          rof(ft) = yrroff
+          fpet(ft) = yrpet
+
+          lai(ft) = laimax(ft)
+
+*     Convert nppstore back to grams
+          nppstore(ft) = nppstore(ft)*12.0d0
+          nppstorx(ft) = nppstorx(ft)*12.0d0
+          nppstor2(ft) = nppstor2(ft)*12.0d0
 
         ELSE ! not dolydo
             DO i=1,10
@@ -5185,16 +5196,16 @@ c       kg_beta    = kg_beta/wi
           ans3 = ans3 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
           !ans1 = ans1 + slc(ft) + rlc(ft) ! adding stem_litter_carbon(ft) & root_litter_carbon(ft)
         ENDDO
-        ans1 = ans2 + ans3 
+        ans1 = ans2 + ans3
         IF(debug .EQV. .TRUE.) THEN
           ans5 = ccheck_biomass_cov + avnpp - ans2 - ans3
           PRINT *,'Biomass check after GROWTH call: ', ans5
           WRITE(*,'(''check0 '',3f14.6)') ccheck
           WRITE(*,'(''check0_soil '',3f14.6)') ccheck_soil
-          WRITE(*,'(''avnpp '',3f12.6)') avnpp 
-          WRITE(*,'(''biomass '',3f14.6)') ans2 
-          WRITE(*,'(''litter '',3f14.6)')  ans3 
-          WRITE(*,'(''ans1 '',3f14.6)') ans1 
+          WRITE(*,'(''avnpp '',3f12.6)') avnpp
+          WRITE(*,'(''biomass '',3f14.6)') ans2
+          WRITE(*,'(''litter '',3f14.6)')  ans3
+          WRITE(*,'(''ans1 '',3f14.6)') ans1
           WRITE(*,'(''tc0(1)'',3f12.6)') tc0(1) 
           WRITE(*,'(''tc0(2)'',3f12.6)') tc0(2) 
           WRITE(*,'(''tc0(3)'',3f12.6)') tc0(3) 
@@ -5219,7 +5230,7 @@ c       kg_beta    = kg_beta/wi
         ! APW: I'm not sure this will balance with land use change as I
         ! haven't looked at how flulcc or firec are calculated and if
         ! those include soil carbon
-        ccheck_soil = ccheck_soil - (tc0(1) + 
+        ccheck_soil = ccheck_soil - (tc0(1) +
      &tc0(2) + tc0(3) + tc0(4) + tc0(5) + tc0(6) + tc0(7) + tc0(8) + 
      &avlch + avsresp )
         ccheck_biomass = ccheck_biomass + avnpp - (ans2 + ans3 + ans4 +
