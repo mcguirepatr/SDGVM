@@ -238,7 +238,6 @@ C     https://www.fao.org/4/X0490E/x0490e06.htm#(bulk)%20surface%20resistance%20
       zpdh   = 0.6667 * ht  !Zero-plane displacement height
       canga = 0.168d0  * windspeed/log((z_m - zpdh)/z_om)/
      &log((z_m - zpdh)/z_oh)
->>>>>>> 477238d (changed canga calculation to FAO inspired)
 
       npp_eff = 0.0d0
       sum = 0.0d0
