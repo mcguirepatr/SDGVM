@@ -225,8 +225,8 @@ c     z=reference height
 c     d=zero plane displacement
 c     z0=roughness length
 
-      !windspeed= 5.0d0 ! in m/s
-      windspeed= wnd ! in m/s !PCM
+      windspeed= 5.0d0 ! in m/s
+C      windspeed= wnd ! in m/s !PCM
 C      WRITE(*,*) 'windspeed = ',windspeed
 
 C PCM      canga = 0.168d0*windspeed/log((200.0d0 - 
