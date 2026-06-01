@@ -3566,6 +3566,8 @@ cc PCM added the following ten lines to compute ht(ft) for ET calculation
              av_hgt(ft) = av_hgt(ft) + hgt(i,ft)
              if(hgt(i,ft).gt.0.0d0) hi = hi + 1 
            enddo
+
+           if(hi.gt.0) av_hgt(ft) = av_hgt(ft) / hi 
  
            IF (av_hgt(ft).GT.50.0d0) THEN
              ht(ft)=50.0d0
