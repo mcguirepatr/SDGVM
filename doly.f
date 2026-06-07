@@ -49,6 +49,7 @@
       REAL*8 sm_trig(30),s1in,tsumam,stemfr,lmor_sc(3600),nleaf
       REAL*8 leaf_nit,vcmax(12),jmax(12),pnlc(12),enzs(12),leafresp
       REAL*8 rootresp,stemresp
+      REAL*8 windspeed_eff,wtsf,canga0
       REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30),cos_zen,kg,can_clump
       REAL*8 ce_maxlight(30,12),ce_ga(30,12),ce_rh(30)
       REAL*8 z_m,z_om,z_oh,zpdh
@@ -225,8 +226,8 @@ c     z=reference height
 c     d=zero plane displacement
 c     z0=roughness length
 
-      windspeed= 5.0d0 ! in m/s
-C      windspeed= wnd ! in m/s !PCM
+C      windspeed= 5.0d0 ! in m/s
+      windspeed= wnd ! in m/s !PCM
 C      WRITE(*,*) 'windspeed = ',windspeed
 
 C PCM      canga = 0.168d0*windspeed/log((200.0d0 - 
@@ -238,8 +239,11 @@ C     https://www.fao.org/4/X0490E/x0490e06.htm#(bulk)%20surface%20resistance%20
       z_m    = 50 !to have a positive argument for log() for the tallest tree (z_m = ht = 50m > zpdh = 0.6667 * 50m) 
       z_om   = 0.1230 * ht   !Roughness scale for momentum
       z_oh   = 0.1000 * z_om !Roughness scale for heat & vapor
-      zpdh   = 0.6667 * ht  !Zero-plane displacement height
-      canga = 0.168d0  * windspeed/log((z_m - zpdh)/z_om)/
+      zpdh   = 0.6667 * ht   !Zero-plane displacement height
+      canga0 = 0.168d0       !squared von-Karman constant; PCM: this is not 'sacrosanct physics'
+      wtsf   = 1.7           !PCM : wind-to-turbulence scaling factor
+      windspeed_eff = wtsf * windspeed
+      canga = canga0 * windspeed_eff/log((z_m - zpdh)/z_om)/
      &log((z_m - zpdh)/z_oh)
 
       npp_eff = 0.0d0
