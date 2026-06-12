@@ -523,7 +523,8 @@
       IF (rlai.GT.0.1d0) THEN
         !leaf boundary layer conductance 
         !- this needs attention, this is not right to use canga divided by lai
-        ga = canga/(8.3144d0*tk/p)/rlai
+        ! PCM ! ga = canga/(8.3144d0*tk/p)/rlai
+        ga = canga/(8.3144d0*tk/p)
 
         !subd_par if statement mean daily PAR or downscaled sub-daily PAR 
         ! - if a daily mean PAR is used (SDGVM default) use above calculated PAR values
