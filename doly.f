@@ -241,7 +241,7 @@ C     https://www.fao.org/4/X0490E/x0490e06.htm#(bulk)%20surface%20resistance%20
       z_oh   = 0.1000 * z_om !Roughness scale for heat & vapor
       zpdh   = 0.6667 * ht   !Zero-plane displacement height
       canga0 = 0.168d0       !squared von-Karman constant; PCM: this is not 'sacrosanct physics'
-      wtsf   = 1.7           !PCM : wind-to-turbulence scaling factor
+      wtsf   = 1.0           !PCM : wind-to-turbulence scaling factor
       windspeed_eff = wtsf * windspeed
       canga = canga0 * windspeed_eff/log((z_m - zpdh)/z_om)/
      &log((z_m - zpdh)/z_oh)
