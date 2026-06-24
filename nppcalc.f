@@ -1273,7 +1273,7 @@
 
       IMPLICIT NONE
 
-      real*8 :: gs_wood,a,dv,t,cs
+      real*8 :: gs_wood,a,dv,t,cs,rawden
       real*8 :: x
       
       x = 3.0d0 + 0.2d0*t
@@ -1281,8 +1281,12 @@
 
 !      gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
-      gs_wood = (x*a/(1.0d0 + dv/1.5d0)/(cs*10.0d0 - 
-     &1.54d0*t))
+      rawden = (cs*10.0d0 - 1.54d0*t)*(1.0d0 + dv/1.5d0)
+      if (rawden.GT.0.0d0) then
+         gs_wood = x*a/rawden
+      else
+         gs_wood = 0.0d0
+      endif
       
       END
 
