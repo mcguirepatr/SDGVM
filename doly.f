@@ -23,7 +23,7 @@
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,no_slw_lim,par_loops,s070607,
      &gs_func,ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,
      &sl,hrs,ttype,calc_zen,iyear,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,debug)
 
 *----------------------------------------------------------------------*
       REAL*8 oi
@@ -59,6 +59,7 @@
       INTEGER hw_j,cstype,calc_zen,phen_cor,subd_par,soilp_map
       INTEGER no_slw_lim,vcmax_type,par_loops,s070607,gs_func,ttype
       LOGICAL veg
+      LOGICAL :: debug !used to print out more debugging info
       INCLUDE 'param.inc'
 
       maxlai = 11.9d0
@@ -290,7 +291,7 @@ C     https://www.fao.org/4/X0490E/x0490e06.htm#(bulk)%20surface%20resistance%20
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,par_loops,s070607,gs_func,
      &ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,ttype,
      &calc_zen,cos_zen,iyear,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,debug)
 
 c      write(*,*) 'o',canga,can2a,can2g,canres,suma
 
