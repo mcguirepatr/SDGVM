@@ -12,7 +12,8 @@
      &read_par,env_vcmax,env_jmax,soilp_map,ga,ftvna,ftvnb,ftjva,ftjvb,
      &ftg0,ftg1,par_loops,s070607,gs_func,ce_light,ce_ci,ce_t,
      &ce_maxlight,ce_ga,ce_rh,ttype,
-     &calc_zen,cos_zen,iyear,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ)
+     &calc_zen,cos_zen,iyear,ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,
+     &debug)
 *----------------------------------------------------------------------*
       
       IMPLICIT NONE
@@ -57,13 +58,16 @@
       INTEGER ttype,calc_zen,luna_calc_days,iyear
       REAL*8  sd_scale(par_loops+1),sd_scale2,nup_rate
       LOGICAL output,gold,jfv
+      LOGICAL :: debug !used to print out more debugging info
 
-      !print*, 'NPPcalc', day
-
-      omnth  = 5 
+      omnth  = 10 
       oday   = 4
       output = .FALSE.
-      !if(iyear.eq.55) output = .TRUE.
+      IF(debug .EQV. .TRUE.) THEN
+        if(iyear.eq.152) output = .TRUE.
+        !print*, 'NPPcalc', day
+      ENDIF
+
    
       if(hw_j.eq.3) then
         hw_j = 0 
@@ -546,7 +550,7 @@
      &) then
             print*, a(1),rd(1),gs(1),ci(1),vmx(1),jmx(1)
             print*, ''
-         endif
+          endif
 
         !if switch 1 not equal to 0: use sub-daily PAR loop
         ELSE
@@ -638,6 +642,12 @@
             if(ii.eq.1) maxlight(:) = 
      &fsunlit_sd(:)*qsunlit_sd(:)+fshade_sd(:)*qshade_sd(:)
 
+            print*, 'Anppcalc: ',iyear,mnth,day
+            print*, 'Aci(:): ',ci(:)
+            print*, 'Aci_sd(:): ',ci_sd(:)
+            print*, 'Asd_scale(:): ',sd_scale(:)
+            print*, 'Asd_scale2: ',sd_scale2
+
           !sub-daily loop
           ENDDO
 
@@ -708,6 +718,15 @@
       tassim =  a(1)
       tgs    = gs(1)
       tci    = ci(1)
+      !if(output.and.(mnth.eq.omnth)) then
+      if(tci .LT. 0) then
+         print*, 'Bnppcalc (tci<0): ',iyear,mnth,day,tassim,tgs,tci
+         print*, 'Bci(:): ',ci(:)
+         print*, 'Bci_sd(:): ',ci_sd(:)
+         print*, 'Bsd_scale(:): ',sd_scale(:)
+         print*, 'Bsd_scale2: ',sd_scale2
+      endif
+      !endif
 
       ! Cumulate daily assimilation of the last lai layer, 'suma'
       IF (lai.GT.1) THEN
@@ -851,7 +870,7 @@
               a  = fshade*ashade
               ci = fshade*pcshade
               gs = fshade*gsshade
-              !if(i.eq.1) print*, 'C3 sun:',a,gs,ci,ga,cs
+              if(i.eq.1) print*, 'C3 sun:',a,gs,ci,ga,cs
             ENDIF
 
             IF (fsunlit.GT.0.01d0) THEN
@@ -871,7 +890,7 @@
               a  = a  + fsunlit*asunlit
               ci = ci + fsunlit*pcsunlit
               gs = gs + fsunlit*gssunlit
-              !if(i.eq.1) print*, 'C3 sun:',a,gs,ci,ga,cs
+              if(i.eq.1) print*, 'C3 sun:',a,gs,ci,ga,cs
             ENDIF
 
           !C3/C4 if
@@ -884,15 +903,18 @@
               a  = fshade*ashade
               ci = fshade*pcshade
               gs = fshade*gsshade
-              !print*, 'C4 shade:',a,gs,ci,ga,cs
+              print*, 'C4 shade:',a,gs,ci,ga,cs
             ENDIF
             IF (fsunlit.GT.0.01d0) THEN
+              !print*, 'C4 sun0:',ca,vmx,rh,kg,t,qsunlit
+              !print*, 'C4 sun0b:',p,upt,rd,dv,g0,g1,gs_func,ga,pepc
               CALL ASSC4_colim(asunlit,pcsunlit,gssunlit,ca,vmx,rh,kg,t,
      &qsunlit,p,upt,rd,dv,g0,g1,gs_func,ga,pepc)
+              !print*, 'C4 sun1:',fsunlit,asunlit,gssunlit,pcsunlit
               a  = a  + fsunlit*asunlit
               ci = ci + fsunlit*pcsunlit
               gs = gs + fsunlit*gssunlit
-              !if(i.eq.1) print*, 'C4 sun:',a,gs,ci,ga,cs
+              !print*, 'C4 sun2:',a,gs,ci,ga,cs
             ENDIF
 
             IF (gs .LT. 0.0d0)  gs = 0.0d0
@@ -901,19 +923,29 @@
           ENDIF
 
 
-        !assimilation if
-        ELSE
+!        !assimilation if
+!        ELSE
+!          a  = 0.0d0
+!          gs = g0 
+!          ci = ca
+!
+!        !end assimilation if
+!        ENDIF
+
+      !assimilation if
+      ELSE
           a  = 0.0d0
           gs = g0 
           ci = ca
+          !print*, 'No assimilation:',a,gs,ci,ga,cs
 
         !end assimilation if
-        ENDIF
+      ENDIF
 
-      !if(output.and.(mnth.eq.omnth).and.(day.eq.oday)) then
-      !  print*, qsunlit+qshade,a,gs,ci
-      !  print*, ''
-      !endif
+      if(output.and.(mnth.eq.omnth).and.(day.eq.oday)) then
+         print*, 'ASSIMILATION_CALC returns:', qsunlit+qshade,a,gs,ci
+         print*, ''
+      endif
 
       END SUBROUTINE
 
@@ -998,6 +1030,8 @@
       gs =  GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
 
       ci = cs - a*1.0e-6*p/gs
+      if (ci .lt. 1.0d-6) ci = 1.0d-6
+      if (ci .gt. cs)     ci = cs
       gam = 1.0d0 - 0.5d0*oi/tau/ci
       fa0 = a - (gam*vmx*ci/(ci + kc*(1.0d0 + oi/ko)) -
      &rd)*1.0e6
@@ -1013,6 +1047,8 @@
 !     &1.54d0*t))*kg
         gs =  GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
         ci = cs - a*1.0e-6*p/gs
+        if (ci .lt. 1.0d-6) ci = 1.0d-6
+        if (ci .gt. cs)     ci = cs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
         faf = a - (gam*vmx*ci/(ci + kc*(1.0d0 + oi/ko)) -
      &rd)*1.0e6
@@ -1031,6 +1067,8 @@
 !     &1.54d0*t))*kg
         gs =  GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
         ci = cs - a*1.0e-6*p/gs
+        if (ci .lt. 1.0d-6) ci = 1.0d-6
+        if (ci .gt. cs)     ci = cs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
       ELSE
         a = (a0 + af)/2.0d0
@@ -1039,6 +1077,8 @@
 !     &1.54d0*t))*kg
         gs =  GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
         ci = cs - a*1.0e-6*p/gs
+        if (ci .lt. 1.0d-6) ci = 1.0d-6
+        if (ci .gt. cs)     ci = cs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
         fa = a - (gam*vmx*ci/(ci + kc*(1.0d0 + oi/ko)) -
      &rd)*1.0e6
@@ -1070,6 +1110,8 @@
 !     &1.54d0*t))*kg
         gs =  GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
         ci = cs - a*1.0e-6*p/gs
+        if (ci .lt. 1.0d-6) ci = 1.0d-6
+        if (ci .gt. cs)     ci = cs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
 *      print'(6f10.3)',a,fa0,cs,gs,ci,gam
 *      print*
@@ -1118,6 +1160,8 @@
 !     &1.54d0*t))*kg
       gs =  GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
       ci = cs - a*1.0e-6*p/gs
+      if (ci .lt. 1.0d-6) ci = 1.0d-6
+      if (ci .gt. cs)     ci = cs
       gam = 1.0d0 - 0.5d0*oi/tau/ci
       fa0 = a - (gam*j*ci/4.0d0/(ci + oi/tau) -
      &rd)*1.0e6
@@ -1133,6 +1177,8 @@
 !     &1.54d0*t))*kg
         gs =  GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
         ci = cs - a*1.0e-6*p/gs
+        if (ci .lt. 1.0d-6) ci = 1.0d-6
+        if (ci .gt. cs)     ci = cs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
         faf = a - (gam*j*ci/4.0d0/(ci + oi/tau) -
      &rd)*1.0e6
@@ -1152,6 +1198,8 @@
 !     &1.54d0*t))*kg
         gs =  GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
         ci = cs - a*1.0e-6*p/gs
+        if (ci .lt. 1.0d-6) ci = 1.0d-6
+        if (ci .gt. cs)     ci = cs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
       ELSE
 
@@ -1161,6 +1209,8 @@
 !     &1.54d0*t))*kg
         gs =  GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
         ci = cs - a*1.0e-6*p/gs
+        if (ci .lt. 1.0d-6) ci = 1.0d-6
+        if (ci .gt. cs)     ci = cs
         gam = 1.0d0 - 0.5d0*oi/tau/ci
         fa = a - (gam*j*ci/4.0d0/(ci + oi/tau) -
      &rd)*1.0e6
@@ -1193,6 +1243,8 @@
 !     &1.54d0*t))*kg
       gs =  GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
       ci = cs - a*1.0e-6*p/gs
+      if (ci .lt. 1.0d-6) ci = 1.0d-6
+      if (ci .gt. cs)     ci = cs
       gam = 1.0d0 - 0.5d0*oi/tau/ci
 
       RETURN
@@ -1285,11 +1337,7 @@
 !      gs = gsmin + (x*a/(1.0d0 + dv/y)/(cs*10.0d0 - 
 !     &1.54d0*t))*kg
       rawden = (cs*10.0d0 - 1.54d0*t)*(1.0d0 + dv/1.5d0)
-      if (rawden.GT.0.0d0) then
-         gs_wood = x*a/rawden
-      else
-         gs_wood = 0.0d0
-      endif
+      gs_wood = x*a/max(rawden,1.0d-3)
       
       END
 
@@ -1729,6 +1777,8 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
       cs   = ca - a*1.0e-6*p/ga
       gs   = GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
       ci   = cs - a*1.0e-6*p/gs
+      if (ci .lt. 1.0d-6) ci = 1.0d-6
+      if (ci .gt. cs)     ci = cs
       faf  = a - c4_colim(ci,p,rd,alpha,q,vmax,kt)
       a0   = a
       fa0  = faf
@@ -1739,6 +1789,8 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
         cs  = ca - a*1.0e-6*p/ga
         gs  = GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
         ci  = cs - a*1.0e-6*p/gs
+        if (ci .lt. 1.0d-6) ci = 1.0d-6
+        if (ci .gt. cs)     ci = cs
         faf = a - c4_colim(ci,p,rd,alpha,q,vmax,kt)
       !IF ((faf.LT.0.0d0).and.(a.le.maxa+1)) THEN
       IF (faf.LT.0.0d0) THEN
@@ -1762,6 +1814,8 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
         cs = ca - a*1.0e-6*p/ga
         gs = GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
         ci = cs - a*1.0e-6*p/gs
+        if (ci .lt. 1.0d-6) ci = 1.0d-6
+        if (ci .gt. cs)     ci = cs
         fa = a - c4_colim(ci,p,rd,alpha,q,vmax,kt)
 
         bx = ((a+a0)*(faf-fa)/(af-a)-(af+a)*(fa-fa0)/(a-a0))/(a0-af)
@@ -1794,6 +1848,8 @@ c      if(i.eq.1) print'(3f14.8)', vcmax_maire,ci,light
       cs = ca - a*1.0e-6*p/ga
       gs = GS_LEAF(g1,a,dv,t,cs,gs_func,g0,kg)
       ci = cs - a*1.0e-6*p/gs
+      if (ci .lt. 1.0d-6) ci = 1.0d-6
+      if (ci .gt. cs)     ci = cs
 
       RETURN
       END
