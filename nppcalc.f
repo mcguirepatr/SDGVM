@@ -642,11 +642,13 @@
             if(ii.eq.1) maxlight(:) = 
      &fsunlit_sd(:)*qsunlit_sd(:)+fshade_sd(:)*qshade_sd(:)
 
-            print*, 'Anppcalc: ',iyear,mnth,day
-            print*, 'Aci(:): ',ci(:)
-            print*, 'Aci_sd(:): ',ci_sd(:)
-            print*, 'Asd_scale(:): ',sd_scale(:)
-            print*, 'Asd_scale2: ',sd_scale2
+            if(output) then
+               print*, 'Anppcalc: ',iyear,mnth,day
+               print*, 'Aci(:): ',ci(:)
+               print*, 'Aci_sd(:): ',ci_sd(:)
+               print*, 'Asd_scale(:): ',sd_scale(:)
+               print*, 'Asd_scale2: ',sd_scale2
+            endif 
 
           !sub-daily loop
           ENDDO
@@ -870,7 +872,7 @@
               a  = fshade*ashade
               ci = fshade*pcshade
               gs = fshade*gsshade
-              if(i.eq.1) print*, 'C3 sun:',a,gs,ci,ga,cs
+              !if(i.eq.1) print*, 'C3 sun:',a,gs,ci,ga,cs
             ENDIF
 
             IF (fsunlit.GT.0.01d0) THEN
@@ -890,7 +892,7 @@
               a  = a  + fsunlit*asunlit
               ci = ci + fsunlit*pcsunlit
               gs = gs + fsunlit*gssunlit
-              if(i.eq.1) print*, 'C3 sun:',a,gs,ci,ga,cs
+              !if(i.eq.1) print*, 'C3 sun:',a,gs,ci,ga,cs
             ENDIF
 
           !C3/C4 if
@@ -903,7 +905,7 @@
               a  = fshade*ashade
               ci = fshade*pcshade
               gs = fshade*gsshade
-              print*, 'C4 shade:',a,gs,ci,ga,cs
+              !print*, 'C4 shade:',a,gs,ci,ga,cs
             ENDIF
             IF (fsunlit.GT.0.01d0) THEN
               !print*, 'C4 sun0:',ca,vmx,rh,kg,t,qsunlit
