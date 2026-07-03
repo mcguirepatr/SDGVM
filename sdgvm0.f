@@ -3729,7 +3729,8 @@ C PCM2     &ft,soilc(ft),s1(ft),year,mnth,day
      &ce_light(:,:,ft),ce_ci(:,:,ft),ce_t,
      &ce_maxlight(:,:,ft),ce_ga(:,:,ft),ce_rh,
      &sl,hrs,ttype,calc_zen,iyear,
-     &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft))
+     &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft),
+     &debug)
       
 C PCM2      print*,'d2 ','tmp,prc,hum,cld,ft,soilc(ft),s1(ft),year,mnth,day'
 C PCM2      print*,'d2 ',tmp(mnth,day),prc(mnth,day),hum(mnth,day),cld(mnth), 

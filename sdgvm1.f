@@ -501,7 +501,7 @@
       ofmt(29)  ='(i4,1x,12f10.2,f10.2)'
       ofmt(30)  ='(i4,1x,12f10.2,f10.2)'
       ofmt(31)  ='(i4,1x,12f10.2,f10.2)'
-      ofmt(32)  ='(i4,1x,12f10.2,f10.2)'
+      ofmt(32)  ='(i4,1x,12f10.4,f10.4)'
       ofmt(33)  ='(i4,1x,12f10.2,f10.2)'
       ofmt(34)  ='(i4,1x,12f10.2,f10.2)'
       ofmt(35)  ='(i4,1x,12f10.2,f10.2)'
@@ -551,8 +551,8 @@
      & read MONTHLY DAILY or ALL.'
           WRITE(*,'('' "'',A,''"'')') st1(1:blank(st1))
           WRITE(*,*) 'Output variable options:'
-          WRITE(*,'(1x,20a4)') (otags(j),j=1,15)
-          WRITE(*,'(1x,20a4)') (otags(j),j=16,douts)
+          WRITE(*,'(1x,21a4)') (otags(j),j=1,15)
+          WRITE(*,'(1x,21a4)') (otags(j),j=16,douts)
           STOP
         ENDIF
         CALL STRIPBS(st1,st2)
@@ -609,7 +609,7 @@
 *                          ***************************                 *
 *----------------------------------------------------------------------*
       SUBROUTINE SET_SUBPIXEL_OUT(st1,st2,outyears,
-     &otagsnft,otags,oymdft,out_cov,out_bio,out_bud,out_sen)
+     &otagsnft,otags,oymdft,out_cov,out_bio,out_bud,out_sen,out_yie)
 *----------------------------------------------------------------------*
       IMPLICIT NONE
       INCLUDE 'array_dims.inc'
@@ -618,12 +618,13 @@
       INTEGER blank,l,ntags,outyears
       CHARACTER otags(douts)*1000,st1*1000,st2*1000,st3*1000
       CHARACTER st4*1000,st5*1000
-      LOGICAL out_cov,out_bio,out_bud,out_sen
+      LOGICAL out_cov,out_bio,out_bud,out_sen,out_yie
 
       out_cov = .false.
       out_bio = .false.
       out_bud = .false.
       out_sen = .false.
+      out_yie = .false.
 
       CALL STRIPB(st1)
       ii = n_fields(st1)
@@ -645,9 +646,9 @@
      & read MONTHLY DAILY or ALL.'
           WRITE(*,'('' "'',A,''"'')') st1(1:blank(st1))
           WRITE(*,*) 'Output variable options:'
-          WRITE(*,'(1x,20a4)') (otags(j),j=1,15)
-          WRITE(*,'(1x,20a4)') (otags(j),j=16,douts),
-     &'cov ','bio ','bud ','sen '
+          WRITE(*,'(1x,21a4)') (otags(j),j=1,15)
+          WRITE(*,'(1x,21a4)') (otags(j),j=16,douts),
+     &'cov ','bio ','bud ','sen ','yie '
           STOP
         ENDIF
         CALL STRIPBS(st1,st2)
@@ -693,19 +694,24 @@
                 IF (stcmp(st2,st3).EQ.1) THEN
                   out_sen = .true.
                 ELSE
-                  l = ntags(otags,st2)
-                  IF (l.NE.-9999) THEN
-                    otagsnft(l) = 1
+                  st3 = 'yie'
+                  IF (stcmp(st2,st3).EQ.1) THEN
+                    out_yie = .true.
                   ELSE
-                    WRITE(*,'('' PROGRAM TERMINATED'')')
-                    WRITE(*,*) 'Error in tag name in the ''SUBPIXEL'' li
-     &ne.'
-                    WRITE(*,'('' "'',A,''"'')') st2(1:blank(st2))
-                    WRITE(*,*) 'Available tag names:'
-                    WRITE(*,'(1x,20a4)') (otags(j),j=1,15)
-                    WRITE(*,'(1x,20a4)') (otags(j),j=16,douts),
-     &'cov ','bio ','bud ','sen '
-                    STOP
+                    l = ntags(otags,st2)
+                    IF (l.NE.-9999) THEN
+                      otagsnft(l) = 1
+                    ELSE
+                      WRITE(*,'('' PROGRAM TERMINATED'')')
+                      WRITE(*,*) 'Error in tag name in the ''SUBPIXEL''
+     & line.'
+                      WRITE(*,'('' "'',A,''"'')') st2(1:blank(st2))
+                      WRITE(*,*) 'Available tag names:'
+                      WRITE(*,'(1x,21a4)') (otags(j),j=1,15)
+                      WRITE(*,'(1x,21a4)') (otags(j),j=16,douts),
+     &'cov ','bio ','bud ','sen ','yie '
+                      STOP
+                    ENDIF
                   ENDIF
                 ENDIF
               ENDIF
@@ -720,6 +726,7 @@
         out_bio = .true.
         out_bud = .true.
         out_sen = .true.
+        out_yie = .true.
       ENDIF
 
 
