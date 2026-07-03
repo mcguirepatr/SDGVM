@@ -15,58 +15,58 @@ rm(list=ls())
 ########################
 
 # output timesteps to process
-annual  <- T
-monthly <- T
-daily   <- F
+annual   <- T
+monthly  <- T
+daily    <- F
 
 # stich output files from all grids into a single file, use multiple processors
-stich   <- T
-mc      <- F 
+stich    <- T
+mc       <- F 
 
 # delete sub-grid files once processesed
-delete  <- F 
+delete   <- F 
 
 # write CMOR(ish) netcdf output
-netcdf  <- F
+netcdf   <- F
 
 # simulation res 1x1 degree, F - 0.5 x 0.5 
-deg1    <- T
+deg1     <- T
 
 # main directory
-dir  <- '~/models/SDGVM/'
-#dir <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/'
+dir      <- '~/models/SDGVM/'
+#dir     <- '/group_workspaces/jasmin2/nexcs/pmcguire/TRENDYv8/'
 
 # source code tools directory
-fd   <- paste(dir,'src/sdgvm/tools/',sep='/')
-#fd   <- paste(dir,'sdgvm/tools/',sep='/')
+fd       <- paste(dir,'src/sdgvm/tools/',sep='/')
+#fd       <- paste(dir,'sdgvm/tools/',sep='/')
 
 # directory in which simulation directory lives
-wd   <- paste(dir,'run/',sep='/')
+wd       <- paste(dir,'run/',sep='/')
 
 # simulation directory
-sim  <- c('blank/')
+sim      <- c('blank/')
 
 # index array to index the above 'sim' vector
-pia  <- 1
+pia      <- 1
 
 # start year and number of years of data in SDGVM output files
-sty  <- 1700 
-ny   <- 319 
+sty      <- 1700 
+ny       <- 319 
 
 # years of output requested for netcdf
 outsyear <- NULL 
 outeyear <- NULL 
 
 # number of parallel grid directories 
-grids  <- 32 
+grids    <- 32 
 
 # number of cores to run the analysis over 
-cores  <- 8 
+cores    <- 8 
 
 #file names etc
-fend   <- '.dat'
-ncf    <- 'SDGVM'
-ncfend <- '.nc'
+fend     <- '.dat'
+ncf      <- 'SDGVM'
+ncfend   <- '.nc'
 
 
 # netcdf files to create
@@ -90,17 +90,28 @@ ncdf_mvars <- c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','r
 #ncdf_mvars <- 'laipft' 
 ncdf_mvars <- c('evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft')
 
+# site variables for single site output with multiple vars
+site_vars <- c('tas', 'ta', 'tsl', 'pr', 'hur', 'rsds', 'pot_evapotrans', 
+               'cVegd', 'cLitterd', 'cSoild', 'cLeafd', 'cRootd', 'cWoodd','cMiscd', 
+               'fVegLitter', 'fLitterSoil', 
+               'mrso', 'rzwc', 'mrsos', 'mrro', 'snw', 'mrsow', 
+               'evapotrans', 'tran', 'es', 'hfls',
+               'gpp', 'npp', 'nep', 'ra', 'rh', 'lai' )
+#site_vars <- NULL
+
 # nc file parameters
-mis_val   <- -99999
-nsites    <- 62220 
-lon       <- 0.5 
-lat       <- 0.5
-pftnames  <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
-#pftnames  <- c('BARE','CITY','C3')
+ncdf_file   <- NULL # only used for simulations of multiple sites that are spearate simulations but output is combined into a sinlge netcdf file
+mis_val     <- -99999
+nsites      <- 62220 
+site_number <- 1
+lon         <- 0.5 
+lat         <- 0.5
+pftnames    <- c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')
+#pftnames    <- c('BARE','CITY','C3')
 
 # specifiy a variable to process, this should be the filename not including the extension
 # - used to test whether the outputting is working correctly 
-var       <- NULL
+var         <- NULL
 
 # set variable for global attributes in netcdf files
 # person, email, institution
@@ -109,7 +120,13 @@ email       <- 'walkerap@ornl.gov'
 institution <- 'Oak Ridge National Laboratory'
 
 # project name
-project   <- 'TRENDYv9, 2020'
+project     <- 'TRENDYv9, 2020'
+
+# site name & and output directories for simulations at a site
+site            <- NULL
+rundir          <- 'run'
+rundir_previous <- '../ind'
+climgrass       <- F # switch for climgrass output style, not passsed properly, also alma is built into writenetcdf function
 
 
 ### Parse command line arguments   
@@ -125,6 +142,8 @@ if(length(commandArgs(T))>=1) {
 
 if(!annual)  ncdf_avars <- NULL
 if(!monthly) ncdf_mvars <- NULL
+
+fref <- if(!is.null(site)) paste(project,site,sep='_') else NULL
 
 if(deg1){
   #nsites <- 15417
@@ -152,6 +171,7 @@ if(netcdf) source('functions_netcdf.R')
 ### Start Program
 ##########################
 wd_list <- paste(wd,sim,'output/',sep='/')
+if(!is.null(site)) wd_list <- paste0(wd_list, rundir )
 print(wd_list)
 
 # if single variable specified process that and nothing else
@@ -182,8 +202,8 @@ if(stich) {
          annual=annual, monthly=monthly, daily=daily,
          mc.cores=cores, styear=sty, nyears=ny )
 
+  print("finished stich_sdgvm_mp_apply")
 }
-print("finished stich_sdgvm_mp_apply")
 
 
 # remove grid output now that combined files have been created
@@ -204,8 +224,11 @@ outnyears <- outeyear - outsyear + 1
 if(netcdf) lapply(wd_list[pia], write_sdgvm_netcdf,
                   afiles=ncdf_avars,
                   mfiles=ncdf_mvars,
+                  site_vars=site_vars,
+                  fref=fref,
                   mc=T, procs=cores,
-                  nsites=nsites, nyears=outnyears, styr=sty, lon=lon, lat=lat,
+                  nsites=nsites, nyears=outnyears, site_number=site_number, ncdf_file=ncdf_file,
+                  styr=sty, lon=lon, lat=lat,
                   osyr=outsyear, person=person, email=email, institution=institution )
 
 

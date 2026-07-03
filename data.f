@@ -866,6 +866,107 @@ C PCM2      WRITE(*,*) '111111111'
 
 *----------------------------------------------------------------------*
 *                                                                      *
+*                          SUBROUTINE EX_HET                           *
+*                          ******************                          *
+*                                                                      *
+* Extract clumpin index from xxxx database.                            *
+*                                                                      *
+*----------------------------------------------------------------------*
+      SUBROUTINE EX_HET(fname1,lat,lon,var,du)
+*----------------------------------------------------------------------*
+      REAL*8 lat,lon,lon0,latf,latr,lonr,xlat,xlon,var,rvar
+      INTEGER blank,row,col,recn,recl1,du,latn,lonn,i,ii,jj,kode
+      CHARACTER fname1*1000
+      INTEGER indx1(4,4)
+      REAL*8 xx1(4,4)
+      REAL*8 ynorm,xnorm,rrow,rcol
+      REAL*8 ans
+      LOGICAL l_soil
+
+      IF (du.eq.1) THEN
+        recl1 = 6
+      ELSE
+        recl1 = 6+1
+      ENDIF
+
+      OPEN(99,FILE=fname1(1:blank(fname1))//'/readme.dat',STATUS='old',
+     &iostat=kode)
+      IF (kode.NE.0) THEN
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'Land heterogeneity data file does not exist.'
+        WRITE(*,'('' "'',A,''/readme.dat"'')') fname1(1:blank(fname1))
+        STOP
+      ENDIF
+
+      READ(99,*)
+      READ(99,*)
+      READ(99,*) latf,lon0
+      READ(99,*)
+      READ(99,*) latr,lonr
+      READ(99,*)
+      READ(99,*) latn,lonn
+      CLOSE(99)
+
+*----------------------------------------------------------------------*
+* Find the real row col corresponding to lat and lon.                  *
+*----------------------------------------------------------------------*
+      rrow = (latf - lat)/latr
+      rcol = (lon - lon0)/lonr
+
+      ynorm = rrow - real(int(rrow))
+      xnorm = rcol - real(int(rcol))
+*----------------------------------------------------------------------*
+
+      OPEN(99,FILE=fname1(1:blank(fname1))//'/globHet_vector.dat',
+     &STATUS='old',FORM='formatted',ACCESS='direct',RECL=recl1,
+     &iostat=kode)
+      IF (kode.NE.0) THEN
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'Land heterogeneity data-base.'
+        WRITE(*,*) 'File does not exist:',fname1(1:blank(fname1)),
+     &'/globalHet_vector.dat'
+        WRITE(*,*) 'Or record length missmatch, 6.'
+        STOP
+      ENDIF
+
+      DO ii=1,4
+        DO jj=1,4
+          row = int(rrow)+jj-1
+          col = int(rcol)+ii-1
+          IF ((row.GE.1).AND.(row.LE.latn).AND.(col.GE.1).AND.
+     &(col.LE.lonn)) THEN
+            recn = (row-1)*lonn + col
+            READ(99,'(f5.3)',rec=recn) rvar
+            xx1(ii,jj) = rvar
+            IF (rvar.LT.0.0d0) THEN
+              indx1(ii,jj) = 0
+            ELSE
+              indx1(ii,jj) = 1
+            ENDIF
+          ELSE
+            indx1(ii,jj) = -1
+          ENDIF
+        ENDDO
+      ENDDO
+
+      CLOSE(99)
+
+      IF ((indx1(2,2).EQ.1).OR.(indx1(2,3).EQ.1).OR.(indx1(3,2).EQ.1).OR
+     &.(indx1(3,3).EQ.1)) THEN
+        CALL BI_LIN(xx1,indx1,xnorm,ynorm,ans)
+        var = ans
+        l_soil = .TRUE.
+      ELSE
+        PRINT*, 'No heterogeneity value in any central four gridcells'
+     & //' of the heterogeneity database' 
+        l_soil = .FALSE.
+      ENDIF
+
+      RETURN
+      END
+
+*----------------------------------------------------------------------*
+*                                                                      *
 *                          SUBROUTINE EX_LU                            *
 *                          ****************                            *
 *                                                                      *
