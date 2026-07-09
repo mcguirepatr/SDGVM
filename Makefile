@@ -1,5 +1,7 @@
 OBJ = sdgvm0.o sdgvm1.o data.o growth.o parameter_adjustment.o hydrology.o phenology.o func.o doly.o soil.o nppcalc.o light.o sunshade.o weathergenerator.o metdos.o luna.o
 FFLAGS= -fbounds-check -O3 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace 
+#For debugging:
+#FFLAGS= -g -fbounds-check -O0 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace -fcheck=all
 FF = gfortran
 
 # allow to work with macs
