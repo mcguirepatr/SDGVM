@@ -138,6 +138,7 @@
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
       LOGICAL year0set
+      LOGICAL debug
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -159,6 +160,9 @@
 *----------------------------------------------------------------------*
 * Read input filename.                                                 *
 *----------------------------------------------------------------------*
+      debug = .FALSE.
+      !debug = .TRUE.
+
 
       IF (IARGC().GT.0) THEN
         CALL GETARG(1,buff1)
