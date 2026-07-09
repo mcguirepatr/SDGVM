@@ -698,8 +698,8 @@
                     otagsnft(l) = 1
                   ELSE
                     WRITE(*,'('' PROGRAM TERMINATED'')')
-                    WRITE(*,*) 'Error in tag name in the ''SUBPIXEL'' li
-     &ne.'
+                    WRITE(*,*) 'Error in tag name in the ''SUBPIXEL''
+     & line.'
                     WRITE(*,'('' "'',A,''"'')') st2(1:blank(st2))
                     WRITE(*,*) 'Available tag names:'
                     WRITE(*,'(1x,20a4)') (otags(j),j=1,15)
