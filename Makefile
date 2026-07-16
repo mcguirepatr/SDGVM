@@ -7,6 +7,8 @@ FF = gfortran
 # allow to work with macs
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
+  unexport LD
+  export PATH := /usr/bin:/bin:/usr/sbin:/sbin:$(PATH)
   SDKROOT := $(shell xcrun --show-sdk-path 2>/dev/null)
   ifneq ($(SDKROOT),)
     LDFLAGS += -Wl,-syslibroot,$(SDKROOT)
