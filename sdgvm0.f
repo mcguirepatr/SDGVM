@@ -1097,7 +1097,8 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
 *----------------------------------------------------------------------*
 * Read in functional type parameterisation.                            *
 *----------------------------------------------------------------------*
-      pft_nflds = 35
+      !pft_nflds = 35
+      pft_nflds = 34
       IF(ttype.ge.1) pft_nflds = 40
 
       READ(98,'(A)') st1
@@ -1159,7 +1160,9 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
      &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
-     &ftg1(ft),ftkg(ft)
+     &ftg1(ft)
+      !&ftg1(ft),ftkg(ft)
+      ftkg(ft)    = 0.2d0
       ftToptV(ft) = 0.0d0
       ftHaV(ft)   = 0.0d0
       ftHdV(ft)   = 0.0d0
@@ -1250,7 +1253,9 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
      &ftbbm(ft),ftbb0(ft),ftbbmax(ft),ftbblim(ft),ftssm(ft),ftsss(ft),
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
-     &ftg1(ft),ftkg(ft)
+     &ftg1(ft)
+      !&ftg1(ft),ftkg(ft)
+      ftkg(ft)    = 0.2d0
       ftToptV(ft) = 0.0d0
       ftHaV(ft)   = 0.0d0
       ftHdV(ft)   = 0.0d0

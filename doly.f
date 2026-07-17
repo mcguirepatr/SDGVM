@@ -174,8 +174,8 @@ c Better: should be removed from nppcalc
 
       !Scaled by soil water limitation and temperature
       IF (soil2g.GT.wtwp) THEN
-        !kg = maxc*((soil2g - wtwp)/(wtfc - wtwp))**p_kgw
-        kg = maxc*((soil2g - wtwp)/(wtfc - wtwp))**ftkg
+        kg = maxc*((soil2g - wtwp)/(wtfc - wtwp))**p_kgw
+        !kg = maxc*((soil2g - wtwp)/(wtfc - wtwp))**ftkg
         IF (kg.GT.maxc)  kg = maxc
       ELSE
         kg = 0.0d0
@@ -228,7 +228,7 @@ c     z=reference height
 c     d=zero plane displacement
 c     z0=roughness length
 
-C      windspeed= 5.0d0 ! in m/s
+!      windspeed= 5.0d0 ! in m/s
       windspeed= wnd ! in m/s !PCM
 C      WRITE(*,*) 'windspeed = ',windspeed
 
