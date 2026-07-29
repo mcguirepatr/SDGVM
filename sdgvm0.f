@@ -2058,8 +2058,8 @@ c     read table of conversion from class to ft's proportion
 *----------------------------------------------------------------------*
 !PCM4 for running a single site in the main run from a gridded spinup;
 !PCM4 (other changes below)
-      DO site=111,111
-!      DO site=1,sites
+!      DO site=111,111
+      DO site=1,sites
 *----------------------------------------------------------------------*
 * closed_loop_ft:                                                      *
 *    standard setting is .FALSE.                                       *
