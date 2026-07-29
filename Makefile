@@ -1,6 +1,6 @@
-#FFLAGS= -fbounds-check -O3 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace 
+FFLAGS= -fbounds-check -O3 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace 
 #For debugging:
-FFLAGS= -g -fbounds-check -O0 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace -fcheck=all
+FFLAGS_DEBUG= -g -fbounds-check -O0 -Wuninitialized -ftrapv -fimplicit-none -fno-automatic -fbacktrace -fcheck=all
 NETCDFFLAGS= `nf-config --fflags`
 NETCDFLIBS= `nf-config --flibs`
 #HDF5LIBS= `h5cc -show`
@@ -12,6 +12,9 @@ OBJ = states_convertSDGVM_func.o sdgvm0.o sdgvm1.o data.o growth.o growth2.o par
 
 sdgvm0:	$(OBJ)
 	$(FF) $(FFLAGS)  -o sdgvm0 $(OBJ) $(NETCDFFLAGS) $(NETCDFLIBS) $(HDF5LIBS)
+
+debug:	$(OBJ)
+	$(FF) $(FFLAGS_DEBUG)  -o sdgvm0 $(OBJ) $(NETCDFFLAGS) $(NETCDFLIBS) $(HDF5LIBS)
 
 tmp:	$(OBJ)
 	$(FF) $(FFLAGS)  -o tmp $(OBJ) $(NETCDFFLAGS) $(NETCDFLIBS) $(HDF5LIBS)
