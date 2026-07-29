@@ -373,7 +373,7 @@ C     The following scalars convert from read units to sdgvm0 expected units
           xtmpv(year-yr0+1,mnth,day)= tmpv(year-yr0+1,mnth,day)*TMP_MULT
           xprcv(year-yr0+1,mnth,day)= prcv(year-yr0+1,mnth,day)*PRC_MULT
           xhumv(year-yr0+1,mnth,day)= humv(year-yr0+1,mnth,day)*HUM_MULT
-          xwndv(year-yr0+1,mnth,day)= wndv(year-yr0+1,mnth,day)*HUM_MULT
+          xwndv(year-yr0+1,mnth,day)= wndv(year-yr0+1,mnth,day)*WND_MULT
          ENDIF
         ENDDO
       ENDDO
