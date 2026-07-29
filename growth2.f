@@ -133,7 +133,8 @@ C The following ordering is the order of ft's in the input.dat file
              CALL ADJUST_FTPROP(nft,n_at,NS,ft,
      &            sum_cov,ftprop,ftprop_init,ftprops,
      &            aggmap_SDGVM_to_aggHyde,ft2frac,
-     &            atprop2,corrct_ft,corrct_ft2,lat,woodh,debug)
+     &            atprop2,corrct_ft,corrct_ft2,lat,atharvest,
+     &            woodh,debug)
           end if
         endif
 
@@ -444,7 +445,7 @@ C The following ordering is the order of ft's in the input.dat file
       SUBROUTINE ADJUST_FTPROP(nft,n_at,NS,ft,
      &  sum_cov,ftprop,ftprop_init,ftprops,
      &  aggmap_SDGVM_to_aggHyde,ft2frac,atprop2,corrct_ft,
-     &  corrct_ft2,lat,woodh,debug)
+     &  corrct_ft2,lat,atharvest,woodh,debug)
 
       INCLUDE 'array_dims.inc'
       LOGICAL :: debug !used to print out more debugging info
