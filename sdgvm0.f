@@ -39,7 +39,7 @@
       REAL*8 sumbio,ans1,ftstmx(maxnft),leaflit(maxnft),stemlit(maxnft)
       REAL*8 rootlit(maxnft),ftwd(maxnft),ftxyl(maxnft),ftpd(maxnft)
       REAL*8 ftsla(maxnft),ftcov(maxnft),lon0,lonf,ftrat(maxnft),kd,kx
-      REAL*8 input_ftsla(maxnft)
+      REAL*8 input_ftsla(maxnft),peak_lai,ftkg(maxnft)
       REAL*8 ftvna(maxnft),ftvnb(maxnft),ftjva(maxnft),ftjvb(maxnft)
       REAL*8 ftg0(maxnft),ftg1(maxnft),amax(maxnft),vcmax_from_amax
       REAL*8 stembio,rootbio,sum,solcoo,biotoo,lutab(255,100),awl(4)
@@ -69,7 +69,7 @@
       REAL*8 soilpr,soilp_init,kg(maxnft),kg_beta,ftcan_clump(maxnft)
       REAL*8 map_clump,w_scalar,t_scalar,leafv_sum,stemv_sum,rootv_sum
       REAL*8 aprc_dryqv(10),aprc_dryq,yearprcdryq,prc_week(52),prcq(52)
-      REAL*8 matvar,aprc_rel,a2,b2,flulccc
+      REAL*8 map_het,matvar,aprc_rel,a2,b2,flulccc
       REAL*8 jmax_int(maxnft),jmax_int_er(maxnft)
       REAL*8 jmax_ci_low,jmax_ci_high
       REAL*8 ftToptV(maxnft),ftHaV(maxnft),ftHdV(maxnft)
@@ -81,7 +81,7 @@
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
-      INTEGER mswitch,subd_par,switch3,no_slw_lim
+      INTEGER mswitch,subd_par,switch3,no_slw_lim,read_het
       INTEGER soilcn_map,soilp_map,vcmax_type,ncalc_type,read_par,ttype
       INTEGER sites,cycle,yr0,yrf,snp_no,snpshts(1000),dschill(maxnft)
       INTEGER ftbbm(maxnft),ftssm(maxnft),ftsss(maxnft),n_fields
@@ -140,7 +140,7 @@
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
       LOGICAL year0set
-      LOGICAL debug
+      LOGICAL debug !used to print out more debugging info
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -525,9 +525,9 @@ C        WRITE(*,*) 'bbbb'
         CALL STRIPBN(st1,i) 
         !switch stomatal conductance function
         IF (i.gt.-1)  gs_func = i 
-        !CALL STRIPBN(st1,i) 
-        !switch electron transport function
-        !IF (i.gt.-1)  hw_j = i 
+        CALL STRIPBN(st1,i) 
+        !switch to read land heterogeneity
+        IF (i.gt.-1)  read_het = i 
       ELSE !
         WRITE(*,'('' PROGRAM TERMINATED'')') !
         WRITE(*,*) 'Line 11 must contain 5 fields' !
@@ -595,6 +595,7 @@ C        WRITE(*,*) 'bbbb'
         soilcn_map = 0
         phen_cor   = 0 
         hw_j       = 0
+        read_het   = 0
       ENDIF
 
       IF(SDGVM_140129) THEN
@@ -616,6 +617,7 @@ C        WRITE(*,*) 'bbbb'
         soilcn_map = 0
         phen_cor   = 1
         hw_j       = 0
+        read_het   = 1 
       ENDIF
 
       if(goudriaan_old) hw_j = 3
@@ -978,7 +980,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       st2 = 'BARE'
       IF ((stcmp(st2,st1).EQ.0).OR.(n_fields(st1).NE.2)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'Line 19 must read "BARE" forllowed by a number (0-1)
+        WRITE(*,*) 'Line 19 must read "BARE" followed by a number (0-1)
      &.'
         STOP
       ENDIF
@@ -989,7 +991,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       st2 = 'CITY'
       IF ((stcmp(st2,st1).EQ.0).OR.(n_fields(st1).NE.2)) THEN
         WRITE(*,'('' PROGRAM TERMINATED'')')
-        WRITE(*,*) 'Line 19 must read "BARE" forllowed by a number (0-1)
+        WRITE(*,*) 'Line 19 must read "BARE" followed by a number (0-1)
      &.'
         STOP
       ENDIF
@@ -1039,6 +1041,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       ftToptJ(ft) = 0.0d0
       ftHaJ(ft)   = 0.0d0
       ftHdJ(ft)   = 0.0d0
+      ftkg(ft)    = 0.0d0
       vcmax(:,ft) = 0.0d0
       jmax(:,ft)  = 0.0d0
       pnlc(:,ft)  = 0.0d0
@@ -1085,6 +1088,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       ftToptJ(ft) = 0.0d0
       ftHaJ(ft)   = 0.0d0
       ftHdJ(ft)   = 0.0d0
+      ftkg(ft)    = 0.0d0
       vcmax(:,ft) = 0.0d0
       jmax(:,ft)  = 0.0d0
       pnlc(:,ft)  = 0.0d0
@@ -1093,6 +1097,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
 *----------------------------------------------------------------------*
 * Read in functional type parameterisation.                            *
 *----------------------------------------------------------------------*
+      !pft_nflds = 35
       pft_nflds = 34
       IF(ttype.ge.1) pft_nflds = 40
 
@@ -1156,6 +1161,8 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
      &ftg1(ft)
+      !&ftg1(ft),ftkg(ft)
+      ftkg(ft)    = 0.2d0
       ftToptV(ft) = 0.0d0
       ftHaV(ft)   = 0.0d0
       ftHdV(ft)   = 0.0d0
@@ -1247,6 +1254,8 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
      &ftsslim(ft),ftstmx(ft),ftgr0(ft),ftgrf(ft),ftppm0(ft),
      &ftcan_clump(ft),ftvna(ft),ftvnb(ft),ftjva(ft),ftjvb(ft),ftg0(ft),
      &ftg1(ft)
+      !&ftg1(ft),ftkg(ft)
+      ftkg(ft)    = 0.2d0
       ftToptV(ft) = 0.0d0
       ftHaV(ft)   = 0.0d0
       ftHdV(ft)   = 0.0d0
@@ -2062,8 +2071,16 @@ C PCM2        WRITE(*,*) 'bbbbbbbbb'
       !if no clumping set canopy clumping index to 1
         ftcan_clump(:) = 1
       ELSEIF(read_clump.eq.2)THEN
-        CALL EX_CLUMP(stlu,lat,lon,map_clump,du)
+        CALL EX_CLUMP(stmask,lat,lon,map_clump,du)
         ftcan_clump(:) = map_clump
+      ENDIF
+
+*----------------------------------------------------------------------*
+* Read in land cover heterogeneity index from a map                    *
+*----------------------------------------------------------------------*
+      IF(read_het.eq.1)THEN
+        CALL EX_HET(stmask,lat,lon,map_het,du)
+        ftmix(:) = map_het
       ENDIF
 
 *----------------------------------------------------------------------*
@@ -2665,6 +2682,9 @@ c     &site_dat,lat,lon,ca
         snp_year = 1
 
 !        soilt = 10.0d0
+
+      ! simple, non-robust initialisation of peak_lai
+      peak_lai = 0.0d0 
 
 *----------------------------------------------------------------------*
 *                               Year Loop                              *
@@ -3733,7 +3753,7 @@ C PCM2     &ft,soilc(ft),s1(ft),year,mnth,day
      &ce_maxlight(:,:,ft),ce_ga(:,:,ft),ce_rh,
      &sl,hrs,ttype,calc_zen,iyear,
      &ftToptV(ft),ftHaV(ft),ftHdV(ft),ftToptJ(ft),ftHaJ(ft),ftHdJ(ft),
-     &debug)
+     &peak_lai,ftkg(ft),debug)
       
 C PCM2      print*,'d2 ','tmp,prc,hum,cld,ft,soilc(ft),s1(ft),year,mnth,day'
 C PCM2      print*,'d2 ',tmp(mnth,day),prc(mnth,day),hum(mnth,day),cld(mnth), 
@@ -4079,7 +4099,7 @@ c     check water cycle closure
 
       CALL GROWTH(nft,ftmor,ftwd,ftxyl,ftpd,ftgr0,ftgrf,cov,bio,
      &nppstore,npp,lai,nps,npr,evp,slc,rlc,sln,rln,stembio,rootbio,ppm,
-     &hgt,leaflit)
+     &hgt,leaflit,ftphen)
 
       CALL SWAP(ic0,in0,iminn,is1,is2,is3,is4,isn,ilsn,tc0,tn0,
      &tminn,ts1,ts2,ts3,ts4,tsn,tlsn)

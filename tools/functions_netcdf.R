@@ -12,11 +12,14 @@ library(ncdf4)
 library(lattice)
 
 source('params_netcdf.R')
+source('read_SDGVM_output.R')
+  
   
   
 ########################
 # Function to take concatenated SDGVM output and process to TRENDY netcdf output format
-write_sdgvm_netcdf <- function(wd, afiles=NULL, mfiles=NULL, dfiles=NULL,
+write_sdgvm_netcdf <- function(wd, afiles=NULL, mfiles=NULL, dfiles=NULL, site_vars=NULL,
+                               fref=NULL,
                                mc=F, procs=4, ... ) {
   
   
@@ -26,26 +29,28 @@ write_sdgvm_netcdf <- function(wd, afiles=NULL, mfiles=NULL, dfiles=NULL,
   setwd(wd)
  
   # scan the directory name for the simlation id, passed thru functions to generate output filename  
-  if(grepl('T1',wd)) fref   <- 'T1'
-  if(grepl('T2',wd)) fref   <- 'T2'
-  if(grepl('T3',wd)) fref   <- 'T3'
-  if(grepl('Stest',wd)) fref <- 'Stest'
-  if(grepl('spin_short',wd)) fref   <- 'spin_short'
-  if(grepl('spin_accel',wd)) fref   <- 'spin_accel'
-  if(grepl('S0',wd)) fref   <- 'S0'
-  if(grepl('S1',wd)) fref   <- 'S1'
-  if(grepl('S2',wd)) fref   <- 'S2'
-  if(grepl('S3',wd)) fref   <- 'S3'
-  if(grepl('S4',wd)) fref   <- 'S4'
-  if(grepl('S5',wd)) fref   <- 'S5'
-  if(grepl('S6',wd)) fref   <- 'S6'
-  if(grepl('S7',wd)) fref   <- 'S7'
-  if(grepl('S8',wd)) fref   <- 'S8'
-  if(grepl('S9',wd)) fref   <- 'S9'
-  if(grepl('tpu0',wd)) fref <- 'tpu0'
-  if(grepl('tpu1',wd)) fref <- 'tpu1'
-  if(grepl('tpu2',wd)) fref <- 'tpu2'
-  if(grepl('tpu3',wd)) fref <- 'tpu3'
+  if(is.null(fref)) {
+    if(grepl('T1',wd)) fref   <- 'T1'
+    if(grepl('T2',wd)) fref   <- 'T2'
+    if(grepl('T3',wd)) fref   <- 'T3'
+    if(grepl('Stest',wd)) fref <- 'Stest'
+    if(grepl('spin_short',wd)) fref   <- 'spin_short'
+    if(grepl('spin_accel',wd)) fref   <- 'spin_accel'
+    if(grepl('S0',wd)) fref   <- 'S0'
+    if(grepl('S1',wd)) fref   <- 'S1'
+    if(grepl('S2',wd)) fref   <- 'S2'
+    if(grepl('S3',wd)) fref   <- 'S3'
+    if(grepl('S4',wd)) fref   <- 'S4'
+    if(grepl('S5',wd)) fref   <- 'S5'
+    if(grepl('S6',wd)) fref   <- 'S6'
+    if(grepl('S7',wd)) fref   <- 'S7'
+    if(grepl('S8',wd)) fref   <- 'S8'
+    if(grepl('S9',wd)) fref   <- 'S9'
+    if(grepl('tpu0',wd)) fref <- 'tpu0'
+    if(grepl('tpu1',wd)) fref <- 'tpu1'
+    if(grepl('tpu2',wd)) fref <- 'tpu2'
+    if(grepl('tpu3',wd)) fref <- 'tpu3'
+  }
 
   print('',quote=F)
   print('',quote=F)
@@ -75,7 +80,7 @@ write_sdgvm_netcdf <- function(wd, afiles=NULL, mfiles=NULL, dfiles=NULL,
     if(monthly) lapply(mfiles,make_netcdf_TRENDY,monthly=monthly,fref=fref,...)
   }
   if(daily)   lapply(dfiles,make_netcdf_TRENDY,daily=daily,fref=fref,...)        
-
+  if(!is.null(site_vars)) make_netcdf_site(site_vars, daily=T, fref=fref, ... )        
 }
 
 
@@ -86,9 +91,11 @@ slice <- function(i,l,nsites){
 }
 
 
-make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
+make_netcdf_TRENDY <- function(varo, 
+                               annual=F, monthly=F, daily=F, fref='',
                                nsites=1548, nyears=110, osyr=1901, lon=3.75, lat=2.5, mv=-99999,
                                person='Anthony P. Walker', email='walkerap@ornl.gov', institution='Oak Ridge National Laboratory',  ... ) {
+
 
   # creates netcdf and call the read write function
   var <- get(varo)
@@ -121,9 +128,9 @@ make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
   
 
   # create the nc dimensions
-  nclon   <- ncdim_def( name='longitude',units='degrees_east',vals=(seq(-180+lon/2,180-lon/2,lon)) )
-  nclat   <- ncdim_def( name='latitude',units='degrees_north',vals=(seq(-90+lat/2,90-lat/2,lat)) )
-  nctime  <- ncdim_def( name='time',units=paste('hours since ',osyr,'-01-01 00:00:00',sep=''),vals=time_seq,unlim=T )
+  nclon   <- ncdim_def(name='longitude', units='degrees_east',  vals=(seq(-180+lon/2,180-lon/2,lon)) )
+  nclat   <- ncdim_def(name='latitude',  units='degrees_north', vals=(seq(-90+lat/2,90-lat/2,lat)) )
+  nctime  <- ncdim_def(name='time', units=paste('hours since ',osyr,'-01-01 00:00:00',sep=''),vals=time_seq,unlim=T )
   if(!is.null(pft)) ncpft <- ncdim_def( name='PFT',units='pft id, see global attributes',vals=1:length(pft) )
   
 
@@ -165,12 +172,12 @@ make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
   # if by pft output required 
   if(is.null(pft)) {
     fnamefull <- paste(fname,'dat',sep='.')  
-    newnc     <- readSDGVM_writeNCDF(fnamefull,var,newnc,ncvar,cs,NULL,
+    newnc     <- readSDGVM_writeNCDF(fnamefull,var,newnc,ncvar,cs,1,NULL,
                                      lat,lon,nyears,nsites,sa,mv,osyr,...) 
   } else { 
     for( p in pft ) {
       fnamefull <- paste(fname,'_',p,'.dat',sep='')
-      newnc     <- readSDGVM_writeNCDF(fnamefull,var,newnc,ncvar,cs,which(pft==p), 
+      newnc     <- readSDGVM_writeNCDF(fnamefull,var,newnc,ncvar,cs,1,which(pft==p), 
                                        lat,lon,nyears,nsites,sa,mv,osyr,...) 
     }
   }
@@ -182,19 +189,261 @@ make_netcdf_TRENDY <- function(varo, annual=F, monthly=F, daily=F, fref='',
 }
 
 
-readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
-                                lat,lon,nyears,nsites,sa,mv,osyr,styr,
-                                ... ) {
+# test year vector for leap years
+leap_year <- function(year) {
+  ifelse((year%%4==0 & year%%100!=0) | year%%400==0, TRUE, FALSE )
+}
+
+
+# creates netcdf and call the read write function
+make_netcdf_site <- function(vars='gpp', alma=T, pftfile=F, annual=F, monthly=F, daily=F, fref='',
+                             nsites=1, site_number=1, ncdf_file=NULL, nyears=110, osyr=1901, lon=0.0, lat=0.0, mv=-99999,
+                             person='Anthony P. Walker', email='walkerap@ornl.gov', 
+                             institution='Oak Ridge National Laboratory',  ... ) {
+
+  # does the netcdf file have a pft dimension?
+  pft   <- if(pftfile) pftnames else NULL 
+
+  # variables to write from SDGVM site_info.dat
+  si_vars <- c('sand', 'silt', 'BD', 'carbon', 'wilt', 'field', 'sat' )
+
+  # read site info
+  df_si <- read_SDGVM_site_info()
+
+  # read sites lat lon file - if multisite, otherwise use site info 
+  if(!is.null(ncdf_file)) { 
+    ncdf_file <- paste0('../../../output/',ncdf_file)
+    df_coord  <- read.csv('../../../sites.csv')
+    
+    # check this is the same length as nsites
+    if(nsites!=length(df_coord[,1]) | site_number>length(df_coord[,1]) ) {
+      stop('netcdf nsites or site_number incompatible with "sites.csv"')
+    }
+
+    lon <- df_coord$lon 
+    lat <- df_coord$lat 
+    ncdf_osyr   <- min(df_coord$sy)
+    ncdf_nyears <- max(df_coord$ey) - ncdf_osyr + 1
+    preosyr_nyears <- osyr - ncdf_osyr
+    preosyr_ndays  <- 365*preosyr_nyears + sum(leap_year(ncdf_osyr:(ncdf_osyr+preosyr_nyears-1)))
+
+  } else {
+    lon <- df_si$lon 
+    lat <- df_si$lat 
+    ncdf_osyr   <- osyr
+    ncdf_nyears <- nyears
+    preosyr_ndays <- 0
+  }
+
+
+  # create netcdf file
+  if(site_number==1) {
+    
+    # create the nc dimensions
+    nclon <- ncdim_def(name='longitude', units='degrees_east', vals=lon )
+    nclat <- ncdim_def(name='latitude', units='degrees_north', vals=lat )
+    if(!is.null(pft)) {
+      ncpft <- ncdim_def(name='PFT', units='pft id, see global attributes', vals=1:length(pft) )
+      print('',quote=F)
+      print('',quote=F)
+      print('Processing PFTs:',quote=F)
+    } 
+    
+    # initialise time dimension 
+    ncdf_lyears <- sum(leap_year(ncdf_osyr:(ncdf_osyr+ncdf_nyears-1)))
+    ncdf_end <- 24*(365*ncdf_nyears+ncdf_lyears) 
+   
+    # annmonth is for variables that are annual output from SDGVM but are required in monthly format 
+    #if(annual&is.null(var$annmonth)) {
+    #  st <- 24*365    ; sa <- 1
+    #} else if(monthly|!is.null(var$annmonth)) {
+    #  st <- 24*30     ; sa <- 12
+    #} else if(daily) {
+      st <- 24        ; sa <- 365   
+    #}
+    # provides time at mid-point of timestep 
+    print('')
+    print('')
+    print(st)
+    print(ncdf_end)
+    print(ncdf_nyears)
+    time_seq <- seq(st,ncdf_end,st) - st/2
+    nctime   <- ncdim_def( name='time',units=paste('hours since ',ncdf_osyr,'-01-01 00:00:00',sep=''),vals=time_seq,unlim=T )
+    
+    # create the ncdf4 object(s) of the var(s)
+    print('',quote=F)
+    print('Processing dynamic variable:',quote=F)
+    for( varo in vars ) {
+      var <- get(varo)
+ 
+      vname <- if(alma&!is.null(var$alma_name)) var$alma_name else var$name 
+      vname <- if(climgrass&!is.null(var$climgrass_name)) var$climgrass_name else vname 
+      print(vname, quote=F )
+ 
+      vunits <- if(climgrass) gsub('s-1', 'd-1', var$units ) else var$units
+      vunits <- if(climgrass & !is.null(var$scale_to_g)) gsub('kg', 'g', vunits ) else vunits
+      print(vunits, quote=F )
+
+      if(!is.null(pft)) ncvar <- ncvar_def( name=vname, units=vunits, dim=list(nclon,nclat,ncpft,nctime), missval=mv, longname=var$lname )
+      else              ncvar <- ncvar_def( name=vname, units=vunits, dim=list(nclon,nclat,nctime), missval=mv, longname=var$lname )
+  
+      # create ncvars vector
+      ncvars <- if(varo==vars[1]) list(ncvar) else c(ncvars,list(ncvar)) 
+    }
+  
+    # create additional site-level variables in netcdf
+    print('',quote=F)
+    print('Processing static variable:',quote=F)
+    for( varo in si_vars ) {
+      var <- SDGVM_site_info_vars[[varo]]
+      vname <- var$name 
+      print(vname,quote=F)
+      ncvar <- ncvar_def( name=vname, units=var$units, dim=list(nclon,nclat), missval=mv, longname=var$lname )
+  
+      # create ncvars vector
+      ncvars <- c(ncvars,list(ncvar)) 
+    }
+  
+    # determine netcdf filename
+    if(is.null(ncdf_file) & nsites==1) ncdf_file <- paste0(paste('SDGVM',fref,rundir,osyr,osyr+nyears-1,sep='_'),'.nc')
+
+    # create the nc file given the vars
+    print('',quote=F)
+    print('Creating netcdf file:',quote=F)
+    print(ncdf_file,quote=F)
+    newnc <- nc_create(ncdf_file, ncvars )
+    
+    # set attributes
+    ncatt_put(newnc,'time',attname='calendar',attval='Gregorian, inc. leap years')
+  
+    # set global attributes
+    conventions <- if(alma) 'ALMA' else 'CF-1.4 (or close)'
+    conventions <- if(climgrass) 'ClimGrass (sort of ALMA)' else conventions 
+    ncatt_put(newnc,0,attname='title',attval=paste('SDGVM output for', project ))
+    ncatt_put(newnc,0,attname='Conventions',attval=conventions)
+    ncatt_put(newnc,0,attname='institution',attval=institution)
+    ncatt_put(newnc,0,attname='history',attval=paste('created:',as.character(as.POSIXlt(Sys.time())),', by:',person,paste0('(',email,')')))
+    if(!is.null(var$notes)) ncatt_put(newnc,0,attname='notes',attval=var$notes)
+    if(!is.null(pft))       ncatt_put(newnc,0,attname='PFTs',attval=paste(paste(pft,collapse=' '),'. PFT distributions were derived by combining the LUH2v2h land-use and land-cover change database with the ESA GLCP 2014 data categorised according to SDGVM PFTs.',sep='') )
+ 
+ 
+  } else { # new netcdf file setup if 
+ 
+    # open existing file
+    newnc <- nc_open(ncdf_file, write=T )
+ 
+    for( varo in vars ) {
+      var    <- get(varo)
+      vname  <- if(alma&!is.null(var$alma_name)) var$alma_name else var$name 
+      ncvars <- if(varo==vars[1]) vname else c(ncvars,vname)
+    }
+
+    for( varo in si_vars ) {
+      var    <- SDGVM_site_info_vars[[varo]]
+      vname  <- var$name
+      ncvars <- c(ncvars,vname)
+    }
+
+    print('',quote=F)
+    print(paste('Adding variables:'),quote=F)
+    print(ncvars,quote=F)
+    print('to existing file:',quote=F)
+    print(ncdf_file,quote=F)
+
+  }
+
+  
+  # add static site variables to netcdf
+  print('',quote=F)
+  print(paste('Adding static variable:'),quote=F)
+  siv <- 1
+  for( varo in si_vars ) {
+    var <- SDGVM_site_info_vars[[varo]]
+    print(var$col_name,quote=F)
+    ncvar_put(newnc, ncvars[[length(vars)+siv]], df_si[[var$col_name]], start=c(site_number,site_number), count=c(1,1) )
+    siv <- siv + 1
+  }
+
+  
+  # extract total veg biomass - calculated from the sum of other variables
+  if('cVegd'%in%vars) {
+    ss_cveg <- which(vars=='cVegd')
+    vars    <- vars[-ss_cveg]
+    ncvars  <- ncvars[-ss_cveg]
+  }  
+
+
+  # variable data reading & writing loop
+  for( v in 1:length(vars) ) {
+    var <- get(vars[v])
+   
+    print('',quote=F)
+    print('',quote=F)
+    print(paste('Reading variable:',var$name),quote=F)
+   
+    # data filename 
+    fname <- var$file
+    if(monthly) fname <- paste('monthly',var$file,sep='_')
+    if(daily)   fname <- paste('daily',var$file,sep='_')
+    cs <- 3
+    if(monthly) cs <- 4
+
+    # if by pft output required 
+    if(is.null(pft)) {
+      fnamefull <- paste(fname,'dat',sep='.') 
+      #print(paste('  from file:',fnamefull), quote=F ) 
+      newnc     <- readSDGVM_writeNCDF(fnamefull, var, newnc, ncvars[[v]], cs, site_number, NULL, 
+                                       180, 360, nyears, 1, sa, mv, osyr, daily=daily, preosyr_ndays=preosyr_ndays, ... ) 
+     
+    } else { 
+
+      for( p in pft ) {
+        fnamefull <- paste(fname, '_', p, '.dat', sep='')
+        newnc     <- readSDGVM_writeNCDF(fnamefull, var, newnc, ncvars[[v]], cs, site_number, which(pft==p),  
+                                         180, 360, nyears, 1, sa, mv, osyr, daily=daily, preosyr_ndays=preosyr_ndays, ... ) 
+      }
+    }
+  }
+
+
+  # calculate total veg biomass from leaf, wood, and root mass
+  if(exists('ss_cveg')) {
+    if('cLeafd'%in%vars & 'cWoodd'%in%vars & 'cRootd'%in%vars ) {
+      
+      total_bio <- ncvar_get(newnc, 'cLeaf', start=c(1,1,1) )
+      bio1      <- ncvar_get(newnc, 'cWood', start=c(1,1,1) )
+      bio2      <- ncvar_get(newnc, 'cRoot', start=c(1,1,1) )
+      total_bio <- total_bio + bio1 + bio2 
+      ncvar_put(newnc, 'cVeg', total_bio )
+
+    } else {
+      warning('cVegd requested but not calculated as one or all of cLeafd, cWoodd, cRootd not requested.')
+    }
+  }
+
+
+  # write the file
+  print(newnc)
+  nc_close(newnc)  
+}
+
+
+
+readSDGVM_writeNCDF <- function(fname, var, newnc, ncvar, cs, site_number=1, pftid=NULL, 
+                                lat, lon, nyears, nsites, sa, mv, osyr, styr, daily=F, 
+                                 preosyr_ndays=0, ... ) {
+
 
   # if SDGVM output is the same variable as required
   if(length(var$file)==1) {
-    df <- read.table( fname )    
+    df <- if(nsites>1) read.table(fname) else read_SDGVM_daily(fname, styr, styr+nyears-1 )     
   
   # if SDGVM output needs to be combined to create a composite variable
   } else {  
 
     for(file in fname) {
-      df1 <- read.table( file )    
+      #df1 <- read.table(file)    
+      df1 <- if(nsites>1) read.table(file) else read_SDGVM_daily(file, styr, styr+nyears-1 ) 
 
       # sum the data in the multiple files - could make more flexible
       if(file==fname[1]) {
@@ -207,35 +456,22 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
     }
     # need to write a check in here
   }
+  
 
   print('Read file(s):',quote=F)
   print(fname,quote=F)
   print(head(df),quote=F)
   print('',quote=F)
 
+
   # for monthly grid square NBP remove fire flux, lulcc flux, and leached DOC flux
-  if(fname=='monthly_nep.dat') {
+  if(fname[1]=='monthly_nep.dat') {
 
     #print('Made it to routine to add C fluxes to nep')
 
     m1 <- as.matrix(read.table('lch.dat'))
     m2 <- as.matrix(read.table('lulccc.dat'))
     m3 <- as.matrix(read.table('fcn.dat'))
-
-    #print('')
-    #print(df[1:12,cs:length(df)])  
-    #print('')
-    #print(apply(m1[,(dim(m1)[2]-length(df)+cs):dim(m1)[2]], 2, function(v) rep(v,each=12)/12 )[1:12,] )  
-    #print('')
-    #print(apply(m2[,(dim(m2)[2]-length(df)+cs):dim(m2)[2]], 2, function(v) rep(v,each=12)/12 )[1:12,] )  
-    #print('')
-    #print(apply(m3[,(dim(m3)[2]-length(df)+cs):dim(m3)[2]], 2, function(v) rep(v,each=12)/12 )[1:12,] ) 
-
-    #print('')
-    #print(sum(df[,cs:length(df)]))  
-    #print(sum(apply(m1[,(dim(m1)[2]-length(df)+cs):dim(m1)[2]], 2, function(v) rep(v,each=12)/12 )))  
-    #print(sum(apply(m2[,(dim(m2)[2]-length(df)+cs):dim(m2)[2]], 2, function(v) rep(v,each=12)/12 )))  
-    #print(sum(apply(m3[,(dim(m3)[2]-length(df)+cs):dim(m3)[2]], 2, function(v) rep(v,each=12)/12 ))) 
 
     df[,cs:length(df)] <- df[,cs:length(df)] - 
 				apply(m1[,(dim(m1)[2]-length(df)+cs):dim(m1)[2]], 2, function(v) rep(v,each=12)/12 ) - 
@@ -245,9 +481,37 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
   } 
 
 
+  # for biomass variables add previous year biomass to current year 'living' (i.e. respiring) biomass
+  if(var$name=='cWood' | var$name=='cRoot') {
+    
+    ifile <- if(var$name=='cWood') 'stembio.dat' else 'rootbio.dat'
+    v_bio  <- scan(ifile) 
+    v_pbio <- scan(paste(rundir_previous,ifile, sep='/' )) 
+    v_cbio <- c(v_pbio[length(v_pbio)], v_bio[3:(length(v_bio)-1)] )
+
+    days_in_y <- lyears <- leap_year(osyr:(osyr+nyears-1))
+    days_in_y[] <- 365
+    days_in_y[lyears] <- 366
+
+    repv    <- function(v) rep(v[1],each=v[2])
+    v_dbio  <- as.vector(unlist(apply(cbind(v_cbio,days_in_y),1,repv)))
+    df[,cs] <- df[,cs] + v_dbio
+  } 
+
+
   # scale variable to correct output units
-  if( var$name %in% c('tas') )  df[,cs:length(df)] <- df[,cs:length(df)] + var$scale
-  else                          df[,cs:length(df)] <- df[,cs:length(df)] * var$scale
+  print('Native SDGVM scale:', quote=F )
+  print(df[,cs:length(df)][1:6])
+  scale_day  <- if(daily&!is.null(var$scale_day)) var$scale_day else 1 
+  scale_day  <- if(climgrass & scale_day!=1) scale_day * 3600 * 24 else 1 
+  scale_to_g <- if(climgrass & !is.null(var$scale_to_g)) var$scale_to_g else 1 
+  if( var$name %in% c('tas','ta','tsl') )  df[,cs:length(df)] <- df[,cs:length(df)] + var$scale
+  else                                     df[,cs:length(df)] <- df[,cs:length(df)] * var$scale * scale_day * scale_to_g
+  print('Scaling factor:', quote=F )
+  print(var$scale * scale_day * scale_to_g)
+  print('Scaled data:', quote=F )
+  print(df[,cs:length(df)][1:6])
+
 
   # expand annual SDGVM variables to monthly TRENDY output 
   if(!is.null(var$annmonth)) {
@@ -262,65 +526,50 @@ readSDGVM_writeNCDF <- function(fname,var,newnc,ncvar,cs,pftid=NULL,
     rm(df1)
   } 
 
+
   # rename lats and lons
   df$lats  <- (df[,1] + 90)/lat  + 1
   df$lons  <- (df[,2] + 180)/lon + 1
 
+
   # put the data into an nc ready array
-  time_sub <- unlist(lapply(1:nyears, slice, l=sa, nsites=nsites ))
-#  print(nyears)
-#  print(sa)
-#  print(nsites)
-#  print(time_sub)
-#  print(df)
-  smat     <- if(!is.null(pftid)) cbind(rep(df$lons,nyears), rep(df$lats,nyears), 1, time_sub ) else 
-                                  cbind(rep(df$lons,nyears), rep(df$lats,nyears), time_sub )
-  rm(time_sub)
-  
-  # create an nc ready array 
-  a_dim    <- if(!is.null(pftid)) c(360/lon,180/lat,1,nyears*sa) else 
-                                  c(360/lon,180/lat,nyears*sa)
+  if(lon==360) { 
+    tsteps <- length(df[,1])  
+    smat   <- if(!is.null(pftid)) cbind(1, 1, 1, 1:tsteps ) else 
+                                  cbind(1, 1, 1:tsteps )
+    ce     <- 3
+
+  } else {
+
+    tsteps   <- nyears*sa
+    time_sub <- unlist(lapply(1:nyears, slice, l=sa, nsites=nsites ))
+#    print(nyears)
+#    print(sa)
+#    print(nsites)
+#    print(time_sub)
+#    print(df)
+    smat     <- if(!is.null(pftid)) cbind(rep(df$lons,nyears), rep(df$lats,nyears), 1, time_sub ) else 
+                                    cbind(rep(df$lons,nyears), rep(df$lats,nyears), time_sub )
+    rm(time_sub)
+    ce <- nyears + cs - 1
+  }
+
+
+  # create an nc ready array
+  a_dim    <- if(!is.null(pftid)) c(360/lon,180/lat,1,tsteps) else 
+                                  c(360/lon,180/lat,tsteps)
   da       <- array(mv,dim=a_dim)
 
-#  PCM: commented out the following block
-#  # remove unneeded columns from df & convert to matrix
-#  # lat & lon
-#  df       <- df[,-c(1:(cs-1))]
-#  cdim     <- dim(df)[2] - 2
-#  df       <- df[,-c((cdim+1):(cdim+2))]
-#  # years of output not requested
-#  #if(nyears!=cdim) df <- df[,-(1:(cdim-nyears))]
-#  if(nyears!=cdim) {
-#    osyr_ss <- osyr - styr
-#    df <- df[,-(1:osyr_ss)]
-#    if(nyears!=dim(df)[2]) df <- df[,1:nyears]
-#  }
-#  df <- as.matrix(df)
-
-  # put the data into an nc ready array 
-  #as.vector(as.matrix(df[,cs:(nyears+cs-1)]))
-  #da[smat] 
-  #print('Read file2(s):',quote=F)
-  #print(fname,quote=F)
-  #print(head(df),quote=F)
-  #print('',quote=F)
-  #print('Read file3(s):',quote=F)
-  #print(fname,quote=F)
-  #print(head(df[,cs:(nyears+cs-1)]),quote=F)
-  #print('',quote=F)
-  da[smat] <- as.vector(as.matrix(df[,cs:(nyears+cs-1)])) #PCM
-  #print('Read file4(s):',quote=F)
-  #print(fname,quote=F)
-  #print(da[smat],quote=F)
-  #print('',quote=F)
-#PCM  #da[smat] <- as.vector(df)
+  da[smat] <- as.vector(as.matrix(df[,cs:ce])) 
   rm(df); rm(smat)
   
+
   # put the data into the ncfile
-  if(!is.null(pftid)) ncvar_put(newnc, ncvar, da, start=c(1,1,pftid,1), count=a_dim )
-  else                ncvar_put(newnc, ncvar, da )
+  if(!is.null(pftid)) ncvar_put(newnc, ncvar, da, start=c(site_number,site_number,pftid,preosyr_ndays+1), count=a_dim )
+  else                ncvar_put(newnc, ncvar, da, start=c(site_number,site_number,preosyr_ndays+1), count=a_dim )
   rm(da)
 
+  # return netcdf
   newnc
 }
 

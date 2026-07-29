@@ -1,22 +1,22 @@
 UNIX
-/home/alp/models/SDGVM/input_data/clim/global/cru-ncep/30min
-/home/alp/models/SDGVM/input_data/stats/global/era40/30min
-/home/alp/models/SDGVM/input_data/soil/global/islscp2/2deg/0-150_plus_CtoN_soilP
-/home/alp/models/SDGVM/input_data/land_use/global/GLOB2009/30min
-/home/alp/models/SDGVM/input_data/co2/SCRIPPS_spline_merged_ice_core_yearly.dat
-28.00
-/home/alp/models/SDGVM/input_data
+#HOME##DATA#/clim/global/cru-ncep_v8/30min
+#HOME##DATA#/stats/global/era40/30min
+#HOME##DATA#/soil/global/islscp2/2deg/0-150_plus_CtoN_soilP
+#HOME##DATA#/land_use/global/ESACCILCP2014/30min
+#HOME##DATA#/co2/global_co2_ann_1860_2016_TRENDY.dat
+-1.0
+#HOME##DATA#
 2
 0 1 1 0 0 0
-1 8 0 0 0 0 
+1 8 0 0 0 1 
 
-./
+ARGUMENT
 ARGUMENT
 
-1 0 0 0
-500 1901 20 1 1901 2012
-PIXEL MONTHLY 22 gpp npp nep swc evt lai tmp prc rof rsp srp snw vcm jmx
-SUBPIXEL MONTHLY 2 gpp cov
+0 0 0
+41 1901 20 0 1901 2016 157
+PIXEL    MONTHLY 157 tmp prc qdr qdf swc snw rof evt gpp rsp npp srp nep trn lai vcm jmx
+SUBPIXEL MONTHLY 157 evt trn bse snw bio gpp npp cov lai
 SNAPSHOTS 
 
 BARE  1.0

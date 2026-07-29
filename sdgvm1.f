@@ -501,7 +501,7 @@
       ofmt(29)  ='(i4,1x,12f10.2,f10.2)'
       ofmt(30)  ='(i4,1x,12f10.2,f10.2)'
       ofmt(31)  ='(i4,1x,12f10.2,f10.2)'
-      ofmt(32)  ='(i4,1x,12f10.2,f10.2)'
+      ofmt(32)  ='(i4,1x,12f10.4,f10.4)'
       ofmt(33)  ='(i4,1x,12f10.2,f10.2)'
       ofmt(34)  ='(i4,1x,12f10.2,f10.2)'
       ofmt(35)  ='(i4,1x,12f10.2,f10.2)'
@@ -551,8 +551,8 @@
      & read MONTHLY DAILY or ALL.'
           WRITE(*,'('' "'',A,''"'')') st1(1:blank(st1))
           WRITE(*,*) 'Output variable options:'
-          WRITE(*,'(1x,20a4)') (otags(j),j=1,15)
-          WRITE(*,'(1x,20a4)') (otags(j),j=16,douts)
+          WRITE(*,'(1x,21a4)') (otags(j),j=1,15)
+          WRITE(*,'(1x,21a4)') (otags(j),j=16,douts)
           STOP
         ENDIF
         CALL STRIPBS(st1,st2)

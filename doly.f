@@ -23,7 +23,7 @@
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,no_slw_lim,par_loops,s070607,
      &gs_func,ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,
      &sl,hrs,ttype,calc_zen,iyear,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,debug)
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,peak_lai,ftkg,debug)
 
 *----------------------------------------------------------------------*
       REAL*8 oi
@@ -46,12 +46,12 @@
       REAL*8 rootnpp,leafnpp,tfscale,s_gpp,s_rr,s_rn,s_sr,s_sn,canrd
       REAL*8 swr,tleaf_n,tleaf_p,tassim,tgs,tci,env_vcmax,env_jmax
       REAL*8 s_lr,s_ln,sswc(4),maxlai,yield,yld,resp,fpr,dayra,gsm
-      REAL*8 sm_trig(30),s1in,tsumam,stemfr,lmor_sc(3600),nleaf
+      REAL*8 sm_trig(30),s1in,tsumam,stemfr,lmor_sc(3600),nleaf,ftkg
       REAL*8 leaf_nit,vcmax(12),jmax(12),pnlc(12),enzs(12),leafresp
       REAL*8 rootresp,stemresp
       REAL*8 windspeed_eff,wtsf,canga0
       REAL*8 ce_light(30,12),ce_ci(30,12),ce_t(30),cos_zen,kg,can_clump
-      REAL*8 ce_maxlight(30,12),ce_ga(30,12),ce_rh(30)
+      REAL*8 ce_maxlight(30,12),ce_ga(30,12),ce_rh(30),peak_lai
       REAL*8 z_m,z_om,z_oh,zpdh
       INTEGER leafls,stemls,rootls,bbm,ssm,sss,ftphen,c3,thty_dys,ft
       INTEGER mnth,i,iter,no_day,ndsum(12),lai,day,year,bb,bbgs
@@ -175,6 +175,7 @@ c Better: should be removed from nppcalc
       !Scaled by soil water limitation and temperature
       IF (soil2g.GT.wtwp) THEN
         kg = maxc*((soil2g - wtwp)/(wtfc - wtwp))**p_kgw
+        !kg = maxc*((soil2g - wtwp)/(wtfc - wtwp))**ftkg
         IF (kg.GT.maxc)  kg = maxc
       ELSE
         kg = 0.0d0
@@ -227,7 +228,7 @@ c     z=reference height
 c     d=zero plane displacement
 c     z0=roughness length
 
-C      windspeed= 5.0d0 ! in m/s
+!      windspeed= 5.0d0 ! in m/s
       windspeed= wnd ! in m/s !PCM
 C      WRITE(*,*) 'windspeed = ',windspeed
 
@@ -287,7 +288,7 @@ C     https://www.fao.org/4/X0490E/x0490e06.htm#(bulk)%20surface%20resistance%20
      &ftvna,ftvnb,ftjva,ftjvb,ftg0,ftg1,par_loops,s070607,gs_func,
      &ce_light,ce_ci,ce_t,ce_maxlight,ce_ga,ce_rh,ttype,
      &calc_zen,cos_zen,iyear,
-     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,debug)
+     &ftToptV,ftHaV,ftHdV,ftToptJ,ftHaJ,ftHdJ,peak_lai,debug)
 
 c      write(*,*) 'o',canga,can2a,can2g,canres,suma
 
@@ -431,27 +432,39 @@ c     added by Ghislain 20/10/03
 
       IF (veg) THEN
         nppstore = nppstore + daynpp
-        IF (ftphen.EQ.1) THEN
-          CALL PHENOLOGY1(ftagh,ftdth,bbm,bb0,bbmax,bblim,ssm,sss,sslim,
+!        IF (uphen.EQ.0) THEN
+!        IF (ftphen.EQ.1) THEN
+!          CALL PHENOLOGY1(ftagh,ftdth,bbm,bb0,bbmax,bblim,ssm,sss,sslim,
+!     &nppstore,leafnpp,stemnpp,rootnpp,tran,rlai,lai,lairat,rem,leafls,
+!     &stemls,rootls,leafmol,respref,soil2g,wtwp,tmem,leafv,stemv,rootv,
+!     &daysoff,laimax,lflit,smlit,rtlit,mnth,day,s_ln,s_sr,s_sn,s_rr,
+!     &s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,maxlai,
+!     &wtfc,yld,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,chill,
+!     &dschill,dayra,leafresp,rootresp,stemresp,
+!     &phen_cor,s070607)
+!        ELSEIF (ftphen.EQ.2) THEN
+!          CALL PHENOLOGY2(bbm,bb0,bbmax,bblim,ssm,sss,sslim,
+!     &nppstore,leafnpp,stemnpp,rootnpp,tran,rlai,lai,lairat,rem,leafls,
+!     &stemls,rootls,leafmol,respref,soil2g,wtwp,tmem,leafv,stemv,rootv,
+!     &daysoff,laimax,lflit,smlit,rtlit,mnth,day,s_ln,s_sr,s_sn,s_rr,
+!     &s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,maxlai,
+!     &wtfc,yld,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,chill,
+!     &dschill,dayra,leafresp,rootresp,stemresp)
+!        ELSE
+!          WRITE(*,*) 'No phenology defined for ',ftphen
+!          STOP
+!        ENDIF
+
+        CALL PHENOLOGY(ftphen,ftagh,ftdth,bbm,bb0,bbmax,bblim,ssm,sss,
+     &sslim,
      &nppstore,leafnpp,stemnpp,rootnpp,tran,rlai,lai,lairat,rem,leafls,
      &stemls,rootls,leafmol,respref,soil2g,wtwp,tmem,leafv,stemv,rootv,
      &daysoff,laimax,lflit,smlit,rtlit,mnth,day,s_ln,s_sr,s_sn,s_rr,
      &s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,maxlai,
      &wtfc,yld,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,chill,
      &dschill,dayra,leafresp,rootresp,stemresp,
-     &phen_cor,s070607)
-        ELSEIF (ftphen.EQ.2) THEN
-          CALL PHENOLOGY2(bbm,bb0,bbmax,bblim,ssm,sss,sslim,
-     &nppstore,leafnpp,stemnpp,rootnpp,tran,rlai,lai,lairat,rem,leafls,
-     &stemls,rootls,leafmol,respref,soil2g,wtwp,tmem,leafv,stemv,rootv,
-     &daysoff,laimax,lflit,smlit,rtlit,mnth,day,s_ln,s_sr,s_sn,s_rr,
-     &s_rn,bb,ss,bbgs,dsbb,nppstorx,nppstor2,daynpp,maxlai,
-     &wtfc,yld,resp,sm_trig,suma,tsumam,stemfr,lmor_sc,chill,
-     &dschill,dayra,leafresp,rootresp,stemresp)
-        ELSE
-          WRITE(*,*) 'No phenology defined for ',ftphen
-          STOP
-        ENDIF
+     &phen_cor,s070607,kg,peak_lai)
+
         leaflit = leaflit + lflit * 12.0d0 * leafmol
         yield   = yield   + yld   * 12.0d0 * leafmol
         stemlit = stemlit + smlit * 12.0d0
