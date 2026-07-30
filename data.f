@@ -514,7 +514,8 @@ C PCM2          WRITE(*,'(30F5.1)') xwndv(1,mnth,1:30)/WND_MULT/WND_MULT
      &status='old',iostat=kode)
       ENDIF
 
-      INQUIRE(file=fname6, exist=wndf_exists)
+      INQUIRE(file=stinput(1:blank(stinput))//'/wnd.dat',
+     &exist=wndf_exists)
       IF (wndf_exists) THEN
         OPEN(fno+6,file=stinput(1:blank(stinput))//'/wnd.dat',
      &status='old',iostat=kode)
