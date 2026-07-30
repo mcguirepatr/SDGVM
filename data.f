@@ -203,7 +203,7 @@
       INTEGER*2 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31) !PCM
       INTEGER*2 wndv(500,12,31) !PCM
       REAL*8 TMP_MULT,PRC_MULT,HUM_MULT,PRC_MULT1,WND_MULT
-      logical debug
+      LOGICAL debug,windf_exists
 
       IF (du.eq.1) THEN
         !recl1 = 730  !PCM
@@ -277,8 +277,15 @@ C         OPEN(fno+4,file=fname4,access='direct',recl=recl1, !PCM
 C     &form='unformatted',status='old')                      !PCM
         OPEN(fno+4,file=fname4,access='direct',recl=recl3,   !PCM
      &form='formatted',status='old')                         !PCM
-        OPEN(fno+5,file=fname5,access='direct',recl=recl3,   !PCM
+
+        INQUIRE(file=fname5, exist=wndf_exists)
+        IF (.not. wndf_exists) THEN
+           PRINT *, 'File does not exist: ', trim(fname5)
+        ! Handle missing file
+        ELSE
+           OPEN(fno+5,file=fname5,access='direct',recl=recl3,!PCM
      &form='formatted',status='old')                         !PCM
+        ENDIF
 
         IF (du.eq.1) THEN
         DO year=yr0,yrf
@@ -295,9 +302,11 @@ C     &form='unformatted',status='old')                      !PCM
      & READ(fno+4,1002,                          !PCM
      & REC=(siteno-1)*nyears+year-year0+1)
      &jj, ((swrv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
-            READ(fno+5,1001,                     !PCM
+            if (wndf_exists) THEN
+                READ(fno+5,1001,                     !PCM
      & REC=(siteno-1)*nyears+year-year0+1) jj,
      &((wndv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
+            endif
 C            DO mnth=1,12
 C              DO day=1,30
 C                prcv(year-yr0+1,mnth,day) = 
@@ -327,9 +336,11 @@ C            write(*,*) (siteno-1)*nyears+year-year0+1
      &READ(fno+4,1002,                       !PCM
      & REC=(siteno-1)*nyears+year-year0+1)
      &ii, ((swrv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
-            READ(fno+5,1001,                   !PCM
+            if (wndf_exists) THEN
+                READ(fno+5,1001,                   !PCM
      & REC=(siteno-1)*nyears+year-year0+1) ii,
      &((wndv(year-yr0+1,mnth,day),day=1,30),mnth=1,12)
+            endif
 C PCM            DO mnth=1,12
 C PCM              DO day=1,30
 C PCM                prcv(year-yr0+1,mnth,day) = 
@@ -341,7 +352,9 @@ C PCM            ENDDO
         CLOSE(fno+1)
         CLOSE(fno+2)
         CLOSE(fno+3)
-        CLOSE(fno+5)
+        if (wndf_exists) THEN
+           CLOSE(fno+5)
+        endif
 
       ENDIF
 
@@ -374,7 +387,12 @@ C     The following scalars convert from read units to sdgvm0 expected units
           xtmpv(year-yr0+1,mnth,day)= tmpv(year-yr0+1,mnth,day)*TMP_MULT
           xprcv(year-yr0+1,mnth,day)= prcv(year-yr0+1,mnth,day)*PRC_MULT
           xhumv(year-yr0+1,mnth,day)= humv(year-yr0+1,mnth,day)*HUM_MULT
-          xwndv(year-yr0+1,mnth,day)= wndv(year-yr0+1,mnth,day)*WND_MULT
+          if (wndf_exists) THEN
+             xwndv(year-yr0+1,mnth,day)=
+     & wndv(year-yr0+1,mnth,day)*WND_MULT
+          else
+             xwndv(year-yr0+1,mnth,day)= 5.0 !no wind file supplied; using 5 m/s
+          endif
          ENDIF
         ENDDO
       ENDDO
@@ -472,7 +490,7 @@ C PCM2          WRITE(*,'(30F5.1)') xwndv(1,mnth,1:30)/WND_MULT/WND_MULT
       REAL*8 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31)
       INTEGER year,year0,yearf,yr0,mnth,day,yrf,iyear,imnth,iday
       INTEGER blank,no_days,fno,cld_default,kode,read_par
-      LOGICAL cloud
+      LOGICAL cloud,wndf_exists
       CHARACTER stinput*1000
 
       cld_default = 50
@@ -495,8 +513,12 @@ C PCM2          WRITE(*,'(30F5.1)') xwndv(1,mnth,1:30)/WND_MULT/WND_MULT
         OPEN(fno+5,file=stinput(1:blank(stinput))//'/swr.dat',
      &status='old',iostat=kode)
       ENDIF
-      OPEN(fno+6,file=stinput(1:blank(stinput))//'/wnd.dat',
+
+      INQUIRE(file=fname6, exist=wndf_exists)
+      IF (wndf_exists) THEN
+        OPEN(fno+6,file=stinput(1:blank(stinput))//'/wnd.dat',
      &status='old',iostat=kode)
+      ENDIF
 
       DO year=year0,yearf
         READ(fno+1,*) iyear,tmp
@@ -504,7 +526,9 @@ C PCM2          WRITE(*,'(30F5.1)') xwndv(1,mnth,1:30)/WND_MULT/WND_MULT
         READ(fno+3,*) iyear,hum
         IF (cloud)     READ(fno+4,*) iyear,cld
         IF (read_par.eq.1)  READ(fno+5,*) iyear,cld
-        READ(fno+6,*) iyear,wnd
+        IF (wndf_exists) THEN
+           READ(fno+6,*) iyear,wnd
+        ENDIF
         IF (iyear.NE.year) THEN
           WRITE(*,'('' PROGRAM TERMINATED'')')
           WRITE(*,*) 'Error in climate data file',year,mnth,day
@@ -522,7 +546,11 @@ C PCM2          WRITE(*,'(30F5.1)') xwndv(1,mnth,1:30)/WND_MULT/WND_MULT
               cldv(year-yr0+1,mnth) = cld_default
             ENDIF
             IF (read_par.eq.1) swrv(year-yr0+1,mnth,1) = swr(mnth)
-            wndv(year-yr0+1,mnth,1) = wnd(mnth)
+            IF (wndf_exists) THEN
+               wndv(year-yr0+1,mnth,1) = wnd(mnth)
+            ELSE
+               wndv(year-yr0+1,mnth,1) = 5.0  
+            ENDIF
           ENDDO
         ENDIF
 
@@ -533,7 +561,9 @@ C PCM2          WRITE(*,'(30F5.1)') xwndv(1,mnth,1:30)/WND_MULT/WND_MULT
       CLOSE(fno+3)
       CLOSE(fno+4)
       CLOSE(fno+5)
-      CLOSE(fno+6)
+      IF (wndf_exists) THEN
+         CLOSE(fno+6)
+      ENDIF
 
       RETURN
       END

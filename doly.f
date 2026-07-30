@@ -227,7 +227,11 @@ c     d=zero plane displacement
 c     z0=roughness length
 
 C      windspeed= 5.0d0 ! in m/s
-      windspeed= wnd ! in m/s !PCM
+
+C      This is set to 5 m/s in data.f if the wind file doesn't exist. 
+C         Otherwise, if the wind file exists, the wind values are read
+C         in from there.
+       windspeed= wnd ! in m/s !PCM
 C      WRITE(*,*) 'windspeed = ',windspeed
 
 C PCM      canga = 0.168d0*windspeed/log((200.0d0 - 
