@@ -22,6 +22,9 @@ sdgvm0:	$(OBJ)
 debug:	$(OBJ)
 	$(FF) $(FFLAGS_DEBUG)  -o sdgvm0 $(OBJ)
 
+debug:	$(OBJ)
+	$(FF) $(FFLAGS_DEBUG)  -o sdgvm0 $(OBJ)
+
 %.o: %.f
 	$(FF) $(FFLAGS) $(LDFLAGS)  -c $<
 
