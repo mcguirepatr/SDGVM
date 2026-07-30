@@ -203,7 +203,7 @@
       INTEGER*2 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31) !PCM
       INTEGER*2 wndv(500,12,31) !PCM
       REAL*8 TMP_MULT,PRC_MULT,HUM_MULT,PRC_MULT1,WND_MULT
-      LOGICAL windf_exists
+      LOGICAL wndf_exists
 
       IF (du.eq.1) THEN
         !recl1 = 730  !PCM
@@ -504,7 +504,8 @@ C PCM2      WRITE(*,*) '111111111'
      &status='old',iostat=kode)
       ENDIF
 
-      INQUIRE(file=fname6, exist=wndf_exists)
+      INQUIRE(file=stinput(1:blank(stinput))//'/wnd.dat',
+     &exist=wndf_exists)
       IF (wndf_exists) THEN
         OPEN(fno+6,file=stinput(1:blank(stinput))//'/wnd.dat',
      &status='old',iostat=kode)
