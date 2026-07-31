@@ -1,0 +1,34 @@
+#!/bin/bash
+
+SRCDIR=/gws/nopw/j04/nexcs/pmcguire/TRENDYv13/sdgvm_bugfix_negsoilc/tools
+ARGS="nsites<-15759 grids<-100 cores<-8 fd<-'${SRCDIR}' dir<-'/work/scratch-pw2/pmcguire/sdgvmR' wd<-'/work/scratch-pw2/pmcguire/sdgvmR/TRENDYv13_v9e' sim<-'S1' outputdir<-'output_v10c/' email<-'p.mcguire@reading.ac.uk' project<-'TRENDYv13(2024)'"
+PARG="person<-'Patrick C. McGuire'" 
+IARG="institution<-'University of Reading'" 
+TIMEARGS="ny<-324 sty<-1700"
+TIMEARGSMON="ny<-324 sty<-1700"
+
+
+cd $SRCDIR
+# stich gridded output together
+ALLARGS="${ARGS} ${TIMEARGS} monthly<-F daily<-F netcdf<-F"
+Rscript postprocess_mp.R ${ALLARGS}
+
+# generate netcdf output
+ALLARGS="${ARGS} ${TIMEARGS} stich<-F netcdf<-T monthly<-F daily<-F"
+Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
+ALLARGS="${ARGS} ${TIMEARGSMON} stich<-F netcdf<-T monthly<-F daily<-F ncdf_avars<-c('cVegpft','landCoverFrac','cYieldpft')"
+Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
+ALLARGS="${ARGS} ${TIMEARGS} outsyear<-1900 stich<-F netcdf<-T monthly<-F daily<-F ncdf_avars<-c('fFire','fLuc')"
+Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
+
+# stich sub-annual gridded output together - monthly
+ALLARGS="${ARGS} ${TIMEARGSMON} netcdf<-F annual<-F daily<-F"
+Rscript postprocess_mp.R ${ALLARGS}
+
+# generate sub-annual netcdf output - monthly
+ALLARGS="${ARGS} ${TIMEARGSMON} stich<-F netcdf<-T annual<-F daily<-F"
+Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
+
+
+
+### END ###

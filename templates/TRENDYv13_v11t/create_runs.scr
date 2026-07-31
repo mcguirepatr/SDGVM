@@ -1,0 +1,47 @@
+#!/bin/bash
+
+exps="spin_accel S0 S1 S2 S3"
+oldrun="TRENDYv13_v9e"
+newrun="TRENDYv13_v11t"
+scratch0='scratch-pw2'
+scratch='scratch-pw5'
+gws0='\/gws\/nopw\/j04\/nexcs\/'
+gws='\/gws\/ssde\/j25a\/nexcs\/'
+vers='v10c'
+old_input_vers='g10c'
+new_input_vers='g10c'
+old_vers_str='9E'
+new_vers_str='11T'
+sdgvm_fort_vers='sdgvm_v8y14_debug'
+
+for exp in $exps; do
+  mkdir $exp 
+  mkdir $exp/logs
+  if [[ "$exp" == "spin_accel" ]]; then 
+	  exp2="spin"
+  else
+	  exp2=$exp
+  fi
+  cp -pr ../$oldrun/$exp/[c-i,m,p-z]* $exp/. 
+  sed -i -e 's/sdgvm_v8._debug/'$sdgvm_fort_vers'/g' $exp'/start_v10c.scr'
+  sed -i -e 's/sdgvm_v8._debug/'$sdgvm_fort_vers'/g' $exp'/submit_v10c.sbatch'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/start_v10c.scr'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/submit_v10c.sbatch'
+  sed -i -e 's/spin_accel\/output_v10a/spin_accel\/output_v10c/g' $exp'/submit_v10c.sbatch'
+  sed -i -e 's/'${scratch0}'/'${scratch}'/g'                         $exp'/submit_'$vers'.sbatch'
+  sed -i -e 's/'${scratch0}'/'${scratch}'/g'                         $exp'/submit_pp_'$vers'.sbatch' 
+  sed -i -e 's/'${scratch0}'/'${scratch}'/g'                         $exp'/start_'$vers'.scr' 
+  sed -i -e 's/'${scratch0}'/'${scratch}'/g'                         $exp'/run_postprocessing_'$vers'.bs' 
+  sed -i -e 's/'${scratch0}'/'${scratch}'/g'                         $exp'/input_global_v5a10'$new_input_vers$exp2'.dat'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/submit_pp_v10c.sbatch'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/run_postprocessing_v10c.bs'
+  if [[ "$exp" == "spin_accel" ]]; then 
+     sed -i -e 's/prc/prc tgs tci/g'                                    $exp'/input_global_v5a10'$new_input_vers$exp2'.dat'
+  else
+     sed -i -e 's/rtr/rtr tgs tci/g'                                    $exp'/input_global_v5a10'$new_input_vers$exp2'.dat'
+  fi
+  sed -i -e 's/yie/yie tgs tci/g'                                    $exp'/input_global_v5a10'$new_input_vers$exp2'.dat'
+  sed -i -e 's/'${gws0}'/'${gws}'/g'                                 $exp'/submit_'$vers'.sbatch' 
+  sed -i -e 's/'${gws0}'/'${gws}'/g'                                 $exp'/start_'$vers'.scr' 
+  sed -i -e 's/'${gws0}'/'${gws}'/g'                                 $exp'/run_postprocessing_'$vers'.bs' 
+done
