@@ -3,7 +3,7 @@
 exps1="S0 S1 S2 S3 S5"
 exps2="FS4 FS5"
 exps3="S6"
-spins="spin_accel spin_accelFS spin_accel0"
+spins="spin_accel spin_accel0"
 
 for spin in $spins; do
   if [[ "$spin" == "spin_accel" ]]; then 

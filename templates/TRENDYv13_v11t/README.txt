@@ -50,7 +50,7 @@ Notes:
   module unload jaspy
 
  #Create & modify the runs in the landsurf_rdg group workspace 
- cd /gws/nopw/j04/landsurf_rdg/pmcguire/sdgvmR2
+ cd /gws/ssde/j25a/landsurf_rdg/pmcguire/sdgvmR2
  #this contains the template installation from TRENDYv12
  cp -pr /gws/ssde/j25a/nexcs/pmcguire/TRENDYv10/sdgvm_v8y15_debug/TRENDYv13_v9e TRENDYv13_v9e
  cp -pr /gws/ssde/j25a/nexcs/pmcguire/TRENDYv10/sdgvm_v8y15_debug/TRENDYv13_v11t TRENDYv13_v11t

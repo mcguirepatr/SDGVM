@@ -5,8 +5,8 @@
 
 ##SBATCH -A                       ### account to run job under
 #SBATCH -J spFR_pp10CM          ### jobname 
-#SBATCH -p highres                    ### partition to run job in (sinfo)
-#SBATCH --qos=highres                  ### partition to run job in (sinfo)
+#SBATCH -p standard                    ### partition to run job in (sinfo)
+#SBATCH --qos=high                  ### partition to run job in (sinfo)
 #SBATCH --account=landsurf_rdg
 #SBATCH --mem=64000                    ### <number>[unit], when 0, all available memory requested
 #SBATCH -N 1                        ### nodes requested for job
