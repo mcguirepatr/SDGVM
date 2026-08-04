@@ -2,13 +2,16 @@
 
 exps1="S0 S1 S2 S3 S5"
 exps2="FS4 FS5"
-spins="spin_accel spin_accelFS"
+exps3="S6"
+spins="spin_accel spin_accelFS spin_accel0"
 
 for spin in $spins; do
   if [[ "$spin" == "spin_accel" ]]; then 
      exps=$exps1
-  else
+  elif [[ "$spin" == "spin_accelFS" ]]; then 
      exps=$exps2
+  else
+     exps=$exps3
   fi
   cd $spin 
   ./start_v10c.scr
