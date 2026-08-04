@@ -25,8 +25,8 @@ Notes:
       #copy your states.nc and transitions.nc from the website to the directory above
  #The half-resolution version is computed with:
       module load jaspy # on JASMIN
-      cdo gridboxmean,2,2 states.nc states2b.nc
-      cdo gridboxmean,2,2 transitions.nc transitions2b.nc
+      cdo gridboxmean,2,2 states.nc states4sdgvm.nc
+      cdo gridboxmean,2,2 transitions.nc transitions4sdgvm.nc
 
  #Also, prior to this rsync, make sure that you have downloaded and done the R preprocessing of the JRU/CRA data.
  #  The 2024 copy of the preprocessed data is found here:

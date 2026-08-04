@@ -18,7 +18,7 @@ Contributing authors:
 
 ### How do I get set up? ###
 
-* Summary of set up - read included files in `documentation` directory `input.doc` (describes how to run model), `projects.docx` (helps set up ensembles and HPC runs), and `sdgvm.doc` (somewhat out of date, but describes core model science). For running on the JASMIN supercomputer, look at `README.txt` in the `TRENDYv13_v11c` directory.
+* Summary of set up - read included files in `documentation` directory `input.doc` (describes how to run model), `projects.docx` (helps set up ensembles and HPC runs), and `sdgvm.doc` (somewhat out of date, but describes core model science). For running on the JASMIN supercomputer, look at `README.txt` in the `TRENDYv13_v11t` directory.
 * Configuration - run `make clean` then `make` -- requires gfortran
 * Dependencies - FORTRAN compiler (gfortran), some R dependencies for post-processing (inc. netcdf libraries if TRENDY input/output required) 
 * Database configuration - need met data sets etc, comes separately, not included

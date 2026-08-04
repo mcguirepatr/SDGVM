@@ -101,7 +101,7 @@
       INTEGER ftmor(maxnft),ftc3(maxnft),nft,site0,sitef,nat_map(8)
       INTEGER ilanduse,siteno,iofn,iofnft,iofngft,recl1,ifire
       INTEGER icontinuouslanduse,ftphen(maxnft),ftdth(maxnft),kode
-      INTEGER i,j,k,l,m,ft,s,w,w1,f
+      INTEGER i,j,k,l,m,ft,ft2,j2,l2,s,w,w1,f
       INTEGER at2,at
       INTEGER blank,site,year,age,bioind,xyearf
       INTEGER mnth,no_days,fireres,xyear0,per,omav(douts),year_out
@@ -147,6 +147,7 @@
       CHARACTER stpname*1000,stpname_t*1000,stwdg*1000,stpname_f*1000
       CHARACTER param_file*1000,date*8,time*10,fttags(maxnft)*1000
       CHARACTER stpname_s*1000
+      CHARACTER SPLIT_TAG*16
 
       LOGICAL initise,initiseo,speedc,crand,xspeedc,withcloudcover
       LOGICAL l_clim,l_lu,l_soil(20),l_stats,l_regional,l_countries
@@ -154,7 +155,7 @@
       LOGICAL land_check,l_parameter,SDGVM_070607,SDGVM_140129
       LOGICAL fire(maxyrs),harvest(maxyrs),met_seq,goudriaan_old
       LOGICAL year0set,no_grow(maxnft)
-      LOGICAL debug,out_yie,prescr_fire
+      LOGICAL debug,out_yie,prescr_fire,p_landuse_ps
 
 *----------------------------------------------------------------------*
       REAL*8 zs1(maxnft),zs2(maxnft),zs3(maxnft),zs4(maxnft)
@@ -178,6 +179,10 @@
       REAL*8 lutab2(255,100) !PCM
       LOGICAL closed_loop_ft !PCM
       REAL*8 ftprop1(maxnft)
+      LOGICAL has_secondary(maxnft)
+      INTEGER secondary_row(255)
+      LOGICAL copy_row
+
 
 
 *----------------------------------------------------------------------*
@@ -273,7 +278,17 @@
       READ(98,*) par_loops
       READ(98,*)
       READ(98,*) p_rd
-      CLOSE(98)
+
+      !optional parameters
+      p_landuse_ps = .FALSE.
+      READ(98,*,IOSTAT=kode)
+      IF (kode /= 0) THEN
+      ! No more input, keep default value.
+         GOTO 94
+      ENDIF
+      READ(98,*,IOSTAT=kode) p_landuse_ps
+
+94    CLOSE(98)
 
 
 *----------------------------------------------------------------------*
@@ -1023,6 +1038,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       CALL ST2ARR(st1,snpshts,100,snp_no)
       READ (98,*)
 
+
 *----------------------------------------------------------------------*
 * Read in compulsory functional types.                                 *
 *----------------------------------------------------------------------*
@@ -1352,7 +1368,87 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
         nft = ft
       ENDIF
 
-      ! preverve inpyut sla value to overwrite trait environment
+      ft2 = 0 
+      ft = 2
+998   CONTINUE
+
+      !if p_landuse_ps == .FALSE. then don't do primary/secondary split
+      IF (.NOT.p_landuse_ps) GOTO 999 
+
+      IF(ft.lt.nft) THEN
+          ft = ft + 1 
+          ! We don't do a primary/secondary split for crops
+          IF (INDEX(fttags(ft), 'crop') == 0) THEN
+              ft2 = ft2 + 1 
+              !We do a primary/secondary split for the following fttags(ft)
+              IF      (INDEX(fttags(ft), 'C3') /= 0) THEN
+                      fttags(ft) = 'C3p'
+                      fttags(ft2+nft) = 'C3s'
+              ELSE IF (INDEX(fttags(ft), 'C4') /= 0) THEN
+                      fttags(ft) = 'C4p'
+                      fttags(ft2+nft) = 'C4s'
+              ELSE IF (INDEX(fttags(ft), 'Ev_Bl') /= 0) THEN
+                      fttags(ft) = 'Ev_Bp'
+                      fttags(ft2+nft) = 'Ev_Bs'
+              ELSE IF (INDEX(fttags(ft), 'Ev_Nl') /= 0) THEN
+                      fttags(ft) = 'Ev_Np'
+                      fttags(ft2+nft) = 'Ev_Ns'
+              ELSE IF (INDEX(fttags(ft), 'Dc_Bl') /= 0) THEN
+                      fttags(ft) = 'Dc_Bp'
+                      fttags(ft2+nft) = 'Dc_Bs'
+              ELSE IF (INDEX(fttags(ft), 'Dc_Nl') /= 0) THEN
+                      fttags(ft) = 'Dc_Np'
+                      fttags(ft2+nft) = 'Dc_Ns'
+              END IF
+              ftmix(ft2+nft)       = ftmix(ft)
+              ftc3(ft2+nft)        = ftc3(ft)
+              ftphen(ft2+nft)      = ftphen(ft)
+              ftagh(ft2+nft)       = ftagh(ft)
+              ftdth(ft2+nft)       = ftdth(ft)
+              ftmor(ft2+nft)       = ftmor(ft)
+              ftwd(ft2+nft)        = ftwd(ft)
+              ftxyl(ft2+nft)       = ftxyl(ft)
+              ftpd(ft2+nft)        = ftpd(ft)
+              ftsla(ft2+nft)       = ftsla(ft)
+              ftlls(ft2+nft)       = ftlls(ft)
+              ftsls(ft2+nft)       = ftsls(ft)
+              ftrls(ft2+nft)       = ftrls(ft)
+              ftlmor(ft2+nft)      = ftlmor(ft)
+              ftrat(ft2+nft)       = ftrat(ft)
+              ftbbm(ft2+nft)       = ftbbm(ft)
+              ftbb0(ft2+nft)       = ftbb0(ft)
+              ftbbmax(ft2+nft)     = ftbbmax(ft)
+              ftbblim(ft2+nft)     = ftbblim(ft)
+              ftssm(ft2+nft)       = ftssm(ft)
+              ftsss(ft2+nft)       = ftsss(ft)
+              ftsslim(ft2+nft)     = ftsslim(ft)
+              ftstmx(ft2+nft)      = ftstmx(ft)
+              ftgr0(ft2+nft)       = ftgr0(ft)
+              ftgrf(ft2+nft)       = ftgrf(ft)
+              ftppm0(ft2+nft)      = ftppm0(ft)
+              ftcan_clump(ft2+nft) = ftcan_clump(ft)
+              ftvna(ft2+nft)       = ftvna(ft)
+              ftvnb(ft2+nft)       = ftvnb(ft)
+              ftjva(ft2+nft)       = ftjva(ft)
+              ftjvb(ft2+nft)       = ftjvb(ft)
+              ftg0(ft2+nft)        = ftg0(ft)
+              ftg1(ft2+nft)        = ftg1(ft)
+              ftToptV(ft2+nft)     = ftToptV(ft)
+              ftHaV(ft2+nft)       = ftHaV(ft)
+              ftHdV(ft2+nft)       = ftHdV(ft)
+              ftToptJ(ft2+nft)     = ftToptJ(ft)
+              ftHaJ(ft2+nft)       = ftHaJ(ft)
+              ftHdJ(ft2+nft)       = ftHdJ(ft) 
+          ENDIF
+      ELSE
+          GOTO 999
+      ENDIF
+      GOTO 998        
+
+999   CONTINUE
+      nft = nft + ft2
+
+      ! preserve input sla value to overwrite trait environment
       ! relationships below when needed 
       input_ftsla(:) = ftsla(:)
 
@@ -1431,35 +1527,94 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
 
       ii = 0
 96    CONTINUE
-        READ(98,'(1000a)') st1
-        ii = ii + 1
-        CALL STRIPB(st1)
+      READ(98,'(1000a)') st1
+      ii = ii + 1
+      CALL STRIPB(st1)
 c     read table of conversion from class to ft's proportion
-        IF (ichar(st1(1:1)).NE.32) THEN
-          i = n_fields(st1)
-          CALL STRIPBN(st1,j)
-          persum = 0
-          DO k=1,(i-1)/2
-            CALL STRIPBN(st1,per)
-            persum = persum + per
-            CALL STRIPBS(st1,st2)
-            l = ntags(fttags,st2)
-            IF (l.EQ.-9999) THEN
-              WRITE(*,'('' PROGRAM TERMINATED'')')
-              WRITE(*,*) 'Error in a tag name in the land use mapping.'
-              WRITE(*,'('' Line number'',i3,'', within the mapping list.
+      IF (ichar(st1(1:1)).NE.32) THEN
+        i = n_fields(st1)
+        CALL STRIPBN(st1,j)
+        persum = 0
+        DO k=1,(i-1)/2
+          CALL STRIPBN(st1,per)
+          persum = persum + per
+          CALL STRIPBS(st1,st2)
+          IF(p_landuse_ps) st2 = SPLIT_TAG(st2,'p')             
+          l = ntags(fttags,st2)
+          IF (l.EQ.-9999) THEN
+            WRITE(*,'('' PROGRAM TERMINATED'')')
+            WRITE(*,*) 'Error in a tag name in the land use mapping.'
+            WRITE(*,'('' Line number'',i3,'', within the mapping list.
      &'')') ii
-              WRITE(*,'('' Category number'',i3,'', tag number'',i2,''.'
-     &')') j,k
-              WRITE(*,'('' "'',A,''"'')') st2(1:blank(st2))
-              STOP
-            ENDIF
-            lutab(j,l) = real(per)
-          ENDDO
-          lutab(j,1) = 100.0d0 - real(persum)
-
+            WRITE(*,'('' Category number'',i3,'', tag number'',i2,''.
+     &'')') j,k
+            WRITE(*,'('' "'',A,''"'')') st2(1:blank(st2))
+            STOP
+          ENDIF
+          lutab(j,l) = real(per)
+        ENDDO
+        lutab(j,1) = 100.0d0 - real(persum)
         GOTO 96        
       ENDIF
+
+      IF(.NOT.p_landuse_ps) GOTO 1001
+
+      !copy primary data to be also the secondary data
+      !----------------------------------------------------------------------
+      ! Determine which functional types have secondary equivalents.
+      ! Crops and BARE do not.
+      !----------------------------------------------------------------------
+
+      DO l = 1, nft
+         has_secondary(l) = (INDEX(fttags(l),'crop') == 0 .AND. 
+     &                       INDEX(fttags(l),'BARE') == 0)
+      ENDDO
+
+      secondary_row(:) = 0
+
+      j2 = ii
+
+      !----------------------------------------------------------------------
+      ! Create secondary land-use categories.
+      !----------------------------------------------------------------------
+
+      DO j = 1, ii
+
+        copy_row = .false.
+
+        ! Does this land-use category contain any FT that has
+        ! a secondary equivalent?
+        DO l = 1, nft
+           IF (lutab(j,l) /= 0.0 .AND. has_secondary(l)) THEN
+              copy_row = .true.
+              EXIT
+           ENDIF
+        ENDDO
+
+        IF (copy_row) THEN
+           j2 = j2 + 1
+           secondary_row(j) = j2
+           DO l = 1, nft
+              IF (lutab(j,l) /= 0.0 .AND. has_secondary(l)) THEN
+                 st2 = SPLIT_TAG(fttags(l),'s')
+                 l2  = ntags(fttags,st2)
+                 IF (l2 == -9999) THEN
+                    WRITE(*,'(" PROGRAM TERMINATED")')
+                    WRITE(*,*) 'Error creating secondary tag.'
+                    WRITE(*,'(" Primary tag: ",A)') fttags(l)
+                    WRITE(*,'(" Secondary tag: ",A)') st2
+                    STOP
+                 ENDIF
+                 lutab(j2,l2) = lutab(j,l)
+              ENDIF
+           ENDDO
+        ENDIF
+      ENDDO
+
+      ! Total number of land-use categories (primary + secondary)
+      !nlanduse = j2
+
+1001  CONTINUE
 *----------------------------------------------------------------------*
 
       READ(98,*) grassrc, barerc, fireres
@@ -1770,6 +1925,20 @@ c     read table of conversion from class to ft's proportion
       ELSE
         WRITE(*,'('' PROGRAM TERMINATED'')')
         WRITE(*,*) 'ilanduse: either 1 or 4 arguments required'
+        STOP
+      ENDIF
+
+      IF ((ilanduse.GT.2).AND.(.NOT.p_landuse_ps)) THEN
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'ilanduse > 2, which means p_landuse_ps must be '
+        WRITE(*,*) 'TRUE. In order to set p_landuse_ps, then add it '
+        WRITE(*,*) 'to the param.dat file.'
+        STOP
+      ELSE IF ((ilanduse.LE.2).AND.(p_landuse_ps)) THEN
+        WRITE(*,'('' PROGRAM TERMINATED'')')
+        WRITE(*,*) 'ilanduse <= 2, which means p_landuse_ps must be '
+        WRITE(*,*) 'FALSE. In order to set p_landuse_ps, then add it'
+        WRITE(*,*) ' to the param.dat file.'
         STOP
       ENDIF
 
@@ -5518,6 +5687,35 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
       print*, ''
       print*, 'SDGVM End'
       STOP
+      END
+
+      CHARACTER*16 FUNCTION SPLIT_TAG(st2,prim)
+
+      CHARACTER*(*) st2
+      CHARACTER*(*) prim
+
+      SPLIT_TAG = st2
+
+C     We don't do a primary/secondary split for crops or bare ground
+      IF ((INDEX(st2,'crop').EQ.0).AND.
+     &    (INDEX(st2,'BARE').EQ.0)) THEN
+
+         IF (INDEX(st2,'C3').NE.0) THEN
+            SPLIT_TAG = 'C3'//prim
+         ELSE IF (INDEX(st2,'C4').NE.0) THEN
+            SPLIT_TAG = 'C4'//prim
+         ELSE IF (INDEX(st2,'Ev_Bl').NE.0) THEN
+            SPLIT_TAG = 'Ev_B'//prim
+         ELSE IF (INDEX(st2,'Ev_Nl').NE.0) THEN
+            SPLIT_TAG = 'Ev_N'//prim
+         ELSE IF (INDEX(st2,'Dc_Bl').NE.0) THEN
+            SPLIT_TAG = 'Dc_B'//prim
+         ELSE IF (INDEX(st2,'Dc_Nl').NE.0) THEN
+            SPLIT_TAG = 'Dc_N'//prim
+         ENDIF
+      ENDIF
+
+      RETURN
       END
 
 *----------------------------------------------------------------------*

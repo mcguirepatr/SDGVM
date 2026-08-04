@@ -203,7 +203,7 @@
       INTEGER*2 tmpv(500,12,31),humv(500,12,31),prcv(500,12,31) !PCM
       INTEGER*2 wndv(500,12,31) !PCM
       REAL*8 TMP_MULT,PRC_MULT,HUM_MULT,PRC_MULT1,WND_MULT
-      LOGICAL debug,windf_exists
+      LOGICAL debug,wndf_exists
 
       IF (du.eq.1) THEN
         !recl1 = 730  !PCM
