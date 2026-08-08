@@ -69,7 +69,8 @@
       !INTEGER, PARAMETER :: SINDEX = 21 !starting year for prints
       !INTEGER, PARAMETER :: SINDEX = 1001 !starting year for prints ! for 1851
       !INTEGER, PARAMETER :: SINDEX = 850 !starting year for prints ! for 1700
-      INTEGER, PARAMETER :: SYR0 = 1700 !starting year for NETCDF data 
+      !INTEGER, PARAMETER :: SYR0 = 1700 !starting year for NETCDF data 
+      INTEGER, PARAMETER :: SYR0 = 850 !starting year for NETCDF data 
       INTEGER, PARAMETER :: SYR0_FIRE = 1901 !starting year for NETCDF data for fire
       INTEGER SINDEX,FINDEX
       REAL*8 :: data_in(NV, DXY, DXY), dummya(DXY, DXY)
@@ -770,12 +771,17 @@
           END IF
         END IF
 
-        IF( (MOD(t-SINDEX,DT) == 0) .AND. (debug .EQV. .TRUE.) ) THEN 
-           IF(compute_next_year) THEN
+        IF(debug) THEN
+            PRINT *, 'SDGVM2'
+            PRINT *,  't'
+            IF(compute_next_year) THEN
                WRITE(*,FMT='(I5)', ADVANCE='no') t+849+2 !t=1 is the year 850
-           ELSE
+            ELSE
                WRITE(*,FMT='(I5)', ADVANCE='no') t+849 !t=1 is the year 850
-           END IF
+            END IF
+        END IF
+
+        IF( (MOD(t-SINDEX,DT) == 0) .AND. (debug .EQV. .TRUE.) ) THEN 
            IF(print_type=='unagg') THEN
              IF(compute_next_year) THEN
                DO v=1,NV

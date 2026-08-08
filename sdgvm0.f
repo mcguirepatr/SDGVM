@@ -278,6 +278,9 @@
       READ(98,*) par_loops
       READ(98,*)
       READ(98,*) p_rd
+      IF(debug) THEN
+         WRITE(*,*) 'p_rd=',p_rd
+      ENDIF
 
       !optional parameters
       p_landuse_ps = .FALSE.
@@ -287,6 +290,9 @@
          GOTO 94
       ENDIF
       READ(98,*,IOSTAT=kode) p_landuse_ps
+      IF(debug) THEN
+         WRITE(*,*) 'p_landuse_ps=',p_landuse_ps
+      ENDIF
 
 94    CLOSE(98)
 
@@ -444,40 +450,45 @@ C        WRITE(*,*) 'bbbb'
       ! climate stats path
       READ(98,'(A)') ststats
       CALL STRIPB(ststats)
+      IF(debug) THEN
+         WRITE(*,*) 'ststats=',ststats
+      ENDIF
 
       ! soil data path
       READ(98,'(A)') sttxdp 
       CALL STRIPB(sttxdp)
+      IF(debug) THEN
+         WRITE(*,*) 'sttxdp=',sttxdp
+      ENDIF
 
-c      stpname = ' '
-c      READ(98,'(A)') st1 
-c      CALL STRIPBS(st1,stpname)
-c      stpname_s = TRIM(stpname) // 
-c     &TRIM('/states4sdgvm.nc')
-c      stpname_t = TRIM(stpname) // 
-c     &TRIM('/transitions4sdgvm.nc')
-c      !WRITE(*,*) 'In sdgvm0, LUH2 path/file.'
-c      !WRITE(*,*) stpname_s(1:blank(stpname_s))
-c      !WRITE(*,*) stpname_t(1:blank(stpname_t))
-c
-c      READ(98,'(A)') st1 
-c      CALL STRIPBS(st1,stpname_f)
-c
-c      READ(98,'(A)') st1 
-c      CALL STRIPBS(st1,stwdg)
-c      !stwdg=stwdg(1:blank(stwdg))
 
       ! landcover data path
       READ(98,'(A)') st1
-      CALL STRIPBS(st1,stlu)
+      CALL STRIPBS(st1,stpname)
       ! LUH2 files required for land cover types 3-6
-      !stpname_s = TRIM(stlu)//TRIM("/states4sdgvm.nc")
-      !stpname_t = TRIM(stlu)//TRIM("/transitions4sdgvm.nc")
-      stpname_s =  stlu(1:blank(stlu))//'/states4sdgvm.nc'
-      stpname_t =  stlu(1:blank(stlu))//'/transitions4sdgvm.nc'
-      !WRITE(*,*) 'In sdgvm0, LUH2 path/file.'
-      !WRITE(*,*) stpname_s(1:blank(stpname_s))
-      !WRITE(*,*) stpname_t(1:blank(stpname_t))
+      stpname_s =  stpname(1:blank(stpname))//'/states4sdgvm.nc'
+      stpname_t =  stpname(1:blank(stpname))//'/transitions4sdgvm.nc'
+      IF(debug) THEN
+         WRITE(*,*) 'stpname_t=',stpname_t
+      ENDIF
+
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stpname_f)
+      IF(debug) THEN
+         WRITE(*,*) 'stpname_f=',stpname_f
+      ENDIF
+
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stwdg)
+      IF(debug) THEN
+         WRITE(*,*) 'stwdg=',stwdg
+      ENDIF
+
+      READ(98,'(A)') st1 
+      CALL STRIPBS(st1,stlu)
+      IF(debug) THEN
+         WRITE(*,*) 'stlu=',stlu
+      ENDIF
 
       ! co2 data path & filename
       READ(98,'(A)') stco2
@@ -489,6 +500,9 @@ c      !stwdg=stwdg(1:blank(stwdg))
       ! land_mask path
       READ(98,'(A)') stmask
       CALL STRIPB(stmask)
+      IF(debug) THEN
+         WRITE(*,*) 'stmask=',stmask
+      ENDIF
 
 *----------------------------------------------------------------------*
 * read input switches                                                  *
@@ -1038,6 +1052,9 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       CALL ST2ARR(st1,snpshts,100,snp_no)
       READ (98,*)
 
+      IF(debug) THEN
+         WRITE(*,*) 'AA st2=',st1
+      ENDIF
 
 *----------------------------------------------------------------------*
 * Read in compulsory functional types.                                 *
@@ -1285,7 +1302,13 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
 * From the input file.                                                 *
 *----------------------------------------------------------------------*
         ft = 2
+
+        IF(debug) THEN
+           WRITE(*,*) 'AA ft=2 '
+        ENDIF
+
 98      CONTINUE
+      
 
         IF (ichar(st1(1:1)).NE.32) THEN
             ft = ft + 1
@@ -1963,6 +1986,8 @@ c     read table of conversion from class to ft's proportion
         STOP
       ENDIF
 
+      WRITE(*,*)'ilanduse=',ilanduse,' NYR=',NYR,' NYR_FILE=',NYR_FILE
+
 *----------------------------------------------------------------------*
 * Read in type of prescribed fire: 1 = not prescribed;                 *
 * 2  = burned-area is prescribed, preindustrial cycling for all time   * 
@@ -2485,8 +2510,7 @@ C The following ordering is the order of ft's in the input.dat file
           CALL EX_CLU(stlu,lat,lon,nft,lutab,cluse,du,l_lu,
      &yr0a,yrfa,year0set,spinl,ilanduse,SYR,NYR,NYR_FILE,
      &SYR_FIRE,NYR_FIRE,prescr_fire,lutab2,
-c     &stpname_s,stpname_t,stpname_f,stwdg,
-     &stpname_s,stpname_t,stpname_f,stlu,
+     &stpname_s,stpname_t,stpname_f,stwdg,
      &cluse2,cluseh,fprob_prescrh,debug)
 
       !loop added for testing purposes

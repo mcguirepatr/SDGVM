@@ -52,8 +52,8 @@ Notes:
  #Create & modify the runs in the landsurf_rdg group workspace 
  cd /gws/ssde/j25a/landsurf_rdg/pmcguire/sdgvmR2
  #this contains the template installation from TRENDYv12
- cp -pr /gws/ssde/j25a/nexcs/pmcguire/TRENDYv10/sdgvm_v8y15_debug/TRENDYv13_v9e TRENDYv13_v9e
- cp -pr /gws/ssde/j25a/nexcs/pmcguire/TRENDYv10/sdgvm_v8y15_debug/TRENDYv13_v11t TRENDYv13_v11t
+ cp -pr /gws/ssde/j25a/nexcs/pmcguire/TRENDYv10/sdgvm_v8y15_debug/templates/TRENDYv13_v9e TRENDYv13_v9e
+ cp -pr /gws/ssde/j25a/nexcs/pmcguire/TRENDYv10/sdgvm_v8y15_debug/templates/TRENDYv13_v11t TRENDYv13_v11t
  #this contains the installation for TRENDYv13
  cp -pr /gws/ssde/j25a/nexcs/pmcguire/TRENDYv10/sdgvm_v8y15_debug/TRENDYv13_v11c TRENDYv13_v11d
  cd TRENDYv13_v11t (or TRENDYv13_v11d) 

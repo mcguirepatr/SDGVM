@@ -33,7 +33,7 @@ echo "`date` -- SDGVM EXECUTION HAS STARTED"
 MODEL=/gws/nopw/j04/nexcs/pmcguire/TRENDYv10/sdgvm_v8v_debug/
 INPUT=input_global_v5a10g10cS6.dat
 
-SPINDIR='/work/scratch-pw2/pmcguire/sdgvmR/TRENDYv13_v9e/spin_accel/output_v10c'
+SPINDIR='/work/scratch-pw2/pmcguire/sdgvmR/TRENDYv13_v9e/spin_accel0/output_v10c'
 OUTPUT='/work/scratch-pw2/pmcguire/sdgvmR/TRENDYv13_v9e/S6/output_v10c'
 
 
