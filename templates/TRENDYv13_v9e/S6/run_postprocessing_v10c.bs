@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SRCDIR=/gws/nopw/j04/nexcs/pmcguire/TRENDYv13/sdgvm_bugfix_negsoilc/tools
-ARGS="nsites<-15789 grids<-100 cores<-8 fd<-'${SRCDIR}' dir<-'/work/scratch-pw2/pmcguire/sdgvmR' wd<-'/work/scratch-pw2/pmcguire/sdgvmR/TRENDYv13_v9e' sim<-'S6' outputdir<-'output_v10c/' email<-'p.mcguire@reading.ac.uk' project<-'TRENDYv13(2024)'"
+ARGS="nsites<-15789 grids<-100 cores<-8 fd<-'${SRCDIR}' dir<-'/work/scratch-pw2/pmcguire/sdgvmR' wd<-'/work/scratch-pw2/pmcguire/sdgvmR/TRENDYv13_v9e' sim<-'S6' outputdir<-'output_v10c/' email<-'p.mcguire@reading.ac.uk' project<-'TRENDYv13(2024)' pftnames<-c('BARE','CITY','C3','C3crop','C4','C4crop','Dc_Bl','Dc_Nl','Ev_Bl','Ev_Nl')"
 PARG="person<-'Patrick C. McGuire'" 
 IARG="institution<-'University of Reading'" 
 TIMEARGS="ny<-324 sty<-1700"
