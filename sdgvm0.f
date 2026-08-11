@@ -89,6 +89,18 @@
       REAL*8 cluseh(maxn_at,maxyrs)
       REAL*8 sum_cov_test(maxnft)
       REAL*8 ftprop_init(maxnft),yieldo(maxnft),ftprops(maxnft)
+      REAL*8 ftmix_tmp(maxnft),ftagh_tmp(maxnft),ftwd_tmp(maxnft)
+      REAL*8 ftxyl_tmp(maxnft),ftpd_tmp(maxnft),ftsla_tmp(maxnft)
+      REAL*8 ftlmor_tmp(maxnft),ftrat_tmp(maxnft),ftbb0_tmp(maxnft)
+      REAL*8 ftbbmax_tmp(maxnft),ftbblim_tmp(maxnft)
+      REAL*8 ftsslim_tmp(maxnft),ftstmx_tmp(maxnft),ftgr0_tmp(maxnft)
+      REAL*8 ftgrf_tmp(maxnft),ftppm0_tmp(maxnft)
+      REAL*8 ftcan_clump_tmp(maxnft),ftvna_tmp(maxnft)
+      REAL*8 ftvnb_tmp(maxnft),ftjva_tmp(maxnft),ftjvb_tmp(maxnft)
+      REAL*8 ftg0_tmp(maxnft),ftg1_tmp(maxnft),ftToptV_tmp(maxnft)
+      REAL*8 ftToptJ_tmp(maxnft),ftHaV_tmp(maxnft),ftHdV_tmp(maxnft)
+      REAL*8 ftHaJ_tmp(maxnft),ftHdJ_tmp(maxnft)
+
 
 
       INTEGER read_clump,hw_j,cstype,calc_zen,phen_cor,pft_nflds
@@ -115,6 +127,11 @@
       INTEGER ibox,jbox,last_blank,site_out,country_id,outyears1,fti
       INTEGER outyears2,budo(maxnft),seno(maxnft),ss(maxnft),clim_type
       INTEGER check_ft_grow,no_countries,n_param_0,n_param_f,n_param
+      INTEGER neworder(16)
+      INTEGER ftc3_tmp(maxnft),ftphen_tmp(maxnft),ftdth_tmp(maxnft)
+      INTEGER ftmor_tmp(maxnft),ftlls_tmp(maxnft),ftsls_tmp(maxnft)
+      INTEGER ftrls_tmp(maxnft),ftbbm_tmp(maxnft),ftssm_tmp(maxnft)
+      INTEGER ftsss_tmp(maxnft)
       REAL*8 xtmpv(500,12,31),xprcv(500,12,31),xhumv(500,12,31)
       REAL*8 xcldv(500,12),xswrv(500,12,31),swr(12,31),mnthswr(12)
       REAL*8 xwndv(500,12,31)
@@ -147,7 +164,15 @@
       CHARACTER stpname*1000,stpname_t*1000,stwdg*1000,stpname_f*1000
       CHARACTER param_file*1000,date*8,time*10,fttags(maxnft)*1000
       CHARACTER stpname_s*1000
+      CHARACTER fttags_tmp(maxnft)*1000
       CHARACTER SPLIT_TAG*16
+
+
+      !this puts all the trees at the end (old primary 7:10, old secondary 13:16
+      !                                    new primary 9:12, new secondary 13:16
+      DATA neworder / 1, 2, 3, 4, 5, 6,
+     &                11, 12, 7, 8, 9, 10, 
+     &                13, 14, 15, 16 /
 
       LOGICAL initise,initiseo,speedc,crand,xspeedc,withcloudcover
       LOGICAL l_clim,l_lu,l_soil(20),l_stats,l_regional,l_countries
@@ -1396,7 +1421,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
 998   CONTINUE
 
       !if p_landuse_ps == .FALSE. then don't do primary/secondary split
-      IF (.NOT.p_landuse_ps) GOTO 999 
+      IF (.NOT.p_landuse_ps) GOTO 993 
 
       IF(ft.lt.nft) THEN
           ft = ft + 1 
@@ -1423,6 +1448,7 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
                       fttags(ft) = 'Dc_Np'
                       fttags(ft2+nft) = 'Dc_Ns'
               END IF
+          ENDIF
               ftmix(ft2+nft)       = ftmix(ft)
               ftc3(ft2+nft)        = ftc3(ft)
               ftphen(ft2+nft)      = ftphen(ft)
@@ -1462,7 +1488,6 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
               ftToptJ(ft2+nft)     = ftToptJ(ft)
               ftHaJ(ft2+nft)       = ftHaJ(ft)
               ftHdJ(ft2+nft)       = ftHdJ(ft) 
-          ENDIF
       ELSE
           GOTO 999
       ENDIF
@@ -1470,6 +1495,96 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
 
 999   CONTINUE
       nft = nft + ft2
+
+C switch to the required order of ft
+      DO ft=1,nft
+              ft2 = neworder(ft)
+              fttags_tmp(ft)      = fttags(ft2)
+              ftmix_tmp(ft)       = ftmix(ft2)
+              ftc3_tmp(ft)        = ftc3(ft2)
+              ftphen_tmp(ft)      = ftphen(ft2)
+              ftagh_tmp(ft)       = ftagh(ft2)
+              ftdth_tmp(ft)       = ftdth(ft2)
+              ftmor_tmp(ft)       = ftmor(ft2)
+              ftwd_tmp(ft)        = ftwd(ft2)
+              ftxyl_tmp(ft)       = ftxyl(ft2)
+              ftpd_tmp(ft)        = ftpd(ft2)
+              ftsla_tmp(ft)       = ftsla(ft2)
+              ftlls_tmp(ft)       = ftlls(ft2)
+              ftsls_tmp(ft)       = ftsls(ft2)
+              ftrls_tmp(ft)       = ftrls(ft2)
+              ftlmor_tmp(ft)      = ftlmor(ft2)
+              ftrat_tmp(ft)       = ftrat(ft2)
+              ftbbm_tmp(ft)       = ftbbm(ft2)
+              ftbb0_tmp(ft)       = ftbb0(ft2)
+              ftbbmax_tmp(ft)     = ftbbmax(ft2)
+              ftbblim_tmp(ft)     = ftbblim(ft2)
+              ftssm_tmp(ft)       = ftssm(ft2)
+              ftsss_tmp(ft)       = ftsss(ft2)
+              ftsslim_tmp(ft)     = ftsslim(ft2)
+              ftstmx_tmp(ft)      = ftstmx(ft2)
+              ftgr0_tmp(ft)       = ftgr0(ft2)
+              ftgrf_tmp(ft)       = ftgrf(ft2)
+              ftppm0_tmp(ft)      = ftppm0(ft2)
+              ftcan_clump_tmp(ft) = ftcan_clump(ft2)
+              ftvna_tmp(ft)       = ftvna(ft2)
+              ftvnb_tmp(ft)       = ftvnb(ft2)
+              ftjva_tmp(ft)       = ftjva(ft2)
+              ftjvb_tmp(ft)       = ftjvb(ft2)
+              ftg0_tmp(ft)        = ftg0(ft2)
+              ftg1_tmp(ft)        = ftg1(ft2)
+              ftToptV_tmp(ft)     = ftToptV(ft2)
+              ftHaV_tmp(ft)       = ftHaV(ft2)
+              ftHdV_tmp(ft)       = ftHdV(ft2)
+              ftToptJ_tmp(ft)     = ftToptJ(ft2)
+              ftHaJ_tmp(ft)       = ftHaJ(ft2)
+              ftHdJ_tmp(ft)       = ftHdJ(ft2) 
+      ENDDO
+
+      DO ft=1,nft
+              fttags(ft)      = fttags_tmp(ft)
+              ftmix(ft)       = ftmix_tmp(ft)
+              ftc3(ft)        = ftc3_tmp(ft)
+              ftphen(ft)      = ftphen_tmp(ft)
+              ftagh(ft)       = ftagh_tmp(ft)
+              ftdth(ft)       = ftdth_tmp(ft)
+              ftmor(ft)       = ftmor_tmp(ft)
+              ftwd(ft)        = ftwd_tmp(ft)
+              ftxyl(ft)       = ftxyl_tmp(ft)
+              ftpd(ft)        = ftpd_tmp(ft)
+              ftsla(ft)       = ftsla_tmp(ft)
+              ftlls(ft)       = ftlls_tmp(ft)
+              ftsls(ft)       = ftsls_tmp(ft)
+              ftrls(ft)       = ftrls_tmp(ft)
+              ftlmor(ft)      = ftlmor_tmp(ft)
+              ftrat(ft)       = ftrat_tmp(ft)
+              ftbbm(ft)       = ftbbm_tmp(ft)
+              ftbb0(ft)       = ftbb0_tmp(ft)
+              ftbbmax(ft)     = ftbbmax_tmp(ft)
+              ftbblim(ft)     = ftbblim_tmp(ft)
+              ftssm(ft)       = ftssm_tmp(ft)
+              ftsss(ft)       = ftsss_tmp(ft)
+              ftsslim(ft)     = ftsslim_tmp(ft)
+              ftstmx(ft)      = ftstmx_tmp(ft)
+              ftgr0(ft)       = ftgr0_tmp(ft)
+              ftgrf(ft)       = ftgrf_tmp(ft)
+              ftppm0(ft)      = ftppm0_tmp(ft)
+              ftcan_clump(ft) = ftcan_clump_tmp(ft)
+              ftvna(ft)       = ftvna_tmp(ft)
+              ftvnb(ft)       = ftvnb_tmp(ft)
+              ftjva(ft)       = ftjva_tmp(ft)
+              ftjvb(ft)       = ftjvb_tmp(ft)
+              ftg0(ft)        = ftg0_tmp(ft)
+              ftg1(ft)        = ftg1_tmp(ft)
+              ftToptV(ft)     = ftToptV_tmp(ft)
+              ftHaV(ft)       = ftHaV_tmp(ft)
+              ftHdV(ft)       = ftHdV_tmp(ft)
+              ftToptJ(ft)     = ftToptJ_tmp(ft)
+              ftHaJ(ft)       = ftHaJ_tmp(ft)
+              ftHdJ(ft)       = ftHdJ_tmp(ft) 
+      ENDDO
+
+993   CONTINUE
 
       ! preserve input sla value to overwrite trait environment
       ! relationships below when needed 
