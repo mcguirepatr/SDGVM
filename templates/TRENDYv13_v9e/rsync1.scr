@@ -1,0 +1,12 @@
+#!/bin/bash
+# maybe add this if doing it interactively: --info=progress2
+#DEPENDENCY="--dependency=afterok:44802986"
+DEPENDENCY=""
+JOBNAME="TRENDYv13_v11u"
+
+sbatch -p standard --qos=standard --account=landsurf_rdg \
+       	--job-name=rsync_$JOBNAME -t 24:00:00 --mem=32000 \
+       	--mail-type=ALL --mail-user=p.mcguire@reading.ac.uk \
+       	$DEPENDENCY \
+	--output=rsync_$JOBNAME_%j.out --error=rsync_$JOBNAME_%j.err \
+       	--wrap="rsync -auh /work/scratch-pw5/pmcguire/sdgvmR/$JOBNAME/ /gws/ssde/j25a/landsurf_rdg/pmcguire/sdgvmR2/$JOBNAME/"
