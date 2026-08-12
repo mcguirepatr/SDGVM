@@ -2,7 +2,7 @@
 # maybe add this if doing it interactively: --info=progress2
 #DEPENDENCY="--dependency=afterok:44802986"
 DEPENDENCY=""
-JOBNAME="TRENDYv13_v11u"
+JOBNAME="TRENDYv13_v9e"
 
 sbatch -p standard --qos=standard --account=landsurf_rdg \
        	--job-name=rsync_$JOBNAME -t 24:00:00 --mem=32000 \
