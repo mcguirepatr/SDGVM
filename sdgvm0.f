@@ -1494,6 +1494,13 @@ C PCM       yearv(i) = mod(i-1+PHASE,cycle) + yr0s !For TRENDY S4-S6
       GOTO 998        
 
 999   CONTINUE
+!      write(*,*) 'AA1'
+!      write(*,*) 'nft=', nft
+!      write(*,*) 'AA2'
+!      write(*,*) 'ft2=', ft2
+!      write(*,*) 'AA3'
+!      write(*,*) 'fftags(ft2+nft)', fttags(ft2+nft)
+!      write(*,*) 'AA4'
       nft = nft + ft2
 
 C switch to the required order of ft
@@ -1585,6 +1592,12 @@ C switch to the required order of ft
       ENDDO
 
 993   CONTINUE
+!      write(*,*) 'AA5'
+!      DO l = 1, nft
+!         write(*,*) l, nft, fttags(l)
+!      ENDDO
+!      write(*,*) 'AA6'
+
 
       ! preserve input sla value to overwrite trait environment
       ! relationships below when needed 
@@ -1657,6 +1670,7 @@ C switch to the required order of ft
 *----------------------------------------------------------------------*
 * Read in landuse index mapping.                                       *
 *----------------------------------------------------------------------*
+!      WRITE(*,*)'AA1'
       DO j=1,255
         DO k=1,nft
           lutab(j,k) = 0.0d0
@@ -1677,7 +1691,7 @@ c     read table of conversion from class to ft's proportion
           CALL STRIPBN(st1,per)
           persum = persum + per
           CALL STRIPBS(st1,st2)
-          IF(p_landuse_ps) st2 = SPLIT_TAG(st2,'p')             
+          IF(p_landuse_ps) st2 = SPLIT_TAG(st2,0,'p')             
           l = ntags(fttags,st2)
           IF (l.EQ.-9999) THEN
             WRITE(*,'('' PROGRAM TERMINATED'')')
@@ -1691,7 +1705,12 @@ c     read table of conversion from class to ft's proportion
           ENDIF
           lutab(j,l) = real(per)
         ENDDO
-        lutab(j,1) = 100.0d0 - real(persum)
+        ! PCM: added this conditional: only do the following for j NE BARE=1?
+        ! PCM: otherwise lutab(1,1) = 0
+        !lutab(j,1) = 100.0d0 - real(persum)
+        IF (j.NE.1) THEN
+           lutab(j,1) = 100.0d0 - real(persum)
+        ENDIF
         GOTO 96        
       ENDIF
 
@@ -1706,17 +1725,18 @@ c     read table of conversion from class to ft's proportion
       DO l = 1, nft
          has_secondary(l) = (INDEX(fttags(l),'crop') == 0 .AND. 
      &                       INDEX(fttags(l),'BARE') == 0)
+!         write(*,*) l, fttags(l), has_secondary(l)
       ENDDO
 
+      j2 = ii-1
       secondary_row(:) = 0
 
-      j2 = ii
 
       !----------------------------------------------------------------------
       ! Create secondary land-use categories.
       !----------------------------------------------------------------------
 
-      DO j = 1, ii
+      DO j = 1, ii-1 
 
         copy_row = .false.
 
@@ -1732,9 +1752,10 @@ c     read table of conversion from class to ft's proportion
         IF (copy_row) THEN
            j2 = j2 + 1
            secondary_row(j) = j2
+!           write(*,*)'copy_row j,j2=',j,j2
            DO l = 1, nft
               IF (lutab(j,l) /= 0.0 .AND. has_secondary(l)) THEN
-                 st2 = SPLIT_TAG(fttags(l),'s')
+                 st2 = SPLIT_TAG(fttags(l),1,'s')
                  l2  = ntags(fttags,st2)
                  IF (l2 == -9999) THEN
                     WRITE(*,'(" PROGRAM TERMINATED")')
@@ -1744,10 +1765,22 @@ c     read table of conversion from class to ft's proportion
                     STOP
                  ENDIF
                  lutab(j2,l2) = lutab(j,l)
+!                 write(*,*)'j,l,j2,l2,lutab(j2,l2)=',
+!     & j,l,j2,l2,lutab(j2,l2)
               ENDIF
            ENDDO
         ENDIF
       ENDDO
+
+!      DO j = 1, j2 
+!        DO l = 1, nft
+!              IF (lutab(j,l) /= 0.0) THEN
+!                    write(*,*) l, fttags(l), lutab(j,l)
+!              ENDIF
+!        ENDDO
+!      ENDDO
+!      write(*,*)'Finished lutab'
+
 
       ! Total number of land-use categories (primary + secondary)
       !nlanduse = j2
@@ -5828,10 +5861,11 @@ C     &l_soil(1),l_soil(3),l_soil(5),l_soil(8),l_lu              !PCM
       STOP
       END
 
-      CHARACTER*16 FUNCTION SPLIT_TAG(st2,prim)
+      CHARACTER*16 FUNCTION SPLIT_TAG(st2,mode,prim)
 
       CHARACTER*(*) st2
       CHARACTER*(*) prim
+      INTEGER mode
 
       SPLIT_TAG = st2
 
@@ -5843,15 +5877,31 @@ C     We don't do a primary/secondary split for crops or bare ground
             SPLIT_TAG = 'C3'//prim
          ELSE IF (INDEX(st2,'C4').NE.0) THEN
             SPLIT_TAG = 'C4'//prim
-         ELSE IF (INDEX(st2,'Ev_Bl').NE.0) THEN
-            SPLIT_TAG = 'Ev_B'//prim
-         ELSE IF (INDEX(st2,'Ev_Nl').NE.0) THEN
-            SPLIT_TAG = 'Ev_N'//prim
-         ELSE IF (INDEX(st2,'Dc_Bl').NE.0) THEN
-            SPLIT_TAG = 'Dc_B'//prim
-         ELSE IF (INDEX(st2,'Dc_Nl').NE.0) THEN
-            SPLIT_TAG = 'Dc_N'//prim
          ENDIF
+
+         IF (MODE.EQ.0) THEN
+                 IF (INDEX(st2,'Ev_Bl').NE.0) THEN
+                    SPLIT_TAG = 'Ev_B'//prim
+                 ELSE IF (INDEX(st2,'Ev_Nl').NE.0) THEN
+                    SPLIT_TAG = 'Ev_N'//prim
+                 ELSE IF (INDEX(st2,'Dc_Bl').NE.0) THEN
+                    SPLIT_TAG = 'Dc_B'//prim
+                 ELSE IF (INDEX(st2,'Dc_Nl').NE.0) THEN
+                    SPLIT_TAG = 'Dc_N'//prim
+                 ENDIF
+         ELSE
+                 IF (INDEX(st2,'Ev_Bp').NE.0) THEN
+                    SPLIT_TAG = 'Ev_B'//prim
+                 ELSE IF (INDEX(st2,'Ev_Np').NE.0) THEN
+                    SPLIT_TAG = 'Ev_N'//prim
+                 ELSE IF (INDEX(st2,'Dc_Bp').NE.0) THEN
+                    SPLIT_TAG = 'Dc_B'//prim
+                 ELSE IF (INDEX(st2,'Dc_Np').NE.0) THEN
+                    SPLIT_TAG = 'Dc_N'//prim
+                 ENDIF
+         ENDIF
+      ELSE
+         SPLIT_TAG = st2 !for BARE or C3crop or C4crop
       ENDIF
 
       RETURN

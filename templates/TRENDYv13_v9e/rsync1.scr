@@ -1,7 +1,8 @@
 #!/bin/bash
 # maybe add this if doing it interactively: --info=progress2
-#DEPENDENCY="--dependency=afterok:44802986"
-DEPENDENCY=""
+#DEPENDENCY="--dependency=afterok:45394662"
+DEPENDENCY="--dependency=afterok:45437245,45394662"
+#DEPENDENCY=""
 JOBNAME="TRENDYv13_v9e"
 
 sbatch -p standard --qos=standard --account=landsurf_rdg \

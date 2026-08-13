@@ -28,7 +28,7 @@ for exp in $exps; do
   sed -i -e 's/sdgvm_v8._debug/'$sdgvm_fort_vers'/g' $exp'/submit_v10c.sbatch'
   sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/start_v10c.scr'
   sed -i -e 's/'$oldrun'/'$newrun'/g' $exp'/submit_v10c.sbatch'
-  sed -i -e 's/'$oldrun'/'$newrun'/g rsync1.scr'
+  sed -i -e 's/'$oldrun'/'$newrun'/g' 'rsync1.scr'
   sed -i -e 's/spin_accel\/output_v10a/spin_accel\/output_v10c/g' -e 's/spin_accel0\/output_v10a/spin_accel0\/output_v10c/g' "$exp/submit_v10c.sbatch"
   sed -i -e 's/'${old_vers_str}'/'${new_vers_str}'/g'                $exp'/submit_'$vers'.sbatch'
   sed -i -e 's/'${old_vers_str}'/'${new_vers_str}'/g'                $exp'/submit_pp_'$vers'.sbatch'
