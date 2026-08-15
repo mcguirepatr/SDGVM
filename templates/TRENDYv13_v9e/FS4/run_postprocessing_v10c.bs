@@ -21,14 +21,23 @@ Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
 ALLARGS="${ARGS} ${TIMEARGS} outsyear<-1900 stich<-F netcdf<-T monthly<-F daily<-F ncdf_avars<-c('fFire','fLuc')"
 Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
 
-# stich sub-annual gridded output together - monthly
-ALLARGS="${ARGS} ${TIMEARGSMON} netcdf<-F annual<-F daily<-F"
+# stich sub-annual gridded output together - monthly: non-pft
+ALLARGS="${ARGS} ${TIMEARGSMON} pft<-F netcdf<-F annual<-F daily<-F"
 Rscript postprocess_mp.R ${ALLARGS}
 
-# generate sub-annual netcdf output - monthly
-ALLARGS="${ARGS} ${TIMEARGSMON} stich<-F netcdf<-T annual<-F daily<-F"
+# generate sub-annual netcdf output - monthly: non-pft
+#skip tgs for now
+ALLARGS="${ARGS} ${TIMEARGSMON} stich<-F netcdf<-T annual<-F daily<-F ncdf_mvars<-c('tas','pr','rsds','mrro','mrso','evapotrans','gpp','ra','npp','rh','nbp','nep','lai','tran','soilr','tci')"
 Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
 
+# do the monthly pft processing last since that takes the longest
+# stich sub-annual gridded output together - monthly: pft
+ALLARGS="${ARGS} ${TIMEARGSMON} pft<-T netcdf<-F annual<-F daily<-F"
+Rscript postprocess_mp.R ${ALLARGS}
+
+# generate sub-annual netcdf output - monthly: pft
+ALLARGS="${ARGS} ${TIMEARGSMON} stich<-F netcdf<-T annual<-F daily<-F ncdf_mvars<-c('evapotranspft','transpft','snow_depthpft','gpppft','npppft','laipft')"
+Rscript postprocess_mp.R ${ALLARGS} "$PARG" "$IARG"
 
 
 ### END ###

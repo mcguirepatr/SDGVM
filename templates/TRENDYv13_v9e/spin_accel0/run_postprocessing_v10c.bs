@@ -13,8 +13,12 @@ cd $SRCDIR
 ALLARGS="${ARGS} ${TIMEARGS} monthly<-F daily<-F netcdf<-F"
 Rscript postprocess_mp.R ${ALLARGS}
 
-# stich sub-annual gridded output together - monthly
-ALLARGS="${ARGS} ${TIMEARGSMON} netcdf<-F annual<-F daily<-F"
+# stich sub-annual gridded output together - monthly: non-pft
+ALLARGS="${ARGS} ${TIMEARGSMON} pft<-F netcdf<-F annual<-F daily<-F"
+Rscript postprocess_mp.R ${ALLARGS}
+
+# stich sub-annual gridded output together - monthly: pft
+ALLARGS="${ARGS} ${TIMEARGSMON} pft<-T netcdf<-F annual<-F daily<-F"
 Rscript postprocess_mp.R ${ALLARGS}
 
 ### END ###
