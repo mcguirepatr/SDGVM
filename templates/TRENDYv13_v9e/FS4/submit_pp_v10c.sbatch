@@ -12,7 +12,7 @@
 #SBATCH -N 1                        ### nodes requested for job
 #SBATCH -n 8                           ### tasks job will run per node
 #SBATCH -c 1                              ### cpu cores each task requires
-#SBATCH -t 08:00:00                     ### requested walltime
+#SBATCH -t 24:00:00                     ### requested walltime
 #SBATCH --no-requeue
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mcguirepatr@gmail.com
