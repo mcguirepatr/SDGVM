@@ -129,13 +129,11 @@ C The following ordering is the order of ft's in the input.dat file
            
         woodh = 0.0d0
         if((compute_covchange.EQV..TRUE.)) then
-          if(ftprop(ft).GT.0.0d0) then
-             CALL ADJUST_FTPROP(nft,n_at,NS,ft,
+          CALL ADJUST_FTPROP(nft,n_at,NS,ft,
      &            sum_cov,ftprop,ftprop_init,ftprops,
      &            aggmap_SDGVM_to_aggHyde,ft2frac,
      &            atprop2,corrct_ft,corrct_ft2,lat,atharvest,
      &            woodh,debug)
-          end if
         endif
 
         loss = sum_cov(ft) - ftprop(ft)*1d-2
